@@ -1,0 +1,92 @@
+{
+  "name": "weuqiangcreate_website",
+  "version": "1.0.0",
+  "description": "个人知识库 - 涵盖前端开发、人工智能、编程语言等技术领域",
+  "keywords": [
+    "前端开发",
+    "JavaScript",
+    "React",
+    "Vue",
+    "人工智能",
+    "机器学习",
+    "编程教程",
+    "技术博客"
+  ],
+  "author": "魏强 <wxai2411@example.com>",
+  "homepage": "https://weuqiang.github.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Weuqiang/weuqiangcreate_website.git"
+  },
+  "private": true,
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "dev": "docusaurus start --host 0.0.0.0",
+    "build": "docusaurus build",
+    "build:analyze": "npm run build -- --bundle-analyzer",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "GIT_USER=Weuqiang docusaurus deploy",
+    "deploy:github": "npm run build && gh-pages -d build",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve",
+    "serve:build": "npm run build && npm run serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Linting not configured yet'",
+    "format": "echo 'Formatting not configured yet'"
+  },
+  "dependencies": {
+    "@docsearch/js": "^3.9.0",
+    "@docusaurus/core": "^3.9.2",
+    "@docusaurus/plugin-google-gtag": "^3.9.2",
+    "@docusaurus/plugin-pwa": "^3.9.2",
+    "@docusaurus/preset-classic": "^3.9.2",
+    "@docusaurus/remark-plugin-npm2yarn": "^3.9.2",
+    "@docusaurus/theme-live-codeblock": "^3.9.2",
+    "@docusaurus/theme-mermaid": "^3.9.2",
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
+    "@giscus/react": "^2.4.0",
+    "@infinum/docusaurus-theme": "^0.4.0",
+    "@mdx-js/react": "^3.0.0",
+    "@mui/material": "^5.15.1",
+    "clsx": "^2.0.0",
+    "d3": "^7.9.0",
+    "markmap-common": "^0.15.6",
+    "markmap-lib": "^0.15.8",
+    "markmap-toolbar": "^0.15.8",
+    "markmap-view": "^0.15.8",
+    "prism-react-renderer": "^2.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "react-photo-album": "^2.4.1",
+    "rehype-katex": "^7.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "yet-another-react-lightbox": "^3.25.0"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "^3.9.2",
+    "@docusaurus/types": "^3.9.2",
+    "gh-pages": "^6.1.1",
+    "html-webpack-plugin": "^5.6.4"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0"
+  }
+}

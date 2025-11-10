@@ -1,0 +1,1801 @@
+---
+sidebar_position: 6
+title: 网格数据
+---
+
+早期计算机处理的数据有2种：文本数据、图像数据。其中文本数据又称为序列数据，图像数据又称为网格数据。
+
+计算机视觉（Computer Vision）是人工智能的一个重要分支，它研究如何让计算机“看”和“理解”图像和视频。也叫机器视觉（Machine Vision）。
+
+除了纯视觉方向外，还有有很多令人兴奋的混合方向！
+
+| 混合方向 | 应用场景 | 核心技术 | 典型案例 |
+|---------|---------|---------|---------|
+| **视觉 + 自然语言处理** | 图像描述生成、视觉问答、多模态搜索 | Vision Transformer、CLIP、GPT-4V、LLaVA | ChatGPT视觉功能、Google Lens、图片搜索 |
+| **视觉 + 运动控制** | 自动驾驶、机器人导航、无人机飞行控制 | SLAM、视觉里程计、路径规划 | 特斯拉FSD、波士顿动力机器人、大疆无人机 |
+| **视觉 + 生物医学** | 疾病诊断、手术导航、药物发现 | CT/MRI图像分析、病理切片分析、三维重建 | 肺结节检测、皮肤癌诊断、眼底病变分析 |
+| **视觉 + 三维重建** | 建筑建模、文物保护、虚拟旅游 | 立体视觉、结构光、NeRF、3D Gaussian Splatting | iPhone激光雷达、Matterport 3D扫描 |
+
+早在深度学习之前，人们就开始探索图像的处理了，OpenCV 诞生于深度学习之前，是功能最全面的开源库。它提供了从最基础的图像读写、处理到复杂的特征匹配、目标跟踪、校准等一系列工具。其核心优势在于传统的计算机视觉算法，如图像处理、滤波、形态学操作等。
+
+它向前承接传统以数组为单位的图像处理，向后允许你加载一些现成的算法、模型，是传统图像处理与深度学习之间重要的桥梁。
+
+## 安装
+
+opencv（opensource computer vision）开源计算机视觉库，包含大量的图像处理函数。
+
+[opencv-python](https://github.com/opencv/opencv-python)需要根据环境选择正确的包
+
+有4个不同的包，你<Highlight>只能选择其中的一个。不要在同一环境中安装多个不同的包。</Highlight>
+
+所有包都使用相同的名称空间（`cv2`）。如果你在同一环境中安装了多个不同的包，请使用 `pip uninstall` 卸载所有包，然后只重新安装一个包。
+
+**a.** 针对标准桌面环境的包（适用于 Windows、macOS、几乎所有 GNU/Linux 发行版）
+
+- 选项 1 - 主模块包：`pip install opencv-python`
+- 选项 2 - 完整包（包含主模块和 contrib/extra 模块）：`pip install opencv-contrib-python`（请参考 [OpenCV 文档](https://docs.opencv.org/master/) 中的 contrib/extra 模块列表）
+
+**b.** 针对服务器（无窗口）环境的包（例如 Docker、云环境等），无 GUI 库依赖
+
+这些包比前面两种包更小，因为它们不包含任何图形用户界面功能（未编译 Qt 或其他 GUI 组件）。这意味着这些包避免了对 X11 库的庞大依赖，从而例如可以生成更小的 Docker 镜像。如果你不使用 `cv2.imshow` 等函数，或者你使用其他包（例如 PyQt）来构建界面而非 OpenCV，则应始终使用这些包。
+
+- 选项 3 - 无窗口主模块包：`pip install opencv-python-headless`
+- 选项 4 - 无窗口完整包（包含主模块和 contrib/extra 模块）：`pip install opencv-contrib-python-headless`（请参考 [OpenCV 文档](https://docs.opencv.org/master/) 中的 contrib/extra 模块列表）
+
+
+OpenCv作为开源软件，自然有大量的教程，我读过一些纸质书籍，也看过一些开源教程，总体来说，对于入门与进阶来说，需要的是细致的基础讲解、完整的处理流程，非常推荐官方的[OpenCV-Python教程](https://opencv-python-tutorials.readthedocs.io/)。
+
+
+## 图像读取与显示
+
+### 图像读取
+
+函数签名：`cv2.imread(filename, flags=cv2.IMREAD_COLOR) -> image`
+
+参数说明：
+
+- `filename`：要读取的文件名
+- `flags`：读取标志，默认值为cv2.IMREAD_COLOR，表示读取为BGR格式。可选参数：
+    - cv2.IMREAD_COLOR：读取为BGR格式，默认值。对应数值为1。
+    - cv2.IMREAD_GRAYSCALE：读取为灰度图，对应数值为0。
+    - cv2.IMREAD_UNCHANGED：读取为原图，包含alpha通道，对应数值为-1。
+
+返回值：
+
+- 返回读取的图像对象, <Highlight>如果读取失败, 不报错，返回None</Highlight>
+- <Highlight>CV2默认使用系统编码，如果文件路径含中文无法正常读取，需要把系统编码改为`utf-8`。</Highlight>
+
+图像对象的常用属性：
+- `shape`：图像的形状，(height, width, channels) 其中channels为3、4，表示通道数为RGB、RGBA（A是透明度），如果是灰度、二值图，通道数为1的情况会只返回(height, width)。
+- `size`：图像的像素数，height * width * channels
+- `dtype`：图像的数据类型
+- `ndim`：图像的维度
+- `itemsize`：图像的元素大小
+- `nbytes`：图像的内存大小
+
+```python showLineNumbers
+import cv2
+path= "10.jpg"
+img = cv2.imread(path)
+print(img.shape) 
+```
+
+### 图像保存
+
+函数签名：`cv2.imwrite(filename, img, [params])`
+
+参数说明：
+
+- `filename`：要保存的文件名
+- `img`：要保存的图像对象(数据)
+- `params`：可选参数，<Highlight>用于指定保存的格式和质量</Highlight>，可选参数：
+    - cv2.IMWRITE_JPEG_QUALITY：JPEG图像质量，范围为0-100，默认值为95
+    - cv2.IMWRITE_PNG_COMPRESSION：PNG图像压缩级别，范围为0-9，默认值为3
+    - cv2.IMWRITE_PXM_BINARY：PPM/PGM/PBM图像格式，默认值为False
+
+```python showLineNumbers
+import cv2
+path= "10.jpg"
+img = cv2.imread(path)
+cv2.imwrite('new_img.jpg',img, [cv2.IMWRITE_JPEG_QUALITY, 100])
+```
+
+### 图像显示、等待按键、关闭窗口
+
+cv2.imshow函数签名：`cv2.imshow(winname, img)`
+
+参数说明：
+
+- `winname`：窗口名称
+- `img`：要显示的图像对象
+
+cv2.waitKey函数签名：`cv2.waitKey([delay]) -> retval`
+
+参数说明：
+
+- `delay`：等待时间，单位为毫秒。当值为0时，表示无限等待。
+
+返回值：
+
+- 返回按键的ASCII码<Highlight>（大小写敏感）</Highlight>，如果到时间没有按键按下，则返回-1。
+
+注意：
+- <Highlight>如果设置了中文输入法，键盘的捕获会被输入法占用，导致无法正常等待按键按下。</Highlight>
+- <Highlight>如果弹出多个相同名称的窗口，只会显示一个窗口，窗口内的图像内容会被覆盖。</Highlight>
+
+上面两个函数是成对出现的，`cv2.imshow`用于显示图像，`cv2.waitKey`用于等待按键按下或者到时间自动关闭窗口。
+
+下面两个函数都表示关闭窗口，区别在于`destroyWindow`是关闭指定窗口，而`destroyAllWindows`是关闭所有窗口。
+
+destroyWindow函数签名：`cv2.destroyWindow(winname)`
+参数说明：
+- `winname`：要关闭的窗口名称
+
+destroyAllWindows函数签名：`cv2.destroyAllWindows()`
+
+```python showLineNumbers
+import cv2
+path= "10.jpg"
+img = cv2.imread(path)
+# 显示图片, 参数：img: 图像对象, 'Image': 窗口名称
+# 如果窗口名称重复，则不会创建新的窗口，而是将图像显示在已有的窗口中
+cv2.imshow('Image', img)
+# 等待按键按下，0表示无限等待，其他数字表示等待时间（毫秒）
+# 这个方法会阻塞程序，直到按键按下，返回值为按键的ASCII码。如果设置了中文输入法，键盘的捕获会被输入法占用，导致无法正常等待按键按下。
+key = cv2.waitKey(0)    
+# 如果按键为q，则退出
+if key == ord('q'):
+    # 关闭指定窗口
+    cv2.destroyWindow('Image') 
+# 关闭所有窗口
+cv2.destroyAllWindows()
+```
+
+
+## 动态图像
+
+### 视频读取与显示
+
+```python showLineNumbers
+# cv2.VideoCapture(参数)：参数可以是整数、字符串、流媒体
+
+# 整数:表示摄像头的编号
+# 0:表示默认摄像头
+# 1:表示第二个摄像头
+
+# 字符串:表示视频文件的路径（绝对相对都可以）：1.mp4
+
+# 流媒体:表示视频流： http://192.168.1.100:8080
+
+cap = cv2.VideoCapture(0) # 摄像头的语柄
+if not cap.isOpened():
+    print("Error: Could not open video.")
+    cap.release() # 释放摄像头
+while True:
+    ret,frame = cap.read() # 读取视频帧
+    # ret:表示是否读取成功（True/False）
+    # frame:表示读取到的视频帧数据（numpy数组）
+    if not ret:
+        print("Error: Could not read frame.")
+        break
+    cv2.imshow("frame",frame) # 显示视频帧。同个窗口名称，会覆盖窗口内容，而不是新开窗口。
+    if cv2.waitKey(1) == ord('q'): # 按q键退出循环
+        break
+cap.release() # 释放摄像头
+cv2.destroyAllWindows() # 关闭所有窗口
+```
+
+### 视频保存
+
+函数签名：`cv2.VideoWriter(filename, fourcc, fps, frameSize)`
+
+参数说明：
+
+- filename：视频文件名
+- fourcc：视频编码格式
+- fps：帧率
+- frameSize：帧大小
+
+```python showLineNumbers {16,18,31,35}
+import cv2
+import numpy as np
+# cv2.VideoCapture(参数)：参数可以是整数、字符串、流媒体
+
+# 整数:表示摄像头的编号
+# 0:表示默认摄像头
+# 1:表示第二个摄像头
+
+# 字符串:表示视频文件的路径（绝对相对都可以）：1.mp4
+
+# 流媒体:表示视频流：rtsp://192.168.1.100:8554/test 或者 http://192.168.1.100:8080
+
+cap = cv2.VideoCapture(0) # 摄像头的语柄
+
+# 视频的编码格式
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+# 视频的输出路径
+out = cv2.VideoWriter('output.mp4', fourcc, 20.0, (640,480))
+
+
+if not cap.isOpened():
+    print("Error: Could not open video.")
+    cap.release() # 释放摄像头
+while True:
+    ret,frame = cap.read() # 读取视频帧
+    # ret:表示是否读取成功（True/False）
+    # frame:表示读取到的视频帧数据（numpy数组）
+    if not ret:
+        print("Error: Could not read frame.")
+        break
+    out.write(frame) # 写入视频帧
+    cv2.imshow("frame",frame) # 显示视频帧。同个窗口名称，会覆盖窗口内容，而不是新开窗口。
+    if cv2.waitKey(1) == ord('q'): # 按q键退出循环
+        break
+out.release() # 释放视频
+cap.release() # 释放摄像头
+cv2.destroyAllWindows() # 关闭所有窗口
+```
+
+## 图像绘制
+
+### 绘制直线、矩形
+
+- `line`函数签名：`cv2.line(img, pt1, pt2, color, thickness, lineType, shift)`
+- `rectangle`函数签名：`cv2.rectangle(img, pt1, pt2, color, thickness, lineType, shift)`
+
+参数说明：
+
+- `img`：图像对象
+- `pt1`：起点坐标
+- `pt2`：终点坐标
+- `color`：颜色
+- `thickness`：线宽
+- `lineType`：线型
+- `shift`：位移，默认为0，表示坐标是整数，如果大于1，则表示坐标是浮点数，例如shift=2，则表示坐标是浮点数。可用于实现亚像素精度绘图。
+- <Highlight>对于矩形来说，`pt1`是左上角，`pt2`是右下角。</Highlight>
+
+### 圆形、椭圆
+
+- `circle`函数签名：`cv2.circle(img, center, radius, color, thickness, lineType, shift)`
+- `ellipse`函数签名：`cv2.ellipse(img, center, axes, angle, startAngle, endAngle, color, thickness, lineType, shift)`
+
+参数说明：
+
+- `img`：图像对象
+- `center`：圆心坐标
+- `radius`：半径
+- `axes`：椭圆长轴和短轴长度
+- `angle`：椭圆旋转角度
+- `startAngle`：椭圆起始角度
+- `endAngle`：椭圆结束角度
+- `color`：颜色
+- `thickness`：线宽
+- `lineType`：线型
+- `shift`：位移，默认为0，表示坐标是整数，如果大于1，则表示坐标是浮点数，例如shift=2，则表示坐标是浮点数。可用于实现亚像素精度绘图。
+
+### 多边形
+
+polylines函数签名：`cv2.polylines(img, pts, isClosed, color, thickness, lineType, shift)`
+
+参数说明：
+
+- `img`：图像对象
+- `pts`：顶点列表
+- `isClosed`：是否闭合
+- `color`：颜色
+- `thickness`：线宽
+- `lineType`：线型
+- `shift`：位移，默认为0，表示坐标是整数，如果大于1，则表示坐标是浮点数，例如shift=2，则表示坐标是浮点数。可用于实现亚像素精度绘图。
+
+```python showLineNumbers
+# 导入库
+import cv2
+# 读取图片
+img = cv2.imread('10.jpg')
+# 绘制直线
+# 参数：img: 图像对象, (100, 100): 起点坐标, (200, 200): 终点坐标, (0, 0, 255): 颜色, 2: 线宽
+cv2.line(img, (100, 100), (200, 200), (0, 0, 255), 2)
+# 绘制矩形
+# 参数：img: 图像对象, (100, 100): 左上角坐标, (200, 200): 右下角坐标, (0, 0, 255): 颜色, 2: 线宽
+cv2.rectangle(img, (100, 100), (200, 200), (0, 0, 255), 2)
+# 绘制圆形
+# 参数：img: 图像对象, (150, 150): 圆心坐标, 50: 半径, (0, 0, 255): 颜色, 2: 线宽
+cv2.circle(img, (150, 150), 50, (0, 0, 255), 2)
+# 绘制多边形
+# 参数：img: 图像对象, [pts]: 顶点列表, True: 是否闭合, (0, 0, 255): 颜色, 2: 线宽
+pts = np.array([[100, 100], [200, 100], [200, 200], [100, 200]])
+cv2.polylines(img, [pts], True, (0, 0, 255), 2)
+# 绘制椭圆
+# 参数：img: 图像对象, (150, 150): 椭圆中心坐标, (100, 50): 椭圆长轴和短轴长度, 0: 椭圆旋转角度, 0: 椭圆起始角度, 360: 椭圆结束角度, (0, 0, 255): 颜色, 2: 线宽
+cv2.ellipse(img, (150, 150), (100, 50), 0, 0, 360, (0, 0, 255), 2)
+# 显示图片
+cv2.imshow('Image', img)
+# 等待按键按下
+cv2.waitKey(0)
+# 关闭所有窗口
+cv2.destroyAllWindows()
+```
+
+### 绘制文字
+
+函数签名：`cv2.putText(img, text, org, fontFace, fontScale, color, thickness, lineType, bottomLeftOrigin)`
+
+参数说明：
+
+- `img`：图像对象
+- `text`：要绘制的文字
+- `org`：文字的左下角坐标
+- `fontFace`：字体类型
+- `fontScale`：字体缩放比例（大于1时，文字会变大、0~1时，文字会变小，小于0时，文本将倒置）
+- `color`：文字颜色
+- `thickness`：文字粗细
+- `lineType`：线型
+- `bottomLeftOrigin`：是否从左下角开始绘制
+
+函数直接作用于图像对象，不需要返回值。
+
+```python showLineNumbers
+import cv2
+
+# 读取图片
+img = cv2.imread('10.jpg')
+# 绘制文字：Hello, World! 位置为(100, 100)，字体为cv2.FONT_HERSHEY_SIMPLEX，字体缩放比例为1，颜色为红色，粗细为2
+cv2.putText(img, 'Hello, World!', (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+# 显示图片
+cv2.imshow('Image', img)
+# 展示1秒
+cv2.waitKey(1000)
+# 关闭所有窗口
+cv2.destroyAllWindows()
+```
+
+### PIL库绘制中文
+
+cv2的在图片上的绘制语法主要缺陷为无法绘制中文，需要使用PIL库来绘制中文。
+
+字体文件：一种可以把码点转换为像素显示的超大型字典。
+
+```python showLineNumbers
+import cv2
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+# 打开图片
+img = Image.open('imgs/img/10.jpg')  # 替换为你的图片路径
+# 设置字体（确保路径正确，Windows下常见字体路径如下）
+font_path = "simhei.ttf"  # 黑体
+font_size = 60
+font = ImageFont.truetype(font_path, font_size)
+# 要绘制的文字
+text = "机器视觉"
+# 创建绘图对象
+draw = ImageDraw.Draw(img)
+# 计算文字尺寸
+text_width, text_height = draw.textsize(text, font=font)
+# 计算图片中心
+img_width, img_height = img.size
+x = (img_width - text_width) // 2
+y = (img_height - text_height) // 2
+# 绘制文字（可设置颜色和描边等）
+draw.text((x, y), text, font=font, fill=(255, 0, 0))  # 红色
+# 保存或显示图片
+img.show()
+# img.save('output.jpg')
+```
+
+## 图像运算
+
+加减法的前提是两张图片的尺寸相同。
+
+### 图像加法、图像减法
+
+```python showLineNumbers {12,23}
+import cv2
+import numpy as np
+path = "xxx.bmp"
+def draw_add(path):
+    img = cv2.imread(path)
+    img_height, img_width = img.shape[:2]
+    # 创建一个全白的mask_img
+    mask_img = np.zeros((img_height, img_width, 3), dtype=np.uint8) + 255
+    # 在mask_img上写上Showcase
+    cv2.putText(mask_img, "Showcase", (img_width//4, img_height//2), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 5)
+    # 将mask_img和img相加
+    img3 = cv2.add(img, mask_img)
+    cv2.imwrite(f"add_{path}", img3)
+
+def draw_subtract(path):
+    img = cv2.imread(path)
+    img_height, img_width = img.shape[:2]
+    # 创建一个全白的mask_img
+    mask_img = np.zeros((img_height, img_width, 3), dtype=np.uint8) + 255
+    # 在mask_img上画一个圆
+    cv2.circle(mask_img, (img_width//2, img_height//2), int(min(img_width, img_height)*0.45), (0, 0, 0), -1)
+    # 将mask_img和img相减
+    img3 = cv2.subtract(img, mask_img)
+    cv2.imwrite(f"subtract_{path}", img3)
+
+draw_add(path)
+draw_subtract(path)
+```
+
+:::info
+
+图像加权cv2.addWeighted
+
+函数签名：`cv2.addWeighted(src1, alpha, src2, beta, gamma) -> dst`
+
+参数说明：
+
+- `src1`：图像1
+- `alpha`：图像1的强度，范围为0-1
+- `src2`：图像2
+- `beta`：图像2的强度，范围为0-1
+- `gamma`：偏移量（即图像在加权后，整体增加的值，一般为0）
+
+图像1和图像2的强度不需要合起来等于1，可以大于1，也可以小于1。
+
+```python showLineNumbers
+import cv2
+import numpy as np
+
+img1 = cv2.imread("green.png")
+img2 = cv2.imread("red.png")
+
+img3 = cv2.addWeighted(img1, 1, img2, 1,0)
+
+cv2.imshow("img4", img3)
+cv2.waitKey(0)
+```
+:::
+
+## 基础图像操作
+
+### 图像缩放
+
+函数签名：`cv2.resize(src, dsize, fx, fy, interpolation) -> dst`
+
+参数说明：
+
+- `src`：源图像
+- `dsize`：目标图像大小，如果为None，则根据fx和fy计算，传入的是(width, height)
+- `fx`：水平缩放比例
+- `fy`：垂直缩放比例
+- `interpolation`：插值方式，默认值为cv2.INTER_LINEAR:双线性插值
+
+
+当resize指定的新尺寸大于原尺寸时，会使用插值方式来填充新产生的像素。
+
+```python showLineNumbers
+import cv2
+import numpy as np
+
+img1 = cv2.imread("xxx.png")
+# 固定值缩放
+img2 = cv2.resize(img1, (100, 100))
+# 按比例缩放
+img2 = cv2.resize(img1, dsize = None, fx = 0.5, fy = 0.5)
+```
+
+### 拆分与合并通道
+
+拆分通道函数签名：`cv2.split(img) -> list`
+
+合并通道函数签名：`cv2.merge(list) -> img`
+
+参数说明：
+
+- `img`：图像对象
+
+返回值：
+
+- `list`：不同通道的图像对象
+
+```python showLineNumbers
+import cv2
+import numpy as np
+
+img = cv2.imread("xxx.png")
+b, g, r = cv2.split(img)
+
+img2 = cv2.merge([b, g, r])
+
+cv2.imshow("img", img)
+cv2.imshow("img2", img2)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+### 图像翻转
+
+函数签名：`cv2.flip(src, flipCode) -> dst`
+
+参数说明：
+
+- `src`：源图像
+- `flipCode`：翻转方式，可选参数：
+  - 0：上下翻转（垂直翻转）
+  - 1：左右翻转（水平翻转）
+  - -1：上下左右翻转（垂直水平翻转）
+
+返回值：
+
+- 翻转后的图像对象
+
+```python showLineNumbers
+import cv2
+
+img = cv2.imread("xxx.png")
+
+# 上下翻转（垂直翻转）
+img_vertical = cv2.flip(img, 0)
+
+# 左右翻转（水平翻转）
+img_horizontal = cv2.flip(img, 1)
+
+# 上下左右翻转（垂直水平翻转）
+img_both = cv2.flip(img, -1)
+
+cv2.imshow("Original", img)
+cv2.imshow("Vertical Flip", img_vertical)
+cv2.imshow("Horizontal Flip", img_horizontal)
+cv2.imshow("Both Flip", img_both)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+### 图像裁剪
+
+图像裁剪使用NumPy数组切片操作，不需要专门的OpenCV函数。
+
+操作语法：`img[start_y:end_y, start_x:end_x]`
+
+参数说明：
+
+- `start_y`：裁剪区域的起始行（y坐标）
+- `end_y`：裁剪区域的结束行（y坐标）
+- `start_x`：裁剪区域的起始列（x坐标）
+- `end_x`：裁剪区域的结束列（x坐标）
+
+注意：<Highlight>坐标系以图像左上角为原点，y轴向下，x轴向右</Highlight>
+
+```python showLineNumbers
+import cv2
+
+img = cv2.imread("xxx.png")
+
+# 获取图像尺寸
+height, width = img.shape[:2]
+
+# 裁剪中心区域（从坐标(100,100)到(300,300)）
+cropped_img = img[100:300, 100:300]
+
+# 裁剪图像上半部分
+top_half = img[0:height//2, 0:width]
+
+# 裁剪图像右下角四分之一
+bottom_right = img[height//2:height, width//2:width]
+
+cv2.imshow("Original", img)
+cv2.imshow("Cropped", cropped_img)
+cv2.imshow("Top Half", top_half)
+cv2.imshow("Bottom Right", bottom_right)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+### 图像平移
+
+函数签名：`cv2.warpAffine(src, M, dsize, flags, borderMode, borderValue) -> dst`
+
+参数说明：
+
+- `src`：源图像
+- `M`：2×3的仿射变换矩阵
+- `dsize`：输出图像的大小，格式为(width, height)
+- `flags`：插值方法，默认为cv2.INTER_LINEAR
+- `borderMode`：边界处理方式，默认为cv2.BORDER_CONSTANT
+- `borderValue`：边界填充值，默认为0
+
+变换矩阵格式：`[[1, 0, dx], [0, 1, dy]]`，其中dx为x方向位移，dy为y方向位移
+
+```python showLineNumbers
+import cv2
+import numpy as np
+
+img = cv2.imread("xxx.png")
+height, width = img.shape[:2]
+
+# 向右平移100像素，向下平移50像素
+M = np.float32([[1, 0, 100], [0, 1, 50]])
+translated_img = cv2.warpAffine(img, M, (width, height))
+
+# 向左平移50像素，向上平移30像素
+M2 = np.float32([[1, 0, -50], [0, 1, -30]])
+translated_img2 = cv2.warpAffine(img, M2, (width, height))
+
+cv2.imshow("Original", img)
+cv2.imshow("Translated Right-Down", translated_img)
+cv2.imshow("Translated Left-Up", translated_img2)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+### 图像旋转
+
+旋转矩阵函数签名：`cv2.getRotationMatrix2D(center, angle, scale) -> M`
+
+参数说明：
+
+- `center`：旋转中心点坐标，格式为(x, y)
+- `angle`：旋转角度（度数），正值表示逆时针旋转
+- `scale`：缩放比例，1.0表示不缩放
+
+应用旋转需要配合`cv2.warpAffine`函数使用。
+
+```python showLineNumbers
+import cv2
+import numpy as np
+
+img = cv2.imread("xxx.png")
+height, width = img.shape[:2]
+
+# 以图像中心为旋转点，逆时针旋转45度，不缩放
+center = (width // 2, height // 2)
+M = cv2.getRotationMatrix2D(center, 45, 1.0)
+rotated_img = cv2.warpAffine(img, M, (width, height))
+
+# 以图像中心为旋转点，顺时针旋转30度，放大1.5倍
+M2 = cv2.getRotationMatrix2D(center, -30, 1.5)
+rotated_scaled_img = cv2.warpAffine(img, M2, (width, height))
+
+cv2.imshow("Original", img)
+cv2.imshow("Rotated 45°", rotated_img)
+cv2.imshow("Rotated -30° Scaled 1.5x", rotated_scaled_img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+### 仿射变换
+
+仿射变换矩阵函数签名：`cv2.getAffineTransform(src, dst) -> M`
+
+参数说明：
+
+- `src`：源图像中的三个点坐标，numpy数组格式
+- `dst`：目标图像中对应的三个点坐标，numpy数组格式
+
+返回值：
+
+- 2×3的仿射变换矩阵
+
+仿射变换能够实现旋转、平移、缩放和错切等变换的组合。
+
+```python showLineNumbers
+import cv2
+import numpy as np
+
+img = cv2.imread("xxx.png")
+height, width = img.shape[:2]
+
+# 定义源图像中的三个点（左上角、右上角、左下角）
+pts1 = np.float32([[0, 0], [width-1, 0], [0, height-1]])
+
+# 定义目标图像中对应的三个点（实现错切变换）
+pts2 = np.float32([[0, height*0.33], [width*0.85, height*0.25], [width*0.15, height*0.7]])
+
+# 计算仿射变换矩阵
+M = cv2.getAffineTransform(pts1, pts2)
+
+# 应用仿射变换
+affine_img = cv2.warpAffine(img, M, (width, height))
+
+# 在原图上标记三个关键点
+cv2.circle(img, (0, 0), 5, (255, 0, 0), -1)
+cv2.circle(img, (width-1, 0), 5, (255, 0, 0), -1)
+cv2.circle(img, (0, height-1), 5, (255, 0, 0), -1)
+
+cv2.imshow("Original", img)
+cv2.imshow("Affine Transform", affine_img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+### 透视变换
+
+透视变换矩阵函数签名：`cv2.getPerspectiveTransform(src, dst) -> M`
+
+透视变换函数签名：`cv2.warpPerspective(src, M, dsize, flags, borderMode, borderValue) -> dst`
+
+参数说明：
+
+- `src`：源图像中的四个点坐标，numpy数组格式
+- `dst`：目标图像中对应的四个点坐标，numpy数组格式
+- `M`：3×3的透视变换矩阵
+- `dsize`：输出图像的大小，格式为(width, height)
+
+透视变换能够模拟三维空间中的投影效果，常用于文档矫正、鸟瞰图变换等。
+
+```python showLineNumbers
+import cv2
+import numpy as np
+
+img = cv2.imread("xxx.png")
+height, width = img.shape[:2]
+
+# 定义源图像中的四个点（矩形的四个角）
+pts1 = np.float32([[0, 0], [width, 0], [0, height], [width, height]])
+
+# 定义目标图像中对应的四个点（梯形效果）
+pts2 = np.float32([[0, 0], [width, 0], [width*0.3, height], [width*0.7, height]])
+
+# 计算透视变换矩阵
+M = cv2.getPerspectiveTransform(pts1, pts2)
+
+# 应用透视变换
+perspective_img = cv2.warpPerspective(img, M, (width, height))
+
+cv2.imshow("Original", img)
+cv2.imshow("Perspective Transform", perspective_img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+### 图像扩边
+
+函数签名：`cv2.copyMakeBorder(src, top, bottom, left, right, borderType, value) -> dst`
+
+参数说明：
+
+- `src`：源图像
+- `top`：上边框宽度（像素）
+- `bottom`：下边框宽度（像素）
+- `left`：左边框宽度（像素）
+- `right`：右边框宽度（像素）
+- `borderType`：边框类型，常用类型：
+  - cv2.BORDER_CONSTANT：常数边框，需要指定value参数
+  - cv2.BORDER_REFLECT：反射边框
+  - cv2.BORDER_REPLICATE：复制边框
+  - cv2.BORDER_WRAP：包装边框
+- `value`：边框颜色值（当borderType为BORDER_CONSTANT时使用）
+
+```python showLineNumbers
+import cv2
+
+img = cv2.imread("xxx.png")
+
+# 添加常数边框（黑色）
+border_constant = cv2.copyMakeBorder(img, 50, 50, 50, 50, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+
+# 添加常数边框（红色）
+border_red = cv2.copyMakeBorder(img, 30, 30, 30, 30, cv2.BORDER_CONSTANT, value=(0, 0, 255))
+
+# 添加反射边框
+border_reflect = cv2.copyMakeBorder(img, 50, 50, 50, 50, cv2.BORDER_REFLECT)
+
+# 添加复制边框
+border_replicate = cv2.copyMakeBorder(img, 50, 50, 50, 50, cv2.BORDER_REPLICATE)
+
+# 添加包装边框
+border_wrap = cv2.copyMakeBorder(img, 50, 50, 50, 50, cv2.BORDER_WRAP)
+
+cv2.imshow("Original", img)
+cv2.imshow("Constant Border (Black)", border_constant)
+cv2.imshow("Constant Border (Red)", border_red)
+cv2.imshow("Reflect Border", border_reflect)
+cv2.imshow("Replicate Border", border_replicate)
+cv2.imshow("Wrap Border", border_wrap)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+## 色彩处理
+
+:::info
+科普：什么是HSV？
+
+HSV：相比RGB相比，HSV能更好的表示同个颜色的不同值（饱和度和明度）
+- H: 色调，取值范围是0-180，表示颜色
+- S: 饱和度，取值范围是0-255，表示颜色的纯度
+- V: 明度，取值范围是0-255，表示颜色的亮度
+:::
+
+
+:::info
+什么是24位真彩屏？
+
+每个像素点的取值返回是0~255，即在二进制中需要8位来表示（2的8次方）
+
+那么 R G B 三个通道就需要 8 + 8 + 8 = 24 位来表示
+
+难道还有假彩屏？
+
+是的，因为人眼并不能分辨出 255 * 255 * 255 种颜色，所以可以适当的减少一些颜色，也不影响人眼感知
+
+所以就有了<HoverText text="16bit屏幕（单片机常用）" explanation="蓝色：5位 + 绿色：6位 + 红色：5位"/>
+
+:::
+
+### 灰度图
+
+灰度图
+适用于图像处理，如边缘检测及其应用：图像分割、轮廓检测
+只有1个通道，取值范围是0-255，表示颜色的亮度
+
+```python showLineNumbers
+import numpy as np
+import cv2
+
+# 方式1 （支持自定义权重）
+img = cv2.imread("xxx.png")
+B,G,R = cv2.split(img)
+gray = R*0.299 + G*0.587 + B*0.114
+gray = gray.astype(np.uint8)
+
+# 方式2 (最简单，最常用)
+gray = cv2.imread("xxx.png",0)
+
+# 方式3 （可以转化为各种色彩空间）
+img = cv2.imread("xxx.png")
+gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+
+
+cv2.imshow("gray",gray)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+### 二值化图
+
+二值化图
+适用于图像压缩
+只有1个通道，取值范围是0或1
+
+
+| 方法 | 核心思想 | 如何工作？ | 优点 | 缺点 | 适用场景 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **固定阈值法** | 设置一个固定的“分界线”来区分黑白。 | 你先设定一个固定的数值，比如 127。然后程序会遍历图像中的每一个像素点：如果像素值大于 127，就把它变成纯白色（255）。如果像素值小于或等于 127，就变成纯黑色（0）。最后，再把白色变为 1，黑色变为 0。 | **简单粗暴，速度快。** 就像给所有学生设一条及格线，谁分数高谁就及格。 | **太死板，不灵活。** 面对一张整体很暗的照片，大部分像素可能都低于 127，结果整个图都变成黑的了。对光线不均匀的图片完全无效。 | 适合处理**光线均匀、对比度高**的简单图像，比如扫描的黑白文档。 |
+| **全局平均值法** | 自动计算图像的“平均分数”作为分界线。 | 程序会先计算整张图片的所有像素值的平均值，并把这个平均值作为动态的阈值。然后按照固定阈值法的方式进行二值化。 | **更智能。** 它会根据图片本身的亮度来决定阈值，所以对整体偏亮或偏暗的图片效果更好。 | **忽略局部差异。** 如果一张图片既有明亮的区域（比如太阳光），又有很暗的区域（比如阴影），这个方法就不太行了，因为它只用一个平均值来判断所有地方。 | 适合处理**整体亮度统一**，但**亮度值不确定**的图片。 |
+| **自适应均值法** | “因地制宜”，为每个小区域设置不同的分界线。 | 程序会把图片分成很多个小格子。然后，它会只看每个格子里的像素，计算这个小区域的平均值，并把这个值作为这个小格子的阈值。 | **最灵活，效果好。** 完美解决了局部光线不均的问题，比如在有阴影的纸张上，文字依然能被清晰地二值化。 | **计算量大。** 因为要处理很多个小区域，所以比前两种方法慢一些。同时，你需要设置小格子的大小，这个参数的选择会影响最终效果。 | 广泛应用于**文档识别**、**车牌识别**、**自动驾驶**等对局部细节要求高的场景。 |
+| **自适应高斯法** | “加权平均”，为每个小区域设置更智能的分界线。 | 类似于自适应均值法，也是将图像分成小格子。但不同的是，它会给离中心点更近的像素更高的权重，来计算区域的加权平均值，作为阈值。这样中心像素的影响更大。 | 相比自适应均值法，它对噪声的敏感度更低，能得到更平滑的二值化结果。 | 计算量比自适应均值法更大，因为要进行加权计算。 | 图像中有较多噪声或细节，需要更平滑二值化效果的场景。 |
+| **Otsu's 方法** | 寻找一个最佳阈值，让图像的“黑白对比度”最大。 | 它会通过分析图像的灰度直方图（用来展示像素分布的图）来寻找最佳阈值。这个方法假设图像只有两类像素（前景和背景），然后找到一个阈值，让这两类像素之间的差异最大。 | **全自动，效果好。** 无需手动设置任何参数，就能找到一个最优的阈值，特别适合那些背景和前景对比度很明显的图片。 | **有前提限制。** 如果图片的前景和背景混合得很复杂，或者灰度直方图不是明显的双峰形状，这个方法的表现就会变差。 | 适合处理**对比度高**的图片，特别是那些有**清晰前景和背景**的图片。 |
+
+:::info
+什么是直方图？
+
+横坐标：表示的是像素的数值，最左边是0，最右边是255
+
+纵坐标：表示的是像素的个数
+
+常用于观察图片的像素分布
+:::
+
+:::info
+归一化（Normalization）是一种常见的数据预处理技术
+
+用于改变数据的范围以使其落在一个特定的区间,通常是[0,1]或者[-1,1]。
+
+归一化的目的是消除数据量纲和尺度的影响，使得不同尺度或单位的数据可以在同一水平上进行比较或处理。
+:::
+
+
+```python showLineNumbers
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 确保能找到图片，请将 'xxx.bmp' 替换为你自己的图片路径
+IMAGE_PATH = 'xxx.bmp'
+
+def show_all_images(original_img, binary_images, titles):
+    """
+    使用 matplotlib 同时显示原始图像和所有二值化图像。
+    :param original_img: 原始灰度图像
+    :param binary_images: 二值化图像列表
+    :param titles: 图像标题列表
+    """
+    num_images = len(binary_images) + 1  # +1 for original image
+    
+    # 计算子图的行数和列数 (尽量接近正方形布局)
+    cols = int(np.ceil(np.sqrt(num_images)))
+    rows = int(np.ceil(num_images / cols))
+    
+    fig, axes = plt.subplots(rows, cols, figsize=(15, 10))
+    fig.suptitle('Image Thresholding Comparison', fontsize=16)
+    
+    # 如果只有一个子图，将axes转换为列表
+    if num_images == 1:
+        axes = [axes]
+    else:
+        axes = axes.flatten()
+    
+    # 显示原始图像
+    axes[0].imshow(original_img, cmap='gray')
+    axes[0].set_title('Original Grayscale Image')
+    axes[0].axis('off')
+    
+    # 显示二值化图像
+    for i, (binary_img, title) in enumerate(zip(binary_images, titles)):
+        axes[i + 1].imshow(binary_img, cmap='gray')
+        axes[i + 1].set_title(title)
+        axes[i + 1].axis('off')
+    
+    # 隐藏多余的子图
+    for i in range(num_images, len(axes)):
+        axes[i].axis('off')
+    
+    plt.tight_layout()
+    plt.show()
+
+def get_binary_image(img, method, *args, **kwargs):
+    """
+    根据不同方法获取二值化图像。
+    :param img: 原始灰度图像
+    :param method: 阈值处理方法，可选 'fixed', 'global_mean', 'adaptive_mean', 'adaptive_gaussian', 'otsu'
+    """
+    if method == 'fixed':
+        # 固定阈值法
+        _, binary = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
+    elif method == 'global_mean':
+        # 全局平均值法
+        _, binary = cv2.threshold(img, img.mean(), 255, cv2.THRESH_BINARY)
+    elif method == 'adaptive_mean':
+        # 自适应均值阈值法
+        binary = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, 
+                                       cv2.THRESH_BINARY, 11, 2)
+    elif method == 'adaptive_gaussian':
+        # 自适应高斯阈值法
+        binary = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                       cv2.THRESH_BINARY, 11, 2)
+    elif method == 'otsu':
+        # Otsu's 方法
+        _, binary = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    else:
+        raise ValueError("Invalid method. Choose from 'fixed', 'global_mean', 'adaptive_mean', 'adaptive_gaussian', 'otsu'")
+
+    # 将二值图的像素值从 0/255 转换为 0/1，以便于分析和存储
+    return (binary / 255).astype(int)
+
+def main():
+    """主函数，演示不同二值化方法。"""
+    
+    # 读取灰度图像
+    img = cv2.imread(IMAGE_PATH, cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        print(f"Error: Could not read image at {IMAGE_PATH}")
+        return
+
+    # 准备各种二值化方法
+    methods = [
+        ('fixed', 'Fixed Thresholding (127)'),
+        ('global_mean', 'Global Mean Thresholding'),
+        ('adaptive_mean', 'Adaptive Mean Thresholding'),
+        ('adaptive_gaussian', 'Adaptive Gaussian Thresholding'),
+        ('otsu', "Otsu's Thresholding")
+    ]
+    
+    # 生成所有二值化图像
+    binary_images = []
+    titles = []
+    for method, title in methods:
+        binary_image = get_binary_image(img, method)
+        binary_images.append(binary_image)
+        titles.append(title)
+    
+    # 同时显示所有图像
+    show_all_images(img, binary_images, titles)
+
+if __name__ == "__main__":
+    main()
+```
+
+
+## 形态学处理
+
+### 膨胀和腐蚀
+
+膨胀函数签名：`cv2.dilate(img,kernel,iterations=5)`
+
+腐蚀函数签名：`cv2.erode(img,kernel,iterations=5)`
+
+参数：
+
+- img：输入图像
+- kernel：膨胀和腐蚀的核
+- iterations：膨胀和腐蚀的迭代次数
+
+膨胀工作原理：类似卷积操作，将核覆盖在图像上，如果核的中心点在图像的范围内，则将核的中心点替换为核的最大值。
+
+腐蚀工作原理与膨胀相反，将核覆盖在图像上，如果核的中心点在图像的范围内，则将核的中心点替换为核的最小值。
+
+
+```python showLineNumbers
+import cv2
+import numpy as np
+img = cv2.imread("dt2.png")
+# 膨胀和腐蚀的操作
+kernel = np.ones((3,3),np.uint8)
+# 腐蚀
+erode = cv2.erode(img,kernel,iterations=5)
+# 膨胀
+dilate = cv2.dilate(img,kernel,iterations=5)
+cv2.imshow("img",img)
+cv2.imshow("dilate",dilate)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+:::info
+- 开运算: 先腐蚀后膨胀，用于去除图像中的小噪声
+- 闭运算: 先膨胀后腐蚀，用于填充图像中的小孔洞
+- 形态学梯度: 膨胀 - 腐蚀，用于提取图像中的边缘
+- 顶帽: 原图 - 开运算，用于提取图像中的小噪声
+- 黑帽: 闭运算 - 原图，用于填充图像中的小孔洞
+:::
+
+
+### 模糊
+
+模糊的原理：让像素点的混在一起：即每个像素点不再是自己，而是自己与周围像素点的混合值。
+
+常见的有：
+
+- 高斯模糊：`cv2.GaussianBlur`
+- 中值滤波：`cv2.medianBlur`
+- Box滤波：`cv2.boxFilter`
+- 均值滤波：`cv2.blur`（Box滤波的归一化版本）
+- 双边滤波：`cv2.bilateralFilter`
+- 矩阵卷积（自定义卷积核）：`cv2.filter2D`
+
+```python showLineNumbers
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+import cv2
+
+# 设置中文字体
+# 替换为你系统中支持中文的字体路径(windows)
+font_path = r'C:\Windows\Fonts\simhei.ttf'  
+# mac（如果有的话）
+# font_path = '/System/Library/Fonts/STHeiti Light.ttc' 
+font_prop = FontProperties(fname=font_path)
+
+# 读取灰度图像
+image = np.array(cv2.imread('xxx.bmp',cv2.IMREAD_GRAYSCALE))
+
+# 定义卷积核
+kernels = {
+    '水平边缘': np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]]),
+    '垂直边缘': np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]]),
+    'Sobel水平': np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]),
+    'Sobel垂直': np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]]),
+    '拉普拉斯': np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]]),
+    '锐化': np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]),
+    '高斯模糊3x3': np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]]) / 16,
+    '边缘增强': np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]]),
+    'Box滤波': np.array([[2, 2, 2], [2, 2, 2], [2, 2, 2]]) / 9
+    '均值滤波': np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]]) / 9,
+}
+
+# 使用NumPy实现卷积操作
+def convolve2d(image, kernel):
+    # 获取图像和卷积核的尺寸
+    i_height, i_width = image.shape
+    k_height, k_width = kernel.shape
+    
+    # 计算输出图像的尺寸
+    o_height = i_height - k_height + 1
+    o_width = i_width - k_width + 1
+    
+    # 创建输出图像
+    output = np.zeros((o_height, o_width))
+    
+    # 执行卷积操作
+    for y in range(o_height):
+        for x in range(o_width):
+            # 提取图像区域
+            region = image[y:y+k_height, x:x+k_width]
+            # 计算卷积值
+            output[y, x] = np.sum(region * kernel)
+    
+    return output
+
+# 应用卷积核
+results = {}
+for name, kernel in kernels.items():
+    # 为了处理边界，先对图像进行填充
+    if kernel.shape[0] == 5:  # 对于5x5卷积核
+        pad_width = 2
+    else:  # 对于3x3卷积核
+        pad_width = 1
+    
+    padded_image = np.pad(image, pad_width, mode='constant')
+    filtered_image = convolve2d(padded_image, kernel)
+    
+    # 归一化处理，确保像素值在有效范围内
+    filtered_image = np.clip(filtered_image, 0, 255).astype(np.uint8)
+    results[name] = filtered_image
+
+# 显示结果
+plt.figure(figsize=(15, 8))
+for i, (name, result) in enumerate(results.items()):
+    plt.subplot(3, 4, i + 1)
+    plt.imshow(result, cmap='gray')
+    plt.title(name, fontproperties=font_prop)
+    plt.axis('off')
+
+plt.tight_layout()
+plt.show()
+```
+## 边缘与轮廓
+
+### 边缘检测cv2.Canny
+### 获取轮廓cv2.findContours
+### 轮廓属性cv2.contourArea、cv2.arcLength
+
+```python showLineNumbers
+import cv2
+img = cv2.imread("xxx.png")
+# 边缘检测
+# 低阈值、高阈值：
+# 强边缘：梯度值 > 高阈值 → 确定保留
+# 弱边缘：低阈值 < 梯度值 < 高阈值 → 条件保留
+# 噪声：梯度值 < 低阈值 → 丢弃（不保留）
+canny = cv2.Canny(img,threshold1=100,threshold2=200)
+
+# 轮廓检测
+contours,hierarchy = cv2.findContours(canny,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+
+# 轮廓的面积
+area = cv2.contourArea(contours[0])
+# 轮廓的周长
+perimeter = cv2.arcLength(contours[0],True)
+
+max_area = max([cv2.contourArea(contour) for contour in contours])
+for contour in contours:
+    if cv2.contourArea(contour) >= max_area:
+        # 绘制轮廓
+        cv2.drawContours(img,contour,-1,(0,0,255),1)
+
+cv2.imshow("img",img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+## 算法指路
+
+下面是Opencv常用的算法，每个算法都比较复杂且可能随时间变化出现新的算法，因此随用随学即可。
+
+想获得认证可以参与[OpenCV Bootcamp](https://courses.opencv.org/courses/course-v1:OpenCV+Bootcamp+CV0/course/)
+
+### 特征点校准
+
+特征点校准主要用于图像校准、图像拼接、图像匹配等场景。
+
+```python showLineNumbers
+"""
+图像配准（Image Registration）程序
+功能：将一张扫描的表单图像与标准表单图像对齐
+应用场景：文档处理、图像拼接、消除扫描时产生的旋转、平移、缩放等变形
+
+图片地址：
+https://www.dropbox.com/s/zuwnn6rqe0f4zgh/opencv_bootcamp_assets_NB8.zip?dl=1
+
+程序流程：
+1. 读取参考图像和待对齐图像
+2. 转换为灰度图像
+3. 使用ORB算法检测特征点
+4. 匹配两幅图像的特征点
+5. 计算单应性变换矩阵
+6. 对待对齐图像进行透视变换
+7. 保存对齐后的结果图像
+"""
+
+# 导入必要的库
+import cv2              # OpenCV库，用于计算机视觉和图像处理
+import numpy as np      # 数值计算库，用于处理数组和矩阵运算
+import matplotlib.pyplot as plt  # 绘图库，用于显示图像
+
+# 读取参考图像（标准表单）
+refFilename = "form.jpg"
+print("Reading reference image:", refFilename)
+im1 = cv2.imread(refFilename, cv2.IMREAD_COLOR)  # 读取彩色图像
+# 将BGR颜色空间转换为RGB颜色空间
+# OpenCV默认使用BGR（蓝绿红）顺序，matplotlib使用RGB（红绿蓝）顺序
+im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2RGB)
+
+# 读取待对齐的图像（扫描的表单）
+imFilename = "scanned-form.jpg"
+print("Reading image to align:", imFilename)
+im2 = cv2.imread(imFilename, cv2.IMREAD_COLOR)  # 读取彩色图像
+# 同样进行BGR到RGB的颜色空间转换
+im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2RGB)
+
+# 将彩色图像转换为灰度图像
+# 特征检测算法通常在灰度图像上工作更好，计算更快，对光照变化更稳定
+im1_gray = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+im2_gray = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+
+# 创建ORB特征检测器
+MAX_NUM_FEATURES = 500  # 设置最大特征点数量为500个
+# ORB (Oriented FAST and Rotated BRIEF) 是一种特征检测算法
+# 它能够找到图像中的"关键点"（特征点），通常是角点、边缘等具有独特特征的位置
+orb = cv2.ORB_create(MAX_NUM_FEATURES)
+# 同时检测关键点和计算描述符
+# keypoints：特征点的位置信息
+# descriptors：每个特征点的描述符（数字化"指纹"）
+keypoints1, descriptors1 = orb.detectAndCompute(im1_gray, None)
+keypoints2, descriptors2 = orb.detectAndCompute(im2_gray, None)
+
+# 显示第一个特征点的描述符示例
+print(descriptors1[0])
+"""
+每个ORB描述符是一个32字节（256位）的二进制向量
+这些数字是该二进制向量的十进制表示
+这个描述符唯一地描述了图像中某个特征点周围的纹理模式
+简单来说，这些数字就是计算机"看到"的某个图像特征点的数字化"指纹"！
+描述符就像人的指纹一样，每个特征点都有独特的数字"指纹"
+计算机通过比较这些"指纹"来找到两幅图像中的相同特征点
+
+[  2 233  53 155 108 141 186 164 142 121  81  73 172 220  44  73 134  91
+  31  71 194  48  74 245 164  24  74 242  28  27 129 217]
+"""
+
+# 在图像上绘制检测到的特征点
+# color=(255, 0, 0)：用红色标记特征点
+# DRAW_RICH_KEYPOINTS：绘制带方向和尺度信息的特征点
+im1_display = cv2.drawKeypoints(im1, keypoints1, outImage=np.array([]), 
+                                color=(255, 0, 0), flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+im2_display = cv2.drawKeypoints(im2, keypoints2, outImage=np.array([]), 
+                                color=(255, 0, 0), flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+# 显示特征点图像（注释掉了，如需显示可取消注释）
+# cv2.imshow("im1_display", im1_display)
+# cv2.imshow("im2_display", im2_display)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+
+# 创建特征匹配器
+# 暴力匹配器会把第一幅图像的每个特征点与第二幅图像的所有特征点进行比较
+# 找出最相似的特征点对，HAMMING距离用于比较二进制描述符的相似性
+matcher = cv2.DescriptorMatcher_create(cv2.DESCRIPTOR_MATCHER_BRUTEFORCE_HAMMING)
+print(cv2.DESCRIPTOR_MATCHER_BRUTEFORCE)
+print(cv2.DESCRIPTOR_MATCHER_BRUTEFORCE_HAMMING)
+
+
+# 进行特征匹配，转换为列表以便排序（元组是不可变对象）
+matches = list(matcher.match(descriptors1, descriptors2, None))
+
+# 按匹配距离排序（距离越小，匹配越好）
+matches.sort(key=lambda x: x.distance, reverse=False)
+
+# 筛选最佳匹配点，只保留前10%的最佳匹配
+# 这样做是因为不是所有匹配都是准确的，保留最好的匹配点可以提高后续计算的准确性
+numGoodMatches = int(len(matches) * 0.1)
+matches = matches[:numGoodMatches]
+
+# 提取匹配点的坐标
+# 创建两个数组存储匹配点的坐标
+points1 = np.zeros((len(matches), 2), dtype=np.float32)  # 参考图像中的点坐标
+points2 = np.zeros((len(matches), 2), dtype=np.float32)  # 待对齐图像中的对应点坐标
+
+# 从匹配结果中提取对应点的(x,y)坐标
+for i, match in enumerate(matches):
+    points1[i, :] = keypoints1[match.queryIdx].pt    # 参考图像中的特征点坐标
+    points2[i, :] = keypoints2[match.trainIdx].pt    # 待对齐图像中的特征点坐标
+
+# 计算单应性矩阵（Homography）
+# 单应性矩阵是一个3x3的变换矩阵，描述了两个图像之间的投影变换关系
+# 简单说就是：如何把第二幅图像变形成第一幅图像的样子
+# RANSAC算法用于排除错误匹配点的干扰
+h, mask = cv2.findHomography(points2, points1, cv2.RANSAC)
+
+# 对图像进行透视变换以实现对齐
+height, width, channels = im1.shape  # 获取参考图像的尺寸
+# 使用单应性矩阵对第二幅图像进行透视变换
+# warpPerspective函数会根据计算出的变换矩阵，将待对齐的图像扭曲变形，使其与参考图像对齐
+im2_reg = cv2.warpPerspective(im2, h, (width, height))
+
+# 保存对齐后的图像
+cv2.imwrite("im2_reg.jpg", im2_reg)
+
+
+[
+  (0,0),
+  (223,232),
+  (131,391),
+  (383,390)
+]
+```
+
+### HDR
+
+HDR（高动态范围）技术主要应用于摄影、监控系统和医学影像中，通过多次曝光融合提升图像细节表现。
+
+HDR 是一种图像处理技术，用于提高图像的动态范围，使得图像中的高光和阴影细节更加清晰。给定多张不同曝光的图像，通过算法将这些图像融合成一张高动态范围的图像。
+
+```python showLineNumbers
+"""
+图片地址：
+https://www.dropbox.com/s/qa1hsyxt66pvj02/opencv_bootcamp_assets_NB10.zip?dl=1
+"""
+
+import os
+import cv2
+import numpy as np
+
+def readImagesAndTimes():
+    # 文件名需要保证是按照曝光时间排序的
+    filenames = ["img_0.033.jpg", "img_0.25.jpg", "img_2.5.jpg", "img_15.jpg"]
+
+    # List of exposure times
+    times = np.array([1 / 30.0, 0.25, 2.5, 15.0], dtype=np.float32)
+
+    # Read images
+    images = []
+    for filename in filenames:
+        im = cv2.imread(filename)
+        images.append(im)
+
+    return images, times
+
+# 对齐图片。不对齐的话，图片会重影
+
+images, times = readImagesAndTimes()
+
+# Align Images
+alignMTB = cv2.createAlignMTB()
+alignMTB.process(images, images)
+
+# 估计相机响应函数
+calibrateDebevec = cv2.createCalibrateDebevec()
+responseDebevec = calibrateDebevec.process(images, times)
+
+# 将曝光合并到 HDR 图像中
+mergeDebevec = cv2.createMergeDebevec()
+hdrDebevec = mergeDebevec.process(images, times, responseDebevec)
+
+# 色调映射
+
+# 方法1
+tonemapDrago = cv2.createTonemapDrago(1.0, 0.7)
+ldrDrago = tonemapDrago.process(hdrDebevec)
+ldrDrago = 3 * ldrDrago
+
+# 方法2
+tonemapReinhard = cv2.createTonemapReinhard(1.5, 0, 0, 0)
+ldrReinhard = tonemapReinhard.process(hdrDebevec)
+
+# 方法3
+tonemapMantiuk = cv2.createTonemapMantiuk(2.2, 0.85, 1.2)
+ldrMantiuk = tonemapMantiuk.process(hdrDebevec)
+ldrMantiuk = 3 * ldrMantiuk
+
+# Saving image
+cv2.imwrite("ldr-Drago.jpg", 255*ldrDrago)
+cv2.imwrite("ldr-Reinhard.jpg", 255*ldrReinhard)
+cv2.imwrite("ldr-Mantiuk.jpg", 255*ldrMantiuk)
+```
+
+### 全景拼接
+
+全景拼接技术广泛应用于虚拟旅游、房地产展示、地图服务和VR/AR场景构建中。
+
+可以实现多张图片的拼接，形成一张完整的全景图。支持拼接为环形。
+
+```python showLineNumbers
+"""
+图片地址：
+https://www.dropbox.com/s/0o5yqql1ynx31bi/opencv_bootcamp_assets_NB9.zip?dl=1
+"""
+import os
+import cv2
+import math
+import glob
+import numpy as np
+
+
+def find_largest_rectangle(mask):
+    """
+    在二值掩码中找到最大的矩形区域
+    使用直方图方法高效计算最大矩形面积
+    """
+    def largest_rectangle_in_histogram(heights):
+        stack = []
+        max_area = 0
+        best_rect = (0, 0, 0, 0)  # (x, y, w, h)
+        
+        for i, h in enumerate(heights):
+            start = i
+            while stack and stack[-1][1] > h:
+                index, height = stack.pop()
+                area = height * (i - index)
+                if area > max_area:
+                    max_area = area
+                    best_rect = (index, 0, i - index, height)
+                start = index
+            stack.append((start, h))
+        
+        # 处理栈中剩余元素
+        for index, height in stack:
+            area = height * (len(heights) - index)
+            if area > max_area:
+                max_area = area
+                best_rect = (index, 0, len(heights) - index, height)
+        
+        return best_rect, max_area
+    
+    # 将掩码转换为灰度图
+    if len(mask.shape) == 3:
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+    
+    height, width = mask.shape
+    
+    # 计算每行的直方图
+    histogram = np.zeros(width, dtype=np.int32)
+    max_area = 0
+    best_rect = (0, 0, 0, 0)
+    
+    for row in range(height):
+        # 更新直方图
+        for col in range(width):
+            if mask[row, col] > 0:  # 有效像素
+                histogram[col] += 1
+            else:  # 无效像素，重置高度
+                histogram[col] = 0
+        
+        # 在当前直方图中找最大矩形
+        rect, area = largest_rectangle_in_histogram(histogram)
+        if area > max_area:
+            max_area = area
+            best_rect = (rect[0], row - rect[3] + 1, rect[2], rect[3])
+    
+    return best_rect
+
+
+def create_valid_mask(image, threshold=10):
+    """
+    创建有效区域掩码，标识非黑色区域
+    """
+    # 转换为灰度图
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image.copy()
+    
+    # 创建掩码：非黑色区域为255，黑色区域为0
+    mask = np.where(gray > threshold, 255, 0).astype(np.uint8)
+    
+    # 形态学操作，填充小的空洞和去除噪声
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)  # 填充小空洞
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)   # 去除小噪声
+    
+    return mask
+
+
+def smart_crop_panorama(image, threshold=10, padding=5):
+    """
+    智能裁剪全景图，去除黑色填充区域
+    """
+    print(f"原始图像尺寸: {image.shape}")
+    
+    # 创建有效区域掩码
+    mask = create_valid_mask(image, threshold)
+    
+    # 找到最大矩形
+    x, y, w, h = find_largest_rectangle(mask)
+    
+    # 应用内边距
+    x = max(0, x + padding)
+    y = max(0, y + padding)
+    w = min(image.shape[1] - x, w - 2 * padding)
+    h = min(image.shape[0] - y, h - 2 * padding)
+    
+    if w <= 0 or h <= 0:
+        return image
+    cropped_image = image[y:y+h, x:x+w]
+    return cropped_image
+
+
+# 读取图像文件
+# 把需要拼接图片放到boat文件夹中
+imagefiles = glob.glob(f"boat{os.sep}*")
+imagefiles.sort()
+
+images = []
+for filename in imagefiles:
+    img = cv2.imread(filename)
+    images.append(img)
+
+stitcher = cv2.Stitcher_create()
+status, result = stitcher.stitch(images)
+
+if status == cv2.Stitcher_OK:
+    cv2.imwrite("result_raw.png", result)
+    cropped_result = smart_crop_panorama(result, threshold=10, padding=5)
+    cv2.imwrite("result.png", cropped_result)
+```
+
+
+### 对象跟踪
+
+对象跟踪技术应用于视频监控、体感交互、体育分析、无人机导航和增强现实等场景。
+
+```python showLineNumbers
+"""
+图片地址：
+https://www.dropbox.com/s/ld535c8e0vueq6x/opencv_bootcamp_assets_NB11.zip?dl=1
+"""
+import os
+import sys
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+from zipfile import ZipFile
+from urllib.request import urlretrieve
+
+from IPython.display import HTML
+from matplotlib.animation import FuncAnimation
+
+from IPython.display import YouTubeVideo, display, HTML
+from base64 import b64encode
+video_input_file_name = "race_car.mp4"
+
+
+def drawRectangle(frame, bbox):
+    p1 = (int(bbox[0]), int(bbox[1]))
+    p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+    cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
+
+
+def displayRectangle(frame, bbox):
+    plt.figure(figsize=(20, 10))
+    frameCopy = frame.copy()
+    drawRectangle(frameCopy, bbox)
+    frameCopy = cv2.cvtColor(frameCopy, cv2.COLOR_RGB2BGR)
+    plt.imshow(frameCopy)
+    plt.axis("off")
+
+
+def drawText(frame, txt, location, color=(50, 170, 50)):
+    cv2.putText(frame, txt, location, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 3)
+
+# Set up tracker
+tracker_types = [
+    "BOOSTING",
+    "MIL",
+    "KCF",
+    "CSRT",
+    "TLD",
+    "MEDIANFLOW",
+    "GOTURN",
+    "MOSSE",
+]
+
+# Change the index to change the tracker type
+tracker_type = tracker_types[2]
+
+if tracker_type == "BOOSTING":
+    tracker = cv2.legacy.TrackerBoosting.create()
+elif tracker_type == "MIL":
+    tracker = cv2.legacy.TrackerMIL.create()
+elif tracker_type == "KCF":
+    tracker = cv2.TrackerKCF.create()
+elif tracker_type == "CSRT":
+    tracker = cv2.TrackerCSRT.create()
+elif tracker_type == "TLD":
+    tracker = cv2.legacy.TrackerTLD.create()
+elif tracker_type == "MEDIANFLOW":
+    tracker = cv2.legacy.TrackerMedianFlow.create()
+elif tracker_type == "GOTURN":
+    tracker = cv2.TrackerGOTURN.create()
+else:
+    tracker = cv2.legacy.TrackerMOSSE.create()
+
+# Read video
+video = cv2.VideoCapture(video_input_file_name)
+ok, frame = video.read()
+
+# Exit if video not opened
+if not video.isOpened():
+    print("Could not open video")
+    sys.exit()
+else:
+    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+video_output_file_name = "race_car-" + tracker_type + ".mp4"
+video_out = cv2.VideoWriter(video_output_file_name, cv2.VideoWriter_fourcc(*"XVID"), 10, (width, height))
+
+
+# Define a bounding box
+bbox = (1300, 405, 160, 120)
+# bbox = cv2.selectROI(frame, False)
+# print(bbox)
+displayRectangle(frame, bbox)
+
+
+ok = tracker.init(frame, bbox)
+
+while True:
+    ok, frame = video.read()
+
+    if not ok:
+        break
+
+    # Start timer
+    timer = cv2.getTickCount()
+
+    # Update tracker
+    ok, bbox = tracker.update(frame)
+
+    # Calculate Frames per second (FPS)
+    fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
+
+    # Draw bounding box
+    if ok:
+        drawRectangle(frame, bbox)
+    else:
+        drawText(frame, "Tracking failure detected", (80, 140), (0, 0, 255))
+
+    # Display Info
+    drawText(frame, tracker_type + " Tracker", (80, 60))
+    drawText(frame, "FPS : " + str(int(fps)), (80, 100))
+
+    # Write frame to video
+    video_out.write(frame)
+
+video.release()
+video_out.release()
+
+
+```
+
+### 人体相关
+
+#### 人脸检测
+
+人脸检测算法广泛应用于身份验证、考勤系统、社交媒体标记、美颜相机和安防监控中。
+
+
+- 这段程序首先会读取摄像头，并自动截取一定数量的人脸用作训练。
+- 然后将截取的人脸进行训练，生成一个训练模型。
+- 最后通过摄像头实时识别人脸
+
+使用下方代码时，需要保证当前文件夹存在以下内容。（如必须在非当前目录执行，请替换相关路径为绝对路径，你可能需要根据自己的摄像头修改代码中的CID = 0的值）
+
+- `dataSet`文件夹  
+如不存在可自行创建一个空文件夹，注意大小写敏感。
+
+- `haarcascade_frontalface_default.xml`文件 可以通过 `everthing` 搜索 ，移动到当前目录。
+
+
+```python showLineNumbers
+import os
+import cv2
+import numpy as np
+
+# 摄像头被分配到的设备ID，window通常为0，linux通常为1，AIBox通常为9~13
+CID = 0
+
+
+# 输入人脸,id为人脸对应的id，同个id的人脸会被识别为同一个人
+def get_face(id="1"):
+    faceDetect = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+    cam = cv2.VideoCapture(CID)
+    sampleNum = 0
+    while True:
+        ret, img = cam.read()
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = faceDetect.detectMultiScale(gray, 1.3, 5)
+        for x, y, w, h in faces:
+            sampleNum = sampleNum + 1
+            cv2.imwrite(
+                "dataSet/User." + str(id) + "." + str(sampleNum) + ".png",
+                gray[y : y + h, x : x + w],
+            )
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            cv2.waitKey(100)
+        cv2.imshow("Face", img)
+        cv2.waitKey(1)
+        if sampleNum > 20:
+            break
+    cam.release()
+    cv2.destroyAllWindows()
+
+
+# 训练数据
+def trainer_face(path="dataSet"):
+    recognizer = cv2.face.LBPHFaceRecognizer_create()
+    imagePaths = [os.path.join(path, f) for f in os.listdir(path)]
+    faces = []
+    IDs = []
+    for imagePath in imagePaths:
+        faceImg = cv2.imread(imagePath,0)
+        faceNp = np.array(faceImg, "uint8")
+        ID = int(os.path.split(imagePath)[-1].split(".")[1])
+        faces.append(faceNp)
+        IDs.append(ID)
+        cv2.imshow("training", faceNp)
+        cv2.waitKey(10)
+    recognizer.train(faces, np.array(IDs))
+    recognizer.save("trainningData.yml")
+    cv2.destroyAllWindows()
+
+
+# 识别人脸
+def recognizer(labels={"p1": 1, "p2": 2}):
+    # 加载人脸识别器
+    face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+
+    # 加载已训练的人脸识别模型
+    recognizer = cv2.face.LBPHFaceRecognizer_create()
+    recognizer.read("trainningData.yml")
+
+    # 初始化摄像头
+    cap = cv2.VideoCapture(CID)
+    font = cv2.FONT_HERSHEY_COMPLEX_SMALL
+    while True:
+        ret, frame = cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # 检测人脸
+        faces = face_cascade.detectMultiScale(
+            gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
+        )
+
+        rgb_color = (0, 0, 0)
+        for x, y, w, h in faces:
+            # 识别人脸
+            id, confidence = recognizer.predict(gray[y : y + h, x : x + w])
+            person = ""
+            if confidence < 100:
+                for name, label in labels.items():
+                    if label == id:
+                        person = name
+                        break
+                confidence = int(100 - confidence)
+                if int(confidence) > 40:
+                    rgb_color = (0, 255, 0)  # 绿色
+                    person = f"{person}: {confidence}%"
+
+                elif 0 < int(confidence) < 40:
+                    rgb_color = (255, 0, 0)  # 红色
+                    person = "unkonw"
+            cv2.putText(
+                frame,
+                str(person),
+                (x, y + h),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 255),
+                2,
+            )  # 更新为cv2.putText()
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.imshow("Face Recognition", frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    get_face(id="1")
+    trainer_face(path="dataSet")
+    recognizer()
+```
+
+#### 其他
+
+人体检测算法广泛应用于智能安防、客流统计、健身应用、体感游戏和自动驾驶系统中。
+
+人体姿态估计主要用于健身指导、医疗康复、运动分析、动作捕捉和人机交互界面。
+
+手势识别技术应用于智能家居控制、手语翻译、VR/AR交互、游戏控制和辅助残障人士交流。
+
+动作识别算法用于视频内容理解、体育比赛分析、异常行为检测、健身应用和人机交互。
+
+行为识别技术主要应用于安防监控、智慧城市、客户行为分析、老人看护和异常事件预警。

@@ -1,0 +1,127 @@
+/* 性能优化工具类 */
+
+/* GPU 加速 */
+.gpu-layer {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* 动画优化 */
+.animate-smooth {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 图片优化 */
+.img-optimized {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden;
+}
+
+/* 文本渲染优化 */
+.text-optimized {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 滚动优化 */
+.scroll-optimized {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* 布局优化 */
+.layout-optimized {
+  contain: layout style paint;
+}
+
+/* 内容可见性优化 */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+/* 减少重绘 */
+.no-repaint {
+  will-change: auto;
+  transform: translateZ(0);
+}
+
+/* 响应式图片 */
+.responsive-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 懒加载占位 */
+.lazy-placeholder {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 防止布局偏移 */
+.aspect-ratio-16-9 {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-ratio-4-3 {
+  aspect-ratio: 4 / 3;
+}
+
+.aspect-ratio-1-1 {
+  aspect-ratio: 1 / 1;
+}
+
+/* 优化的阴影 */
+.shadow-optimized {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  transition: box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.shadow-optimized:hover {
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+}
+
+/* 减少动画卡顿 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 优化焦点样式 */
+.focus-optimized:focus {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 2px;
+}
+
+/* 优化的渐变 */
+.gradient-optimized {
+  background: linear-gradient(135deg, var(--ifm-color-primary) 0%, var(--ifm-color-secondary) 100%);
+  background-attachment: fixed;
+}
+
+/* 防止字体闪烁 */
+.font-display-swap {
+  font-display: swap;
+}

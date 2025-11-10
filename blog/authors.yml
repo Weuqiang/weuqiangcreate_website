@@ -1,0 +1,39 @@
+weuqiang:
+  name: 魏强
+  title: AI技术研究者
+  url: https://github.com/Weuqiang
+  image_url: https://github.com/Weuqiang.png
+  email: weuqiang@example.com
+  socials:
+    github: Weuqiang
+    wechat: wxai2411
+
+openai_team:
+  name: OpenAI Research Team
+  title: OpenAI研究团队
+  url: https://openai.com
+  image_url: https://openai.com/favicon.ico
+
+anthropic_team:
+  name: Anthropic Research Team
+  title: Anthropic研究团队
+  url: https://anthropic.com
+  image_url: https://anthropic.com/favicon.ico
+
+google_team:
+  name: Google DeepMind Team
+  title: Google DeepMind团队
+  url: https://deepmind.google
+  image_url: https://deepmind.google/favicon.ico
+
+meta_team:
+  name: Meta AI Research Team
+  title: Meta AI研究团队
+  url: https://ai.meta.com
+  image_url: https://ai.meta.com/favicon.ico
+
+xai_team:
+  name: xAI Research Team
+  title: xAI研究团队
+  url: https://x.ai
+  image_url: https://x.ai/favicon.ico
