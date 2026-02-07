@@ -1,0 +1,647 @@
+---
+sidebarDepth: 4
+---
+# 二进制与编码
+
+## 进制转换
+
+``` js
+// 十进制 -> 二进制
+const num = 255;
+num.toString(2) // '11111111'
+
+// 十进制 -> 十六进制
+const num = 255;
+num.toString(16) // 'ff'
+
+// 二进制 -> 十进制
+parseInt(0b1111) // 15
+
+// 十六进制 -> 十进制
+parseInt(0xff) // 255
+```
+
+
+## 位运算 
+
+虽然日常编码中不一定会用到位运算，但在某些特定情况下位运算可能意外的好用。假设存在这样的场景，平台下不同用户可能具备不同功能的白名单，因此我们需要使用一个字段`features`来记录用户所具备的功能，在使用时根据这个字段来判断用户具备哪些功能。
+
+首先，我们通过一个`Feature`对象定义了一组功能，并使用二进制来表示每个功能的值。
+
+``` js
+const Feature = {
+  One: 0b01,
+  Two: 0b10,
+  Three: 0b100,
+  Four: 0b1000,
+}
+```
+
+那么假设用户具备了所有的功能，那么他的`features`字段的值应该是`0b1111`。
+
+
+
+### 左移
+
+上述的代码中`Feature`的定义有些繁琐，我们可以使用更简洁的写法：
+
+``` js
+let shift = 0
+const Feature = {
+  One: 1 << shift++,
+  Two: 1 << shift++,
+  Three: 1 << shift++,
+  Four: 1 << shift++,
+}
+```
+
+在这个例子中的`<<`被称作**左移运算符**，它表示把二进制的每一位都向左移动指定的位数。如对于`1 << 3`表达式，返回的是`0b1`左移3位后的结果即`0b1000`，也就是十进制的8。
+
+
+
+### 右移
+
+与左移运算符对应的，通过**右移运算符**`>>`可以返回二进制的每一位都右移指定位数的结果。如对于`8 >> 3`表达式，返回的是`0b1000`右移3位的结果即`0b1`，即十进制的1。
+
+
+
+### 按位或
+
+`0b0101`表示用户同时具备`Feature.One`和`Feature.Two`这两个功能，实际上这是这两个变量**按位或|**的结果。
+
+``` js
+const features = Feature.One | Feature.Three
+```
+
+
+
+### 按位与
+
+为了了解用户是否具备`Feature.One`的功能，我们的目的是确认`features`的最后一位的值是否为1，通常可以使用**按位与&**来进行区分
+
+``` js
+const hasFeature = (feature & Features.One) > 0
+```
+
+## Buffer
+
+`Buffer`用于表示固定长度的字节序列，**`Buffer`仅存在于`Node.js`环境中**，**在浏览器环境中使用`ArrayBuffer`作为替代**，二者的原理基本一致但API层面存在些许差异。
+
+通过`fs`模块不指定编码方式`encoding`读取文件时，我们能够获取到表示二进制数据的`Buffer`对象。
+
+
+
+### `Buffer.alloc()` 
+
+可以用来生成指定长度的Buffer，也可以同时指定Buffer字节序列的值。
+
+``` js
+const buffer = Buffer.alloc(10) // <Buffer 00 00 00 00 00 00 00 00 00 00>
+const buffer = Buffer.alloc(10, 0xfc) // <Buffer fc fc fc fc fc fc fc fc fc fc>
+```
+
+### `Buffer.from(string[, encoding])`
+
+将字符串编码成`Buffer`表示的字节序列，默认为`utf-8`编码
+
+``` js
+const buffer = Buffer.from('aka') // <Buffer 61 6b 61>  
+const buffer = Buffer.from('你好') // <Buffer e4 bd a0 e5 a5 bd>
+```
+
+### `buffer.toString([encoding])`
+
+将`Buffer`解码成字符串，默认为`utf-8`编码
+
+``` js
+const buffer = Buffer.from('aka') 
+const str = buffer.toString() // aka
+```
+
+
+
+
+
+## ArrayBuffer
+``` js
+const buffer = new ArrayBuffer(3) // 创建3个字节长的ArrayBuffer
+```
+
+
+和Node环境中的`Buffer`类似，浏览器环境提供了**`ArrayBuffer`**数据类型表示一块内存中的字节序列。但我们无法直接操作这块内存，而是需要为`ArrayBuffer`创建**`Typed Array`**或者**`DataView`**的**视图**，并借助视图的能力来读写对应的字节。我们可以为同一个ArrayBuffer创建多个不同的视图，他们本质上读写的都是同一块内存/同一个ArrayBuffer。
+
+
+这两种视图的主要差异包括这两点：
+1. **步长不同**。对于特定的`Typed Array`，比如`Uint32Array`实例，这个数组的每个索引对应的值都由32位即4个字节组成，我们每次读写都是同时操作**固定长度**的字节。而`DataView`更加灵活，同一个实例即可以调用`getUint8`获取一个字节的内容，也可以调用`getUint32`获取四个字节的内容。
+2. **字节序不同**。`Typed Array`采用小端字节序，并且无法修改；而`DataView`默认采用大端字节序，但也支持使用小端字节序。
+
+:::info
+在计算机领域中，一个多字节的数值在内存中的存储顺序会根据我们所采用的**字节序**策略的不同而产生差异。字节序又分为**小端字节序**和**大端字节序**，比如对于一个两字节的数值0x0102来说，如果我们以小端字节序写入到内存中，则内存中的表示为[02, 01]；反之若我们以大端字节序的形式，则内存中的表示为[01, 02]。
+
+一般来说，系统内字节的存储都是采用小端字节序，因此我们通常采用小端字节序读取内存数据即可。而网络中传输的字节则是大端字节序，如果需要访问网络流中的数据，需要采用大端字节序的方式才能正确读取内容。
+::: 
+
+
+### 类型化数组（Typed Array）
+
+`Typed Array`可以理解成一种抽象类，具体的实现包括`Uint8Array`、`Int8Array`、`Uint32Array`、`Int32Array`，以及`Uint8ClampedArray`等特化。
+
+``` js title="构造实例"
+const buffer = new ArrayBuffer(3)
+const typedArray1 = new Uint8Array(buffer) // length: 3, byteLength: 3
+buffer === typedArray1.buffer // true
+
+const typedArray2 = new Uint32Array([65]) // length: 1, byteLength: 4
+```
+
+``` js title="多个视图读写同一块内存"
+const typedArray3 = new Uint8Array([65, 66, 67, 68]) // length: 4, byteLength: 4
+const typedArray4 = new Uint16Array(typedArray3.buffer) // length: 2, byteLength: 4
+
+typedArray4[0] = 0;
+typedArray3[0] === 0 // true;
+typedArray3[1] === 0 // true 
+```
+
+``` js title="TypedArray是小端字节序"
+const buffer = new ArrayBuffer(4)
+
+const typedArray1 = new Uint8Array(buffer)
+const typedArray2 = new Uint16Array(buffer)
+typedArray2[0] = 255
+
+typedArray1[0] === 255 // true 
+typedArray1[1] === 0 // true
+```
+
+``` js title="Uint8ClampedArray每个字节超出255后不会重新从0计数"
+const buffer = new ArrayBuffer(2)
+const typedArray1 = new Uint8Array(buffer)
+typedArray1[0] = 256
+typedArray1[0] === 0 // true
+
+const typedArray2 = new Uint8ClampedArray(buffer)
+typedArray2[0] = 256
+typedArray2[0] === 255 // true
+```
+
+### DataView
+
+``` js title="构造实例"
+const buffer = new ArrayBuffer(3)
+const view1 = new DataView(buffer)
+const view2 = new DataView(new Uint8Array([65, 66, 67, 68]).buffer)
+```
+
+
+``` js title="DataView默认是大端字节序"
+const buffer = new ArrayBuffer(4)
+
+const typedArray1 = new Uint8Array(buffer)
+const view = new DataView(buffer)
+
+view.setUint16(0, 255) 
+typedArray1[0] === 0 // true;
+typedArray1[1] === 255 // true
+
+view.setUint16(0, 255, true) // DataView也可以指定小端字节序 
+typedArray1[0] === 255 // true 
+typedArray1[1] === 0 // true
+```
+
+
+
+## 字符编码
+
+### 编码与解码
+无论是`Buffer`还是`ArrayBuffer`，本质上都表示着内存中的二进制数据（或者叫字节序列）。借助指定的解码方式，我们可以将其转换为对应的文本字符，常见的编码方式有`ascii`、`gbk`、`utf-8`、`utf-16`等。一般的解析函数编码格式都为`utf-8`，比如`Buffer.from`、`fs.writeFile`、`fs.readFile`，以及后文会介绍的`TextEncoder`、`TextDecoder`等。
+
+需要特别注意的一点是在JavaScript中字符串的存储是**`utf-16`**的格式，通过`charCodeAt`方法我们可以查询某个JS字符在内存中对应的二进制内容。
+
+``` js
+'A'.charCodeAt(0) // 获取字符解码后的二进制数据
+```
+
+:::info 注意
+
+对于无法通过`utf-16`解码成正常文本的字符串来说，会用类似`\u0003`、`\x03`的形式进行表示
+
+``` js
+'\x03'.length // 1
+'\x03'.charCodeAt(0) // 3
+```
+:::
+
+
+
+
+
+### 字符集
+上一节介绍了编码和解码，一个字符通过不同的编码方式可以转换为不同格式的二进制，而除了编码的概念外我们可能还听说过Unicode和字符集。简单来说，每个字符都和对应的码点（CodePoint）存在一对一映射关系，而根据我们采用的编码方式的不同（`utf-8`、`utf-16`、`utf-32`），同一个码点又会对应不同的二进制数据。
+
+``` js title="获取字符的码点"
+'你好'.codePointAt(0)
+```
+
+
+
+### HTML实体字符（character Entities）
+
+``` html
+<span>&ZeroWidthSpace;</span>
+<span>&#8203;</span> <!-- unicode的十进制表示-->
+```
+
+
+
+### JavaScript字符表示
+
+``` js
+// 零宽字符 zeroWidthSpace
+const str = '\u200B' // unicode的十六进制表示
+```
+
+
+
+
+
+### TextEncoder
+
+浏览器环境下通过`TextEncoder`，可以将字符串通过`utf-8`的格式编码成二进制（返回的是Typed Array，我们可以拿到对应的buffer）
+
+``` js
+const arr = new TextEncoder().encode('akara') // Uint8Array(5) [97, 107, 97, 114, 97, buffer: ArrayBuffer(5)]
+const buffer = arr.buffer // ArrayBuffer(5)
+```
+
+``` js title="再次提醒，字符串变量是通过utf-16编码后存储的"
+[...new TextEncoder().encode('你')].map(i => i.toString(16)) // utf-8编码为 ['e4', 'bd', 'a0']
+'你'.charCodeAt().toString(16) // utf-16编码为 4f60
+```
+
+
+### TextDecoder
+
+``` js
+const arr = new Uint8Array([97, 107, 97, 114, 97])
+new TextDecoder().decode(arr) // akara
+```
+
+
+
+### encodeURI
+HTTP请求报文头部的内容会经过ASCII编码后传输，这意味着我们无法在请求路径或参数上附带汉字等字符。而浏览器提供了`encodeURI`和`encodeURIComponent`方法来实现对这种复杂字符的编码，它会返回汉字以`utf-8`编码后的二进制数值的**字符表示**。
+
+
+``` js
+encodeURI('你好') // '%E4%BD%A0%E5%A5%BD'
+
+[...new TextEncoder().encode("你好")].map(item => item.toString(16)) // ['e4', 'bd', 'a0', 'e5', 'a5', 'bd']
+
+const buffer = Buffer.from('你好') // Nodejs <Buffer e4 bd a0 e5 a5 bd>
+```
+
+
+### decodeURI
+
+``` js
+decodeURI('%E4%BD%A0%E5%A5%BD') // 你好
+```
+
+:::info 知识点
+相较于`encodeURI`，`encodeURIComponent`可以对更多的URL字符进行编码
+``` js
+encodeURI('http://baidu.com') // 'http://baidu.com'
+
+encodeURIComponent('http://baidu.com') // 'http%3A%2F%2Fbaidu.com'
+```
+:::
+
+
+### Base64
+上述的内容都是单个字符的编码格式，而`Base64`的作用是将任意二进制字节序转化为可见的字符。比如可以把图片的二进制数据编码成字符串进行存储等。
+
+:::info 编码原理
+
+给定任意的字节序列，我们将其每三个字节共24位比特作为一组，然后把这24位比特又划分为4个6比特的小组，在每个小组的最高位添加`00`的两个比特。此时，原本三个字节的数据变成了四个字节，每个新的字节有效位数为6位，我们可以把每个字节都根据`ASCII`的规则映射为64种（即`2^6`）不同的字符，因此这种编码方式被称为`Base64`。
+
+:::
+
+
+如上文所介绍，`Base64`是一种二进制的编码方式，但在实际生活中我们会经常见到使用`Base64`来编码字符串来进行混淆（伪加密）。比如使用`window.btoa`可以将字符串转化为`Base64`形式的字符，首先我们的参数必须是binary string（即每个字符解码后都只占一个字节），`window.btoa`获取到字节序后再通过`Base64`编码成ASCII字符。
+
+`Base64`的一个常用途径是对小型图片进行编码，如通过`<img src="data:img/gif;base64,xxxxx" />`形式进行图片的加载来减少不必要的网络请求，但因为`Base64`会使得编码后的数据比原先大三分之一，因此通常不会对大图进行编码。
+
+``` js
+fetch('data:image/png;base64,xxxxx').then(res => res.arrayBuffer())
+```
+
+
+
+### `window.btoa()`
+
+如上小节所介绍，通过浏览器提供的`window.btoa`可以实现`base64`的编码。
+
+``` js
+window.btoa('hello akara') // aGVsbG8gYWthcmE=
+```
+
+并且由于中文字符编码后都大于一个字节，所以`window.btoa`无法直接解析中文参数，但可以借助`encodeURIComponent()`来实现对应的效果
+
+``` js
+window.btoa(encodeURIComponent('你好')) // JUU0JUJEJUEwJUU1JUE1JUJE
+```
+
+### `window.atob()`
+
+``` js
+window.atob('aGVsbG8gYWthcmE=') // hello akara
+
+decodeURIComponent(window.atob('JUU0JUJEJUEwJUU1JUE1JUJE')) // 你好
+```
+
+
+
+
+
+## Blob
+
+**`Blob`只存在于浏览器环境中**，可以大致把它视为一个类文件对象，是后续将介绍的`File`对象的父类。
+
+``` js
+fetch()
+.then(res => res.blob())
+.then(blob => {
+    console.log(blob)
+})
+```
+
+
+
+### `new Blob()`
+
+可用于根据`ArrayBuffer`或字符串生成`Blob`。
+
+``` js
+new Blob([JSON.stringify({
+    name: 'akara'
+})], { type: 'application/json' })
+```
+
+``` js
+new Blob([new Uint8Array([10, 20]).buffer]) // 需要注意第一个参数是数组包了一层
+```
+
+
+
+
+
+### `blob.arrayBuffer()`
+
+将`Blob`转化为`ArrayBuffer`，需要注意函数的返回值为`Promise`
+
+
+
+### `blob.text()`
+
+将`Blob`转化为字符串，编码为`utf-8`，需要注意函数的返回值为`Promise`
+
+``` js
+blob.text().then(text => console.log(text))
+```
+
+### `blob.slice()`
+
+将文件或`blob`分割成多个`blob`，常用于大型图片的上传。
+
+
+
+### `URL.createObjectURL(blob)`
+
+当后端将读取的文件作为响应体发送给前端时，我们常见的需求有：①下载文件到本地。②在本地显示图片。
+
+这种需求的关键在于根据给定的文件或`blob`生成一个URL路径，将其放入`a`或`img`标签的属性中。
+
+``` js
+const url = URL.createObjectURL(blob)
+a.href = url // 结构类似于 blob:http://localhost:3000/486ef892-d4fc-485f-b4ab-fae272d35e55
+a.download = '下载文件.txt' // 文件名
+
+const url2 = URL.createObjectURL(blob)
+img.src = url2
+```
+
+
+
+## File
+
+`File`是`Blob`的子类，相较于`Blob`多了`name`、`lastModified`和`lastModifiedDate`属性。通常可以从`input`元素中获取到。
+
+
+
+``` js
+const el = document.querySelector('input')
+console.log(el.files) // FileList
+el.files[0] // File
+```
+
+
+
+## FormData
+
+通常当我们需要给后端发送文件时，要么直接把单个文件内容作为请求体，要么通过`formData`来进行数据传输。
+
+``` javascript
+// 错误
+fetch(url, {
+  data: {
+    file: new File(), // 会被JSON.stringify序列化
+   	name: 'akara',
+  }
+})
+
+// 正确
+const formData = new FormData();
+formData.append('file', new File());
+formData.append('name', 'akara')
+
+fetch(url, {
+  data: formData
+})
+```
+
+
+
+
+
+## 总结
+
+通过上述几节我们了解到`ArrayBuffer`、`String`、`Blob`的基本情况，并且知道它们直接是可以进行闭环任意转化的：
+
+1. `String -> Uint8Array（TextEncoder）`
+2. `Uint8Array -> String（TextDecoder）`
+3. `Uint8Array -> ArrayBuffer（.buffer）`
+4. `ArrayBuffer -> Uint8Array（new Uint8Array）`
+5. `ArrayBuffer -> Blob（new Blob）`
+6. `Blob -> ArrayBuffer（arrayBuffer）`
+7. `Blob -> String（text）`
+8. `String -> Blob（new Blob）`
+
+
+
+
+
+
+
+## FileReader
+
+`FileReader`用于读取文件中的数据，`Blob`内置了一些方法来获取对应的`ArrayBuffer`、字符串，而`FileReader`也提供了类似的功能。
+
+``` js
+const reader = new FileReader()
+reader.onload = function() {
+    console.log(reader.result)
+}
+reader.readAsXXX(blob)
+```
+
+### `readAsArrayBuffer()`
+
+功能类似于`blob.arrayBuffer()`
+
+### `readAsText()`
+
+功能类似于`blob.text()`
+
+
+
+### `readAsDataURL()`
+
+功能类似于`URL.createObjectURL`，但稍微有些不同。
+
+这个方式是将文件内容的字节序列通过Base64编码得到字符串，即以`data:application/octet-stream;base64,`开头的长URL；而`URL.createObjectURL()`实际上拿到的是一个以`blob:http://xxx.com/xxx`开头的短URL，这个URL将会指向内存中的对应地址。
+
+
+
+### `readAsBinaryString()`
+将二进制编码为JS字符串，因此是使用的UTF-16编码。
+
+``` js
+const blob = new Blob([new Uint8Array([0, 255, 0, 255, 100, 200])])
+
+const reader = new FileReader();
+reader.onload = function () {
+    console.log(Uint8Array.from(reader.result, char => char.charCodeAt(0))) // Uint8Array([0, 255, 0, 255, 100, 200])
+    // console.log(reader.result) 会显示乱码 ÿÿdÈ
+}
+reader.readAsBinaryString(blob)
+```
+
+
+
+
+
+
+
+
+
+## stream
+
+流对象用来处理Node中的流式数据，`Stream`继承于`eventEmitter`，因此实例存在`on`方法，除此之外流对象的实例存在`pipe`方法来实现流式数据的传输。
+
+流对象有四种类型：
+
+- `Writable`，比如`fs.createWriteStream`、`process.stdout`、`res`
+- `Readable`，比如`fs.createReadStream`、`process.stdin`、`req`
+- `Duplex`，可以当成`Writable`和`Readable`的结合
+- `Transform`
+
+
+
+### Writable
+
+对于`Writable`类型的流对象，实例存在`write()`和`end()`方法。
+
+
+
+### Readable
+
+对于`Readable`类型的流对象，实例存在`on('data')`和`on('end')`方法。
+
+
+
+### `pipeline`
+
+``` js
+const { stdout, stdin } = require('process')
+const { pipeline } = require('stream')
+
+// 写法一
+stdin.on('data', chunk => {
+    stdout.write(chunk)
+})
+
+// 写法二
+stdin.pipe(stdout)
+
+// 写法三
+pipeline(stdin, stdout)
+```
+
+
+
+## zlib
+
+Node的`Zlib`模块提供了基于`Stream`的API来实现`gzip`等格式的压缩或解压缩。
+
+``` js
+const zlib = require('zlib')
+const { pipeline } = require('stream')
+const gzip = zlib.createGzip() // 创建一个流对象
+const source = fs.createReadStream('./a.txt')
+const target = fs.createWriteStream('./a.txt.gz')
+
+pipeline(source, gzip, target, err => console.log(err)) // 生成压缩文件a.txt.gz
+```
+
+
+
+当然我们也可以使用基于回调函数的写法来直接对文件进行压缩，经过测试可以把160Kb的页面压缩至4Kb，当浏览器识别到响应头部的`Content-Encoding: gzip`，浏览器就会**自动对响应的内容进行解压缩**。
+
+``` js
+// server.js
+const { promisify } = require('util')
+const fs = require('fs')
+const zlib = require('zlib')
+const readFile = promisify(fs.readFile)
+const gzip = promisify(zlib.gzip)
+const http = require('http')
+
+http.createServer(async (req, res) => {
+    if (req.url === '/') {
+        const page = await readFile('./index.html')
+        const data = await gzip(page)
+        res.setHeader('Content-Encoding', 'gzip')
+        res.end(data)
+    } 
+    else if (req.url === '/test') {
+        let obj = {}
+        for (let i = 0; i < 10000; i++) {
+            obj[i] = i
+        }
+        const data = await gzip(JSON.stringify(obj))
+        res.setHeader('Content-Encoding', 'gzip')
+        res.end(data)
+    }
+}).listen(3000)
+
+// client.js
+fetch('/test')
+.then(res => res.json())
+.then(data => console.log(data)) // 拿到obj
+```
+
+
+
+
+

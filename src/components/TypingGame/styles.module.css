@@ -1,0 +1,133 @@
+.container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 15px;
+  padding: 30px;
+  margin: 20px 0;
+  color: white;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  color: white;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.gameArea {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 15px 0;
+  backdrop-filter: blur(10px);
+}
+
+.codeDisplay {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: 15px;
+  min-height: 60px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.correct {
+  background-color: #10b981;
+  color: white;
+}
+
+.incorrect {
+  background-color: #ef4444;
+  color: white;
+}
+
+.current {
+  background-color: #fbbf24;
+  color: black;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-family: 'Courier New', monospace;
+  box-sizing: border-box;
+}
+
+.input:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.startBtn {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.startBtn:hover {
+  background: #059669;
+  transform: translateY(-2px);
+}
+
+.stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.tip {
+  margin-top: 15px;
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 20px;
+    margin: 10px 0;
+  }
+  
+  .codeDisplay {
+    font-size: 14px;
+    padding: 10px;
+  }
+  
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .stats {
+    justify-content: center;
+    gap: 15px;
+  }
+  
+  .startBtn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}

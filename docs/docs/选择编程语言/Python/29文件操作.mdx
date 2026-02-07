@@ -1,0 +1,220 @@
+---
+sidebar_position: 29
+title: 文件操作
+---
+
+:::info
+文件操作是程序与外部数据交互的基础。Python 提供了简洁且功能强大的内置函数和模块，用于处理各类文件。无论是读写文本、处理二进制数据，还是管理文件生命周期，Python 的设计都注重易用性和安全性。
+
+- `open()` 函数是文件操作的核心入口
+- `with` 语句是处理文件的最佳实践
+- 理解文本模式与二进制模式的区别至关重要
+:::
+
+## open 函数
+
+`open()` 函数是 Python 内置的，用于打开文件并返回对应的文件对象。
+
+函数签名：`open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)`
+
+-   **`file`**：
+    -   一个 [path-like object](https://docs.python.org/zh-cn/3/glossary.html#term-path-like-object)，表示将要打开的文件的路径（绝对路径或相对当前工作目录的路径）。
+    -   也可以是要封装文件对应的整数类型文件描述符（如果给出的是文件描述符，则当返回的 I/O 对象关闭时它也会关闭，除非将 `closefd` 设为 `False`）。
+
+-   **`mode`**：
+    -   一个指明文件打开模式的可选字符串，默认为 `'r'` (以文本模式读取)。
+    -   详细模式字符及含义见下表。参数 mode 可以叠加使用，例如 `rb` 表示以二进制模式读取并写入。
+    - `'r'`：读取（默认）               
+    - `'w'`：写入，并先截断文件（清空） 
+    - `'x'`：排它性创建，如果文件已存在则失败 
+    - `'a'`：打开文件用于写入，如果文件存在则在末尾追加 
+    - `'b'`：二进制模式                 
+    - `'t'`：文本模式（默认）           
+    - `'+'`：打开用于更新（读取与写入） 
+
+-   **`buffering`**：
+    -   一个可选的整数，用于设置缓冲策略。
+    -   `0`：关闭缓冲（仅在二进制模式下允许）。
+    -   `1`：行缓冲（仅在文本模式下写入时可用）。
+    -   `>1`：表示固定大小的块缓冲区的字节大小。
+    -   默认行为：二进制文件通常使用 128KB 块缓冲；交互式文本文件使用行缓冲；其他文本文件使用与二进制文件相同的块缓冲策略。
+
+-   **`encoding`**：
+    -   用于编码或解码文件的编码格式名称，仅在文本模式下使用。
+    -   默认编码格式依赖于具体平台（`locale.getencoding()`）。
+
+-   **`errors`**：
+    -   可选字符串参数，指定如何处理编码和解码错误，不能在二进制模式下使用。
+    -  `'strict'` (默认，引发 `ValueError`)
+    -  `'ignore'`：忽略错误，继续执行。
+    -  `'replace'`：替换为 `?`。
+    -  `'surrogateescape'`：使用代理字符。
+    -  `'xmlcharrefreplace'`：替换为 XML 字符引用。
+    -  `'backslashreplace'`：替换为反斜杠。
+    -  `'namereplace'`：替换为名称。
+
+-   **`newline`**：
+    -   决定如何解析来自流的换行符。可为 `None`, `''`, `'\n'`, `'\r'` 和 `'\r\n'`。 
+    -   读取时：`None` 启用通用换行模式并转换为 `'\n'`；`''` 启用通用换行模式但不转换；其他值则按给定字符串终止行且不转换。
+    -   写入时：`None` 转换为系统默认行分隔符 `os.linesep`；`''` 或 `'\n'` 不进行翻译；其他值转换为给定字符串。
+
+-   **`closefd`**：
+    -   如果为 `False` 且 `file` 是文件描述符，则当文件对象关闭时，底层文件描述符保持打开状态。如果 `file` 是文件名，则 `closefd` 必须为 `True`（默认值）。
+
+-   **`opener`**：
+    -   一个可调用的自定义开启器。通过 `opener(file, flags)` 获取文件对象的基础文件描述符。
+
+
+### 读写文本文件
+
+使用 `'w'` 模式（写入并清空）、`'a'` 模式（追加写入）或 `'w+'` （读写并清空）模式打开文件进行写入。如果文件不存在，这些模式会自动创建文件。
+
+```python showLineNumbers
+# 使用 'w' 模式写入，如果文件不存在则创建，存在则清空
+f = open('test.txt', 'w')
+f.write('hello world.')
+f.close()
+
+print(open('test.txt').read()) # 输出：hello world.
+
+# 使用 'a' 模式追加写入
+f = open('test.txt', 'a')
+f.write(' appended content.')
+f.close()
+
+print(open('test.txt').read()) # 输出：hello world. appended content.
+
+# 使用 'w+' 模式读写（会先清空文件），并使用 seek 定位
+f = open('test.txt', 'w+')
+f.write('hello world. morning.')
+f.seek(3) # 将文件指针移动到第3个字节
+print(f.read())  # 输出：lo world. morning.
+f.close()
+```
+
+使用 `'r'` 模式（默认）或 `'r+'` （读写但不清空）模式打开文件进行读取。如果文件不存在，会引发 `FileNotFoundError`。
+
+```python showLineNumbers
+# 默认以 'r' 模式打开文件，读取所有内容
+f = open("test.txt")
+text = f.read()
+print(text)
+f.close()
+
+# 按照行读入内容，readlines 方法返回一个列表
+f = open("test.txt")
+lines = f.readlines()
+print(lines) # 输出：['hello world. morning.
+']
+f.close()
+
+# 迭代文件对象，逐行读取内容
+f = open('test.txt')
+for line in f:
+    print(line, end='') # end='' 防止额外换行
+f.close()
+```
+
+### 读写二进制文件
+
+当需要处理图片、音频、视频等非文本数据时，应以二进制模式（`'b'`）打开文件。
+
+在二进制模式下，所有数据都以 `bytes` 对象形式读写，不进行任何编码或解码。
+
+```python showLineNumbers
+import os
+
+# 以 'wb' 模式写入 10 个随机字节到二进制文件
+f = open('binary.bin', 'wb')
+f.write(os.urandom(10))
+f.close()
+
+# 以 'rb' 模式读取二进制文件内容
+f = open('binary.bin', 'rb')
+print(repr(f.read())) # 输出：b'...' (bytes representation)
+f.close()
+```
+
+## with 语句
+
+`with` 语句是 Python 中处理文件（及其他需要资源清理的操作）的最佳实践。它确保文件在使用完毕后，无论是否发生异常，都会被正确关闭。
+
+:::info `with` 语句的优势
+`with` 语句通过上下文管理器协议 (`__enter__` 和 `__exit__` 方法) 自动管理资源的获取和释放。它替代了传统的 `try...finally` 模式，使代码更简洁、更安全，有效避免了资源泄漏。
+:::
+
+这是打开文件的推荐方式。
+
+```python showLineNumbers
+# 使用 with 语句，文件会在代码块结束时自动关闭
+with open('my_file.txt', 'w') as fp:
+    fp.write("Hello world")
+
+# 上述代码等效于以下 try...finally 结构，但更简洁安全：
+fp = open('my_file.txt', 'w')
+try:
+    fp.write("Hello world")
+finally:
+    fp.close()
+```
+
+
+## memoryview 函数
+
+`memoryview` 函数主要用于需要高性能和低内存开销的场景，特别是在处理大型二进制数据时。它提供了一个“视图”来直接、高效地访问和操作底层对象的内存，而不需要为数据创建昂贵的副本。
+
+考虑一个场景，你需要从二进制文件中读取大量结构化的记录（例如，每条记录包含一个整数和一个浮点数），并且可能需要修改它们。
+
+传统低效方式每次读取和解包一条记录都会创建新的 `bytes` 对象，效率低下。
+
+`memoryview` 允许我们一次性读取一个较大的块，然后通过“视图”来遍历和修改这块内存，避免不必要的数据拷贝。
+
+```python showLineNumbers
+import struct
+import array # 用于创建可变缓冲区
+
+# 假设 data.bin 文件已经存在并有足够的数据
+# 我们可以先创建一个模拟的 data.bin 文件
+with open("data.bin", "wb") as f:
+    for i in range(1000):
+        # 写入一个 int32 (i) 和一个 double64 (i * 1.5)
+        f.write(struct.pack('<id', i, i * 1.5))
+
+# 实际应用：读取并处理文件
+record_size = 12 # 4字节 (int) + 8字节 (double)
+num_records_to_read = 100
+
+with open("data.bin", "rb") as f:
+    # 一次性读取100条记录的字节数据到内存
+    buffer = f.read(num_records_to_read * record_size)
+
+    # 将 buffer 转换为一个可变的 bytearray，以便我们能通过 memoryview 修改它
+    byte_data = bytearray(buffer)
+
+    # 创建一个 memoryview 对象，指向这个 byte_data
+    # 使用 struct 模块的格式字符串来指定 memoryview 的格式
+    # 这使得我们可以像访问数组一样访问数据，但背后是 memoryview
+    structured_mv = memoryview(byte_data).cast('id', shape=[num_records_to_read])
+
+    # 现在我们可以像访问数组一样，高效地访问和修改数据
+    for i in range(num_records_to_read):
+        record_id, value = structured_mv[i]
+        # print(f"Record {i}: ID={record_id}, Value={value}")
+
+        # 如果需要，我们可以直接修改内存中的值
+        structured_mv[i] = (record_id, value + 10.0)
+
+# 现在，如果我们将 byte_data 写回文件，修改就已经生效了
+# 或者在内存中处理完后，将整个 byte_data 对象传递给其他函数，而不用担心数据拷贝
+
+# 示例：验证修改后的数据
+with open("data.bin", "rb") as f:
+    f.seek(0) # 回到文件开头
+    modified_buffer = f.read(num_records_to_read * record_size)
+    modified_byte_data = bytearray(modified_buffer)
+    modified_structured_mv = memoryview(modified_byte_data).cast('id', shape=[num_records_to_read])
+
+    # for i in range(5): # 仅打印前5条验证
+    #     record_id, value = modified_structured_mv[i]
+    #     print(f"Modified Record {i}: ID={record_id}, Value={value}")
+```

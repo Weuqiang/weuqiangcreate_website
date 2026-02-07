@@ -1,0 +1,427 @@
+
+# 基础
+
+## 组件
+
+React组件包括class组件和函数组件。
+
+``` jsx live 
+class Welcome extends React.Component {
+  render() {
+    return <div>Hello world</div>;
+  }
+}
+```
+
+``` jsx live
+function Hello(props) {
+    return (
+        <div>
+            hello world {props.name}
+        </div>
+    )
+}
+```
+
+当组件内部`state`改变或`props`地址改变的时候组件会重新渲染，并且对于非纯组件来说，父组件的渲染也会引起子组件的渲染。
+
+我们可以使用`React.PureComponent`或`React.memo`实现纯组件。
+
+``` jsx
+class Akara extends React.PureComponent { // 纯类组件
+    // ...
+}
+
+const App = React.memo(() => <div>akara</div>) // 纯函数组件
+```
+
+
+### 状态
+
+在类组件中通过`this.setState`修改数据。
+
+``` js
+this.setState({name: 'aka'})
+```
+
+``` jsx
+this.state = Object.assign(this.state, { name: 'aka' }) // 简单地理解
+```
+
+通常状态的更新是**异步**的。
+
+``` tsx
+this.setState({
+    count: 1 // 假设原始值为0
+})
+console.log(this.state.count) // 输出0而不是1
+```
+
+想要获取修改后的值，我们可以传一个回调函数给`setState`
+
+``` javascript
+this.setState({
+    count: 1
+}, () => {
+    console.log(this.state.count) // 输出1
+})
+```
+
+如果`setState`依赖之前的State，`setState`的参数可以为函数
+
+``` jsx
+this.setState((state, props) => {
+    return {
+        count: state.count + 1
+    }
+})
+```
+
+事实上，在**合成事件**和**组件的生命周期**中`setState`是异步的；而在**原生事件**和**定时器**中`setState`是同步的。
+
+这是因为，React内部维护了一个标识：`isBatchingUpdates`。在**合成事件**和**组件的生命周期**中，该值为`true`，那么`setState`会被缓存进队列，最后才批量更新；而在**原生事件**和**定时器**中，该值为`false`，调用`setState`时会直接同步更新。
+
+
+
+### 事件
+
+React中的`event`是**合成事件**，我们无需担心任何浏览器的兼容性问题。
+
+``` jsx
+<button onClick={this.handleClick}>
+	aka
+</button>
+```
+
+我们有几种方式绑定事件。
+
+``` tsx
+// 方法一
+constructor() {
+    this.handlerClick = this.handlerClick.bind(this)
+}
+
+// 方法二
+<button onClick={(e) => this.handleClick(e)}>
+    Click me
+</button>
+
+// 方法三
+class Btn extends React.component {
+    handlerClick = (e) => {
+        console.log(this)
+    }
+
+    render() {
+        return (
+        	 <button onClick={this.handlerClick}>
+                Click me
+             </button>
+        )
+    }
+}
+```
+
+### 生命周期
+
+详细的生命周期可以参考[该链接](http://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/)
+
+
+
+## Form
+
+React把表单元素分为**受控组件**和**非受控组件**，默认的`input`元素被视为非受控组件，此时我们通常会给`defaultValue`属性；当我们给`input`元素加上`value`和`onChange`属性时该元素被视为受控组件，此时`input`元素的内部值完全由我们的状态控制。
+
+``` jsx
+// 受控组件
+handleChange = (e) => {
+    this.setState({
+        name: e.target.value.toUpperCase()
+    })
+}
+
+render() {
+    return <input type="text" value={name} onChange={this.handleChange}/>
+}
+```
+
+
+
+## Ref and forwardRef
+
+使用现代框架的一大特点是基于数据驱动的页面渲染，避免了复杂的DOM操作。有的时候我们就是想使用DOM，此时可以使用`ref`。
+
+``` javascript
+class App extends React.Component {
+    constructor(props) {
+        super(props)
+        this.myRef = React.createRef()
+    }
+
+    handleClick = () => {
+        this.myRef.current.focus()
+    }
+
+    render() {
+        return (
+            <div>
+                <input type="text" ref={this.myRef} />
+                <button onClick={this.handleClick}>点我</button>
+            </div>
+        )
+    }
+}
+```
+
+对于一个`FancyButton`组件，我们或许希望能用`ref`拿到组件内部的元素，此时可以使用**Refs转发**。
+
+``` jsx
+const FancyButton = React.forwardRef((props, ref) => {
+    return <button ref={ref}>aka</button>
+})
+
+<FancyButton ref={myRef}></FancyButton>
+```
+
+
+
+## Context
+
+Context 设计目的是为了共享那些对于一个组件树而言是“全局”的数据，例如当前认证的用户、主题或首选语言。
+
+### 类组件
+
+``` jsx 
+const ThemeContext = React.createContext("akara");
+export const MyProvider = ThemeContext.Provider;
+
+const App = () => {
+    return (
+        <div>
+            <Test />
+        </div>
+    );
+};
+
+class Test extends React.Component {
+    static contextType = ThemeContext
+    render() {
+        return <div>{this.context}</div>
+    }
+}
+
+```
+
+### 函数式组件
+
+``` js
+const ThemeContext = React.createContext("akara");
+export const MyProvider = ThemeContext.Provider;
+
+export function useMyContext() {
+    const context = useContext(ThemeContext);
+    return context;
+}
+
+const App = () => {
+    return (
+        <div>
+            <MyProvider value="bkara">
+                <Test />
+            </MyProvider>
+        </div>
+    );
+};
+
+const Test = () => {
+    const context = useMyContext();
+    return <div>{context}</div>;
+};
+```
+
+## Fragment
+
+``` jsx
+function App() {
+    return (
+    	<>
+            <React.Fragment>
+        		<div></div>
+            	<div></div>
+        	</React.Fragment>
+        </>
+    )
+}
+```
+
+
+
+## Hight-Order Components
+
+高阶组件是参数为组件，返回值为新组件的函数。
+
+``` js
+// 官网例子
+function App () {
+    const MouseWithCat = withMouse(Cat)
+    return (
+        <MouseWithCat />
+    )
+}
+
+function Cat (props) {
+    let {x, y} = props.mouse
+    x += 20
+    y += 20
+    return (
+        <img src='https://messiahhh.github.io/blog/logo.png' style={{position: 'absolute', left: x , top: y, width: '40px', height: '40px'}}/>
+    )
+}
+
+function withMouse(WrappedComponent) {
+    return function () {
+        let [point, setPoint] = useState({
+            x: 0,
+            y: 0,
+        })
+
+        const move = (e) => {
+            setPoint({
+                x: e.clientX,
+                y: e.clientY
+            })
+        }
+
+        return (
+            <div style={{height: '100vh'}} onMouseMove={move}>
+                鼠标的位置：{ point.x } , { point.y }
+                <WrappedComponent mouse={point} />
+            </div>
+        )
+    }
+}
+```
+
+## Render Props
+
+``` js
+// 官网例子
+function App () {
+    return (
+        <Mouse render={point =>
+            <Cat mouse={point} />
+        }/>
+    )
+}
+
+function Cat (props) {
+    let {x, y} = props.mouse
+    x += 20
+    y += 20
+    return (
+        <img src='https://messiahhh.github.io/blog/logo.png' style={{position: 'absolute', left: x , top: y, width: '40px', height: '40px'}}/>
+    )
+}
+
+
+function Mouse(props) {
+    let [point, setPoint] = useState({
+        x: 0,
+        y: 0,
+    })
+
+    const move = (e) => {
+        setPoint({
+            x: e.clientX,
+            y: e.clientY
+        })
+    }
+
+    return (
+        <div style={{height: '100vh'}} onMouseMove={move}>
+            鼠标的位置：{ point.x } , { point.y }
+            {props.render(point)}
+        </div>
+    )
+}
+```
+
+## Error Boundary
+
+当某个组件抛出异常时，开发模式下能在页面看到错误信息，而生产模式下整个页面都白屏了。**在生产模式下**为了避免某个组件的错误让整个应用都塌陷，我们可以使用`Error Boundary`组件来捕捉和打印组件内部的异常信息，并提供页面的降级处理。
+
+一个类组件被视为错误边界组件的前提是我们给该组件定义了`static getDerivedStateFromError() `或`componentDidCatch()`，通常我们会同时提供这两个方法。`static getDerivedStateFromError() `的作用是当出现异常时提供降级UI，`componentDidCatch()`内部通常用来打印错误日志。
+
+``` js
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props)
+        this.state = { 
+            hasError: false 
+        }
+    }
+
+    static getDerivedStateFromError(error) {
+        return {
+            hasError: true
+        }
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.log(error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return <div>i'm fallback UI</div>
+        }
+        return this.props.children
+    }
+}
+
+const App = () => {
+    const [count, setCount] = useState(0)
+    const handleClick = useCallback(() => {
+        setCount(count + 1)
+    }, [count])
+
+    if (count >= 5) {
+        throw new Error('i crashed!')
+    }
+    return (
+        <>
+            {count}
+            <div onClick={handleClick}>点击</div>
+        </>
+    );
+};
+
+ReactDOM.render(
+    <ErrorBoundary>
+        <App />
+    </ErrorBoundary>,
+    document.querySelector("#root")
+);
+```
+
+## Portals
+
+``` js
+const App = () => {
+    return (
+        <>
+            <div>hello akara</div>
+            <Modal>
+                <div>i'm modal</div>
+            </Modal>
+        </>
+    );
+};
+
+const Modal = (props) => {
+    return ReactDOM.createPortal(
+        props.children,
+        document.querySelector('body')
+    )
+}
+```

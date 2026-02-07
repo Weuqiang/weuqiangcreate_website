@@ -1,0 +1,46 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="aiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="circleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f093fb;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#f5576c;stop-opacity:0.1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景圆圈 -->
+  <circle cx="100" cy="100" r="90" fill="url(#circleGradient)" stroke="url(#aiGradient)" stroke-width="2" opacity="0.3"/>
+  
+  <!-- AI 文字 -->
+  <g fill="url(#aiGradient)">
+    <!-- 字母 A -->
+    <path d="M 60 140 L 75 100 L 90 140 Z M 68 125 L 82 125" stroke="url(#aiGradient)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- 字母 I -->
+    <line x1="120" y1="100" x2="120" y2="140" stroke="url(#aiGradient)" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="120" cy="85" r="6" fill="url(#aiGradient)"/>
+  </g>
+  
+  <!-- 装饰性元素 -->
+  <g opacity="0.6">
+    <!-- 神经网络节点 -->
+    <circle cx="50" cy="60" r="3" fill="url(#aiGradient)"/>
+    <circle cx="150" cy="60" r="3" fill="url(#aiGradient)"/>
+    <circle cx="50" cy="160" r="3" fill="url(#aiGradient)"/>
+    <circle cx="150" cy="160" r="3" fill="url(#aiGradient)"/>
+    
+    <!-- 连接线 -->
+    <line x1="50" y1="60" x2="75" y2="100" stroke="url(#aiGradient)" stroke-width="1" opacity="0.4"/>
+    <line x1="150" y1="60" x2="120" y2="85" stroke="url(#aiGradient)" stroke-width="1" opacity="0.4"/>
+    <line x1="50" y1="160" x2="75" y2="140" stroke="url(#aiGradient)" stroke-width="1" opacity="0.4"/>
+    <line x1="150" y1="160" x2="120" y2="140" stroke="url(#aiGradient)" stroke-width="1" opacity="0.4"/>
+  </g>
+  
+  <!-- 发光效果 -->
+  <g opacity="0.3">
+    <circle cx="100" cy="100" r="95" fill="none" stroke="url(#aiGradient)" stroke-width="1" opacity="0.2"/>
+    <circle cx="100" cy="100" r="85" fill="none" stroke="url(#aiGradient)" stroke-width="1" opacity="0.3"/>
+  </g>
+</svg>
