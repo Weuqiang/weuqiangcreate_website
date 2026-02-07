@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# 禁止访问构建文件和配置文件
+Disallow: /build/
+Disallow: /.docusaurus/
+Disallow: /node_modules/
+Disallow: /.git/
+
+# 允许访问重要页面
+Allow: /docs/
+Allow: /blog/
+Allow: /bookshelf/
+Allow: /cases/
+
+# 网站地图
+Sitemap: https://weuqiang.github.io/weuqiangcreate_website/sitemap.xml
+
+# 爬取延迟（秒）
+Crawl-delay: 1

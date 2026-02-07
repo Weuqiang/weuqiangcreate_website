@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkweuqiangcreate_website=globalThis.webpackChunkweuqiangcreate_website||[]).push([[121],{99213(e){e.exports=JSON.parse('{"metadata":{"permalink":"/weuqiangcreate_website/blog/page/2","page":2,"postsPerPage":10,"totalPages":2,"totalCount":14,"previousPage":"/weuqiangcreate_website/blog","blogDescription":"Blog","blogTitle":"Blog"}}')}}]);
