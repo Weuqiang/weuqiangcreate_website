@@ -1,0 +1,1058 @@
+---
+sidebar_position: 12
+title: AI Agent智能体
+---
+
+# AI Agent（智能体）
+
+:::info 章节概述
+本章节介绍AI Agent的原理、架构和实现，涵盖ReAct、AutoGPT、LangChain Agent等前沿技术。
+:::
+
+## 什么是AI Agent
+
+**AI Agent（智能体）** 是能够感知环境、自主决策并采取行动以实现目标的AI系统。
+
+### Agent的核心特征
+
+**自主性（Autonomy）**
+- 无需人工干预
+- 自主规划和执行
+
+**反应性（Reactivity）**
+- 感知环境变化
+- 及时响应
+
+**主动性（Proactivity）**
+- 目标导向
+- 主动采取行动
+
+**社交能力（Social Ability）**
+- 与人类交互
+- 与其他Agent协作
+
+### Agent vs 传统AI
+
+| 特性 | 传统AI | AI Agent |
+|------|--------|----------|
+| 交互方式 | 单次问答 | 多轮对话 |
+| 能力范围 | 固定任务 | 动态任务 |
+| 工具使用 | 无 | 可调用工具 |
+| 规划能力 | 无 | 自主规划 |
+| 记忆 | 无状态 | 有记忆 |
+
+## Agent架构
+
+### 1. 基础架构
+
+```python
+class Agent:
+    """基础Agent架构"""
+    
+    def __init__(self, llm, tools, memory=None):
+        self.llm = llm  # 大语言模型
+        self.tools = tools  # 可用工具
+        self.memory = memory or []  # 记忆
+    
+    def perceive(self, observation):
+        """感知环境"""
+        return observation
+    
+    def think(self, observation):
+        """思考和规划"""
+        # 构建prompt
+        prompt = self._build_prompt(observation)
+        
+        # LLM推理
+        response = self.llm.generate(prompt)
+        
+        return response
+    
+    def act(self, action):
+        """执行动作"""
+        # 解析动作
+        tool_name, tool_input = self._parse_action(action)
+        
+        # 调用工具
+        if tool_name in self.tools:
+            result = self.tools[tool_name](tool_input)
+        else:
+            result = f"Tool {tool_name} not found"
+        
+        return result
+    
+    def run(self, task, max_iterations=10):
+        """运行Agent"""
+        observation = task
+        
+        for i in range(max_iterations):
+            # 思考
+            thought = self.think(observation)
+            
+            # 判断是否完成
+            if self._is_finished(thought):
+                return self._extract_answer(thought)
+            
+            # 执行动作
+            action = self._extract_action(thought)
+            observation = self.act(action)
+            
+            # 更新记忆
+            self.memory.append({
+                'thought': thought,
+                'action': action,
+                'observation': observation
+            })
+        
+        return "Max iterations reached"
+```
+
+### 2. ReAct架构
+
+**ReAct = Reasoning + Acting**
+
+```python
+class ReActAgent:
+    """ReAct Agent实现"""
+    
+    def __init__(self, llm, tools):
+        self.llm = llm
+        self.tools = tools
+    
+    def _build_react_prompt(self, task, history):
+        """构建ReAct prompt"""
+        prompt = f"""You are an AI assistant that can use tools to solve tasks.
+
+Available tools:
+{self._format_tools()}
+
+Use the following format:
+
+Thought: Think about what to do
+Action: the action to take, should be one of [{', '.join(self.tools.keys())}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Task: {task}
+
+{self._format_history(history)}
+"""
+        return prompt
+    
+    def _format_tools(self):
+        """格式化工具描述"""
+        tool_desc = []
+        for name, tool in self.tools.items():
+            tool_desc.append(f"- {name}: {tool.description}")
+        return '\n'.join(tool_desc)
+    
+    def _format_history(self, history):
+        """格式化历史记录"""
+        formatted = []
+        for step in history:
+            formatted.append(f"Thought: {step['thought']}")
+            formatted.append(f"Action: {step['action']}")
+            formatted.append(f"Action Input: {step['action_input']}")
+            formatted.append(f"Observation: {step['observation']}")
+        return '\n'.join(formatted)
+    
+    def run(self, task, max_steps=10):
+        """运行ReAct Agent"""
+        history = []
+        
+        for step in range(max_steps):
+            # 生成下一步
+            prompt = self._build_react_prompt(task, history)
+            response = self.llm.generate(prompt)
+            
+            # 解析响应
+            if "Final Answer:" in response:
+                answer = response.split("Final Answer:")[-1].strip()
+                return answer
+            
+            # 提取思考、动作和输入
+            thought = self._extract_field(response, "Thought:")
+            action = self._extract_field(response, "Action:")
+            action_input = self._extract_field(response, "Action Input:")
+            
+            # 执行动作
+            if action in self.tools:
+                observation = self.tools[action].run(action_input)
+            else:
+                observation = f"Error: Tool '{action}' not found"
+            
+            # 记录历史
+            history.append({
+                'thought': thought,
+                'action': action,
+                'action_input': action_input,
+                'observation': observation
+            })
+        
+        return "Max steps reached without finding answer"
+    
+    def _extract_field(self, text, field_name):
+        """提取字段"""
+        if field_name not in text:
+            return ""
+        
+        start = text.index(field_name) + len(field_name)
+        end = text.find('\n', start)
+        if end == -1:
+            end = len(text)
+        
+        return text[start:end].strip()
+
+
+# 示例：定义工具
+class SearchTool:
+    name = "search"
+    description = "Search the internet for information"
+    
+    def run(self, query):
+        # 实际实现会调用搜索API
+        return f"Search results for: {query}"
+
+
+class CalculatorTool:
+    name = "calculator"
+    description = "Perform mathematical calculations"
+    
+    def run(self, expression):
+        try:
+            result = eval(expression)
+            return str(result)
+        except Exception as e:
+            return f"Error: {str(e)}"
+
+
+# 使用ReAct Agent
+tools = {
+    'search': SearchTool(),
+    'calculator': CalculatorTool()
+}
+
+agent = ReActAgent(llm, tools)
+answer = agent.run("What is the population of Tokyo multiplied by 2?")
+print(answer)
+```
+
+### 3. 规划型Agent
+
+```python
+class PlanAndExecuteAgent:
+    """规划-执行Agent"""
+    
+    def __init__(self, llm, tools):
+        self.llm = llm
+        self.tools = tools
+    
+    def plan(self, task):
+        """制定计划"""
+        prompt = f"""Break down the following task into a step-by-step plan:
+
+Task: {task}
+
+Plan:
+1."""
+        
+        response = self.llm.generate(prompt)
+        steps = self._parse_plan(response)
+        return steps
+    
+    def execute_step(self, step, context):
+        """执行单个步骤"""
+        prompt = f"""Execute the following step using available tools:
+
+Step: {step}
+Context: {context}
+
+Available tools: {list(self.tools.keys())}
+
+Action:"""
+        
+        response = self.llm.generate(prompt)
+        action, action_input = self._parse_action(response)
+        
+        if action in self.tools:
+            result = self.tools[action].run(action_input)
+        else:
+            result = f"Tool {action} not found"
+        
+        return result
+    
+    def run(self, task):
+        """运行Agent"""
+        # 制定计划
+        plan = self.plan(task)
+        print(f"Plan: {plan}")
+        
+        # 执行计划
+        context = []
+        for i, step in enumerate(plan):
+            print(f"\nExecuting step {i+1}: {step}")
+            result = self.execute_step(step, context)
+            print(f"Result: {result}")
+            context.append({
+                'step': step,
+                'result': result
+            })
+        
+        # 总结结果
+        return self._summarize(task, context)
+    
+    def _parse_plan(self, response):
+        """解析计划"""
+        lines = response.strip().split('\n')
+        steps = []
+        for line in lines:
+            line = line.strip()
+            if line and line[0].isdigit():
+                step = line.split('.', 1)[1].strip()
+                steps.append(step)
+        return steps
+    
+    def _summarize(self, task, context):
+        """总结结果"""
+        prompt = f"""Summarize the results of the following task:
+
+Task: {task}
+
+Execution history:
+{self._format_context(context)}
+
+Final Answer:"""
+        
+        return self.llm.generate(prompt)
+```
+
+## 工具调用（Tool Use）
+
+### 1. 函数调用（Function Calling）
+
+```python
+import json
+from openai import OpenAI
+
+class FunctionCallingAgent:
+    """基于函数调用的Agent"""
+    
+    def __init__(self):
+        self.client = OpenAI()
+        self.functions = self._define_functions()
+        self.available_functions = self._register_functions()
+    
+    def _define_functions(self):
+        """定义可用函数"""
+        return [
+            {
+                "name": "get_weather",
+                "description": "获取指定城市的天气信息",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "city": {
+                            "type": "string",
+                            "description": "城市名称，如：北京"
+                        },
+                        "unit": {
+                            "type": "string",
+                            "enum": ["celsius", "fahrenheit"],
+                            "description": "温度单位"
+                        }
+                    },
+                    "required": ["city"]
+                }
+            },
+            {
+                "name": "search_web",
+                "description": "在网上搜索信息",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "搜索查询"
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        ]
+    
+    def _register_functions(self):
+        """注册实际的函数实现"""
+        return {
+            "get_weather": self.get_weather,
+            "search_web": self.search_web
+        }
+    
+    def get_weather(self, city, unit="celsius"):
+        """获取天气（示例实现）"""
+        # 实际应该调用天气API
+        return json.dumps({
+            "city": city,
+            "temperature": 22,
+            "unit": unit,
+            "condition": "晴朗"
+        })
+    
+    def search_web(self, query):
+        """搜索网页（示例实现）"""
+        # 实际应该调用搜索API
+        return json.dumps({
+            "query": query,
+            "results": ["结果1", "结果2", "结果3"]
+        })
+    
+    def run(self, user_message):
+        """运行Agent"""
+        messages = [{"role": "user", "content": user_message}]
+        
+        while True:
+            # 调用LLM
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=messages,
+                functions=self.functions,
+                function_call="auto"
+            )
+            
+            message = response.choices[0].message
+            
+            # 如果没有函数调用，返回结果
+            if not message.function_call:
+                return message.content
+            
+            # 执行函数调用
+            function_name = message.function_call.name
+            function_args = json.loads(message.function_call.arguments)
+            
+            print(f"调用函数: {function_name}")
+            print(f"参数: {function_args}")
+            
+            function_response = self.available_functions[function_name](**function_args)
+            
+            # 将函数结果添加到对话
+            messages.append({
+                "role": "function",
+                "name": function_name,
+                "content": function_response
+            })
+
+
+# 使用
+agent = FunctionCallingAgent()
+result = agent.run("北京今天天气怎么样？")
+print(result)
+```
+
+### 2. LangChain工具
+
+```python
+from langchain.agents import Tool, AgentExecutor, create_react_agent
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.tools import DuckDuckGoSearchRun
+from langchain.utilities import WikipediaAPIWrapper
+
+# 定义工具
+search = DuckDuckGoSearchRun()
+wikipedia = WikipediaAPIWrapper()
+
+tools = [
+    Tool(
+        name="Search",
+        func=search.run,
+        description="用于搜索互联网信息"
+    ),
+    Tool(
+        name="Wikipedia",
+        func=wikipedia.run,
+        description="用于查询维基百科"
+    ),
+    Tool(
+        name="Calculator",
+        func=lambda x: str(eval(x)),
+        description="用于数学计算"
+    )
+]
+
+# 创建Agent
+llm = OpenAI(temperature=0)
+
+prompt = PromptTemplate.from_template("""
+Answer the following questions as best you can. You have access to the following tools:
+
+{tools}
+
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Begin!
+
+Question: {input}
+Thought: {agent_scratchpad}
+""")
+
+agent = create_react_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+# 运行
+result = agent_executor.invoke({
+    "input": "What is the population of Tokyo? Calculate it multiplied by 2."
+})
+print(result)
+```
+
+## 记忆系统
+
+### 1. 短期记忆
+
+```python
+class ShortTermMemory:
+    """短期记忆（对话历史）"""
+    
+    def __init__(self, max_length=10):
+        self.messages = []
+        self.max_length = max_length
+    
+    def add(self, role, content):
+        """添加消息"""
+        self.messages.append({
+            "role": role,
+            "content": content
+        })
+        
+        # 保持最大长度
+        if len(self.messages) > self.max_length:
+            self.messages = self.messages[-self.max_length:]
+    
+    def get_messages(self):
+        """获取所有消息"""
+        return self.messages
+    
+    def clear(self):
+        """清空记忆"""
+        self.messages = []
+```
+
+### 2. 长期记忆
+
+```python
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
+
+class LongTermMemory:
+    """长期记忆（向量数据库）"""
+    
+    def __init__(self):
+        self.embeddings = OpenAIEmbeddings()
+        self.vectorstore = None
+        self.documents = []
+    
+    def add(self, text, metadata=None):
+        """添加记忆"""
+        self.documents.append({
+            "text": text,
+            "metadata": metadata or {}
+        })
+        
+        # 更新向量数据库
+        texts = [doc["text"] for doc in self.documents]
+        metadatas = [doc["metadata"] for doc in self.documents]
+        
+        self.vectorstore = FAISS.from_texts(
+            texts,
+            self.embeddings,
+            metadatas=metadatas
+        )
+    
+    def search(self, query, k=5):
+        """搜索相关记忆"""
+        if not self.vectorstore:
+            return []
+        
+        results = self.vectorstore.similarity_search(query, k=k)
+        return [doc.page_content for doc in results]
+    
+    def save(self, path):
+        """保存记忆"""
+        if self.vectorstore:
+            self.vectorstore.save_local(path)
+    
+    def load(self, path):
+        """加载记忆"""
+        self.vectorstore = FAISS.load_local(path, self.embeddings)
+
+
+class MemoryAgent:
+    """带记忆的Agent"""
+    
+    def __init__(self, llm):
+        self.llm = llm
+        self.short_term = ShortTermMemory()
+        self.long_term = LongTermMemory()
+    
+    def run(self, user_input):
+        """运行Agent"""
+        # 搜索相关长期记忆
+        relevant_memories = self.long_term.search(user_input)
+        
+        # 构建prompt
+        prompt = self._build_prompt(user_input, relevant_memories)
+        
+        # 生成响应
+        response = self.llm.generate(prompt)
+        
+        # 更新短期记忆
+        self.short_term.add("user", user_input)
+        self.short_term.add("assistant", response)
+        
+        # 更新长期记忆
+        self.long_term.add(
+            f"User: {user_input}\nAssistant: {response}",
+            metadata={"timestamp": time.time()}
+        )
+        
+        return response
+    
+    def _build_prompt(self, user_input, relevant_memories):
+        """构建prompt"""
+        prompt = "Relevant past conversations:\n"
+        for memory in relevant_memories:
+            prompt += f"- {memory}\n"
+        
+        prompt += "\nCurrent conversation:\n"
+        for msg in self.short_term.get_messages():
+            prompt += f"{msg['role']}: {msg['content']}\n"
+        
+        prompt += f"user: {user_input}\nassistant:"
+        
+        return prompt
+```
+
+## 多Agent系统
+
+### 1. Agent协作
+
+```python
+class MultiAgentSystem:
+    """多Agent系统"""
+    
+    def __init__(self):
+        self.agents = {}
+    
+    def register_agent(self, name, agent):
+        """注册Agent"""
+        self.agents[name] = agent
+    
+    def route_task(self, task):
+        """路由任务到合适的Agent"""
+        # 使用LLM判断应该由哪个Agent处理
+        prompt = f"""Given the following task, which agent should handle it?
+
+Task: {task}
+
+Available agents:
+{self._format_agents()}
+
+Agent:"""
+        
+        agent_name = self.llm.generate(prompt).strip()
+        
+        if agent_name in self.agents:
+            return self.agents[agent_name]
+        else:
+            return self.agents[list(self.agents.keys())[0]]
+    
+    def run(self, task):
+        """运行任务"""
+        agent = self.route_task(task)
+        return agent.run(task)
+
+
+# 示例：创建专门的Agent
+class ResearchAgent:
+    """研究Agent"""
+    def run(self, task):
+        # 搜索和总结信息
+        pass
+
+
+class CodingAgent:
+    """编程Agent"""
+    def run(self, task):
+        # 编写和调试代码
+        pass
+
+
+class WritingAgent:
+    """写作Agent"""
+    def run(self, task):
+        # 撰写文章
+        pass
+
+
+# 使用
+system = MultiAgentSystem()
+system.register_agent("research", ResearchAgent())
+system.register_agent("coding", CodingAgent())
+system.register_agent("writing", WritingAgent())
+
+result = system.run("Write a Python script to analyze data")
+```
+
+### 2. Agent辩论
+
+```python
+class DebateSystem:
+    """Agent辩论系统"""
+    
+    def __init__(self, agents, judge):
+        self.agents = agents
+        self.judge = judge
+    
+    def debate(self, topic, rounds=3):
+        """进行辩论"""
+        history = []
+        
+        for round_num in range(rounds):
+            print(f"\n=== Round {round_num + 1} ===")
+            
+            for agent_name, agent in self.agents.items():
+                # 构建prompt
+                prompt = self._build_debate_prompt(
+                    topic,
+                    agent_name,
+                    history
+                )
+                
+                # 生成观点
+                response = agent.generate(prompt)
+                
+                print(f"\n{agent_name}: {response}")
+                
+                history.append({
+                    "agent": agent_name,
+                    "response": response
+                })
+        
+        # 裁判总结
+        summary = self.judge_debate(topic, history)
+        return summary
+    
+    def judge_debate(self, topic, history):
+        """裁判总结"""
+        prompt = f"""As a judge, summarize the debate on: {topic}
+
+Debate history:
+{self._format_history(history)}
+
+Summary:"""
+        
+        return self.judge.generate(prompt)
+```
+
+## 实战案例
+
+### 1. 自动化研究助手
+
+```python
+class ResearchAssistant:
+    """自动化研究助手"""
+    
+    def __init__(self):
+        self.llm = OpenAI()
+        self.search_tool = DuckDuckGoSearchRun()
+        self.memory = LongTermMemory()
+    
+    def research_topic(self, topic, depth=3):
+        """研究主题"""
+        results = {
+            "topic": topic,
+            "findings": [],
+            "summary": ""
+        }
+        
+        # 生成研究问题
+        questions = self._generate_questions(topic, depth)
+        
+        # 搜索每个问题
+        for question in questions:
+            print(f"研究问题: {question}")
+            
+            # 搜索
+            search_results = self.search_tool.run(question)
+            
+            # 总结
+            summary = self._summarize(question, search_results)
+            
+            results["findings"].append({
+                "question": question,
+                "summary": summary
+            })
+            
+            # 保存到记忆
+            self.memory.add(f"Q: {question}\nA: {summary}")
+        
+        # 生成最终总结
+        results["summary"] = self._generate_final_summary(results["findings"])
+        
+        return results
+    
+    def _generate_questions(self, topic, depth):
+        """生成研究问题"""
+        prompt = f"""Generate {depth} research questions about: {topic}
+
+Questions:
+1."""
+        
+        response = self.llm.generate(prompt)
+        questions = self._parse_questions(response)
+        return questions
+    
+    def _summarize(self, question, search_results):
+        """总结搜索结果"""
+        prompt = f"""Summarize the following search results for the question:
+
+Question: {question}
+
+Search results:
+{search_results}
+
+Summary:"""
+        
+        return self.llm.generate(prompt)
+    
+    def _generate_final_summary(self, findings):
+        """生成最终总结"""
+        prompt = "Synthesize the following research findings:\n\n"
+        
+        for i, finding in enumerate(findings):
+            prompt += f"{i+1}. {finding['question']}\n"
+            prompt += f"   {finding['summary']}\n\n"
+        
+        prompt += "Final Summary:"
+        
+        return self.llm.generate(prompt)
+
+
+# 使用
+assistant = ResearchAssistant()
+results = assistant.research_topic("人工智能的最新进展", depth=5)
+print(results["summary"])
+```
+
+### 2. 代码生成Agent
+
+```python
+class CodingAgent:
+    """代码生成Agent"""
+    
+    def __init__(self):
+        self.llm = OpenAI()
+    
+    def generate_code(self, requirement):
+        """生成代码"""
+        # 分析需求
+        analysis = self._analyze_requirement(requirement)
+        
+        # 设计方案
+        design = self._design_solution(analysis)
+        
+        # 生成代码
+        code = self._write_code(design)
+        
+        # 测试代码
+        test_results = self._test_code(code)
+        
+        # 如果测试失败，修复代码
+        if not test_results["passed"]:
+            code = self._fix_code(code, test_results["errors"])
+        
+        return {
+            "code": code,
+            "design": design,
+            "tests": test_results
+        }
+    
+    def _analyze_requirement(self, requirement):
+        """分析需求"""
+        prompt = f"""Analyze the following coding requirement:
+
+Requirement: {requirement}
+
+Analysis (include: inputs, outputs, constraints, edge cases):"""
+        
+        return self.llm.generate(prompt)
+    
+    def _design_solution(self, analysis):
+        """设计方案"""
+        prompt = f"""Design a solution based on this analysis:
+
+{analysis}
+
+Design (include: algorithm, data structures, functions):"""
+        
+        return self.llm.generate(prompt)
+    
+    def _write_code(self, design):
+        """编写代码"""
+        prompt = f"""Write Python code based on this design:
+
+{design}
+
+Code:
+```python"""
+        
+        response = self.llm.generate(prompt)
+        code = response.split("```")[0]
+        return code
+    
+    def _test_code(self, code):
+        """测试代码"""
+        try:
+            # 在安全环境中执行代码
+            exec(code)
+            return {"passed": True, "errors": []}
+        except Exception as e:
+            return {"passed": False, "errors": [str(e)]}
+    
+    def _fix_code(self, code, error_list):
+        """修复代码"""
+        errors_str = '\n'.join(error_list)
+        prompt = f"""Fix the following code errors:
+
+Code:
+{code}
+
+Errors:
+{errors_str}
+
+Fixed code:"""
+        
+        response = self.llm.generate(prompt)
+        return response
+
+
+# 使用
+agent = CodingAgent()
+result = agent.generate_code("创建一个函数，计算斐波那契数列的第n项")
+print(result["code"])
+```
+
+## 最佳实践
+
+### 1. Prompt设计
+
+```python
+# 好的Agent Prompt模板
+AGENT_PROMPT = """You are a helpful AI assistant with access to tools.
+
+Your goal: {goal}
+
+Available tools:
+{tools}
+
+Guidelines:
+1. Think step by step
+2. Use tools when necessary
+3. Verify your answers
+4. Be concise and accurate
+
+Current task: {task}
+
+Let's begin:
+"""
+```
+
+### 2. 错误处理
+
+```python
+class RobustAgent:
+    """健壮的Agent"""
+    
+    def run(self, task, max_retries=3):
+        """运行Agent with重试"""
+        for attempt in range(max_retries):
+            try:
+                result = self._execute(task)
+                return result
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed: {e}")
+                if attempt == max_retries - 1:
+                    return f"Failed after {max_retries} attempts: {e}"
+                time.sleep(2 ** attempt)  # 指数退避
+```
+
+### 3. 成本控制
+
+```python
+class CostAwareAgent:
+    """成本感知Agent"""
+    
+    def __init__(self, budget=10.0):
+        self.budget = budget
+        self.spent = 0.0
+    
+    def run(self, task):
+        """运行Agent with成本控制"""
+        estimated_cost = self._estimate_cost(task)
+        
+        if self.spent + estimated_cost > self.budget:
+            return "Budget exceeded"
+        
+        result = self._execute(task)
+        self.spent += estimated_cost
+        
+        return result
+```
+
+## 未来趋势
+
+**更强的自主性**
+- 更少的人工干预
+- 更复杂的任务处理
+
+**多Agent协作**
+- Agent之间的通信协议
+- 分布式Agent系统
+
+**具身Agent**
+- 机器人控制
+- 物理世界交互
+
+**可信赖的Agent**
+- 可解释性
+- 安全性保证
+- 对齐人类价值观
+
+## 总结
+
+**关键要点**:
+1. Agent = 感知 + 思考 + 行动
+2. ReAct是主流架构
+3. 工具调用扩展Agent能力
+4. 记忆系统提供上下文
+5. 多Agent协作解决复杂任务
+
+**学习建议**:
+- 理解Agent的核心概念
+- 实践ReAct架构
+- 学习工具调用
+- 构建自己的Agent系统
+
+<DocCardList />
+

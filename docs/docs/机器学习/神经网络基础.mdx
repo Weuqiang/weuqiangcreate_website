@@ -1,0 +1,647 @@
+---
+sidebar_position: 1
+title: 神经网络基础
+---
+
+# 神经网络基础
+
+:::info 章节概述
+本章节介绍神经网络的基本原理、结构和训练方法，是深度学习的基础。
+:::
+
+## 从生物神经元到人工神经元
+
+### 生物神经元
+
+人脑包含约860亿个神经元，通过突触连接形成复杂的神经网络。
+
+**神经元的基本结构**：
+- **树突（Dendrites）**：接收来自其他神经元的信号
+- **细胞体（Cell Body）**：处理信号
+- **轴突（Axon）**：传递信号到其他神经元
+- **突触（Synapse）**：神经元之间的连接点
+
+**工作原理**：
+1. 树突接收多个输入信号
+2. 细胞体对信号进行加权求和
+3. 如果总和超过阈值，神经元激活
+4. 通过轴突传递信号到下一个神经元
+
+### 人工神经元（感知机）
+
+1958年，Frank Rosenblatt提出了感知机（Perceptron），这是最简单的人工神经元模型。
+
+```python
+import numpy as np
+
+class Perceptron:
+    """感知机实现"""
+    
+    def __init__(self, input_size, learning_rate=0.01):
+        # 初始化权重和偏置
+        self.weights = np.random.randn(input_size)
+        self.bias = np.random.randn()
+        self.learning_rate = learning_rate
+    
+    def activation(self, x):
+        """阶跃激活函数"""
+        return 1 if x >= 0 else 0
+    
+    def predict(self, x):
+        """预测"""
+        # 加权求和
+        z = np.dot(x, self.weights) + self.bias
+        # 激活
+        return self.activation(z)
+    
+    def train(self, X, y, epochs=100):
+        """训练"""
+        for epoch in range(epochs):
+            errors = 0
+            for xi, yi in zip(X, y):
+                # 预测
+                prediction = self.predict(xi)
+                # 计算误差
+                error = yi - prediction
+                # 更新权重
+                self.weights += self.learning_rate * error * xi
+                self.bias += self.learning_rate * error
+                errors += abs(error)
+            
+            if errors == 0:
+                print(f"收敛于第 {epoch + 1} 轮")
+                break
+
+# 示例：AND逻辑门
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y = np.array([0, 0, 0, 1])
+
+perceptron = Perceptron(input_size=2)
+perceptron.train(X, y)
+
+# 测试
+for xi, yi in zip(X, y):
+    pred = perceptron.predict(xi)
+    print(f"输入: {xi}, 真实: {yi}, 预测: {pred}")
+```
+
+**感知机的局限性**：
+- 只能解决线性可分问题
+- 无法解决XOR问题
+- 这导致了第一次AI寒冬（1969-1980s）
+
+## 多层感知机（MLP）
+
+为了解决感知机的局限性，引入了多层神经网络。
+
+### 网络结构
+
+```
+输入层 → 隐藏层1 → 隐藏层2 → ... → 输出层
+```
+
+**层的类型**：
+- **输入层**：接收原始数据
+- **隐藏层**：提取特征（可以有多层）
+- **输出层**：产生最终预测
+
+### 前向传播
+
+```python
+import numpy as np
+
+class NeuralNetwork:
+    """简单的多层感知机"""
+    
+    def __init__(self, layer_sizes):
+        """
+        layer_sizes: 每层的神经元数量
+        例如 [2, 4, 3, 1] 表示：
+        - 输入层2个神经元
+        - 第一隐藏层4个神经元
+        - 第二隐藏层3个神经元
+        - 输出层1个神经元
+        """
+        self.layer_sizes = layer_sizes
+        self.num_layers = len(layer_sizes)
+        
+        # 初始化权重和偏置
+        self.weights = []
+        self.biases = []
+        
+        for i in range(self.num_layers - 1):
+            # He初始化
+            w = np.random.randn(layer_sizes[i], layer_sizes[i+1]) * np.sqrt(2.0 / layer_sizes[i])
+            b = np.zeros((1, layer_sizes[i+1]))
+            
+            self.weights.append(w)
+            self.biases.append(b)
+    
+    def sigmoid(self, x):
+        """Sigmoid激活函数"""
+        return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
+    
+    def sigmoid_derivative(self, x):
+        """Sigmoid导数"""
+        s = self.sigmoid(x)
+        return s * (1 - s)
+    
+    def forward(self, X):
+        """前向传播"""
+        self.activations = [X]
+        self.z_values = []
+        
+        for i in range(self.num_layers - 1):
+            # 线性变换: z = xW + b
+            z = np.dot(self.activations[-1], self.weights[i]) + self.biases[i]
+            self.z_values.append(z)
+            
+            # 激活函数: a = σ(z)
+            a = self.sigmoid(z)
+            self.activations.append(a)
+        
+        return self.activations[-1]
+    
+    def compute_loss(self, y_true, y_pred):
+        """计算损失（均方误差）"""
+        return np.mean((y_true - y_pred) ** 2)
+
+# 示例：创建网络
+nn = NeuralNetwork([2, 4, 1])
+
+# 前向传播
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+output = nn.forward(X)
+print("输出:", output)
+```
+
+### 激活函数
+
+激活函数引入非线性，使神经网络能够学习复杂的模式。
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 定义各种激活函数
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def tanh(x):
+    return np.tanh(x)
+
+def relu(x):
+    return np.maximum(0, x)
+
+def leaky_relu(x, alpha=0.01):
+    return np.where(x > 0, x, alpha * x)
+
+def elu(x, alpha=1.0):
+    return np.where(x > 0, x, alpha * (np.exp(x) - 1))
+
+def swish(x):
+    return x * sigmoid(x)
+
+# 可视化
+x = np.linspace(-5, 5, 100)
+
+plt.figure(figsize=(15, 10))
+
+functions = [
+    ('Sigmoid', sigmoid),
+    ('Tanh', tanh),
+    ('ReLU', relu),
+    ('Leaky ReLU', leaky_relu),
+    ('ELU', elu),
+    ('Swish', swish)
+]
+
+for i, (name, func) in enumerate(functions, 1):
+    plt.subplot(2, 3, i)
+    plt.plot(x, func(x), linewidth=2)
+    plt.title(name)
+    plt.grid(True)
+    plt.axhline(y=0, color='k', linestyle='--', alpha=0.3)
+    plt.axvline(x=0, color='k', linestyle='--', alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+**激活函数对比**：
+
+| 激活函数 | 公式 | 优点 | 缺点 | 适用场景 |
+|---------|------|------|------|---------|
+| Sigmoid | $\frac{1}{1+e^{-x}}$ | 平滑，输出(0,1) | 梯度消失，计算慢 | 二分类输出层 |
+| Tanh | $\frac{e^x-e^{-x}}{e^x+e^{-x}}$ | 输出(-1,1)，零中心 | 梯度消失 | RNN |
+| ReLU | $\max(0,x)$ | 计算快，缓解梯度消失 | 死神经元 | 隐藏层（最常用） |
+| Leaky ReLU | $\max(\alpha x, x)$ | 解决死神经元 | 需要调参 | 隐藏层 |
+| ELU | $x$ if $x>0$ else $\alpha(e^x-1)$ | 平滑，负值输出 | 计算慢 | 隐藏层 |
+| Swish | $x \cdot \sigma(x)$ | 平滑，性能好 | 计算慢 | 深层网络 |
+
+### 反向传播算法
+
+反向传播是训练神经网络的核心算法，通过链式法则计算梯度。
+
+```python
+class NeuralNetwork:
+    # ... (前面的代码)
+    
+    def backward(self, X, y, learning_rate=0.01):
+        """反向传播"""
+        m = X.shape[0]  # 样本数量
+        
+        # 计算输出层的误差
+        delta = self.activations[-1] - y
+        
+        # 从后向前遍历每一层
+        for i in range(self.num_layers - 2, -1, -1):
+            # 计算梯度
+            dW = np.dot(self.activations[i].T, delta) / m
+            db = np.sum(delta, axis=0, keepdims=True) / m
+            
+            # 更新权重和偏置
+            self.weights[i] -= learning_rate * dW
+            self.biases[i] -= learning_rate * db
+            
+            # 如果不是第一层，继续向前传播误差
+            if i > 0:
+                # 误差传播到前一层
+                delta = np.dot(delta, self.weights[i].T) * self.sigmoid_derivative(self.z_values[i-1])
+    
+    def train(self, X, y, epochs=1000, learning_rate=0.1, verbose=True):
+        """训练网络"""
+        losses = []
+        
+        for epoch in range(epochs):
+            # 前向传播
+            y_pred = self.forward(X)
+            
+            # 计算损失
+            loss = self.compute_loss(y, y_pred)
+            losses.append(loss)
+            
+            # 反向传播
+            self.backward(X, y, learning_rate)
+            
+            # 打印进度
+            if verbose and (epoch + 1) % 100 == 0:
+                print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss:.6f}")
+        
+        return losses
+
+# 示例：训练XOR问题
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y = np.array([[0], [1], [1], [0]])
+
+nn = NeuralNetwork([2, 4, 1])
+losses = nn.train(X, y, epochs=5000, learning_rate=0.5)
+
+# 测试
+print("\n测试结果:")
+predictions = nn.forward(X)
+for i in range(len(X)):
+    print(f"输入: {X[i]}, 真实: {y[i][0]}, 预测: {predictions[i][0]:.4f}")
+
+# 绘制损失曲线
+plt.plot(losses)
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training Loss')
+plt.grid(True)
+plt.show()
+```
+
+### 梯度下降优化算法
+
+**批量梯度下降（BGD）**：
+```python
+# 使用所有样本计算梯度
+for epoch in range(epochs):
+    gradient = compute_gradient(X, y)
+    weights -= learning_rate * gradient
+```
+
+**随机梯度下降（SGD）**：
+```python
+# 每次使用一个样本
+for epoch in range(epochs):
+    for i in range(len(X)):
+        gradient = compute_gradient(X[i], y[i])
+        weights -= learning_rate * gradient
+```
+
+**小批量梯度下降（Mini-batch GD）**：
+```python
+# 每次使用一小批样本
+batch_size = 32
+for epoch in range(epochs):
+    for i in range(0, len(X), batch_size):
+        X_batch = X[i:i+batch_size]
+        y_batch = y[i:i+batch_size]
+        gradient = compute_gradient(X_batch, y_batch)
+        weights -= learning_rate * gradient
+```
+
+**动量（Momentum）**：
+```python
+velocity = 0
+momentum = 0.9
+
+for epoch in range(epochs):
+    gradient = compute_gradient(X, y)
+    velocity = momentum * velocity - learning_rate * gradient
+    weights += velocity
+```
+
+**Adam优化器**：
+```python
+class Adam:
+    def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+        self.learning_rate = learning_rate
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+        self.m = None  # 一阶矩估计
+        self.v = None  # 二阶矩估计
+        self.t = 0     # 时间步
+    
+    def update(self, weights, gradients):
+        if self.m is None:
+            self.m = np.zeros_like(weights)
+            self.v = np.zeros_like(weights)
+        
+        self.t += 1
+        
+        # 更新一阶和二阶矩估计
+        self.m = self.beta1 * self.m + (1 - self.beta1) * gradients
+        self.v = self.beta2 * self.v + (1 - self.beta2) * (gradients ** 2)
+        
+        # 偏差修正
+        m_hat = self.m / (1 - self.beta1 ** self.t)
+        v_hat = self.v / (1 - self.beta2 ** self.t)
+        
+        # 更新权重
+        weights -= self.learning_rate * m_hat / (np.sqrt(v_hat) + self.epsilon)
+        
+        return weights
+```
+
+## 深度神经网络
+
+### 为什么需要深度
+
+**浅层网络的局限**：
+- 需要指数级的神经元数量
+- 难以学习复杂的层次化特征
+
+**深度网络的优势**：
+- 层次化特征学习
+- 参数效率更高
+- 更强的表达能力
+
+### 深度网络的挑战
+
+**1. 梯度消失/爆炸**
+
+```python
+# 演示梯度消失
+def demonstrate_vanishing_gradient():
+    # 假设有10层，每层梯度都是0.5
+    gradient = 1.0
+    for layer in range(10):
+        gradient *= 0.5
+        print(f"第{layer+1}层梯度: {gradient:.6f}")
+    
+    # 输出会显示梯度快速衰减到接近0
+
+demonstrate_vanishing_gradient()
+```
+
+**解决方案**：
+- 使用ReLU激活函数
+- 批归一化（Batch Normalization）
+- 残差连接（Residual Connection）
+- 梯度裁剪（Gradient Clipping）
+
+**2. 过拟合**
+
+```python
+# Dropout实现
+class Dropout:
+    def __init__(self, dropout_rate=0.5):
+        self.dropout_rate = dropout_rate
+        self.mask = None
+    
+    def forward(self, x, training=True):
+        if training:
+            # 训练时随机丢弃神经元
+            self.mask = np.random.binomial(1, 1-self.dropout_rate, size=x.shape)
+            return x * self.mask / (1 - self.dropout_rate)
+        else:
+            # 测试时不丢弃
+            return x
+    
+    def backward(self, dout):
+        return dout * self.mask / (1 - self.dropout_rate)
+```
+
+**3. 训练困难**
+
+**批归一化（Batch Normalization）**：
+```python
+class BatchNormalization:
+    def __init__(self, num_features, epsilon=1e-5, momentum=0.9):
+        self.epsilon = epsilon
+        self.momentum = momentum
+        
+        # 可学习参数
+        self.gamma = np.ones(num_features)
+        self.beta = np.zeros(num_features)
+        
+        # 移动平均
+        self.running_mean = np.zeros(num_features)
+        self.running_var = np.ones(num_features)
+    
+    def forward(self, x, training=True):
+        if training:
+            # 计算批次统计量
+            batch_mean = np.mean(x, axis=0)
+            batch_var = np.var(x, axis=0)
+            
+            # 更新移动平均
+            self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * batch_mean
+            self.running_var = self.momentum * self.running_var + (1 - self.momentum) * batch_var
+            
+            # 归一化
+            x_normalized = (x - batch_mean) / np.sqrt(batch_var + self.epsilon)
+        else:
+            # 测试时使用移动平均
+            x_normalized = (x - self.running_mean) / np.sqrt(self.running_var + self.epsilon)
+        
+        # 缩放和平移
+        out = self.gamma * x_normalized + self.beta
+        return out
+```
+
+## 使用PyTorch实现
+
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+class SimpleNN(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(SimpleNN, self).__init__()
+        
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.bn1 = nn.BatchNorm1d(hidden_size)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.5)
+        self.fc2 = nn.Linear(hidden_size, output_size)
+    
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+
+# 创建模型
+model = SimpleNN(input_size=10, hidden_size=20, output_size=2)
+
+# 定义损失函数和优化器
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+# 训练循环
+def train(model, X, y, epochs=100):
+    model.train()
+    for epoch in range(epochs):
+        # 前向传播
+        outputs = model(X)
+        loss = criterion(outputs, y)
+        
+        # 反向传播
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        if (epoch + 1) % 10 == 0:
+            print(f'Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}')
+
+# 示例数据
+X = torch.randn(100, 10)
+y = torch.randint(0, 2, (100,))
+
+train(model, X, y)
+```
+
+## 实战案例：手写数字识别
+
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+
+# 定义网络
+class MNISTNet(nn.Module):
+    def __init__(self):
+        super(MNISTNet, self).__init__()
+        self.fc1 = nn.Linear(28*28, 128)
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, 10)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.2)
+    
+    def forward(self, x):
+        x = x.view(-1, 28*28)  # 展平
+        x = self.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = self.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = self.fc3(x)
+        return x
+
+# 数据加载
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.1307,), (0.3081,))
+])
+
+train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
+test_dataset = datasets.MNIST('./data', train=False, transform=transform)
+
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False)
+
+# 训练
+model = MNISTNet()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+def train_epoch(model, train_loader, criterion, optimizer):
+    model.train()
+    total_loss = 0
+    correct = 0
+    
+    for data, target in train_loader:
+        optimizer.zero_grad()
+        output = model(data)
+        loss = criterion(output, target)
+        loss.backward()
+        optimizer.step()
+        
+        total_loss += loss.item()
+        pred = output.argmax(dim=1)
+        correct += pred.eq(target).sum().item()
+    
+    return total_loss / len(train_loader), correct / len(train_loader.dataset)
+
+def test(model, test_loader):
+    model.eval()
+    correct = 0
+    
+    with torch.no_grad():
+        for data, target in test_loader:
+            output = model(data)
+            pred = output.argmax(dim=1)
+            correct += pred.eq(target).sum().item()
+    
+    return correct / len(test_loader.dataset)
+
+# 训练循环
+for epoch in range(10):
+    train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer)
+    test_acc = test(model, test_loader)
+    print(f'Epoch {epoch+1}: Loss={train_loss:.4f}, Train Acc={train_acc:.4f}, Test Acc={test_acc:.4f}')
+```
+
+## 总结
+
+**关键要点**：
+1. 神经网络由多层神经元组成
+2. 前向传播计算输出，反向传播计算梯度
+3. 激活函数引入非线性
+4. 深度网络能学习层次化特征
+5. 需要处理梯度消失、过拟合等问题
+
+**最佳实践**：
+- 使用ReLU作为隐藏层激活函数
+- 使用Adam优化器
+- 添加Batch Normalization
+- 使用Dropout防止过拟合
+- 使用合适的权重初始化
+
+**下一步**：
+- 学习卷积神经网络（CNN）
+- 学习循环神经网络（RNN）
+- 学习Transformer架构
+- 实践更多项目
+
+<DocCardList />
+

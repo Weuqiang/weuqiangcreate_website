@@ -1,0 +1,710 @@
+---
+sidebar_position: 3
+title: Redis - 高性能缓存数据库
+---
+
+# Redis - 内存数据库之王
+
+Redis是最流行的内存数据库。这一章教你**用Redis构建高性能应用**。
+
+## 第一部分：Redis基础
+
+### 为什么需要Redis？
+
+**问题**：数据库查询太慢，每次都要查数据库
+
+```python
+# 每次都查数据库 - 慢！
+def get_user(user_id):
+    return db.query("SELECT * FROM users WHERE id = ?", user_id)
+# 耗时：50ms
+```
+
+**解决**：用Redis缓存
+
+```python
+# 先查缓存，缓存没有再查数据库
+def get_user(user_id):
+    # 1. 先查Redis
+    user = redis.get(f"user:{user_id}")
+    if user:
+        return json.loads(user)  # 耗时：1ms
+    
+    # 2. 缓存没有，查数据库
+    user = db.query("SELECT * FROM users WHERE id = ?", user_id)
+    
+    # 3. 写入缓存
+    redis.setex(f"user:{user_id}", 3600, json.dumps(user))
+    
+    return user
+```
+
+### 安装和连接
+
+**Docker方式**：
+```bash
+# 启动Redis
+docker run -d --name redis \
+  -p 6379:6379 \
+  redis:latest
+
+# 进入Redis CLI
+docker exec -it redis redis-cli
+```
+
+**Python连接**：
+```python
+import redis
+
+# 连接Redis
+r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+# 测试连接
+r.ping()  # 返回True表示连接成功
+```
+
+## 第二部分：五大数据结构
+
+### 1. String（字符串）
+
+```python
+import redis
+
+r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+
+# 设置值
+r.set('name', 'Alice')
+
+# 获取值
+name = r.get('name')
+print(name)  # Alice
+
+# 设置过期时间（秒）
+r.setex('session:123', 3600, 'user_data')
+
+# 设置过期时间（毫秒）
+r.psetex('token:456', 60000, 'auth_token')
+
+# 只有key不存在时才设置
+r.setnx('lock:order', 'locked')
+
+# 批量设置
+r.mset({'key1': 'value1', 'key2': 'value2'})
+
+# 批量获取
+values = r.mget(['key1', 'key2'])
+
+# 追加字符串
+r.append('name', ' Smith')
+
+# 获取字符串长度
+length = r.strlen('name')
+
+# 数值操作
+r.set('counter', 0)
+r.incr('counter')  # 加1
+r.incrby('counter', 10)  # 加10
+r.decr('counter')  # 减1
+r.decrby('counter', 5)  # 减5
+
+# 获取并设置
+old_value = r.getset('name', 'Bob')
+```
+
+**应用场景**：
+- 缓存：用户信息、配置信息
+- 计数器：点赞数、浏览量
+- 分布式锁：防止并发问题
+- Session存储：用户会话
+
+### 2. Hash（哈希）
+
+```python
+# 设置hash字段
+r.hset('user:1', 'name', 'Alice')
+r.hset('user:1', 'age', 25)
+
+# 批量设置
+r.hmset('user:1', {'email': 'alice@example.com', 'city': 'Beijing'})
+
+# 获取字段
+name = r.hget('user:1', 'name')
+
+# 批量获取
+user = r.hmget('user:1', ['name', 'age', 'email'])
+
+# 获取所有字段
+user_data = r.hgetall('user:1')
+print(user_data)
+# {'name': 'Alice', 'age': '25', 'email': 'alice@example.com', 'city': 'Beijing'}
+
+# 获取所有字段名
+keys = r.hkeys('user:1')
+
+# 获取所有值
+values = r.hvals('user:1')
+
+# 判断字段是否存在
+exists = r.hexists('user:1', 'name')
+
+# 删除字段
+r.hdel('user:1', 'city')
+
+# 字段数量
+count = r.hlen('user:1')
+
+# 数值操作
+r.hincrby('user:1', 'age', 1)  # age加1
+```
+
+**应用场景**：
+- 对象缓存：用户对象、商品对象
+- 购物车：用户ID为key，商品ID为field
+
+### 3. List（列表）
+
+```python
+# 左侧插入
+r.lpush('queue', 'task1')
+r.lpush('queue', 'task2', 'task3')
+
+# 右侧插入
+r.rpush('queue', 'task4')
+
+# 左侧弹出
+task = r.lpop('queue')
+
+# 右侧弹出
+task = r.rpop('queue')
+
+# 阻塞弹出（队列为空时等待）
+task = r.blpop('queue', timeout=10)
+
+# 获取列表长度
+length = r.llen('queue')
+
+# 获取范围内的元素
+tasks = r.lrange('queue', 0, -1)  # 获取所有
+
+# 获取指定位置的元素
+task = r.lindex('queue', 0)
+
+# 设置指定位置的元素
+r.lset('queue', 0, 'new_task')
+
+# 删除元素
+r.lrem('queue', 1, 'task1')  # 删除1个task1
+
+# 修剪列表
+r.ltrim('queue', 0, 99)  # 只保留前100个
+```
+
+**应用场景**：
+- 消息队列：任务队列、通知队列
+- 最新列表：最新文章、最新评论
+- 时间线：微博时间线
+
+### 4. Set（集合）
+
+```python
+# 添加元素
+r.sadd('tags', 'python', 'redis', 'database')
+
+# 获取所有元素
+tags = r.smembers('tags')
+
+# 判断元素是否存在
+exists = r.sismember('tags', 'python')
+
+# 删除元素
+r.srem('tags', 'database')
+
+# 随机获取元素
+tag = r.srandmember('tags')
+
+# 随机弹出元素
+tag = r.spop('tags')
+
+# 集合大小
+count = r.scard('tags')
+
+# 集合运算
+r.sadd('set1', 'a', 'b', 'c')
+r.sadd('set2', 'b', 'c', 'd')
+
+# 交集
+inter = r.sinter('set1', 'set2')  # {'b', 'c'}
+
+# 并集
+union = r.sunion('set1', 'set2')  # {'a', 'b', 'c', 'd'}
+
+# 差集
+diff = r.sdiff('set1', 'set2')  # {'a'}
+
+# 将结果存储到新集合
+r.sinterstore('result', 'set1', 'set2')
+```
+
+**应用场景**：
+- 标签系统：文章标签、用户标签
+- 共同好友：社交关系
+- 去重：唯一访客统计
+- 抽奖系统：随机抽取
+
+### 5. Sorted Set（有序集合）
+
+```python
+# 添加元素（带分数）
+r.zadd('rank', {'alice': 100, 'bob': 90, 'charlie': 95})
+
+# 获取分数
+score = r.zscore('rank', 'alice')
+
+# 增加分数
+r.zincrby('rank', 10, 'bob')  # bob的分数加10
+
+# 获取排名（从0开始）
+rank = r.zrank('rank', 'alice')  # 升序排名
+rank = r.zrevrank('rank', 'alice')  # 降序排名
+
+# 获取范围内的元素
+# 按索引
+top3 = r.zrange('rank', 0, 2, withscores=True)  # 升序
+top3 = r.zrevrange('rank', 0, 2, withscores=True)  # 降序
+
+# 按分数
+users = r.zrangebyscore('rank', 90, 100, withscores=True)
+
+# 删除元素
+r.zrem('rank', 'charlie')
+
+# 删除范围内的元素
+r.zremrangebyrank('rank', 0, 2)  # 删除排名0-2的元素
+r.zremrangebyscore('rank', 0, 60)  # 删除分数0-60的元素
+
+# 集合大小
+count = r.zcard('rank')
+
+# 分数范围内的元素数量
+count = r.zcount('rank', 90, 100)
+```
+
+**应用场景**：
+- 排行榜：游戏排行、热门文章
+- 延时队列：定时任务
+- 范围查询：价格筛选
+
+## 第三部分：高级特性
+
+### 1. 发布订阅
+
+```python
+import redis
+import threading
+
+r = redis.Redis(host='localhost', port=6379)
+
+# 订阅者
+def subscriber():
+    pubsub = r.pubsub()
+    pubsub.subscribe('news')
+    
+    print("等待消息...")
+    for message in pubsub.listen():
+        if message['type'] == 'message':
+            print(f"收到消息: {message['data'].decode()}")
+
+# 发布者
+def publisher():
+    import time
+    time.sleep(1)
+    
+    for i in range(5):
+        r.publish('news', f'新闻{i}')
+        time.sleep(1)
+
+# 启动订阅者线程
+t = threading.Thread(target=subscriber, daemon=True)
+t.start()
+
+# 发布消息
+publisher()
+```
+
+### 2. 事务
+
+```python
+# 开始事务
+pipe = r.pipeline()
+
+# 添加命令
+pipe.set('key1', 'value1')
+pipe.set('key2', 'value2')
+pipe.incr('counter')
+
+# 执行事务
+results = pipe.execute()
+
+# 监视key（乐观锁）
+with r.pipeline() as pipe:
+    while True:
+        try:
+            # 监视key
+            pipe.watch('balance')
+            
+            # 获取当前值
+            balance = int(pipe.get('balance') or 0)
+            
+            # 检查条件
+            if balance < 100:
+                pipe.unwatch()
+                break
+            
+            # 开始事务
+            pipe.multi()
+            pipe.decrby('balance', 100)
+            
+            # 执行
+            pipe.execute()
+            break
+        except redis.WatchError:
+            # 如果key被修改，重试
+            continue
+```
+
+### 3. Lua脚本
+
+```python
+# 原子性操作：获取并删除
+lua_script = """
+local value = redis.call('GET', KEYS[1])
+if value then
+    redis.call('DEL', KEYS[1])
+    return value
+else
+    return nil
+end
+"""
+
+# 注册脚本
+get_and_delete = r.register_script(lua_script)
+
+# 执行脚本
+result = get_and_delete(keys=['mykey'])
+
+# 限流脚本
+rate_limit_script = """
+local key = KEYS[1]
+local limit = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+
+local current = redis.call('INCR', key)
+if current == 1 then
+    redis.call('EXPIRE', key, window)
+end
+
+if current > limit then
+    return 0
+else
+    return 1
+end
+"""
+
+rate_limiter = r.register_script(rate_limit_script)
+
+# 限制每秒10次请求
+allowed = rate_limiter(keys=['rate:user:123'], args=[10, 1])
+if allowed:
+    print("请求通过")
+else:
+    print("请求被限流")
+```
+
+## 第四部分：实战应用
+
+### 1. 缓存系统
+
+```python
+import redis
+import json
+import time
+from functools import wraps
+
+class RedisCache:
+    """Redis缓存装饰器"""
+    
+    def __init__(self, host='localhost', port=6379):
+        self.redis = redis.Redis(host=host, port=port, decode_responses=True)
+    
+    def cache(self, expire=3600, key_prefix=''):
+        """缓存装饰器"""
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                # 生成缓存key
+                cache_key = f"{key_prefix}:{func.__name__}:{args}:{kwargs}"
+                
+                # 尝试从缓存获取
+                cached = self.redis.get(cache_key)
+                if cached:
+                    print(f"缓存命中: {cache_key}")
+                    return json.loads(cached)
+                
+                # 缓存未命中，执行函数
+                print(f"缓存未命中: {cache_key}")
+                result = func(*args, **kwargs)
+                
+                # 写入缓存
+                self.redis.setex(cache_key, expire, json.dumps(result))
+                
+                return result
+            return wrapper
+        return decorator
+
+# 使用
+cache = RedisCache()
+
+@cache.cache(expire=60, key_prefix='user')
+def get_user_info(user_id):
+    """模拟数据库查询"""
+    time.sleep(1)  # 模拟慢查询
+    return {
+        'id': user_id,
+        'name': f'User{user_id}',
+        'email': f'user{user_id}@example.com'
+    }
+
+# 第一次调用：查询数据库
+user = get_user_info(123)  # 耗时1秒
+
+# 第二次调用：从缓存获取
+user = get_user_info(123)  # 耗时<1ms
+```
+
+### 2. 分布式锁
+
+```python
+import redis
+import time
+import uuid
+
+class RedisLock:
+    """Redis分布式锁"""
+    
+    def __init__(self, redis_client, lock_name, timeout=10):
+        self.redis = redis_client
+        self.lock_name = f"lock:{lock_name}"
+        self.timeout = timeout
+        self.identifier = str(uuid.uuid4())
+    
+    def acquire(self):
+        """获取锁"""
+        end_time = time.time() + self.timeout
+        
+        while time.time() < end_time:
+            # 尝试获取锁
+            if self.redis.set(self.lock_name, self.identifier, nx=True, ex=self.timeout):
+                return True
+            
+            # 等待一小段时间
+            time.sleep(0.001)
+        
+        return False
+    
+    def release(self):
+        """释放锁"""
+        # 使用Lua脚本保证原子性
+        lua_script = """
+        if redis.call('GET', KEYS[1]) == ARGV[1] then
+            return redis.call('DEL', KEYS[1])
+        else
+            return 0
+        end
+        """
+        
+        script = self.redis.register_script(lua_script)
+        return script(keys=[self.lock_name], args=[self.identifier])
+    
+    def __enter__(self):
+        if not self.acquire():
+            raise Exception("无法获取锁")
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
+# 使用
+r = redis.Redis(host='localhost', port=6379)
+
+# 方式1：手动管理
+lock = RedisLock(r, 'order:123')
+if lock.acquire():
+    try:
+        # 执行业务逻辑
+        print("处理订单...")
+        time.sleep(2)
+    finally:
+        lock.release()
+
+# 方式2：上下文管理器
+with RedisLock(r, 'order:456'):
+    print("处理订单...")
+    time.sleep(2)
+```
+
+### 3. 排行榜系统
+
+```python
+import redis
+import time
+
+class Leaderboard:
+    """排行榜系统"""
+    
+    def __init__(self, redis_client, name):
+        self.redis = redis_client
+        self.key = f"leaderboard:{name}"
+    
+    def add_score(self, user_id, score):
+        """添加分数"""
+        self.redis.zincrby(self.key, score, user_id)
+    
+    def get_rank(self, user_id):
+        """获取排名（从1开始）"""
+        rank = self.redis.zrevrank(self.key, user_id)
+        return rank + 1 if rank is not None else None
+    
+    def get_score(self, user_id):
+        """获取分数"""
+        return self.redis.zscore(self.key, user_id)
+    
+    def get_top(self, n=10):
+        """获取TOP N"""
+        return self.redis.zrevrange(self.key, 0, n-1, withscores=True)
+    
+    def get_around(self, user_id, n=5):
+        """获取用户周围的排名"""
+        rank = self.redis.zrevrank(self.key, user_id)
+        if rank is None:
+            return []
+        
+        start = max(0, rank - n)
+        end = rank + n
+        
+        return self.redis.zrevrange(self.key, start, end, withscores=True)
+    
+    def get_range(self, start_rank, end_rank):
+        """获取排名范围"""
+        return self.redis.zrevrange(self.key, start_rank-1, end_rank-1, withscores=True)
+
+# 使用
+r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+leaderboard = Leaderboard(r, 'game:2024')
+
+# 添加分数
+leaderboard.add_score('user1', 100)
+leaderboard.add_score('user2', 200)
+leaderboard.add_score('user3', 150)
+
+# 获取TOP 10
+top10 = leaderboard.get_top(10)
+print("TOP 10:")
+for i, (user, score) in enumerate(top10, 1):
+    print(f"{i}. {user}: {score}")
+
+# 获取用户排名
+rank = leaderboard.get_rank('user1')
+print(f"user1排名: {rank}")
+
+# 获取用户周围的排名
+around = leaderboard.get_around('user1', 2)
+print("周围排名:", around)
+```
+
+### 4. 限流器
+
+```python
+import redis
+import time
+
+class RateLimiter:
+    """限流器"""
+    
+    def __init__(self, redis_client):
+        self.redis = redis_client
+    
+    def is_allowed(self, key, limit, window):
+        """
+        固定窗口限流
+        key: 限流key
+        limit: 限制次数
+        window: 时间窗口（秒）
+        """
+        current = self.redis.incr(key)
+        
+        if current == 1:
+            self.redis.expire(key, window)
+        
+        return current <= limit
+    
+    def is_allowed_sliding(self, key, limit, window):
+        """
+        滑动窗口限流
+        """
+        now = time.time()
+        window_start = now - window
+        
+        # 删除窗口外的记录
+        self.redis.zremrangebyscore(key, 0, window_start)
+        
+        # 获取当前窗口内的请求数
+        count = self.redis.zcard(key)
+        
+        if count < limit:
+            # 添加当前请求
+            self.redis.zadd(key, {str(now): now})
+            self.redis.expire(key, window)
+            return True
+        
+        return False
+
+# 使用
+r = redis.Redis(host='localhost', port=6379)
+limiter = RateLimiter(r)
+
+# 固定窗口：每秒最多10次请求
+for i in range(15):
+    if limiter.is_allowed('api:user:123', 10, 1):
+        print(f"请求{i+1}: 通过")
+    else:
+        print(f"请求{i+1}: 被限流")
+    time.sleep(0.05)
+
+# 滑动窗口：每10秒最多100次请求
+for i in range(105):
+    if limiter.is_allowed_sliding('api:user:456', 100, 10):
+        print(f"请求{i+1}: 通过")
+    else:
+        print(f"请求{i+1}: 被限流")
+```
+
+## 总结
+
+Redis是高性能的内存数据库：
+
+1. **五大数据结构**：String、Hash、List、Set、Sorted Set
+2. **丰富功能**：缓存、分布式锁、排行榜、限流
+3. **高性能**：内存存储、单线程模型
+4. **持久化**：RDB、AOF
+
+记住：**Redis是缓存和高性能场景的首选**！
+
+## 练习题
+
+1. 实现一个购物车系统
+2. 实现延时队列
+3. 实现布隆过滤器
+4. 搭建Redis集群
+
+上一章：[MongoDB文档数据库](./mongodb.mdx)
+

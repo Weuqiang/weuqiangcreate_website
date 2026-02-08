@@ -1,6 +1,7 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
-export default function Highlight({children, color = "var(--highlight-color)"}) {
+function Highlight({children, color = "var(--highlight-color)"}) {
   // 颜色预设映射
   const colorPresets = {
     'r': '#ea6c70',
@@ -27,3 +28,9 @@ export default function Highlight({children, color = "var(--highlight-color)"}) 
   );
 }
 
+Highlight.propTypes = {
+  children: PropTypes.node.isRequired,
+  color: PropTypes.string,
+};
+
+export default Highlight;

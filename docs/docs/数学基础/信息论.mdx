@@ -1,0 +1,463 @@
+---
+sidebar_position: 4
+title: 信息论 - 衡量信息的数学
+---
+
+# 信息论 - AI的损失函数从哪来
+
+信息论告诉我们**如何衡量信息量**。这一章教你理解为什么分类用交叉熵，为什么Transformer用注意力机制。
+
+## 第一部分：熵 - 信息量
+
+### 什么是熵？
+
+**熵是不确定性的度量**。越不确定，熵越大。
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+def entropy(p):
+    """计算熵：H(X) = -Σ p(x) * log(p(x))"""
+    p = np.array(p)
+    p = p[p > 0]  # 去除0概率
+    return -np.sum(p * np.log2(p))
+
+# 例子1：抛硬币
+p_fair = [0.5, 0.5]  # 公平硬币
+p_biased = [0.9, 0.1]  # 偏向硬币
+p_certain = [1.0, 0.0]  # 确定结果
+
+print("公平硬币熵:", entropy(p_fair))  # 1.0 bit
+print("偏向硬币熵:", entropy(p_biased))  # 0.47 bit
+print("确定结果熵:", entropy(p_certain))  # 0.0 bit
+
+# 可视化：熵与概率的关系
+p_values = np.linspace(0.01, 0.99, 100)
+h_values = [-p * np.log2(p) - (1-p) * np.log2(1-p) for p in p_values]
+
+plt.figure(figsize=(10, 6))
+plt.plot(p_values, h_values, linewidth=2)
+plt.xlabel('概率 p')
+plt.ylabel('熵 H(p)')
+plt.title('二元熵函数')
+plt.grid(True)
+plt.axvline(x=0.5, color='r', linestyle='--', label='最大熵点')
+plt.legend()
+plt.show()
+```
+
+**熵的意义**：
+- 熵 = 0：完全确定，没有信息
+- 熵 = 1：最不确定，信息量最大
+- 熵越大，越难预测
+
+### AI中的应用：决策树
+
+```python
+class DecisionTree:
+    """基于信息增益的决策树"""
+    
+    def __init__(self, max_depth=3):
+        self.max_depth = max_depth
+    
+    def entropy(self, y):
+        """计算熵"""
+        _, counts = np.unique(y, return_counts=True)
+        probs = counts / len(y)
+        return -np.sum(probs * np.log2(probs + 1e-10))
+    
+    def information_gain(self, X, y, feature_idx, threshold):
+        """计算信息增益"""
+        # 父节点熵
+        parent_entropy = self.entropy(y)
+        
+        # 分裂
+        left_mask = X[:, feature_idx] <= threshold
+        right_mask = ~left_mask
+        
+        if np.sum(left_mask) == 0 or np.sum(right_mask) == 0:
+            return 0
+        
+        # 子节点熵
+        n = len(y)
+        left_entropy = self.entropy(y[left_mask])
+        right_entropy = self.entropy(y[right_mask])
+        
+        # 加权平均
+        child_entropy = (np.sum(left_mask) / n * left_entropy +
+                        np.sum(right_mask) / n * right_entropy)
+        
+        # 信息增益
+        return parent_entropy - child_entropy
+    
+    def find_best_split(self, X, y):
+        """找最佳分裂点"""
+        best_gain = 0
+        best_feature = None
+        best_threshold = None
+        
+        for feature_idx in range(X.shape[1]):
+            thresholds = np.unique(X[:, feature_idx])
+            
+            for threshold in thresholds:
+                gain = self.information_gain(X, y, feature_idx, threshold)
+                
+                if gain > best_gain:
+                    best_gain = gain
+                    best_feature = feature_idx
+                    best_threshold = threshold
+        
+        return best_feature, best_threshold, best_gain
+
+# 测试
+from sklearn.datasets import load_iris
+iris = load_iris()
+X, y = iris.data, iris.target
+
+tree = DecisionTree()
+feature, threshold, gain = tree.find_best_split(X, y)
+
+print(f"最佳分裂特征: {iris.feature_names[feature]}")
+print(f"最佳阈值: {threshold:.2f}")
+print(f"信息增益: {gain:.4f}")
+```
+
+## 第二部分：交叉熵 - 分类损失函数
+
+### 什么是交叉熵？
+
+**交叉熵衡量两个概率分布的差异**。
+
+```python
+def cross_entropy(y_true, y_pred):
+    """交叉熵：H(p, q) = -Σ p(x) * log(q(x))"""
+    y_pred = np.clip(y_pred, 1e-10, 1 - 1e-10)  # 避免log(0)
+    return -np.sum(y_true * np.log(y_pred))
+
+# 例子：分类问题
+y_true = np.array([0, 0, 1])  # 真实标签：类别2
+y_pred1 = np.array([0.1, 0.2, 0.7])  # 预测1：接近真实
+y_pred2 = np.array([0.4, 0.4, 0.2])  # 预测2：远离真实
+
+print("预测1的交叉熵:", cross_entropy(y_true, y_pred1))  # 0.36
+print("预测2的交叉熵:", cross_entropy(y_true, y_pred2))  # 1.61
+
+# 可视化
+pred_probs = np.linspace(0.01, 0.99, 100)
+ce_values = [-np.log(p) for p in pred_probs]
+
+plt.figure(figsize=(10, 6))
+plt.plot(pred_probs, ce_values, linewidth=2)
+plt.xlabel('预测概率')
+plt.ylabel('交叉熵损失')
+plt.title('交叉熵损失函数')
+plt.grid(True)
+plt.show()
+```
+
+### 为什么分类用交叉熵？
+
+```python
+# 对比不同损失函数
+def mse_loss(y_true, y_pred):
+    """均方误差"""
+    return np.mean((y_true - y_pred) ** 2)
+
+def cross_entropy_loss(y_true, y_pred):
+    """交叉熵"""
+    y_pred = np.clip(y_pred, 1e-10, 1 - 1e-10)
+    return -np.mean(y_true * np.log(y_pred))
+
+# 真实标签
+y_true = np.array([1, 0])  # 类别0
+
+# 不同预测
+predictions = np.linspace(0.01, 0.99, 100)
+mse_losses = [mse_loss(y_true, np.array([p, 1-p])) for p in predictions]
+ce_losses = [cross_entropy_loss(y_true, np.array([p, 1-p])) for p in predictions]
+
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.plot(predictions, mse_losses, label='MSE', linewidth=2)
+plt.xlabel('预测概率')
+plt.ylabel('损失')
+plt.title('均方误差')
+plt.grid(True)
+plt.legend()
+
+plt.subplot(1, 2, 2)
+plt.plot(predictions, ce_losses, label='Cross Entropy', linewidth=2, color='orange')
+plt.xlabel('预测概率')
+plt.ylabel('损失')
+plt.title('交叉熵')
+plt.grid(True)
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+print("交叉熵的优势：")
+print("1. 梯度更大，训练更快")
+print("2. 概率解释更自然")
+print("3. 惩罚错误预测更严厉")
+```
+
+### 实战：实现Softmax + 交叉熵
+
+```python
+class SoftmaxCrossEntropy:
+    """Softmax + 交叉熵"""
+    
+    @staticmethod
+    def softmax(x):
+        """Softmax函数"""
+        exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+        return exp_x / np.sum(exp_x, axis=1, keepdims=True)
+    
+    @staticmethod
+    def forward(logits, labels):
+        """前向传播"""
+        probs = SoftmaxCrossEntropy.softmax(logits)
+        
+        # 交叉熵
+        m = labels.shape[0]
+        log_probs = -np.log(probs[range(m), labels])
+        loss = np.sum(log_probs) / m
+        
+        return loss, probs
+    
+    @staticmethod
+    def backward(probs, labels):
+        """反向传播"""
+        m = labels.shape[0]
+        grad = probs.copy()
+        grad[range(m), labels] -= 1
+        grad /= m
+        return grad
+
+# 测试
+logits = np.array([
+    [2.0, 1.0, 0.1],
+    [0.5, 2.5, 0.3],
+    [1.0, 0.5, 2.0]
+])
+labels = np.array([0, 1, 2])
+
+loss, probs = SoftmaxCrossEntropy.forward(logits, labels)
+grad = SoftmaxCrossEntropy.backward(probs, labels)
+
+print("预测概率:")
+print(probs)
+print(f"\n损失: {loss:.4f}")
+print("\n梯度:")
+print(grad)
+```
+
+## 第三部分：KL散度 - 分布差异
+
+### 什么是KL散度？
+
+**KL散度衡量两个概率分布的差异**。
+
+```python
+def kl_divergence(p, q):
+    """KL散度：D_KL(P||Q) = Σ p(x) * log(p(x) / q(x))"""
+    p = np.array(p)
+    q = np.array(q)
+    q = np.clip(q, 1e-10, 1)
+    return np.sum(p * np.log(p / q))
+
+# 例子
+p = np.array([0.5, 0.3, 0.2])  # 真实分布
+q1 = np.array([0.5, 0.3, 0.2])  # 完全相同
+q2 = np.array([0.4, 0.4, 0.2])  # 略有不同
+q3 = np.array([0.2, 0.3, 0.5])  # 很不同
+
+print("KL(P||Q1):", kl_divergence(p, q1))  # 0.0
+print("KL(P||Q2):", kl_divergence(p, q2))  # 0.02
+print("KL(P||Q3):", kl_divergence(p, q3))  # 0.33
+
+# KL散度的性质
+print("\nKL散度的性质：")
+print("1. 非负：D_KL(P||Q) >= 0")
+print("2. 不对称：D_KL(P||Q) != D_KL(Q||P)")
+print("3. P=Q时为0")
+
+# 验证不对称性
+print(f"\nD_KL(P||Q3) = {kl_divergence(p, q3):.4f}")
+print(f"D_KL(Q3||P) = {kl_divergence(q3, p):.4f}")
+```
+
+### AI中的应用：VAE损失函数
+
+```python
+class VAE:
+    """变分自编码器（简化版）"""
+    
+    @staticmethod
+    def kl_loss(mu, log_var):
+        """KL散度损失：D_KL(N(μ,σ²) || N(0,1))"""
+        # KL散度的解析解
+        kl = -0.5 * np.sum(1 + log_var - mu**2 - np.exp(log_var))
+        return kl
+    
+    @staticmethod
+    def reconstruction_loss(x, x_recon):
+        """重构损失"""
+        return np.sum((x - x_recon) ** 2)
+    
+    @staticmethod
+    def total_loss(x, x_recon, mu, log_var, beta=1.0):
+        """总损失 = 重构损失 + β * KL散度"""
+        recon_loss = VAE.reconstruction_loss(x, x_recon)
+        kl_loss = VAE.kl_loss(mu, log_var)
+        return recon_loss + beta * kl_loss
+
+# 测试
+x = np.random.randn(10)
+x_recon = x + np.random.randn(10) * 0.1
+mu = np.random.randn(5)
+log_var = np.random.randn(5)
+
+recon = VAE.reconstruction_loss(x, x_recon)
+kl = VAE.kl_loss(mu, log_var)
+total = VAE.total_loss(x, x_recon, mu, log_var)
+
+print(f"重构损失: {recon:.4f}")
+print(f"KL散度: {kl:.4f}")
+print(f"总损失: {total:.4f}")
+```
+
+## 第四部分：互信息 - 注意力机制
+
+### 什么是互信息？
+
+**互信息衡量两个变量的相关性**。
+
+```python
+def mutual_information(x, y, bins=10):
+    """互信息：I(X;Y) = H(X) + H(Y) - H(X,Y)"""
+    # 计算联合分布
+    hist_xy, _, _ = np.histogram2d(x, y, bins=bins)
+    hist_xy = hist_xy / np.sum(hist_xy)
+    
+    # 计算边缘分布
+    hist_x = np.sum(hist_xy, axis=1)
+    hist_y = np.sum(hist_xy, axis=0)
+    
+    # 计算熵
+    def entropy_from_hist(hist):
+        hist = hist[hist > 0]
+        return -np.sum(hist * np.log2(hist))
+    
+    h_x = entropy_from_hist(hist_x)
+    h_y = entropy_from_hist(hist_y)
+    h_xy = entropy_from_hist(hist_xy.flatten())
+    
+    # 互信息
+    mi = h_x + h_y - h_xy
+    return mi
+
+# 测试
+n = 1000
+
+# 完全独立
+x1 = np.random.randn(n)
+y1 = np.random.randn(n)
+
+# 强相关
+x2 = np.random.randn(n)
+y2 = x2 + np.random.randn(n) * 0.1
+
+# 完全相关
+x3 = np.random.randn(n)
+y3 = x3
+
+print("独立变量的互信息:", mutual_information(x1, y1))
+print("强相关变量的互信息:", mutual_information(x2, y2))
+print("完全相关变量的互信息:", mutual_information(x3, y3))
+```
+
+### 注意力机制的信息论解释
+
+```python
+class Attention:
+    """注意力机制"""
+    
+    @staticmethod
+    def scaled_dot_product_attention(Q, K, V):
+        """缩放点积注意力"""
+        # Q: (batch, seq_len, d_k)
+        # K: (batch, seq_len, d_k)
+        # V: (batch, seq_len, d_v)
+        
+        d_k = Q.shape[-1]
+        
+        # 计算注意力分数
+        scores = np.matmul(Q, K.transpose(0, 2, 1)) / np.sqrt(d_k)
+        
+        # Softmax
+        attention_weights = np.exp(scores - np.max(scores, axis=-1, keepdims=True))
+        attention_weights = attention_weights / np.sum(attention_weights, axis=-1, keepdims=True)
+        
+        # 加权求和
+        output = np.matmul(attention_weights, V)
+        
+        return output, attention_weights
+    
+    @staticmethod
+    def visualize_attention(attention_weights, tokens):
+        """可视化注意力权重"""
+        plt.figure(figsize=(10, 8))
+        plt.imshow(attention_weights, cmap='hot', interpolation='nearest')
+        plt.colorbar()
+        plt.xticks(range(len(tokens)), tokens, rotation=45)
+        plt.yticks(range(len(tokens)), tokens)
+        plt.title('注意力权重矩阵')
+        plt.tight_layout()
+        plt.show()
+
+# 测试
+seq_len = 5
+d_k = 64
+d_v = 64
+
+Q = np.random.randn(1, seq_len, d_k)
+K = np.random.randn(1, seq_len, d_k)
+V = np.random.randn(1, seq_len, d_v)
+
+output, attention_weights = Attention.scaled_dot_product_attention(Q, K, V)
+
+print("输出形状:", output.shape)
+print("注意力权重形状:", attention_weights.shape)
+print("\n注意力权重（每行和为1）:")
+print(attention_weights[0])
+print("\n每行和:", np.sum(attention_weights[0], axis=1))
+
+# 可视化
+tokens = ['我', '爱', '学习', 'AI', '！']
+Attention.visualize_attention(attention_weights[0], tokens)
+```
+
+## 总结
+
+信息论是AI的理论基础：
+
+1. **熵**：衡量不确定性，用于决策树
+2. **交叉熵**：分类损失函数的理论基础
+3. **KL散度**：衡量分布差异，用于VAE
+4. **互信息**：衡量相关性，解释注意力机制
+
+记住：**信息论让AI的损失函数有了数学依据**！
+
+## 练习题
+
+1. 实现一个基于信息增益的决策树
+2. 比较MSE和交叉熵在分类任务上的表现
+3. 实现VAE并可视化潜在空间
+4. 实现多头注意力机制
+
+上一章：[微积分与优化](./微积分与优化.mdx)
+

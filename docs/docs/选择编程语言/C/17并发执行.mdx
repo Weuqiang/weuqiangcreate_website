@@ -1,4 +1,752 @@
 ---
 sidebar_position: 17
-title: （编写中）🐏并发执行
+title: 并发执行
 ---
+
+# 并发执行
+
+## 概述
+
+并发（Concurrency）是指程序在同一时间段内处理多个任务的能力。在C语言中，主要通过多线程（Multi-threading）来实现并发执行。
+
+C语言标准库从C11开始引入了线程支持（`threads.h`），但在此之前，开发者通常使用POSIX线程库（pthread）或Windows线程API。
+
+## POSIX线程（pthread）
+
+POSIX线程（通常称为pthread）是Unix/Linux系统上最常用的多线程编程接口。
+
+### 基本概念
+
+- **线程（Thread）**：程序执行的最小单位，一个进程可以包含多个线程
+- **主线程（Main Thread）**：程序启动时自动创建的线程
+- **子线程（Child Thread）**：由主线程或其他线程创建的线程
+
+### 创建和等待线程
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+// 线程函数
+void* thread_function(void* arg) {
+    int thread_id = *(int*)arg;
+    printf("线程 %d 开始执行\n", thread_id);
+    
+    // 模拟工作
+    sleep(2);
+    
+    printf("线程 %d 执行完毕\n", thread_id);
+    return NULL;
+}
+
+int main() {
+    pthread_t thread1, thread2;
+    int id1 = 1, id2 = 2;
+    
+    // 创建线程
+    pthread_create(&thread1, NULL, thread_function, &id1);
+    pthread_create(&thread2, NULL, thread_function, &id2);
+    
+    printf("主线程等待子线程完成...\n");
+    
+    // 等待线程结束
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+    
+    printf("所有线程执行完毕\n");
+    return 0;
+}
+```
+
+编译命令：`gcc program.c -pthread -o program`
+
+### 线程函数返回值
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+#include <stdlib.h>
+
+void* calculate_sum(void* arg) {
+    int n = *(int*)arg;
+    int* result = malloc(sizeof(int));
+    
+    *result = 0;
+    for (int i = 1; i <= n; i++) {
+        *result += i;
+    }
+    
+    return result;
+}
+
+int main() {
+    pthread_t thread;
+    int n = 100;
+    int* result;
+    
+    pthread_create(&thread, NULL, calculate_sum, &n);
+    
+    // 获取线程返回值
+    pthread_join(thread, (void**)&result);
+    
+    printf("1到%d的和为: %d\n", n, *result);
+    
+    free(result);
+    return 0;
+}
+```
+
+## 互斥锁（Mutex）
+
+互斥锁用于保护共享资源，防止多个线程同时访问造成数据竞争。
+
+### 基本使用
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+
+int counter = 0;
+pthread_mutex_t mutex;
+
+void* increment(void* arg) {
+    for (int i = 0; i < 100000; i++) {
+        pthread_mutex_lock(&mutex);    // 加锁
+        counter++;
+        pthread_mutex_unlock(&mutex);  // 解锁
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[5];
+    
+    // 初始化互斥锁
+    pthread_mutex_init(&mutex, NULL);
+    
+    // 创建5个线程
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&threads[i], NULL, increment, NULL);
+    }
+    
+    // 等待所有线程完成
+    for (int i = 0; i < 5; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    printf("最终计数: %d\n", counter);
+    
+    // 销毁互斥锁
+    pthread_mutex_destroy(&mutex);
+    
+    return 0;
+}
+```
+
+### 死锁问题
+
+死锁是指两个或多个线程互相等待对方释放资源，导致程序无法继续执行。
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+pthread_mutex_t mutex1, mutex2;
+
+void* thread1_func(void* arg) {
+    pthread_mutex_lock(&mutex1);
+    printf("线程1获得mutex1\n");
+    sleep(1);
+    
+    printf("线程1等待mutex2...\n");
+    pthread_mutex_lock(&mutex2);  // 可能死锁
+    
+    printf("线程1获得mutex2\n");
+    
+    pthread_mutex_unlock(&mutex2);
+    pthread_mutex_unlock(&mutex1);
+    return NULL;
+}
+
+void* thread2_func(void* arg) {
+    pthread_mutex_lock(&mutex2);
+    printf("线程2获得mutex2\n");
+    sleep(1);
+    
+    printf("线程2等待mutex1...\n");
+    pthread_mutex_lock(&mutex1);  // 可能死锁
+    
+    printf("线程2获得mutex1\n");
+    
+    pthread_mutex_unlock(&mutex1);
+    pthread_mutex_unlock(&mutex2);
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+    
+    pthread_mutex_init(&mutex1, NULL);
+    pthread_mutex_init(&mutex2, NULL);
+    
+    pthread_create(&t1, NULL, thread1_func, NULL);
+    pthread_create(&t2, NULL, thread2_func, NULL);
+    
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    
+    pthread_mutex_destroy(&mutex1);
+    pthread_mutex_destroy(&mutex2);
+    
+    return 0;
+}
+```
+
+**避免死锁的方法：**
+1. 按固定顺序获取锁
+2. 使用`pthread_mutex_trylock()`尝试加锁
+3. 设置超时时间
+4. 避免嵌套锁
+
+## 条件变量（Condition Variable）
+
+条件变量用于线程间的同步，允许线程等待某个条件成立。
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+int ready = 0;
+
+void* producer(void* arg) {
+    sleep(2);  // 模拟准备数据
+    
+    pthread_mutex_lock(&mutex);
+    ready = 1;
+    printf("生产者：数据已准备好\n");
+    pthread_cond_signal(&cond);  // 通知等待的线程
+    pthread_mutex_unlock(&mutex);
+    
+    return NULL;
+}
+
+void* consumer(void* arg) {
+    pthread_mutex_lock(&mutex);
+    
+    while (!ready) {
+        printf("消费者：等待数据...\n");
+        pthread_cond_wait(&cond, &mutex);  // 等待条件变量
+    }
+    
+    printf("消费者：收到数据，开始处理\n");
+    pthread_mutex_unlock(&mutex);
+    
+    return NULL;
+}
+
+int main() {
+    pthread_t prod, cons;
+    
+    pthread_create(&cons, NULL, consumer, NULL);
+    pthread_create(&prod, NULL, producer, NULL);
+    
+    pthread_join(prod, NULL);
+    pthread_join(cons, NULL);
+    
+    return 0;
+}
+```
+
+## 读写锁（Read-Write Lock）
+
+读写锁允许多个线程同时读取，但写入时需要独占访问。
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+pthread_rwlock_t rwlock;
+int shared_data = 0;
+
+void* reader(void* arg) {
+    int id = *(int*)arg;
+    
+    pthread_rwlock_rdlock(&rwlock);  // 读锁
+    printf("读者%d: 读取数据 = %d\n", id, shared_data);
+    sleep(1);
+    pthread_rwlock_unlock(&rwlock);
+    
+    return NULL;
+}
+
+void* writer(void* arg) {
+    int id = *(int*)arg;
+    
+    pthread_rwlock_wrlock(&rwlock);  // 写锁
+    shared_data++;
+    printf("写者%d: 写入数据 = %d\n", id, shared_data);
+    sleep(1);
+    pthread_rwlock_unlock(&rwlock);
+    
+    return NULL;
+}
+
+int main() {
+    pthread_t readers[3], writers[2];
+    int ids[5] = {1, 2, 3, 4, 5};
+    
+    pthread_rwlock_init(&rwlock, NULL);
+    
+    // 创建读者和写者线程
+    for (int i = 0; i < 3; i++) {
+        pthread_create(&readers[i], NULL, reader, &ids[i]);
+    }
+    for (int i = 0; i < 2; i++) {
+        pthread_create(&writers[i], NULL, writer, &ids[i+3]);
+    }
+    
+    // 等待所有线程
+    for (int i = 0; i < 3; i++) {
+        pthread_join(readers[i], NULL);
+    }
+    for (int i = 0; i < 2; i++) {
+        pthread_join(writers[i], NULL);
+    }
+    
+    pthread_rwlock_destroy(&rwlock);
+    
+    return 0;
+}
+```
+
+## 信号量（Semaphore）
+
+信号量用于控制对共享资源的访问数量。
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+sem_t semaphore;
+
+void* worker(void* arg) {
+    int id = *(int*)arg;
+    
+    printf("线程%d: 等待资源...\n", id);
+    sem_wait(&semaphore);  // P操作，信号量-1
+    
+    printf("线程%d: 获得资源，开始工作\n", id);
+    sleep(2);  // 模拟工作
+    printf("线程%d: 释放资源\n", id);
+    
+    sem_post(&semaphore);  // V操作，信号量+1
+    
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[5];
+    int ids[5] = {1, 2, 3, 4, 5};
+    
+    // 初始化信号量，初始值为2（最多2个线程同时访问）
+    sem_init(&semaphore, 0, 2);
+    
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&threads[i], NULL, worker, &ids[i]);
+    }
+    
+    for (int i = 0; i < 5; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    sem_destroy(&semaphore);
+    
+    return 0;
+}
+```
+
+## 线程局部存储（Thread Local Storage）
+
+线程局部存储允许每个线程拥有自己的变量副本。
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+
+// 使用__thread关键字声明线程局部变量
+__thread int thread_local_var = 0;
+
+void* thread_func(void* arg) {
+    int id = *(int*)arg;
+    
+    thread_local_var = id * 100;
+    printf("线程%d: thread_local_var = %d\n", id, thread_local_var);
+    
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[3];
+    int ids[3] = {1, 2, 3};
+    
+    for (int i = 0; i < 3; i++) {
+        pthread_create(&threads[i], NULL, thread_func, &ids[i]);
+    }
+    
+    for (int i = 0; i < 3; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    return 0;
+}
+```
+
+## 线程池
+
+线程池是一种常见的并发编程模式，预先创建一定数量的线程，重复使用这些线程执行任务。
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define THREAD_POOL_SIZE 4
+#define TASK_QUEUE_SIZE 100
+
+typedef struct {
+    void (*function)(void*);
+    void* argument;
+} task_t;
+
+typedef struct {
+    pthread_t threads[THREAD_POOL_SIZE];
+    task_t task_queue[TASK_QUEUE_SIZE];
+    int queue_front;
+    int queue_rear;
+    int task_count;
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    int shutdown;
+} thread_pool_t;
+
+thread_pool_t pool;
+
+void* worker_thread(void* arg) {
+    while (1) {
+        pthread_mutex_lock(&pool.mutex);
+        
+        while (pool.task_count == 0 && !pool.shutdown) {
+            pthread_cond_wait(&pool.cond, &pool.mutex);
+        }
+        
+        if (pool.shutdown) {
+            pthread_mutex_unlock(&pool.mutex);
+            pthread_exit(NULL);
+        }
+        
+        task_t task = pool.task_queue[pool.queue_front];
+        pool.queue_front = (pool.queue_front + 1) % TASK_QUEUE_SIZE;
+        pool.task_count--;
+        
+        pthread_mutex_unlock(&pool.mutex);
+        
+        // 执行任务
+        task.function(task.argument);
+    }
+    
+    return NULL;
+}
+
+void thread_pool_init() {
+    pool.queue_front = 0;
+    pool.queue_rear = 0;
+    pool.task_count = 0;
+    pool.shutdown = 0;
+    
+    pthread_mutex_init(&pool.mutex, NULL);
+    pthread_cond_init(&pool.cond, NULL);
+    
+    for (int i = 0; i < THREAD_POOL_SIZE; i++) {
+        pthread_create(&pool.threads[i], NULL, worker_thread, NULL);
+    }
+}
+
+void thread_pool_add_task(void (*function)(void*), void* argument) {
+    pthread_mutex_lock(&pool.mutex);
+    
+    pool.task_queue[pool.queue_rear].function = function;
+    pool.task_queue[pool.queue_rear].argument = argument;
+    pool.queue_rear = (pool.queue_rear + 1) % TASK_QUEUE_SIZE;
+    pool.task_count++;
+    
+    pthread_cond_signal(&pool.cond);
+    pthread_mutex_unlock(&pool.mutex);
+}
+
+void thread_pool_destroy() {
+    pthread_mutex_lock(&pool.mutex);
+    pool.shutdown = 1;
+    pthread_cond_broadcast(&pool.cond);
+    pthread_mutex_unlock(&pool.mutex);
+    
+    for (int i = 0; i < THREAD_POOL_SIZE; i++) {
+        pthread_join(pool.threads[i], NULL);
+    }
+    
+    pthread_mutex_destroy(&pool.mutex);
+    pthread_cond_destroy(&pool.cond);
+}
+
+// 示例任务函数
+void example_task(void* arg) {
+    int task_id = *(int*)arg;
+    printf("执行任务 %d\n", task_id);
+    sleep(1);
+    printf("任务 %d 完成\n", task_id);
+}
+
+int main() {
+    thread_pool_init();
+    
+    int task_ids[10];
+    for (int i = 0; i < 10; i++) {
+        task_ids[i] = i + 1;
+        thread_pool_add_task(example_task, &task_ids[i]);
+    }
+    
+    sleep(5);  // 等待任务完成
+    
+    thread_pool_destroy();
+    
+    return 0;
+}
+```
+
+## 原子操作
+
+原子操作是不可分割的操作，可以避免使用锁的开销。
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+#include <stdatomic.h>
+
+atomic_int counter = 0;
+
+void* increment(void* arg) {
+    for (int i = 0; i < 100000; i++) {
+        atomic_fetch_add(&counter, 1);  // 原子加法
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[5];
+    
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&threads[i], NULL, increment, NULL);
+    }
+    
+    for (int i = 0; i < 5; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    printf("最终计数: %d\n", counter);
+    
+    return 0;
+}
+```
+
+## 注意事项
+
+### 线程安全
+
+- **数据竞争**：多个线程同时访问共享数据，至少有一个是写操作
+- **临界区**：访问共享资源的代码段，需要使用同步机制保护
+- **线程安全函数**：可以被多个线程同时调用而不会出现问题的函数
+
+### 性能考虑
+
+1. **避免过度同步**：锁的粒度要适中，过细会增加开销
+2. **减少锁竞争**：尽量缩短持有锁的时间
+3. **使用无锁数据结构**：在合适的场景使用原子操作
+4. **线程数量**：通常设置为CPU核心数或稍多一些
+
+### 常见错误
+
+1. **忘记初始化/销毁同步对象**
+2. **死锁**：循环等待资源
+3. **数据竞争**：未正确保护共享数据
+4. **内存泄漏**：线程创建后未join或detach
+
+## 实际应用场景
+
+### 1. 并行计算
+
+```c showLineNumbers
+#include <stdio.h>
+#include <pthread.h>
+
+#define ARRAY_SIZE 1000000
+#define NUM_THREADS 4
+
+int array[ARRAY_SIZE];
+long partial_sums[NUM_THREADS];
+
+typedef struct {
+    int thread_id;
+    int start;
+    int end;
+} thread_data_t;
+
+void* calculate_partial_sum(void* arg) {
+    thread_data_t* data = (thread_data_t*)arg;
+    long sum = 0;
+    
+    for (int i = data->start; i < data->end; i++) {
+        sum += array[i];
+    }
+    
+    partial_sums[data->thread_id] = sum;
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    thread_data_t thread_data[NUM_THREADS];
+    
+    // 初始化数组
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        array[i] = i + 1;
+    }
+    
+    // 创建线程计算部分和
+    int chunk_size = ARRAY_SIZE / NUM_THREADS;
+    for (int i = 0; i < NUM_THREADS; i++) {
+        thread_data[i].thread_id = i;
+        thread_data[i].start = i * chunk_size;
+        thread_data[i].end = (i == NUM_THREADS - 1) ? ARRAY_SIZE : (i + 1) * chunk_size;
+        pthread_create(&threads[i], NULL, calculate_partial_sum, &thread_data[i]);
+    }
+    
+    // 等待所有线程完成
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    // 计算总和
+    long total_sum = 0;
+    for (int i = 0; i < NUM_THREADS; i++) {
+        total_sum += partial_sums[i];
+    }
+    
+    printf("数组总和: %ld\n", total_sum);
+    
+    return 0;
+}
+```
+
+### 2. 生产者-消费者模型
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define BUFFER_SIZE 10
+
+int buffer[BUFFER_SIZE];
+int count = 0;
+int in = 0;
+int out = 0;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
+pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;
+
+void* producer(void* arg) {
+    int id = *(int*)arg;
+    
+    for (int i = 0; i < 20; i++) {
+        int item = rand() % 100;
+        
+        pthread_mutex_lock(&mutex);
+        
+        while (count == BUFFER_SIZE) {
+            pthread_cond_wait(&not_full, &mutex);
+        }
+        
+        buffer[in] = item;
+        in = (in + 1) % BUFFER_SIZE;
+        count++;
+        
+        printf("生产者%d: 生产 %d (缓冲区: %d)\n", id, item, count);
+        
+        pthread_cond_signal(&not_empty);
+        pthread_mutex_unlock(&mutex);
+        
+        usleep(100000);  // 0.1秒
+    }
+    
+    return NULL;
+}
+
+void* consumer(void* arg) {
+    int id = *(int*)arg;
+    
+    for (int i = 0; i < 20; i++) {
+        pthread_mutex_lock(&mutex);
+        
+        while (count == 0) {
+            pthread_cond_wait(&not_empty, &mutex);
+        }
+        
+        int item = buffer[out];
+        out = (out + 1) % BUFFER_SIZE;
+        count--;
+        
+        printf("消费者%d: 消费 %d (缓冲区: %d)\n", id, item, count);
+        
+        pthread_cond_signal(&not_full);
+        pthread_mutex_unlock(&mutex);
+        
+        usleep(150000);  // 0.15秒
+    }
+    
+    return NULL;
+}
+
+int main() {
+    pthread_t prod_threads[2], cons_threads[2];
+    int prod_ids[2] = {1, 2};
+    int cons_ids[2] = {1, 2};
+    
+    for (int i = 0; i < 2; i++) {
+        pthread_create(&prod_threads[i], NULL, producer, &prod_ids[i]);
+        pthread_create(&cons_threads[i], NULL, consumer, &cons_ids[i]);
+    }
+    
+    for (int i = 0; i < 2; i++) {
+        pthread_join(prod_threads[i], NULL);
+        pthread_join(cons_threads[i], NULL);
+    }
+    
+    return 0;
+}
+```
+
+## 相关资源
+
+- [POSIX Threads Programming](https://computing.llnl.gov/tutorials/pthreads/)
+- [Linux man pages - pthread](https://man7.org/linux/man-pages/man7/pthreads.7.html)
+- [C11 Threads](https://en.cppreference.com/w/c/thread)

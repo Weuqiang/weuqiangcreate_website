@@ -1,0 +1,833 @@
+---
+sidebar_position: 16
+title: C预处理器和C库
+---
+
+# C预处理器和C库
+
+## C预处理器
+
+C预处理器在编译之前处理源代码，执行文本替换、文件包含、条件编译等操作。预处理指令以`#`开头。
+
+### #define - 宏定义
+
+#### 对象式宏
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define PI 3.14159
+#define MAX_SIZE 100
+#define GREETING "Hello, World!"
+
+int main() {
+    double radius = 5.0;
+    double area = PI * radius * radius;
+    
+    printf("%s\n", GREETING);
+    printf("Area: %.2f\n", area);
+    printf("Max size: %d\n", MAX_SIZE);
+    
+    return 0;
+}
+```
+
+#### 函数式宏
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define SQUARE(x) ((x) * (x))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+
+int main() {
+    int num = 5;
+    printf("Square of %d: %d\n", num, SQUARE(num));
+    
+    int a = 10, b = 20;
+    printf("Max: %d\n", MAX(a, b));
+    printf("Min: %d\n", MIN(a, b));
+    
+    int x = -15;
+    printf("Absolute value: %d\n", ABS(x));
+    
+    return 0;
+}
+```
+
+:::warning 宏的陷阱
+宏是简单的文本替换，需要注意括号的使用！
+:::
+
+```c showLineNumbers
+#include <stdio.h>
+
+// 错误的宏定义
+#define SQUARE_BAD(x) x * x
+
+// 正确的宏定义
+#define SQUARE_GOOD(x) ((x) * (x))
+
+int main() {
+    int result1 = SQUARE_BAD(2 + 3);   // 2 + 3 * 2 + 3 = 11
+    int result2 = SQUARE_GOOD(2 + 3);  // ((2 + 3) * (2 + 3)) = 25
+    
+    printf("Bad: %d\n", result1);
+    printf("Good: %d\n", result2);
+    
+    return 0;
+}
+```
+
+#### 多行宏
+
+使用反斜杠`\`连接多行。
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define PRINT_ARRAY(arr, size) \
+    do { \
+        printf("["); \
+        for (int i = 0; i < (size); i++) { \
+            printf("%d", (arr)[i]); \
+            if (i < (size) - 1) { \
+                printf(", "); \
+            } \
+        } \
+        printf("]\n"); \
+    } while(0)
+
+int main() {
+    int numbers[] = {1, 2, 3, 4, 5};
+    int size = sizeof(numbers) / sizeof(numbers[0]);
+    
+    PRINT_ARRAY(numbers, size);
+    
+    return 0;
+}
+```
+
+#### 字符串化运算符 #
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define PRINT_VAR(var) printf(#var " = %d\n", var)
+#define TO_STRING(x) #x
+
+int main() {
+    int age = 25;
+    int score = 95;
+    
+    PRINT_VAR(age);    // 输出: age = 25
+    PRINT_VAR(score);  // 输出: score = 95
+    
+    printf("%s\n", TO_STRING(Hello World));  // "Hello World"
+    
+    return 0;
+}
+```
+
+#### 连接运算符 ##
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define CONCAT(a, b) a##b
+#define MAKE_VAR(name, num) name##num
+
+int main() {
+    int CONCAT(var, 1) = 10;  // int var1 = 10;
+    int CONCAT(var, 2) = 20;  // int var2 = 20;
+    
+    printf("var1 = %d\n", var1);
+    printf("var2 = %d\n", var2);
+    
+    int MAKE_VAR(num, 1) = 100;
+    int MAKE_VAR(num, 2) = 200;
+    
+    printf("num1 = %d\n", num1);
+    printf("num2 = %d\n", num2);
+    
+    return 0;
+}
+```
+
+#### 可变参数宏
+
+```c showLineNumbers
+#include <stdio.h>
+
+// C99标准
+#define DEBUG(format, ...) \
+    printf("[DEBUG] " format "\n", ##__VA_ARGS__)
+
+// C23标准（更清晰）
+#define LOG(format, args...) \
+    printf("[LOG] " format "\n", ##args)
+
+int main() {
+    DEBUG("Program started");
+    DEBUG("Value: %d", 42);
+    DEBUG("Values: %d, %d, %d", 1, 2, 3);
+    
+    LOG("Test message");
+    LOG("Number: %d", 100);
+    
+    return 0;
+}
+```
+
+### #undef - 取消宏定义
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define MAX 100
+
+int main() {
+    printf("MAX = %d\n", MAX);
+    
+    #undef MAX
+    #define MAX 200
+    
+    printf("MAX = %d\n", MAX);
+    
+    return 0;
+}
+```
+
+### #include - 文件包含
+
+#### 标准库头文件
+
+```c
+#include <stdio.h>   // 系统头文件
+#include <stdlib.h>
+#include <string.h>
+```
+
+#### 自定义头文件
+
+```c
+#include "myheader.h"  // 当前目录或指定路径
+```
+
+**区别：**
+- `<>`: 在系统标准路径中查找
+- `""`: 先在当前目录查找，再在系统路径查找
+
+### 条件编译
+
+#### #ifdef / #ifndef
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define DEBUG
+
+int main() {
+    #ifdef DEBUG
+        printf("Debug mode is ON\n");
+    #endif
+    
+    #ifndef RELEASE
+        printf("Not in release mode\n");
+    #endif
+    
+    return 0;
+}
+```
+
+#### #if / #elif / #else / #endif
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define VERSION 2
+
+int main() {
+    #if VERSION == 1
+        printf("Version 1\n");
+    #elif VERSION == 2
+        printf("Version 2\n");
+    #elif VERSION == 3
+        printf("Version 3\n");
+    #else
+        printf("Unknown version\n");
+    #endif
+    
+    return 0;
+}
+```
+
+#### defined运算符
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define FEATURE_A
+// #define FEATURE_B
+
+int main() {
+    #if defined(FEATURE_A) && defined(FEATURE_B)
+        printf("Both features enabled\n");
+    #elif defined(FEATURE_A)
+        printf("Only Feature A enabled\n");
+    #elif defined(FEATURE_B)
+        printf("Only Feature B enabled\n");
+    #else
+        printf("No features enabled\n");
+    #endif
+    
+    return 0;
+}
+```
+
+### 预定义宏
+
+```c showLineNumbers
+#include <stdio.h>
+
+int main() {
+    printf("File: %s\n", __FILE__);      // 当前文件名
+    printf("Line: %d\n", __LINE__);      // 当前行号
+    printf("Date: %s\n", __DATE__);      // 编译日期
+    printf("Time: %s\n", __TIME__);      // 编译时间
+    printf("Function: %s\n", __func__);  // 当前函数名（C99）
+    
+    #ifdef __STDC__
+        printf("Standard C\n");
+    #endif
+    
+    #ifdef __STDC_VERSION__
+        printf("C Standard Version: %ld\n", __STDC_VERSION__);
+    #endif
+    
+    return 0;
+}
+```
+
+### #error和#warning
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define VERSION 1
+
+#if VERSION < 2
+    #warning "Using old version"
+#endif
+
+#if !defined(REQUIRED_FEATURE)
+    #error "REQUIRED_FEATURE must be defined"
+#endif
+
+int main() {
+    printf("Program running\n");
+    return 0;
+}
+```
+
+### #pragma
+
+```c showLineNumbers
+// 禁用特定警告
+#pragma GCC diagnostic ignored "-Wunused-variable"
+
+// 优化级别
+#pragma GCC optimize("O3")
+
+// 一次性包含保护
+#pragma once
+
+// 结构体对齐
+#pragma pack(1)
+struct Data {
+    char c;
+    int i;
+};
+#pragma pack()
+```
+
+## 头文件保护
+
+### 传统方法
+
+```c showLineNumbers
+// myheader.h
+#ifndef MYHEADER_H
+#define MYHEADER_H
+
+// 头文件内容
+void my_function(void);
+
+#endif // MYHEADER_H
+```
+
+### 现代方法
+
+```c showLineNumbers
+// myheader.h
+#pragma once
+
+// 头文件内容
+void my_function(void);
+```
+
+## 内联函数
+
+C99引入了内联函数，作为宏的替代方案。
+
+```c showLineNumbers
+#include <stdio.h>
+
+// 内联函数
+inline int square(int x) {
+    return x * x;
+}
+
+// 宏
+#define SQUARE(x) ((x) * (x))
+
+int main() {
+    int num = 5;
+    
+    printf("square(%d) = %d\n", num, square(num));
+    printf("SQUARE(%d) = %d\n", num, SQUARE(num));
+    
+    return 0;
+}
+```
+
+**内联函数 vs 宏：**
+
+| 特性 | 内联函数 | 宏 |
+|------|---------|-----|
+| 类型检查 | 有 | 无 |
+| 调试 | 容易 | 困难 |
+| 副作用 | 无 | 可能有 |
+| 代码膨胀 | 编译器控制 | 总是展开 |
+| 性能 | 编译器优化 | 简单替换 |
+
+## C标准库
+
+### 常用头文件
+
+#### stdio.h - 标准输入输出
+
+```c showLineNumbers
+#include <stdio.h>
+
+int main() {
+    // 文件操作
+    FILE *fp = fopen("test.txt", "w");
+    if (fp != NULL) {
+        fprintf(fp, "Hello, File!\n");
+        fclose(fp);
+    }
+    
+    // 格式化输入输出
+    int num;
+    printf("Enter a number: ");
+    scanf("%d", &num);
+    
+    // 字符输入输出
+    char ch = getchar();
+    putchar(ch);
+    
+    return 0;
+}
+```
+
+#### stdlib.h - 标准工具库
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    // 内存分配
+    int *arr = (int*)malloc(5 * sizeof(int));
+    if (arr != NULL) {
+        for (int i = 0; i < 5; i++) {
+            arr[i] = i * 10;
+        }
+        free(arr);
+    }
+    
+    // 字符串转换
+    char str[] = "123";
+    int num = atoi(str);
+    printf("num = %d\n", num);
+    
+    // 随机数
+    srand(time(NULL));
+    int random = rand() % 100;
+    printf("Random: %d\n", random);
+    
+    // 程序退出
+    // exit(0);
+    
+    return 0;
+}
+```
+
+#### string.h - 字符串处理
+
+```c showLineNumbers
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char str1[50] = "Hello";
+    char str2[] = " World";
+    
+    // 字符串长度
+    printf("Length: %zu\n", strlen(str1));
+    
+    // 字符串复制
+    char str3[50];
+    strcpy(str3, str1);
+    
+    // 字符串连接
+    strcat(str1, str2);
+    printf("%s\n", str1);
+    
+    // 字符串比较
+    if (strcmp(str1, str3) == 0) {
+        printf("Equal\n");
+    }
+    
+    // 字符串查找
+    char *p = strstr(str1, "World");
+    if (p != NULL) {
+        printf("Found: %s\n", p);
+    }
+    
+    return 0;
+}
+```
+
+#### math.h - 数学函数
+
+```c showLineNumbers
+#include <stdio.h>
+#include <math.h>
+
+int main() {
+    double x = 2.0;
+    
+    printf("sqrt(%.1f) = %.2f\n", x, sqrt(x));
+    printf("pow(%.1f, 3) = %.2f\n", x, pow(x, 3));
+    printf("sin(%.1f) = %.2f\n", x, sin(x));
+    printf("cos(%.1f) = %.2f\n", x, cos(x));
+    printf("log(%.1f) = %.2f\n", x, log(x));
+    printf("exp(%.1f) = %.2f\n", x, exp(x));
+    
+    printf("ceil(3.2) = %.0f\n", ceil(3.2));
+    printf("floor(3.8) = %.0f\n", floor(3.8));
+    printf("fabs(-5.5) = %.1f\n", fabs(-5.5));
+    
+    return 0;
+}
+```
+
+#### time.h - 时间处理
+
+```c showLineNumbers
+#include <stdio.h>
+#include <time.h>
+
+int main() {
+    // 获取当前时间
+    time_t now = time(NULL);
+    
+    // 转换为本地时间
+    struct tm *local = localtime(&now);
+    
+    // 格式化输出
+    printf("Current time: %s", asctime(local));
+    
+    // 自定义格式
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", local);
+    printf("Formatted: %s\n", buffer);
+    
+    // 计时
+    clock_t start = clock();
+    
+    // 执行一些操作
+    for (int i = 0; i < 1000000; i++);
+    
+    clock_t end = clock();
+    double cpu_time = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("CPU time: %.6f seconds\n", cpu_time);
+    
+    return 0;
+}
+```
+
+#### ctype.h - 字符处理
+
+```c showLineNumbers
+#include <stdio.h>
+#include <ctype.h>
+
+int main() {
+    char ch = 'A';
+    
+    printf("isalpha('%c'): %d\n", ch, isalpha(ch));
+    printf("isdigit('%c'): %d\n", ch, isdigit(ch));
+    printf("isupper('%c'): %d\n", ch, isupper(ch));
+    printf("islower('%c'): %d\n", ch, islower(ch));
+    
+    printf("tolower('%c'): %c\n", ch, tolower(ch));
+    printf("toupper('a'): %c\n", toupper('a'));
+    
+    return 0;
+}
+```
+
+## 实用示例
+
+### 调试宏
+
+```c showLineNumbers
+#include <stdio.h>
+
+#define DEBUG
+
+#ifdef DEBUG
+    #define DEBUG_PRINT(fmt, ...) \
+        fprintf(stderr, "[%s:%d] " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#else
+    #define DEBUG_PRINT(fmt, ...) do {} while(0)
+#endif
+
+int main() {
+    int x = 10;
+    DEBUG_PRINT("x = %d", x);
+    
+    DEBUG_PRINT("Program running");
+    
+    return 0;
+}
+```
+
+### 断言宏
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+
+#define ASSERT(condition, message) \
+    do { \
+        if (!(condition)) { \
+            fprintf(stderr, "Assertion failed: %s\n", message); \
+            fprintf(stderr, "File: %s, Line: %d\n", __FILE__, __LINE__); \
+            exit(1); \
+        } \
+    } while(0)
+
+int main() {
+    int x = 10;
+    
+    ASSERT(x > 0, "x must be positive");
+    ASSERT(x < 100, "x must be less than 100");
+    
+    printf("All assertions passed\n");
+    
+    return 0;
+}
+```
+
+### 跨平台代码
+
+```c showLineNumbers
+#include <stdio.h>
+
+// 平台检测
+#ifdef _WIN32
+    #define PLATFORM "Windows"
+    #include <windows.h>
+#elif __linux__
+    #define PLATFORM "Linux"
+    #include <unistd.h>
+#elif __APPLE__
+    #define PLATFORM "macOS"
+    #include <unistd.h>
+#else
+    #define PLATFORM "Unknown"
+#endif
+
+int main() {
+    printf("Platform: %s\n", PLATFORM);
+    
+    #ifdef _WIN32
+        Sleep(1000);  // Windows
+    #else
+        sleep(1);     // Unix-like
+    #endif
+    
+    return 0;
+}
+```
+
+### 配置管理
+
+```c showLineNumbers
+// config.h
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// 功能开关
+#define FEATURE_LOGGING 1
+#define FEATURE_CACHE 1
+#define FEATURE_NETWORK 0
+
+// 配置参数
+#define MAX_USERS 100
+#define BUFFER_SIZE 1024
+#define TIMEOUT 30
+
+// 版本信息
+#define VERSION_MAJOR 1
+#define VERSION_MINOR 0
+#define VERSION_PATCH 0
+
+#endif
+```
+
+```c showLineNumbers
+// main.c
+#include <stdio.h>
+#include "config.h"
+
+int main() {
+    printf("Version: %d.%d.%d\n", 
+           VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+    
+    #if FEATURE_LOGGING
+        printf("Logging enabled\n");
+    #endif
+    
+    #if FEATURE_CACHE
+        printf("Cache enabled\n");
+    #endif
+    
+    #if FEATURE_NETWORK
+        printf("Network enabled\n");
+    #else
+        printf("Network disabled\n");
+    #endif
+    
+    return 0;
+}
+```
+
+### 性能测试宏
+
+```c showLineNumbers
+#include <stdio.h>
+#include <time.h>
+
+#define BENCHMARK(name, code) \
+    do { \
+        clock_t start = clock(); \
+        code; \
+        clock_t end = clock(); \
+        double time_spent = (double)(end - start) / CLOCKS_PER_SEC; \
+        printf("%s: %.6f seconds\n", name, time_spent); \
+    } while(0)
+
+int main() {
+    BENCHMARK("Loop test", {
+        int sum = 0;
+        for (int i = 0; i < 1000000; i++) {
+            sum += i;
+        }
+    });
+    
+    BENCHMARK("Array test", {
+        int arr[1000];
+        for (int i = 0; i < 1000; i++) {
+            arr[i] = i * 2;
+        }
+    });
+    
+    return 0;
+}
+```
+
+## 最佳实践
+
+### 1. 宏命名规范
+
+```c
+// 使用大写字母和下划线
+#define MAX_SIZE 100
+#define PI 3.14159
+#define SQUARE(x) ((x) * (x))
+```
+
+### 2. 总是使用括号
+
+```c
+// 错误
+#define MULTIPLY(a, b) a * b
+
+// 正确
+#define MULTIPLY(a, b) ((a) * (b))
+```
+
+### 3. 使用do-while(0)包装多语句宏
+
+```c
+#define SWAP(a, b) \
+    do { \
+        typeof(a) temp = (a); \
+        (a) = (b); \
+        (b) = temp; \
+    } while(0)
+```
+
+### 4. 优先使用内联函数而非宏
+
+```c
+// 宏（不推荐用于复杂逻辑）
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+// 内联函数（推荐）
+inline int max(int a, int b) {
+    return a > b ? a : b;
+}
+```
+
+### 5. 头文件保护
+
+```c
+#ifndef MYHEADER_H
+#define MYHEADER_H
+
+// 头文件内容
+
+#endif
+```
+
+或使用：
+
+```c
+#pragma once
+
+// 头文件内容
+```
+
+## 相关资源
+
+- [C Preprocessor - cppreference](https://en.cppreference.com/w/c/preprocessor)
+- [C Standard Library - cppreference](https://en.cppreference.com/w/c/header)
+- [GCC Preprocessor Manual](https://gcc.gnu.org/onlinedocs/cpp/)

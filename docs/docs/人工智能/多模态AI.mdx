@@ -1,0 +1,823 @@
+---
+sidebar_position: 11
+title: 多模态AI
+---
+
+# 多模态AI（Multimodal AI）
+
+:::info 章节概述
+本章节介绍多模态AI的原理、架构和应用，涵盖视觉-语言模型、CLIP、GPT-4V等前沿技术。
+:::
+
+## 什么是多模态AI
+
+**多模态AI** 是能够理解和处理多种类型数据（文本、图像、音频、视频等）的人工智能系统。
+
+### 为什么需要多模态
+
+**人类的感知是多模态的**：
+- 我们通过视觉、听觉、触觉等多种感官理解世界
+- 不同模态的信息相互补充、相互验证
+
+**单模态的局限性**：
+- 文本无法描述视觉细节
+- 图像缺乏语义理解
+- 音频缺少视觉上下文
+
+**多模态的优势**：
+- 更全面的理解
+- 跨模态推理
+- 更强的泛化能力
+
+## 多模态AI发展历程
+
+### 早期探索（2015-2019）
+
+**图像描述（Image Captioning）**
+```python
+# 早期的CNN+RNN架构
+class ImageCaptioning(nn.Module):
+    def __init__(self, vocab_size, embed_size, hidden_size):
+        super().__init__()
+        # CNN编码器（如ResNet）
+        self.encoder = models.resnet50(pretrained=True)
+        self.encoder.fc = nn.Linear(2048, embed_size)
+        
+        # LSTM解码器
+        self.embedding = nn.Embedding(vocab_size, embed_size)
+        self.lstm = nn.LSTM(embed_size, hidden_size, batch_first=True)
+        self.fc = nn.Linear(hidden_size, vocab_size)
+    
+    def forward(self, images, captions):
+        # 图像特征
+        features = self.encoder(images).unsqueeze(1)
+        
+        # 文本嵌入
+        embeddings = self.embedding(captions)
+        
+        # 拼接
+        inputs = torch.cat([features, embeddings], dim=1)
+        
+        # LSTM生成
+        hiddens, _ = self.lstm(inputs)
+        outputs = self.fc(hiddens)
+        
+        return outputs
+```
+
+**视觉问答（VQA）**
+- 给定图像和问题，生成答案
+- 需要视觉理解和语言推理
+
+### CLIP时代（2021）
+
+**CLIP（Contrastive Language-Image Pre-training）**
+
+OpenAI在2021年提出的CLIP模型，通过对比学习实现了视觉和语言的统一表示。
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class CLIP(nn.Module):
+    """CLIP模型简化实现"""
+    
+    def __init__(self, image_encoder, text_encoder, embed_dim=512):
+        super().__init__()
+        self.image_encoder = image_encoder
+        self.text_encoder = text_encoder
+        
+        # 投影层
+        self.image_projection = nn.Linear(image_encoder.output_dim, embed_dim)
+        self.text_projection = nn.Linear(text_encoder.output_dim, embed_dim)
+        
+        # 温度参数
+        self.temperature = nn.Parameter(torch.ones([]) * 0.07)
+    
+    def encode_image(self, images):
+        """编码图像"""
+        features = self.image_encoder(images)
+        embeddings = self.image_projection(features)
+        # L2归一化
+        embeddings = F.normalize(embeddings, dim=-1)
+        return embeddings
+    
+    def encode_text(self, texts):
+        """编码文本"""
+        features = self.text_encoder(texts)
+        embeddings = self.text_projection(features)
+        # L2归一化
+        embeddings = F.normalize(embeddings, dim=-1)
+        return embeddings
+    
+    def forward(self, images, texts):
+        # 编码
+        image_embeddings = self.encode_image(images)
+        text_embeddings = self.encode_text(texts)
+        
+        # 计算相似度矩阵
+        logits = (image_embeddings @ text_embeddings.T) / self.temperature
+        
+        return logits
+    
+    def contrastive_loss(self, logits):
+        """对比学习损失"""
+        batch_size = logits.shape[0]
+        labels = torch.arange(batch_size, device=logits.device)
+        
+        # 图像到文本的损失
+        loss_i2t = F.cross_entropy(logits, labels)
+        
+        # 文本到图像的损失
+        loss_t2i = F.cross_entropy(logits.T, labels)
+        
+        # 总损失
+        loss = (loss_i2t + loss_t2i) / 2
+        
+        return loss
+
+# 使用CLIP进行零样本分类
+def zero_shot_classification(model, image, class_names):
+    """零样本图像分类"""
+    # 编码图像
+    image_features = model.encode_image(image)
+    
+    # 为每个类别创建文本提示
+    text_prompts = [f"a photo of a {name}" for name in class_names]
+    text_features = model.encode_text(text_prompts)
+    
+    # 计算相似度
+    similarities = (image_features @ text_features.T).softmax(dim=-1)
+    
+    # 返回最可能的类别
+    pred_idx = similarities.argmax().item()
+    return class_names[pred_idx], similarities[0, pred_idx].item()
+```
+
+**CLIP的应用**：
+- 零样本图像分类
+- 图像检索
+- 文本到图像生成（DALL-E）
+- 图像编辑
+
+### 大型多模态模型（2022-至今）
+
+**Flamingo（DeepMind, 2022）**
+- Few-shot学习能力
+- 交错的图像和文本输入
+
+**GPT-4V（OpenAI, 2023）**
+- 强大的视觉理解
+- 多图像推理
+- OCR和图表理解
+
+**Gemini（Google, 2023）**
+- 原生多模态设计
+- 文本、图像、音频、视频
+
+## 核心技术
+
+### 1. 视觉-语言预训练
+
+**对比学习（Contrastive Learning）**
+
+```python
+def clip_loss(image_embeddings, text_embeddings, temperature=0.07):
+    """
+    CLIP对比学习损失
+    
+    Args:
+        image_embeddings: (batch_size, embed_dim)
+        text_embeddings: (batch_size, embed_dim)
+    """
+    # 归一化
+    image_embeddings = F.normalize(image_embeddings, dim=-1)
+    text_embeddings = F.normalize(text_embeddings, dim=-1)
+    
+    # 计算相似度矩阵
+    logits = torch.matmul(image_embeddings, text_embeddings.T) / temperature
+    
+    # 标签（对角线为正样本）
+    batch_size = image_embeddings.shape[0]
+    labels = torch.arange(batch_size, device=logits.device)
+    
+    # 双向交叉熵
+    loss_i2t = F.cross_entropy(logits, labels)
+    loss_t2i = F.cross_entropy(logits.T, labels)
+    
+    loss = (loss_i2t + loss_t2i) / 2
+    
+    return loss
+```
+
+**掩码建模（Masked Modeling）**
+
+```python
+def masked_image_modeling(model, images, mask_ratio=0.75):
+    """
+    掩码图像建模（类似MAE）
+    """
+    batch_size, channels, height, width = images.shape
+    
+    # 将图像分成patches
+    patch_size = 16
+    num_patches = (height // patch_size) * (width // patch_size)
+    
+    # 随机mask
+    num_masked = int(mask_ratio * num_patches)
+    mask_indices = torch.randperm(num_patches)[:num_masked]
+    
+    # 编码
+    encoded = model.encode(images, mask_indices)
+    
+    # 解码重建
+    reconstructed = model.decode(encoded)
+    
+    # 计算损失（只在mask位置）
+    loss = F.mse_loss(reconstructed[:, mask_indices], images[:, mask_indices])
+    
+    return loss
+```
+
+### 2. 跨模态注意力
+
+```python
+class CrossModalAttention(nn.Module):
+    """跨模态注意力机制"""
+    
+    def __init__(self, dim, num_heads=8):
+        super().__init__()
+        self.num_heads = num_heads
+        self.scale = (dim // num_heads) ** -0.5
+        
+        self.q_proj = nn.Linear(dim, dim)
+        self.k_proj = nn.Linear(dim, dim)
+        self.v_proj = nn.Linear(dim, dim)
+        self.out_proj = nn.Linear(dim, dim)
+    
+    def forward(self, query_modality, key_value_modality):
+        """
+        Args:
+            query_modality: (batch, seq_len_q, dim) - 查询模态
+            key_value_modality: (batch, seq_len_kv, dim) - 键值模态
+        """
+        batch_size = query_modality.shape[0]
+        
+        # 投影
+        Q = self.q_proj(query_modality)
+        K = self.k_proj(key_value_modality)
+        V = self.v_proj(key_value_modality)
+        
+        # 重塑为多头
+        Q = Q.view(batch_size, -1, self.num_heads, -1).transpose(1, 2)
+        K = K.view(batch_size, -1, self.num_heads, -1).transpose(1, 2)
+        V = V.view(batch_size, -1, self.num_heads, -1).transpose(1, 2)
+        
+        # 注意力
+        attn = (Q @ K.transpose(-2, -1)) * self.scale
+        attn = F.softmax(attn, dim=-1)
+        
+        # 加权求和
+        out = attn @ V
+        out = out.transpose(1, 2).contiguous().view(batch_size, -1, -1)
+        out = self.out_proj(out)
+        
+        return out
+
+
+class MultimodalTransformer(nn.Module):
+    """多模态Transformer"""
+    
+    def __init__(self, dim, num_heads, num_layers):
+        super().__init__()
+        
+        self.layers = nn.ModuleList([
+            nn.ModuleDict({
+                'self_attn': nn.MultiheadAttention(dim, num_heads),
+                'cross_attn': CrossModalAttention(dim, num_heads),
+                'ffn': nn.Sequential(
+                    nn.Linear(dim, dim * 4),
+                    nn.GELU(),
+                    nn.Linear(dim * 4, dim)
+                ),
+                'norm1': nn.LayerNorm(dim),
+                'norm2': nn.LayerNorm(dim),
+                'norm3': nn.LayerNorm(dim),
+            })
+            for _ in range(num_layers)
+        ])
+    
+    def forward(self, text_features, image_features):
+        """
+        Args:
+            text_features: (batch, text_len, dim)
+            image_features: (batch, image_len, dim)
+        """
+        for layer in self.layers:
+            # 自注意力（文本）
+            text_features = text_features + layer['self_attn'](
+                layer['norm1'](text_features),
+                layer['norm1'](text_features),
+                layer['norm1'](text_features)
+            )[0]
+            
+            # 跨模态注意力（文本关注图像）
+            text_features = text_features + layer['cross_attn'](
+                layer['norm2'](text_features),
+                layer['norm2'](image_features)
+            )
+            
+            # 前馈网络
+            text_features = text_features + layer['ffn'](layer['norm3'](text_features))
+        
+        return text_features
+```
+
+### 3. 模态融合策略
+
+**早期融合（Early Fusion）**
+```python
+def early_fusion(image_features, text_features):
+    """在特征提取前融合"""
+    # 拼接原始输入
+    combined = torch.cat([image_features, text_features], dim=1)
+    # 统一编码器处理
+    fused_features = encoder(combined)
+    return fused_features
+```
+
+**晚期融合（Late Fusion）**
+```python
+def late_fusion(image_features, text_features):
+    """在特征提取后融合"""
+    # 分别编码
+    image_encoded = image_encoder(image_features)
+    text_encoded = text_encoder(text_features)
+    
+    # 简单拼接或加权
+    fused = torch.cat([image_encoded, text_encoded], dim=-1)
+    # 或者加权平均
+    # fused = alpha * image_encoded + (1 - alpha) * text_encoded
+    
+    return fused
+```
+
+**混合融合（Hybrid Fusion）**
+```python
+def hybrid_fusion(image_features, text_features):
+    """多层次融合"""
+    # 早期融合
+    early_fused = early_fusion(image_features, text_features)
+    
+    # 中间层交互
+    image_mid = image_encoder.mid_layers(image_features)
+    text_mid = text_encoder.mid_layers(text_features)
+    mid_fused = cross_attention(image_mid, text_mid)
+    
+    # 晚期融合
+    late_fused = late_fusion(image_mid, text_mid)
+    
+    # 组合
+    final = torch.cat([early_fused, mid_fused, late_fused], dim=-1)
+    return final
+```
+
+## 主流多模态模型
+
+### CLIP（OpenAI）
+
+```python
+from transformers import CLIPProcessor, CLIPModel
+from PIL import Image
+import requests
+
+# 加载模型
+model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+# 加载图像
+url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+image = Image.open(requests.get(url, stream=True).raw)
+
+# 准备输入
+inputs = processor(
+    text=["a photo of a cat", "a photo of a dog"],
+    images=image,
+    return_tensors="pt",
+    padding=True
+)
+
+# 前向传播
+outputs = model(**inputs)
+logits_per_image = outputs.logits_per_image
+probs = logits_per_image.softmax(dim=1)
+
+print(f"概率: {probs}")
+```
+
+### BLIP（Salesforce）
+
+```python
+from transformers import BlipProcessor, BlipForConditionalGeneration
+
+# 加载模型
+processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+
+# 图像描述生成
+inputs = processor(image, return_tensors="pt")
+out = model.generate(**inputs)
+caption = processor.decode(out[0], skip_special_tokens=True)
+print(f"描述: {caption}")
+
+# 视觉问答
+question = "What is in the image?"
+inputs = processor(image, question, return_tensors="pt")
+out = model.generate(**inputs)
+answer = processor.decode(out[0], skip_special_tokens=True)
+print(f"答案: {answer}")
+```
+
+### LLaVA（视觉指令微调）
+
+```python
+from llava.model import LlavaLlamaForCausalLM
+from llava.conversation import conv_templates
+
+# 加载模型
+model = LlavaLlamaForCausalLM.from_pretrained("liuhaotian/llava-v1.5-7b")
+
+# 准备对话
+conv = conv_templates["llava_v1"].copy()
+conv.append_message(conv.roles[0], "What is shown in this image?")
+conv.append_message(conv.roles[1], None)
+
+# 生成回答
+prompt = conv.get_prompt()
+inputs = tokenizer([prompt], return_tensors="pt")
+output = model.generate(**inputs, images=image_tensor)
+response = tokenizer.decode(output[0])
+
+print(response)
+```
+
+### GPT-4V（OpenAI）
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+# 多模态对话
+response = client.chat.completions.create(
+    model="gpt-4-vision-preview",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "这张图片里有什么？"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://example.com/image.jpg",
+                    },
+                },
+            ],
+        }
+    ],
+    max_tokens=300,
+)
+
+print(response.choices[0].message.content)
+```
+
+## 应用场景
+
+### 1. 图像理解与描述
+
+```python
+class ImageCaptioningSystem:
+    """图像描述系统"""
+    
+    def __init__(self, model_name="Salesforce/blip-image-captioning-large"):
+        self.processor = BlipProcessor.from_pretrained(model_name)
+        self.model = BlipForConditionalGeneration.from_pretrained(model_name)
+    
+    def generate_caption(self, image, max_length=50):
+        """生成图像描述"""
+        inputs = self.processor(image, return_tensors="pt")
+        outputs = self.model.generate(**inputs, max_length=max_length)
+        caption = self.processor.decode(outputs[0], skip_special_tokens=True)
+        return caption
+    
+    def generate_detailed_caption(self, image):
+        """生成详细描述"""
+        # 使用条件生成
+        text = "a detailed description of"
+        inputs = self.processor(image, text, return_tensors="pt")
+        outputs = self.model.generate(**inputs, max_length=100)
+        caption = self.processor.decode(outputs[0], skip_special_tokens=True)
+        return caption
+
+# 使用
+system = ImageCaptioningSystem()
+caption = system.generate_caption(image)
+print(f"描述: {caption}")
+```
+
+### 2. 视觉问答（VQA）
+
+```python
+class VisualQASystem:
+    """视觉问答系统"""
+    
+    def __init__(self):
+        self.model = BlipForQuestionAnswering.from_pretrained(
+            "Salesforce/blip-vqa-base"
+        )
+        self.processor = BlipProcessor.from_pretrained(
+            "Salesforce/blip-vqa-base"
+        )
+    
+    def answer_question(self, image, question):
+        """回答关于图像的问题"""
+        inputs = self.processor(image, question, return_tensors="pt")
+        outputs = self.model.generate(**inputs)
+        answer = self.processor.decode(outputs[0], skip_special_tokens=True)
+        return answer
+    
+    def batch_qa(self, image, questions):
+        """批量问答"""
+        answers = []
+        for question in questions:
+            answer = self.answer_question(image, question)
+            answers.append(answer)
+        return answers
+
+# 使用
+vqa = VisualQASystem()
+questions = [
+    "What color is the cat?",
+    "How many cats are there?",
+    "What is the cat doing?"
+]
+answers = vqa.batch_qa(image, questions)
+for q, a in zip(questions, answers):
+    print(f"Q: {q}\nA: {a}\n")
+```
+
+### 3. 图像检索
+
+```python
+class ImageSearchEngine:
+    """图像搜索引擎"""
+    
+    def __init__(self):
+        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self.image_database = []
+        self.image_embeddings = None
+    
+    def add_images(self, images):
+        """添加图像到数据库"""
+        self.image_database.extend(images)
+        
+        # 计算图像嵌入
+        inputs = self.processor(images=images, return_tensors="pt")
+        with torch.no_grad():
+            embeddings = self.model.get_image_features(**inputs)
+        
+        if self.image_embeddings is None:
+            self.image_embeddings = embeddings
+        else:
+            self.image_embeddings = torch.cat([self.image_embeddings, embeddings])
+    
+    def search_by_text(self, query, top_k=5):
+        """文本搜索图像"""
+        # 编码查询文本
+        inputs = self.processor(text=[query], return_tensors="pt")
+        with torch.no_grad():
+            text_embedding = self.model.get_text_features(**inputs)
+        
+        # 计算相似度
+        similarities = (text_embedding @ self.image_embeddings.T).squeeze()
+        
+        # 获取top-k
+        top_indices = similarities.argsort(descending=True)[:top_k]
+        
+        results = [(self.image_database[i], similarities[i].item()) 
+                   for i in top_indices]
+        
+        return results
+    
+    def search_by_image(self, query_image, top_k=5):
+        """图像搜索图像"""
+        # 编码查询图像
+        inputs = self.processor(images=query_image, return_tensors="pt")
+        with torch.no_grad():
+            query_embedding = self.model.get_image_features(**inputs)
+        
+        # 计算相似度
+        similarities = (query_embedding @ self.image_embeddings.T).squeeze()
+        
+        # 获取top-k（排除自己）
+        top_indices = similarities.argsort(descending=True)[1:top_k+1]
+        
+        results = [(self.image_database[i], similarities[i].item()) 
+                   for i in top_indices]
+        
+        return results
+
+# 使用
+search_engine = ImageSearchEngine()
+search_engine.add_images(image_list)
+
+# 文本搜索
+results = search_engine.search_by_text("a cat sitting on a couch")
+for img, score in results:
+    print(f"相似度: {score:.4f}")
+```
+
+### 4. 文本到图像生成
+
+```python
+from diffusers import StableDiffusionPipeline
+
+class TextToImageGenerator:
+    """文本生成图像"""
+    
+    def __init__(self, model_id="stabilityai/stable-diffusion-2-1"):
+        self.pipe = StableDiffusionPipeline.from_pretrained(
+            model_id,
+            torch_dtype=torch.float16
+        )
+        self.pipe = self.pipe.to("cuda")
+    
+    def generate(self, prompt, negative_prompt="", num_images=1, 
+                 guidance_scale=7.5, num_inference_steps=50):
+        """生成图像"""
+        images = self.pipe(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            num_images_per_prompt=num_images,
+            guidance_scale=guidance_scale,
+            num_inference_steps=num_inference_steps
+        ).images
+        
+        return images
+    
+    def generate_with_controlnet(self, prompt, control_image):
+        """使用ControlNet生成"""
+        # 需要加载ControlNet模型
+        pass
+
+# 使用
+generator = TextToImageGenerator()
+images = generator.generate(
+    prompt="a beautiful sunset over the ocean, highly detailed",
+    negative_prompt="blurry, low quality",
+    num_images=4
+)
+
+for i, img in enumerate(images):
+    img.save(f"generated_{i}.png")
+```
+
+## 最佳实践
+
+### 1. 数据准备
+
+```python
+class MultimodalDataset(torch.utils.data.Dataset):
+    """多模态数据集"""
+    
+    def __init__(self, image_paths, captions, processor):
+        self.image_paths = image_paths
+        self.captions = captions
+        self.processor = processor
+    
+    def __len__(self):
+        return len(self.image_paths)
+    
+    def __getitem__(self, idx):
+        # 加载图像
+        image = Image.open(self.image_paths[idx]).convert('RGB')
+        caption = self.captions[idx]
+        
+        # 处理
+        encoding = self.processor(
+            images=image,
+            text=caption,
+            return_tensors="pt",
+            padding="max_length",
+            truncation=True
+        )
+        
+        # 移除batch维度
+        encoding = {k: v.squeeze() for k, v in encoding.items()}
+        
+        return encoding
+```
+
+### 2. 模型训练
+
+```python
+def train_multimodal_model(model, train_loader, val_loader, epochs=10):
+    """训练多模态模型"""
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
+    
+    for epoch in range(epochs):
+        # 训练
+        model.train()
+        train_loss = 0
+        for batch in train_loader:
+            optimizer.zero_grad()
+            
+            outputs = model(**batch)
+            loss = outputs.loss
+            
+            loss.backward()
+            optimizer.step()
+            
+            train_loss += loss.item()
+        
+        # 验证
+        model.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for batch in val_loader:
+                outputs = model(**batch)
+                val_loss += outputs.loss.item()
+        
+        scheduler.step()
+        
+        print(f"Epoch {epoch+1}/{epochs}")
+        print(f"Train Loss: {train_loss/len(train_loader):.4f}")
+        print(f"Val Loss: {val_loss/len(val_loader):.4f}")
+```
+
+### 3. 推理优化
+
+```python
+@torch.no_grad()
+def optimized_inference(model, image, text):
+    """优化的推理"""
+    # 使用半精度
+    model = model.half()
+    
+    # 批处理
+    if isinstance(image, list):
+        batch_size = len(image)
+    else:
+        batch_size = 1
+        image = [image]
+        text = [text]
+    
+    # 处理输入
+    inputs = processor(images=image, text=text, return_tensors="pt")
+    inputs = {k: v.to(model.device) for k, v in inputs.items()}
+    
+    # 推理
+    outputs = model(**inputs)
+    
+    return outputs
+```
+
+## 未来趋势
+
+**统一的多模态架构**
+- 单一模型处理所有模态
+- 端到端训练
+
+**更多模态融合**
+- 文本+图像+音频+视频+3D
+- 传感器数据融合
+
+**具身智能（Embodied AI）**
+- 机器人视觉
+- 环境理解
+- 动作规划
+
+**实时多模态交互**
+- 低延迟推理
+- 流式处理
+- 边缘部署
+
+## 总结
+
+**关键要点**:
+1. 多模态AI融合多种数据类型
+2. CLIP开启了视觉-语言预训练新时代
+3. 跨模态注意力是核心技术
+4. 应用广泛：VQA、图像检索、生成等
+
+**学习建议**:
+- 理解CLIP的对比学习原理
+- 实践不同的融合策略
+- 关注最新的多模态模型
+- 动手实现应用项目
+
+<DocCardList />
+

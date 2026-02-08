@@ -51,11 +51,13 @@
 ## 🛠️ 技术栈
 
 - **框架**: Docusaurus 3.9.2
-- **语言**: JavaScript (ES6+), CSS3
+- **语言**: JavaScript (ES6+), TypeScript, CSS3
 - **UI 库**: Material-UI 5.15.1
 - **构建工具**: Webpack 5
-- **部署**: GitHub Pages
+- **部署**: GitHub Pages (自动化)
 - **样式**: CSS Modules + CSS 变量
+- **代码质量**: ESLint + Prettier
+- **CI/CD**: GitHub Actions
 - **Markdown 处理**: 
   - remark-math, rehype-katex (数学公式)
   - remark-gfm (GitHub Flavored Markdown)
@@ -65,7 +67,7 @@
 
 ### 环境要求
 
-- Node.js >= 18.0
+- Node.js >= 20.0
 - npm >= 8.0
 
 ### 本地开发
@@ -111,6 +113,25 @@ npm run deploy
 npm run deploy:github
 ```
 
+### 代码质量检查
+
+```bash
+# 代码规范检查
+npm run lint
+
+# 自动修复代码规范问题
+npm run lint:fix
+
+# 格式化代码
+npm run format
+
+# 检查代码格式
+npm run format:check
+
+# TypeScript 类型检查
+npm run typecheck
+```
+
 ### 其他命令
 
 ```bash
@@ -119,9 +140,6 @@ npm run clear
 
 # 分析构建包大小
 npm run build:analyze
-
-# 类型检查
-npm run typecheck
 ```
 
 ## 📁 项目结构
@@ -216,9 +234,15 @@ description: 文章描述
 
 本项目已完全配置好 GitHub Pages 自动部署：
 
-1. **自动部署**: 推送到 `main` 分支自动触发部署
+1. **自动部署**: 推送到 `main` 分支自动触发部署（GitHub Actions）
 2. **手动部署**: 使用 `npm run deploy` 或 `npm run deploy:github`
 3. **部署地址**: [https://weuqiang.github.io/weuqiangcreate_website/](https://weuqiang.github.io/weuqiangcreate_website/)
+
+### CI/CD 流程
+
+- **持续集成**: 每次 PR 和 push 自动运行测试和构建
+- **持续部署**: main 分支自动部署到 GitHub Pages
+- **多版本测试**: 自动测试 Node.js 18.x 和 20.x 兼容性
 
 详细部署说明请查看：
 - [DEPLOYMENT.md](DEPLOYMENT.md)
@@ -240,6 +264,32 @@ description: 文章描述
 ### 评论系统
 
 Giscus 评论系统使用 GitHub Discussions，需要在 GitHub 仓库中启用 Discussions 功能。
+
+## 🤝 贡献
+
+欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详细的贡献指南。
+
+### 快速开始贡献
+
+1. Fork 本项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'feat: Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+### 代码规范
+
+提交前请确保：
+- 运行 `npm run lint:fix` 修复代码规范问题
+- 运行 `npm run format` 格式化代码
+- 运行 `npm run build` 确保构建成功
+
+## 📚 文档
+
+- [项目分析报告](PROJECT_ANALYSIS.md) - 详细的项目架构分析
+- [修复总结](FIX_SUMMARY.md) - 最近的修复和改进
+- [更新日志](CHANGELOG.md) - 版本更新记录
+- [贡献指南](CONTRIBUTING.md) - 如何参与贡献
 
 ## 📞 联系方式
 

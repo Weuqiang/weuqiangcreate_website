@@ -77,9 +77,9 @@ const config = {
     [
       "@docusaurus/plugin-content-docs",
       {
-        id: "read",
-        path: "docs/read",
-        routeBasePath: "read",
+        id: "docs",
+        path: "docs/docs",
+        routeBasePath: "docs",
         sidebarPath: require.resolve("./sidebars.js"),
         remarkPlugins: [remarkMath],
         rehypePlugins: [rehypeKatex],
@@ -88,9 +88,9 @@ const config = {
     [
       "@docusaurus/plugin-content-docs",
       {
-        id: "docs",
-        path: "docs/docs",
-        routeBasePath: "docs",
+        id: "books",
+        path: "docs/books",
+        routeBasePath: "books",
         sidebarPath: require.resolve("./sidebars.js"),
         remarkPlugins: [remarkMath],
         rehypePlugins: [rehypeKatex],
@@ -160,9 +160,9 @@ const config = {
           label: "开发",
         },
         {
-          to: "/read",
+          to: "/books",
           position: "left",
-          label: "书架",
+          label: "书库",
         },
         {
           to: "/blog/archive",
@@ -172,7 +172,7 @@ const config = {
         {
           to: "/case",
           position: "left",
-          label: "个案",
+          label: "案例",
         },
         {
           to: "/gallery",

@@ -1,0 +1,662 @@
+---
+sidebar_position: 1
+title: Hadoop生态系统 - 从零开始
+---
+
+# Hadoop生态系统 - 大数据的基石
+
+Hadoop是大数据的基础，但很多教程只讲概念。这一章会带你**真正搭建和使用Hadoop**。
+
+## 第一部分：理解Hadoop
+
+### 为什么需要Hadoop？
+
+**问题**：你有1TB的日志文件，要统计每个IP的访问次数。
+
+**传统方式**：
+```python
+# 单机处理 - 内存爆了！
+ip_counts = {}
+with open('1TB_log.txt') as f:  # 内存装不下
+    for line in f:
+        ip = extract_ip(line)
+        ip_counts[ip] = ip_counts.get(ip, 0) + 1
+```
+
+**Hadoop方式**：
+```python
+# 分布式处理 - 100台机器并行
+# 每台机器处理10GB，最后汇总结果
+# 原本需要10小时，现在只需要6分钟！
+```
+
+### Hadoop三大核心
+
+1. **HDFS**：分布式文件系统（存储）
+2. **MapReduce**：分布式计算框架（计算）
+3. **YARN**：资源管理器（调度）
+
+```
+┌─────────────────────────────────────┐
+│           应用层                     │
+│    MapReduce、Spark、Hive           │
+└─────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────┐
+│           YARN                       │
+│      资源管理和任务调度               │
+└─────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────┐
+│           HDFS                       │
+│      分布式文件存储                   │
+└─────────────────────────────────────┘
+```
+
+## 第二部分：HDFS - 分布式文件系统
+
+### HDFS的设计思想
+
+**核心理念**：
+- 一次写入，多次读取
+- 大文件存储（GB、TB级别）
+- 流式数据访问
+- 硬件故障是常态
+
+### HDFS架构
+
+```
+┌──────────────┐
+│  NameNode    │  ← 管理者：记录文件在哪
+└──────────────┘
+       ↓
+┌──────────────┬──────────────┬──────────────┐
+│ DataNode 1   │ DataNode 2   │ DataNode 3   │  ← 工人：存储数据
+│ Block 1,3,5  │ Block 2,4,6  │ Block 1,2,3  │
+└──────────────┴──────────────┴──────────────┘
+```
+
+**文件如何存储？**
+
+```python
+# 假设你上传一个300MB的文件
+# HDFS会这样处理：
+
+1. 切分成块（默认128MB）
+   文件 → Block1(128MB) + Block2(128MB) + Block3(44MB)
+
+2. 每个块复制3份（防止丢失）
+   Block1 → DataNode1, DataNode2, DataNode3
+   Block2 → DataNode2, DataNode3, DataNode1
+   Block3 → DataNode3, DataNode1, DataNode2
+
+3. NameNode记录映射关系
+   file.txt → [Block1@DN1,DN2,DN3, Block2@DN2,DN3,DN1, ...]
+```
+
+### 实战：搭建HDFS
+
+**1. 使用Docker快速搭建**
+
+```bash
+# docker-compose.yml
+version: '3'
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    environment:
+      - CLUSTER_NAME=test
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
+```
+
+```bash
+# 启动
+docker-compose up -d
+
+# 查看Web界面
+# 浏览器打开: http://localhost:9870
+```
+
+**2. HDFS基本操作**
+
+```bash
+# 进入容器
+docker exec -it namenode bash
+
+# 创建目录
+hdfs dfs -mkdir -p /user/data
+
+# 上传文件
+hdfs dfs -put local_file.txt /user/data/
+
+# 查看文件列表
+hdfs dfs -ls /user/data/
+
+# 查看文件内容
+hdfs dfs -cat /user/data/local_file.txt
+
+# 下载文件
+hdfs dfs -get /user/data/local_file.txt ./
+
+# 删除文件
+hdfs dfs -rm /user/data/local_file.txt
+
+# 查看文件大小
+hdfs dfs -du -h /user/data/
+
+# 查看磁盘使用情况
+hdfs dfsadmin -report
+```
+
+**3. Python操作HDFS**
+
+```python
+from hdfs import InsecureClient
+
+# 连接HDFS
+client = InsecureClient('http://localhost:9870', user='root')
+
+# 上传文件
+client.upload('/user/data/test.txt', 'local_test.txt')
+
+# 下载文件
+client.download('/user/data/test.txt', 'downloaded.txt')
+
+# 读取文件
+with client.read('/user/data/test.txt', encoding='utf-8') as reader:
+    content = reader.read()
+    print(content)
+
+# 写入文件
+with client.write('/user/data/output.txt', encoding='utf-8') as writer:
+    writer.write('Hello HDFS!')
+
+# 列出目录
+files = client.list('/user/data/')
+print(files)
+
+# 删除文件
+client.delete('/user/data/test.txt')
+
+# 获取文件状态
+status = client.status('/user/data/output.txt')
+print(f"文件大小: {status['length']} bytes")
+```
+
+### HDFS高级特性
+
+**1. 副本放置策略**
+
+```python
+# HDFS的智能副本放置
+# 第一个副本：写入的DataNode
+# 第二个副本：不同机架的DataNode
+# 第三个副本：第二个副本同机架的不同DataNode
+
+# 这样设计的好处：
+# - 机架故障不会丢数据
+# - 读取时可以选择最近的副本
+# - 网络带宽利用率高
+```
+
+**2. 数据完整性**
+
+```bash
+# HDFS会自动校验数据
+# 每个块都有校验和（checksum）
+
+# 手动检查文件完整性
+hdfs fsck /user/data/file.txt -files -blocks -locations
+```
+
+**3. 快照**
+
+```bash
+# 创建快照目录
+hdfs dfsadmin -allowSnapshot /user/data
+
+# 创建快照
+hdfs dfs -createSnapshot /user/data snapshot1
+
+# 查看快照
+hdfs dfs -ls /user/data/.snapshot/
+
+# 恢复快照
+hdfs dfs -cp /user/data/.snapshot/snapshot1/file.txt /user/data/
+
+# 删除快照
+hdfs dfs -deleteSnapshot /user/data snapshot1
+```
+
+## 第三部分：MapReduce - 分布式计算
+
+### MapReduce思想
+
+**核心**：分而治之
+
+```python
+# 问题：统计1TB文本中每个单词出现次数
+
+# Map阶段：每台机器处理一部分
+Machine1: "hello world" → [("hello", 1), ("world", 1)]
+Machine2: "hello hadoop" → [("hello", 1), ("hadoop", 1)]
+Machine3: "world hadoop" → [("world", 1), ("hadoop", 1)]
+
+# Shuffle阶段：相同key的数据发送到同一台机器
+Machine1: ("hello", [1, 1])
+Machine2: ("world", [1, 1])
+Machine3: ("hadoop", [1, 1])
+
+# Reduce阶段：汇总结果
+Machine1: ("hello", 2)
+Machine2: ("world", 2)
+Machine3: ("hadoop", 2)
+```
+
+### 实战：WordCount
+
+**1. Python版本（使用mrjob）**
+
+```python
+# wordcount.py
+from mrjob.job import MRJob
+import re
+
+class WordCount(MRJob):
+    
+    def mapper(self, _, line):
+        """Map阶段：拆分单词"""
+        # 清理文本，提取单词
+        words = re.findall(r'\w+', line.lower())
+        for word in words:
+            yield word, 1
+    
+    def reducer(self, word, counts):
+        """Reduce阶段：汇总计数"""
+        yield word, sum(counts)
+
+if __name__ == '__main__':
+    WordCount.run()
+```
+
+```bash
+# 本地测试
+python wordcount.py input.txt
+
+# 在Hadoop上运行
+python wordcount.py -r hadoop hdfs:///user/data/input.txt
+```
+
+**2. 更复杂的例子：日志分析**
+
+```python
+# log_analysis.py
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+import re
+
+class LogAnalysis(MRJob):
+    
+    def steps(self):
+        """定义多个MapReduce步骤"""
+        return [
+            MRStep(mapper=self.mapper_parse_log,
+                   reducer=self.reducer_count_by_ip),
+            MRStep(reducer=self.reducer_find_top)
+        ]
+    
+    def mapper_parse_log(self, _, line):
+        """解析日志，提取IP"""
+        # 日志格式: 192.168.1.1 - - [01/Jan/2024:10:00:00] "GET /index.html"
+        match = re.match(r'(\d+\.\d+\.\d+\.\d+)', line)
+        if match:
+            ip = match.group(1)
+            yield ip, 1
+    
+    def reducer_count_by_ip(self, ip, counts):
+        """统计每个IP的访问次数"""
+        total = sum(counts)
+        yield None, (total, ip)  # 输出(次数, IP)
+    
+    def reducer_find_top(self, _, ip_counts):
+        """找出访问最多的TOP10 IP"""
+        top_ips = sorted(ip_counts, reverse=True)[:10]
+        for count, ip in top_ips:
+            yield ip, count
+
+if __name__ == '__main__':
+    LogAnalysis.run()
+```
+
+**3. 实战案例：用户行为分析**
+
+```python
+# user_behavior.py
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+import json
+
+class UserBehavior(MRJob):
+    
+    def steps(self):
+        return [
+            MRStep(mapper=self.mapper_parse_event,
+                   reducer=self.reducer_aggregate_user),
+            MRStep(mapper=self.mapper_user_stats,
+                   reducer=self.reducer_summary)
+        ]
+    
+    def mapper_parse_event(self, _, line):
+        """解析用户事件"""
+        try:
+            event = json.loads(line)
+            user_id = event['user_id']
+            action = event['action']
+            timestamp = event['timestamp']
+            
+            yield user_id, {
+                'action': action,
+                'timestamp': timestamp
+            }
+        except:
+            pass
+    
+    def reducer_aggregate_user(self, user_id, events):
+        """聚合单个用户的行为"""
+        events_list = list(events)
+        
+        # 统计各种行为次数
+        action_counts = {}
+        for event in events_list:
+            action = event['action']
+            action_counts[action] = action_counts.get(action, 0) + 1
+        
+        # 计算活跃度
+        total_actions = sum(action_counts.values())
+        
+        yield 'user_stats', {
+            'user_id': user_id,
+            'total_actions': total_actions,
+            'action_counts': action_counts
+        }
+    
+    def mapper_user_stats(self, key, stats):
+        """按活跃度分类用户"""
+        total = stats['total_actions']
+        
+        if total >= 100:
+            category = 'highly_active'
+        elif total >= 10:
+            category = 'active'
+        else:
+            category = 'inactive'
+        
+        yield category, 1
+    
+    def reducer_summary(self, category, counts):
+        """汇总统计"""
+        yield category, sum(counts)
+
+if __name__ == '__main__':
+    UserBehavior.run()
+```
+
+### MapReduce优化技巧
+
+**1. Combiner：本地聚合**
+
+```python
+class WordCountOptimized(MRJob):
+    
+    def mapper(self, _, line):
+        for word in line.split():
+            yield word, 1
+    
+    def combiner(self, word, counts):
+        """在Map端先做一次聚合，减少网络传输"""
+        yield word, sum(counts)
+    
+    def reducer(self, word, counts):
+        yield word, sum(counts)
+```
+
+**2. 自定义分区**
+
+```python
+class CustomPartitioner(MRJob):
+    
+    def mapper(self, _, line):
+        # 按首字母分区
+        word = line.strip().lower()
+        if word:
+            first_letter = word[0]
+            yield (first_letter, word), 1
+    
+    def reducer(self, key, counts):
+        first_letter, word = key
+        yield word, sum(counts)
+```
+
+## 第四部分：YARN - 资源管理
+
+### YARN架构
+
+```
+┌──────────────────┐
+│  ResourceManager │  ← 总管：分配资源
+└──────────────────┘
+         ↓
+┌────────┬────────┬────────┐
+│  NM1   │  NM2   │  NM3   │  ← NodeManager：管理单机资源
+└────────┴────────┴────────┘
+    ↓        ↓        ↓
+┌────────┬────────┬────────┐
+│Container│Container│Container│  ← 容器：运行任务
+└────────┴────────┴────────┘
+```
+
+### YARN命令
+
+```bash
+# 查看所有应用
+yarn application -list
+
+# 查看应用状态
+yarn application -status application_1234567890_0001
+
+# 杀死应用
+yarn application -kill application_1234567890_0001
+
+# 查看日志
+yarn logs -applicationId application_1234567890_0001
+
+# 查看队列
+yarn queue -status default
+
+# 查看节点
+yarn node -list
+```
+
+## 第五部分：实战项目
+
+### 项目：电商日志分析系统
+
+**需求**：
+1. 统计每天的PV、UV
+2. 分析热门商品
+3. 用户行为路径分析
+
+**数据格式**：
+```json
+{
+  "timestamp": "2024-01-01 10:00:00",
+  "user_id": "user123",
+  "action": "view",
+  "item_id": "item456",
+  "category": "electronics"
+}
+```
+
+**实现**：
+
+```python
+# ecommerce_analysis.py
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+import json
+from datetime import datetime
+
+class EcommerceAnalysis(MRJob):
+    
+    def steps(self):
+        return [
+            MRStep(mapper=self.mapper_parse,
+                   reducer=self.reducer_daily_stats),
+            MRStep(mapper=self.mapper_category,
+                   reducer=self.reducer_top_items)
+        ]
+    
+    def mapper_parse(self, _, line):
+        """解析日志"""
+        try:
+            log = json.loads(line)
+            
+            # 提取日期
+            date = log['timestamp'][:10]
+            user_id = log['user_id']
+            item_id = log['item_id']
+            category = log['category']
+            action = log['action']
+            
+            # 输出多个维度的数据
+            # 1. 日期+用户 -> 用于计算UV
+            yield (date, 'uv', user_id), 1
+            
+            # 2. 日期+PV -> 用于计算PV
+            yield (date, 'pv'), 1
+            
+            # 3. 商品点击
+            if action == 'view':
+                yield (date, 'item', item_id), 1
+            
+            # 4. 类别统计
+            yield (date, 'category', category), 1
+            
+        except Exception as e:
+            pass
+    
+    def reducer_daily_stats(self, key, values):
+        """每日统计"""
+        if len(key) == 3:
+            date, metric_type, item = key
+            if metric_type == 'uv':
+                # UV：每个用户只计数一次
+                yield (date, 'uv'), 1
+            elif metric_type == 'item':
+                # 商品点击次数
+                yield (date, 'item', item), sum(values)
+            elif metric_type == 'category':
+                # 类别统计
+                yield (date, 'category', item), sum(values)
+        else:
+            date, metric_type = key
+            if metric_type == 'pv':
+                # PV：总点击数
+                yield (date, 'pv'), sum(values)
+    
+    def mapper_category(self, key, value):
+        """按类别分组"""
+        if len(key) == 3:
+            date, metric_type, item = key
+            if metric_type == 'item':
+                # 输出商品点击数
+                yield (date, 'top_items'), (value, item)
+            elif metric_type == 'category':
+                # 输出类别统计
+                yield (date, 'category_stats'), (item, value)
+        else:
+            # 输出PV/UV
+            yield key, value
+    
+    def reducer_top_items(self, key, values):
+        """汇总结果"""
+        date, metric_type = key
+        
+        if metric_type == 'top_items':
+            # 找出TOP10商品
+            items = sorted(values, reverse=True)[:10]
+            for count, item_id in items:
+                yield f"{date}_top_item", f"{item_id}: {count}"
+        
+        elif metric_type == 'category_stats':
+            # 类别统计
+            for category, count in values:
+                yield f"{date}_category", f"{category}: {count}"
+        
+        else:
+            # PV/UV
+            total = sum(values)
+            yield f"{date}_{metric_type}", total
+
+if __name__ == '__main__':
+    EcommerceAnalysis.run()
+```
+
+**运行**：
+
+```bash
+# 生成测试数据
+python generate_test_data.py > test_logs.json
+
+# 本地测试
+python ecommerce_analysis.py test_logs.json
+
+# 上传到HDFS
+hdfs dfs -put test_logs.json /user/data/logs/
+
+# 在Hadoop上运行
+python ecommerce_analysis.py -r hadoop hdfs:///user/data/logs/test_logs.json \
+    --output-dir hdfs:///user/data/output/
+```
+
+## 总结
+
+Hadoop是大数据的基础：
+
+1. **HDFS**：分布式存储，可靠、可扩展
+2. **MapReduce**：分布式计算，简单、强大
+3. **YARN**：资源管理，灵活、高效
+
+**下一步**：
+- 学习Spark（比MapReduce快100倍）
+- 学习Hive（用SQL查询大数据）
+- 学习HBase（实时查询）
+
+记住：**Hadoop不难，多动手！**
+
+## 练习题
+
+1. 实现一个倒排索引（搜索引擎的基础）
+2. 分析Twitter数据，找出热门话题
+3. 实现PageRank算法
+4. 构建一个推荐系统的离线部分
+
+下一章：[Spark快速大数据分析](./Spark快速大数据分析.mdx)
+

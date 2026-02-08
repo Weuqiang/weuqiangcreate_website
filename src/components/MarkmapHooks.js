@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
+import PropTypes from 'prop-types';
 
 // 思维导图部分
 // 完整文档与修改可参见https://markmap.js.org/
@@ -7,7 +8,7 @@ import { Markmap } from "markmap-view";
 import { Toolbar } from "markmap-toolbar";
 import { deriveOptions } from "markmap-view";
 
-export default function MarkmapHooks({ initialMarkdown }) {
+function MarkmapHooks({ initialMarkdown }) {
   const jsonOptions = {
     color: ["#DD551E"],
     initialExpandLevel: 1, //限制展开级别
@@ -46,4 +47,10 @@ export default function MarkmapHooks({ initialMarkdown }) {
     </div>
   );
 }
+
+MarkmapHooks.propTypes = {
+  initialMarkdown: PropTypes.string.isRequired,
+};
+
+export default MarkmapHooks;
 

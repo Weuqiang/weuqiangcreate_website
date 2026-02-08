@@ -1,0 +1,564 @@
+---
+sidebar_position: 5
+title: 经典神经网络
+---
+
+## 神经网络是什么
+
+模仿人脑神经元的数学模型，都叫神经网络。
+
+神经网络大致分三类：
+
+### BP神经网络（反向传播）
+
+1986年，Romelhart和Mcclelland提出了反向传播（Backpropagation）算法，构建了BP神经网络。这玩意儿一出来就成了主流，现在说"神经网络"，默认就是指BP神经网络。
+
+### 全连接神经网络（MLP）
+
+最基础的神经网络结构，也叫多层感知机。特点是：**相邻两层的神经元全部连接**。
+
+信息流动：输入层 → 隐藏层 → 输出层，一层层往前传，不跳层。
+
+这是理解深度学习的基础。
+
+### 深度学习
+
+BP神经网络很强，但遇到图像、音频这种高维数据就歇菜了。一张50×50的图片就有2500个输入，如果隐藏层有100个神经元，第一层的参数就有250万个，电脑直接爆炸。
+
+怎么办？利用数据的特性做优化：
+- **图像**：相邻像素往往相似 → 卷积神经网络（CNN）
+- **文本**：前后文有关联 → 循环神经网络（RNN）、Transformer
+
+深度学习本质上是BP神经网络的加强版，专门解决超高维输入的问题。
+
+### 神经元的工作原理
+
+生物神经元通过电信号传递信息，当电信号累积超过阈值，就会触发神经冲动，传给其他神经元。
+
+人工神经网络就是模仿这个过程：
+- 输入信号 × 权重 → 累加 → 激活函数 → 输出
+
+:::tip
+想看动画演示？推荐3Blue1Brown的[神经网络可视化](https://www.3blue1brown.com/topics/neural-networks)
+:::
+
+
+## 手写数字识别
+
+一张28×28的图片可以看成一个784维的向量（28×28=784），每个像素就是向量的一个分量。
+
+我们要做的是：输入784个数字 → 神经网络处理 → 输出10个数字（代表0-9每个数字的概率）
+
+### 网络结构
+
+- **输入层**：784个神经元（每个像素一个）
+- **隐藏层**：16个神经元（可以调整）
+- **输出层**：10个神经元（0-9十个数字）
+
+### 数学表示
+
+用线性代数简洁地表示层与层之间的计算：
+
+$$
+\begin{aligned}
+a_{0}^{1} &= \sigma \left( \sum_{i=1}^{784} (w_{0,i} \cdot a_{i}^{0}) + b_{0} \right)\\
+a_{1}^{1} &= \sigma \left( \sum_{i=1}^{784} (w_{1,i} \cdot a_{i}^{0}) + b_{1} \right)\\
+&\vdots\\
+a_{15}^{1} &= \sigma \left( \sum_{i=1}^{784} (w_{15,i} \cdot a_{i}^{0}) + b_{15} \right)
+\end{aligned}
+$$
+
+矩阵表示
+$$
+\begin{bmatrix}
+    w_{0,0} & w_{0,1} & ... & w_{0,784} \\
+    w_{1,0} & w_{1,1} & ... & w_{1,784} \\
+    ... & ... & ... & ... \\
+    w_{15,0} & w_{15,1} & ... & w_{15,784} 
+\end{bmatrix}
+$$
+
+
+```python showLineNumbers 
+import numpy
+
+# 确保绘图在此nb中进行，而不是在外部窗口中
+class NeuralNetwork:
+    # 初始化神经网络
+    def __init__(self, inputnodes, hiddennodes, outputnodes, learningrate):
+        # 设置每个输入、隐藏和输出层的节点数
+        self.inodes = inputnodes
+        self.hnodes = hiddennodes
+        self.onodes = outputnodes
+        # 连接权重矩阵，wih 和 who
+        # 数组中的权重是 w_i_j，其中链接从上一层的节点 i 到下一层的节点 j
+        # w11 w21
+        # w12 w22 等等
+        # 返回正态分布数据
+        self.wih = numpy.random.normal(0.0, pow(self.inodes, -0.5), (self.hnodes, self.inodes))
+        self.who = numpy.random.normal(0.0, pow(self.hnodes, -0.5), (self.onodes, self.hnodes))
+        # 学习率
+        self.lr = learningrate
+        # 激活函数是 sigmoid 函数
+        self.activation_function = lambda x: 1 / (1 + numpy.exp(-x))
+        pass
+    
+    # 训练神经网络
+    def train(self, 输入列表, 目标列表):
+        # 将输入列表转换为 2D 数组
+        inputs = numpy.array(输入列表, ndmin=2).T
+        targets = numpy.array(目标列表, ndmin=2).T
+        # 计算进入隐藏层的信号
+        hidden_inputs = numpy.dot(self.wih, inputs)
+        # 计算从隐藏层出来的信号
+        hidden_outputs = self.activation_function(hidden_inputs)
+        
+        # 计算进入最终输出层的信号
+        final_inputs = numpy.dot(self.who, hidden_outputs)
+        # 计算从最终输出层出来的信号
+        final_outputs = self.activation_function(final_inputs)
+        
+        # 输出层误差是 (目标 - 实际)
+        output_errors = targets - final_outputs
+        # 隐藏层误差是输出误差，按权重拆分，重新组合在隐藏节点处
+        hidden_errors = numpy.dot(self.who.T, output_errors)
+        
+        # 更新隐藏层和输出层之间的链接权重
+        self.who += self.lr * numpy.dot((output_errors * final_outputs * (1.0 - final_outputs)), numpy.transpose(hidden_outputs))
+        
+        # 更新输入层和隐藏层之间的链接权重
+        self.wih += self.lr * numpy.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)), numpy.transpose(inputs))
+        
+        pass
+    
+    # 查询神经网络
+    def query(self, 输入列表):
+        # 将输入列表转换为 2D 数组
+        inputs = numpy.array(输入列表, ndmin=2).T
+        
+        # 计算进入隐藏层的信号
+        hidden_inputs = numpy.dot(self.wih, inputs)
+        # 计算从隐藏层出来的信号
+        hidden_outputs = self.activation_function(hidden_inputs)
+        
+        # 计算进入最终输出层的信号
+        final_inputs = numpy.dot(self.who, hidden_outputs)
+        # 计算从最终输出层出来的信号
+        final_outputs = self.activation_function(final_inputs)
+        
+        return final_outputs
+    
+
+input_nodes = 64
+hidden_nodes = 32
+output_nodes = 10
+
+# 学习率
+learning_rate = 0.2
+
+# 创建神经网络实例
+n = NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
+
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
+# 加载数据集
+digits = datasets.load_digits()
+X_train, X_test, y_train, y_test = train_test_split(digits.data, digits.target, test_size=0.1,random_state=0)
+
+epochs = 2  # 回声增加样本量
+ 
+for i in range(epochs):
+    for record in zip(y_train, X_train):
+        y, X = record
+        # 缩放和移动输入
+        inputs = (numpy.asfarray(X) / 16.0 * 0.99) + 0.01
+        # 创建目标输出值（全部为 0.01，除了所需标签为 0.99）
+        targets = numpy.zeros(output_nodes) + 0.01
+        # all_values[0] 是此记录的目标标签
+        targets[int(y)] = 0.99
+        n.train(inputs, targets)
+# 我们自己的图像测试数据集
+our_own_dataset = []
+
+for i in zip(y_test, X_test):
+    label, img_array = i
+    # img_data  = 16.0 - img_array
+    # 然后将数据缩放到范围从 0.01 到 1.0
+    img_data = (img_array / 16.0 * 0.99) + 0.01
+    # 将标签和图像数据附加到测试数据集
+    record = numpy.append(label, img_data)
+    our_own_dataset.append(record)
+    pass
+
+right = 0
+error = 0
+for item in range(len(our_own_dataset)):
+    # 正确答案是第一个值
+    correct_label = our_own_dataset[item][0]
+    # print(correct_label)
+
+    # 数据是剩余的值
+    inputs = our_own_dataset[item][1:]
+ 
+    # 查询网络
+    outputs = n.query(inputs)
+
+    # 最高值的索引对应于标签
+    label = numpy.argmax(outputs)
+    if label != correct_label:
+        error += 1
+    else:
+        right += 1
+print(right / (right + error))
+
+```
+
+
+### 实战应用：验证码识别
+
+现实中不会有人给你单独一个数字让你识别，但有类似场景：车牌号、发票号、验证码。
+
+思路：
+1. **图像分割**：把验证码切成单个字符
+2. **标准化**：统一大小（比如都压缩成8×8）
+3. **逐个识别**：用训练好的模型识别每个字符
+4. **拼接结果**：组合成完整答案
+
+关键是图像分割要准确，否则字符粘连或切歪了，识别率就会下降。
+
+
+```python showLineNumbers 
+from PIL import ImageFont,Image,ImageDraw
+# 生成一个验证码
+c_chars = "0 1 2 3 4"
+path = 'test.png'
+size = (100,24)                             #图片大小
+img = Image.new("RGB",size)
+draw = ImageDraw.Draw(img)                  #draw一个
+font = ImageFont.truetype("arial.ttf", 23)      #字体
+draw.text((5,0),c_chars,font=font,fill="white") #字颜色
+# img.show()
+img.save(path)
+
+# 分割图片
+def sliceImg(img_path, count = 5):
+    img = Image.open(img_path).convert("L")
+    w, h = img.size
+    eachWidth = int(w/count)
+    for i in range(count):
+        box = (i * eachWidth, 0, (i + 1) * eachWidth, h)
+        yield img.crop(box)
+
+# 转化图片
+def exchange(img):
+    target_size = (8, 8)
+    resized_image = img.resize(target_size)
+    # resized_image.show()
+    return resized_image
+
+
+out = ""
+for i in sliceImg(path):
+    # .flatten()方法将数组转化为列表
+    original_array =  numpy.array(exchange(i)).flatten()
+    # 将数据0-1化
+    inputs = (original_array / 255.0 * 0.99) + 0.01
+    # 查询网络
+    outputs = n.query(inputs)
+    # print(outputs)
+    # 最高值的索引对应于标签
+    label = numpy.argmax(outputs)
+    out+=str(label)
+print(out)
+```
+
+
+从结果看，0、1、2、4识别正确，但3识别错了。
+
+**怎么优化？**
+
+答案A：优化图像切割算法（膨胀、腐蚀、padding等）
+答案B：增加训练轮数（epochs）
+答案C：喂更多生成的数字3的样本
+
+<details>
+<summary>点击查看解决方案</summary>
+
+我检查了转换后8×8的数字3，发现它和手写数字8更像，而不像手写数字3。
+
+**解决方案**：给模型多喂一些生成的数字3的样本。
+
+```python showLineNumbers
+from PIL import ImageFont,Image,ImageDraw
+# 生成一个验证码
+c_chars = "3 3 3 3 3"
+path = 'test.png'
+size = (100,24)                             #图片大小
+img = Image.new("RGB",size)
+draw = ImageDraw.Draw(img)                  #draw一个
+font = ImageFont.truetype("arial.ttf", 23)      #字体
+draw.text((5,0),c_chars,font=font,fill="white") #字颜色
+# img.show()
+img.save(path)
+
+# 分割图片
+def sliceImg(img_path, count = 5):
+    img = Image.open(img_path).convert("L")
+    w, h = img.size
+    eachWidth = int(w/count)
+    for i in range(count):
+        box = (i * eachWidth, 0, (i + 1) * eachWidth, h)
+        yield img.crop(box)
+
+# 转化图片
+def exchange(img):
+    target_size = (8, 8)
+    resized_image = img.resize(target_size)
+    # resized_image.show()
+    return resized_image
+
+
+for i in sliceImg(path):
+    # .flatten()方法将数组转化为列表
+    original_array =  numpy.array(exchange(i)).flatten()
+    # 将数据0-1化
+    inputs = (original_array / 255.0 * 0.99) + 0.01
+    targets = numpy.zeros(output_nodes) + 0.01
+    # all_values[0] 是此记录的目标标签
+    targets[int(3)] = 0.99
+    n.train(inputs, targets)
+
+# 生成一个验证码
+c_chars = "0 1 2 3 4"
+path = 'test.png'
+size = (100,24)                             #图片大小
+img = Image.new("RGB",size)
+draw = ImageDraw.Draw(img)                  #draw一个
+font = ImageFont.truetype("arial.ttf", 23)      #字体
+draw.text((5,0),c_chars,font=font,fill="white") #字颜色
+# img.show()
+img.save(path)
+
+out = ""
+for i in sliceImg(path):
+    # .flatten()方法将数组转化为列表
+    original_array =  numpy.array(exchange(i)).flatten()
+    # 将数据0-1化
+    inputs = (original_array / 255.0 * 0.99) + 0.01
+    # 查询网络
+    outputs = n.query(inputs)
+    # print(outputs)
+    # 最高值的索引对应于标签
+    label = numpy.argmax(outputs)
+    out+=str(label)
+print(out)
+
+# 移除生成的图片，保持文件夹的整洁
+import os
+os.remove(path)
+```
+
+可以看到输出结果已经正确显示为0、1、2、3、4。模型训练完成！
+
+</details>
+
+### PyTorch版本
+
+```python showLineNumbers
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+
+# 定义数据转换
+# Compose 是一个函数，用于将多个变换组合在一起
+transform = transforms.Compose([
+    # 将图像转换为张量
+    transforms.ToTensor(),
+    # 将图像的像素值转换为0.1307附近，标准差为0.3081
+    # 为什么是0.1307和0.3081？
+    # 因为MNIST数据集的像素值是0-255，转换为0-1之间的值
+    # 0.1307是MNIST数据集的均值，0.3081是MNIST数据集的标准差
+    # 所以需要将图像的像素值转换为0.1307附近，标准差为0.3081
+    transforms.Normalize((0.1307,), (0.3081,))  
+])
+
+# 加载MNIST数据集
+# root：数据集的根目录
+# train：是否为训练集(获取带有train=True的数据集)
+# download：是否下载数据集，如果没有，则下载
+# transform：数据转换
+train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+
+# 创建数据加载器
+# batch_size：每个batch（批次）的大小
+# 如果batch_size=1，则每次只取一个样本，则不需要打乱数据集
+# 如果batch_size=1000，则每次取1000个样本，则需要打乱数据集
+# 较大的batch_size可以提高训练速度，但可能会导致内存不足
+# shuffle：是否打乱数据集
+batch_size = 32
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+# 定义神经网络模型
+# 继承自nn.Module，所以需要实现forward方法
+class NeuralNetwork(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        # 调用父类nn.Module的构造函数
+        super(NeuralNetwork, self).__init__()
+        # 初始化线性层1
+        self.layer1 = nn.Linear(input_size, hidden_size)
+        # 初始化ReLU激活函数
+        self.relu = nn.ReLU()
+        # 初始化线性层2
+        self.layer2 = nn.Linear(hidden_size, output_size)
+
+    # 在PyTorch中forward是一个特殊方法名，是模型正向传播的标准命名
+    # 由于nn.Module继承自nn.Module，所以需要实现forward方法，forward方法中的数据会被记录，用于下方loss.backward()自动反向传播
+    def forward(self, x):
+        # 将图像展平
+        x = x.reshape(-1, input_size)  
+        # 执行线性层1的前向传播计算
+        x = self.layer1(x)
+        # 执行ReLU激活函数
+        x = self.relu(x)
+        # 执行线性层2的前向传播计算
+        x = self.layer2(x)
+        return x
+
+    # # 反向传播
+    # def backward(self, x):
+    #     # 执行线性层1的反向传播计算
+    #     x = self.layer1.backward(x)
+    #     # 执行ReLU激活函数的反向传播计算
+    #     x = self.relu.backward(x)
+    #     # 执行线性层2的反向传播计算
+    #     x = self.layer2.backward(x)
+
+# 创建模型实例
+# 输入层：28*28=784
+input_size = 28 * 28 
+# 隐藏层：128（可以设置为其他值，通常设为2的幂次方，且不超过输入层的一半）
+hidden_size = 128
+# 输出层：10  （因为MNIST数据集有10个类别）
+output_size = 10
+model = NeuralNetwork(input_size, hidden_size, output_size)
+
+# 定义损失函数和优化器
+# 重点1：损失函数
+# 常见的损失函数有：交叉熵、均方误差
+# 交叉熵损失函数：用于分类问题，计算预测值和真实值之间的差异
+# 公式：loss = -sum(y_true * log(y_pred))
+# 均方误差：用于回归问题，计算预测值和真实值之间的差异
+# 公式：loss = sum((y_true - y_pred) ** 2)
+criterion = nn.CrossEntropyLoss()
+# 重点2：优化器
+# 常见的优化器有：随机梯度下降、Adam、RMSprop等
+# SGD：随机梯度下降
+# 公式：optimizer = optim.SGD(model.parameters(), lr=0.01)
+# lr：学习率，用于控制每次更新参数的步长
+# momentum：动量，用于加速梯度下降
+# 梯度计算公式与momentum有关，最终更新的梯度为：g_v = momentum * g_v + lr * grad
+# 其中grad是梯度，lr是学习率，momentum是动量，g_v是最终更新的梯度
+optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+# 训练模型，epochs是训练的轮数，训练的轮数越多，训练的越充分，但训练时间越长
+# 训练的前期梯度下降较多，后期梯度下降较少，因为后期梯度较小，所以需要较小的学习率
+epochs = 5
+
+for epoch in range(epochs):
+    running_loss = 0.0
+    for i, (images, labels) in enumerate(train_loader):
+        # 模型训练,把模型设置为训练模式
+        # 激活BatchNorm层的参数更新机制，使用当前批次的均值和方差进行归一化，并更新运行时统计值
+        # 激活Dropout层，随机丢弃一部分神经元，防止过拟合
+        # 确保梯度计算和参数更新正常进行
+        model.train()
+        # 前向传播
+        outputs = model(images)
+        # 计算损失
+        loss = criterion(outputs, labels)
+        # 梯度清零，如果不清零，梯度会累加
+        optimizer.zero_grad()
+        # 反向传播
+        '''
+PyTorch的自动微分引擎很智能（你也可以在模型中像构建前向传播一样，手动设置backward方法），它能够自动处理梯度在计算图中的流动。
+不需要我们明确指定梯度应该传播到哪个模型。
+只要模型的参数参与了损失的计算，它们就会自动成为梯度计算的一部分。
+1. 当你执行前向计算时，PyTorch会在后台构建一个动态计算图，记录所有操作及其依赖关系。每个张量都会存储信息，指向创建它的操作（存储在`grad_fn`属性中）。
+2. 损失函数（如`loss`）是这个计算图的一个节点，通过`.backward()`方法，PyTorch会从这个节点开始沿着计算图向后追踪所有需要计算梯度的参数。
+3. 当创建模型时，所有参数都会自动设置`requires_grad=True`，这些参数会被纳入计算图中。当计算损失时，这些参数通过一系列操作与损失函数相连接。
+4. PyTorch会自动追踪从损失到各个参数的路径，不需要明确指定模型。这是因为计算图包含了所有操作的完整记录，包括哪些参数参与了计算。
+        '''
+        loss.backward()
+        # 更新参数,更新参数的公式为：weight = weight - lr * grad
+        optimizer.step()
+        # 累计损失
+        running_loss += loss.item()
+        
+    # 每个epoch结束后计算准确率
+    correct = 0
+    total = 0
+    # 测试模型
+    # 测试模型时，不需要计算梯度，即关闭后台自动的梯度计算
+    with torch.no_grad():
+        # 加载测试集
+        for images, labels in test_loader:
+            # 测试模型，把模型设置为测试模式
+            # BatchNorm层会使用运行时统计数据而不是批次统计数据
+            # Dropout层会停止随机丢弃神经元
+            model.eval()
+            outputs = model(images)
+            # 获取预测值
+            # 区别与torch.maximum
+            # torch.max会返回两个值，一个是最大值，一个是最大值的索引
+            # 而torch.maximum只会返回最大值
+            # 点击进入这个方法，可以看到示例
+            _, predicted = torch.max(outputs.data, 1)
+            # 累计样本数,labels.size(0) 表示当前批次中样本的数量。
+            # 在测试过程中，当使用 DataLoader 加载数据时，每个批次可能包含多个样本（由 batch_size 决定）。
+            total += labels.size(0)
+            # 累计正确样本数
+            # 计算预测值与真实值相等的样本数
+            print(predicted) # 得到长度为batch_size的向量（预测值）
+            print(labels) # 得到长度为batch_size的向量(真实值)
+            
+            # 计算预测值与真实值相等的样本数
+            test = (predicted == labels)
+            # [ True .... False ],Python计算布尔值的时候，把True当作1，False当作0
+            # 所以test.sum()就是预测值与真实值相等的样本数
+            # .item() 方法用于将张量转换为标量（即一个数值）用于加法计算
+            correct += test.sum().item()
+    
+    accuracy = correct / total
+    print(f'Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(train_loader):.4f}, Accuracy: {accuracy:.4f}')
+
+# 评估模型
+correct = 0
+total = 0
+# 关闭梯度计算
+with torch.no_grad():
+    for images, labels in test_loader:
+        # 测试模型，把模型设置为测试模式
+        """
+本代码不加model.train()和model.eval()原因有以下几点：
+1. 模型中没有BatchNorm和Dropout等层，调用与否确实不会有区别
+2. 创建模型后，PyTorch默认是训练模式，所以不调用model.train()也能正常训练，只有明确调用model.eval()后才会切换到评估模式
+
+更复杂的模型如ResNet、BERT等都包含这些层。
+所以需要养成习惯始终在相应阶段调用model.train()和model.eval()
+这样代码更规范，也能避免在模型变复杂后出现意外问题。
+        """
+        model.eval()
+        outputs = model(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+accuracy = correct / total
+print(f'测试集准确率: {accuracy:.4f}')
+
+```
+

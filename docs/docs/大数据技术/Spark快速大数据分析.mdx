@@ -1,0 +1,664 @@
+---
+sidebar_position: 2
+title: Spark - 快如闪电的大数据处理
+---
+
+# Spark - 比Hadoop快100倍
+
+Spark是目前最流行的大数据处理框架。这一章教你**真正用Spark解决实际问题**。
+
+## 为什么选择Spark？
+
+### Spark vs MapReduce
+
+```python
+# MapReduce：慢
+# 每次计算都要读写磁盘
+Map → 写磁盘 → Shuffle → 读磁盘 → Reduce → 写磁盘
+
+# Spark：快
+# 数据缓存在内存，链式计算
+Map → Shuffle → Reduce  (全在内存)
+```
+
+**性能对比**：
+- 迭代计算：Spark快100倍
+- 交互式查询：Spark快10倍
+- 流式处理：Spark延迟更低
+
+### Spark的优势
+
+1. **速度快**：内存计算
+2. **易用**：API简洁
+3. **通用**：批处理、流处理、机器学习、图计算
+4. **兼容**：可以读取HDFS、Hive、HBase等
+
+## 第一部分：Spark快速入门
+
+### 安装Spark
+
+**方法1：使用Docker（推荐）**
+
+```bash
+# docker-compose.yml
+version: '3'
+services:
+  spark-master:
+    image: bitnami/spark:3.4
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+  
+  spark-worker:
+    image: bitnami/spark:3.4
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    depends_on:
+      - spark-master
+
+# 启动
+docker-compose up -d
+
+# 访问Web UI: http://localhost:8080
+```
+
+**方法2：本地安装**
+
+```bash
+# 下载Spark
+wget https://dlcdn.apache.org/spark/spark-3.4.0/spark-3.4.0-bin-hadoop3.tgz
+tar -xzf spark-3.4.0-bin-hadoop3.tgz
+cd spark-3.4.0-bin-hadoop3
+
+# 启动Spark Shell
+./bin/pyspark
+```
+
+### 第一个Spark程序
+
+```python
+from pyspark.sql import SparkSession
+
+# 创建Spark会话
+spark = SparkSession.builder \
+    .appName("HelloSpark") \
+    .master("local[*]") \
+    .getOrCreate()
+
+# 创建数据
+data = [1, 2, 3, 4, 5]
+rdd = spark.sparkContext.parallelize(data)
+
+# 计算
+result = rdd.map(lambda x: x * 2).collect()
+print(result)  # [2, 4, 6, 8, 10]
+
+# 停止
+spark.stop()
+```
+
+**运行**：
+```bash
+spark-submit hello_spark.py
+```
+
+## 第二部分：RDD - Spark的基础
+
+### 什么是RDD？
+
+**RDD（Resilient Distributed Dataset）**：弹性分布式数据集
+
+```python
+# RDD就是分布在多台机器上的数据集合
+数据: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# 分成3个分区
+Partition 1: [1, 2, 3, 4]
+Partition 2: [5, 6, 7]
+Partition 3: [8, 9, 10]
+
+# 每个分区在不同的机器上并行处理
+```
+
+### 创建RDD
+
+```python
+from pyspark import SparkContext
+
+sc = SparkContext("local", "RDD Demo")
+
+# 方法1：从集合创建
+data = [1, 2, 3, 4, 5]
+rdd1 = sc.parallelize(data)
+
+# 方法2：从文件创建
+rdd2 = sc.textFile("data.txt")
+
+# 方法3：从HDFS创建
+rdd3 = sc.textFile("hdfs://namenode:9000/user/data/file.txt")
+```
+
+### RDD转换操作（Transformation）
+
+**转换操作是惰性的，不会立即执行**
+
+```python
+# 1. map：对每个元素应用函数
+rdd = sc.parallelize([1, 2, 3, 4, 5])
+rdd2 = rdd.map(lambda x: x * 2)
+# [2, 4, 6, 8, 10]
+
+# 2. filter：过滤元素
+rdd3 = rdd.filter(lambda x: x % 2 == 0)
+# [2, 4]
+
+# 3. flatMap：展平结果
+rdd4 = sc.parallelize(["hello world", "spark is fast"])
+words = rdd4.flatMap(lambda line: line.split())
+# ["hello", "world", "spark", "is", "fast"]
+
+# 4. distinct：去重
+rdd5 = sc.parallelize([1, 2, 2, 3, 3, 3])
+rdd6 = rdd5.distinct()
+# [1, 2, 3]
+
+# 5. union：合并
+rdd7 = sc.parallelize([1, 2, 3])
+rdd8 = sc.parallelize([4, 5, 6])
+rdd9 = rdd7.union(rdd8)
+# [1, 2, 3, 4, 5, 6]
+
+# 6. intersection：交集
+rdd10 = sc.parallelize([1, 2, 3, 4])
+rdd11 = sc.parallelize([3, 4, 5, 6])
+rdd12 = rdd10.intersection(rdd11)
+# [3, 4]
+
+# 7. groupByKey：按key分组
+rdd13 = sc.parallelize([("a", 1), ("b", 2), ("a", 3)])
+rdd14 = rdd13.groupByKey()
+# [("a", [1, 3]), ("b", [2])]
+
+# 8. reduceByKey：按key聚合
+rdd15 = rdd13.reduceByKey(lambda x, y: x + y)
+# [("a", 4), ("b", 2)]
+
+# 9. sortByKey：按key排序
+rdd16 = sc.parallelize([(3, "c"), (1, "a"), (2, "b")])
+rdd17 = rdd16.sortByKey()
+# [(1, "a"), (2, "b"), (3, "c")]
+
+# 10. join：连接
+rdd18 = sc.parallelize([("a", 1), ("b", 2)])
+rdd19 = sc.parallelize([("a", "x"), ("b", "y")])
+rdd20 = rdd18.join(rdd19)
+# [("a", (1, "x")), ("b", (2, "y"))]
+```
+
+### RDD行动操作（Action）
+
+**行动操作会触发实际计算**
+
+```python
+rdd = sc.parallelize([1, 2, 3, 4, 5])
+
+# 1. collect：收集所有元素
+result = rdd.collect()
+print(result)  # [1, 2, 3, 4, 5]
+
+# 2. count：计数
+count = rdd.count()
+print(count)  # 5
+
+# 3. first：第一个元素
+first = rdd.first()
+print(first)  # 1
+
+# 4. take：取前n个元素
+top3 = rdd.take(3)
+print(top3)  # [1, 2, 3]
+
+# 5. reduce：聚合
+sum_val = rdd.reduce(lambda x, y: x + y)
+print(sum_val)  # 15
+
+# 6. foreach：对每个元素执行操作
+rdd.foreach(lambda x: print(x))
+
+# 7. saveAsTextFile：保存到文件
+rdd.saveAsTextFile("output/")
+
+# 8. countByKey：统计每个key的数量
+rdd_kv = sc.parallelize([("a", 1), ("b", 2), ("a", 3)])
+counts = rdd_kv.countByKey()
+print(counts)  # {'a': 2, 'b': 1}
+```
+
+### 实战：WordCount
+
+```python
+from pyspark import SparkContext
+
+sc = SparkContext("local", "WordCount")
+
+# 读取文件
+text = sc.textFile("data.txt")
+
+# 处理
+counts = text.flatMap(lambda line: line.split()) \
+    .map(lambda word: (word.lower(), 1)) \
+    .reduceByKey(lambda x, y: x + y) \
+    .sortBy(lambda x: x[1], ascending=False)
+
+# 输出TOP10
+top10 = counts.take(10)
+for word, count in top10:
+    print(f"{word}: {count}")
+
+# 保存结果
+counts.saveAsTextFile("output/wordcount")
+
+sc.stop()
+```
+
+## 第三部分：DataFrame - 结构化数据处理
+
+### 为什么用DataFrame？
+
+```python
+# RDD：灵活但繁琐
+rdd.map(lambda x: x[0]) \
+   .filter(lambda x: x > 18) \
+   .groupBy(lambda x: x) \
+   .count()
+
+# DataFrame：简洁且优化
+df.select("age") \
+  .filter(df.age > 18) \
+  .groupBy("age") \
+  .count()
+```
+
+### 创建DataFrame
+
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("DataFrame Demo").getOrCreate()
+
+# 方法1：从列表创建
+data = [
+    ("Alice", 25, "F"),
+    ("Bob", 30, "M"),
+    ("Charlie", 35, "M")
+]
+df = spark.createDataFrame(data, ["name", "age", "gender"])
+
+# 方法2：从字典创建
+data = [
+    {"name": "Alice", "age": 25, "gender": "F"},
+    {"name": "Bob", "age": 30, "gender": "M"}
+]
+df = spark.createDataFrame(data)
+
+# 方法3：从CSV读取
+df = spark.read.csv("data.csv", header=True, inferSchema=True)
+
+# 方法4：从JSON读取
+df = spark.read.json("data.json")
+
+# 方法5：从Parquet读取（推荐）
+df = spark.read.parquet("data.parquet")
+
+# 方法6：从数据库读取
+df = spark.read.jdbc(
+    url="jdbc:mysql://localhost:3306/db",
+    table="users",
+    properties={"user": "root", "password": "password"}
+)
+```
+
+### DataFrame基本操作
+
+```python
+# 查看数据
+df.show()  # 显示前20行
+df.show(5)  # 显示前5行
+df.head(3)  # 返回前3行
+
+# 查看结构
+df.printSchema()  # 打印schema
+df.columns  # 列名列表
+df.dtypes  # 列类型
+
+# 统计信息
+df.count()  # 行数
+df.describe().show()  # 统计摘要
+df.summary().show()  # 更详细的统计
+
+# 选择列
+df.select("name", "age").show()
+df.select(df.name, df.age).show()
+df.select(df["name"], df["age"]).show()
+
+# 过滤
+df.filter(df.age > 25).show()
+df.filter("age > 25").show()
+df.where(df.age > 25).show()
+
+# 排序
+df.orderBy("age").show()
+df.orderBy(df.age.desc()).show()
+df.sort("age", ascending=False).show()
+
+# 去重
+df.distinct().show()
+df.dropDuplicates(["name"]).show()
+
+# 重命名
+df.withColumnRenamed("name", "username").show()
+
+# 添加列
+from pyspark.sql.functions import col, lit
+df.withColumn("age_plus_10", col("age") + 10).show()
+df.withColumn("country", lit("USA")).show()
+
+# 删除列
+df.drop("gender").show()
+
+# 缺失值处理
+df.na.drop().show()  # 删除含缺失值的行
+df.na.fill(0).show()  # 填充缺失值
+df.na.fill({"age": 0, "name": "Unknown"}).show()
+```
+
+### DataFrame聚合操作
+
+```python
+from pyspark.sql.functions import *
+
+# 分组聚合
+df.groupBy("gender").count().show()
+df.groupBy("gender").agg(avg("age"), max("age"), min("age")).show()
+
+# 多列分组
+df.groupBy("gender", "city").count().show()
+
+# 聚合函数
+df.agg(
+    count("*").alias("total"),
+    avg("age").alias("avg_age"),
+    max("age").alias("max_age"),
+    min("age").alias("min_age"),
+    sum("salary").alias("total_salary")
+).show()
+
+# 窗口函数
+from pyspark.sql.window import Window
+
+# 按部门排名
+window = Window.partitionBy("department").orderBy(col("salary").desc())
+df.withColumn("rank", row_number().over(window)).show()
+
+# 累计和
+window = Window.partitionBy("user_id").orderBy("date")
+df.withColumn("cumsum", sum("amount").over(window)).show()
+```
+
+### 实战：用户行为分析
+
+```python
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+spark = SparkSession.builder.appName("UserBehavior").getOrCreate()
+
+# 读取数据
+df = spark.read.json("user_behavior.json")
+
+# 数据预览
+print("数据总量:", df.count())
+df.show(5)
+df.printSchema()
+
+# 1. 每日活跃用户数（DAU）
+dau = df.select(
+    to_date("timestamp").alias("date"),
+    "user_id"
+).distinct().groupBy("date").count().withColumnRenamed("count", "dau")
+
+dau.orderBy("date").show()
+
+# 2. 用户行为分布
+action_dist = df.groupBy("action").count().orderBy("count", ascending=False)
+action_dist.show()
+
+# 3. 热门商品TOP10
+top_items = df.filter(df.action == "view") \
+    .groupBy("item_id") \
+    .count() \
+    .orderBy("count", ascending=False) \
+    .limit(10)
+
+top_items.show()
+
+# 4. 用户活跃度分析
+user_activity = df.groupBy("user_id").agg(
+    count("*").alias("total_actions"),
+    countDistinct("item_id").alias("unique_items"),
+    collect_set("action").alias("action_types")
+)
+
+# 用户分层
+user_activity = user_activity.withColumn(
+    "user_level",
+    when(col("total_actions") >= 100, "高活跃")
+    .when(col("total_actions") >= 10, "中活跃")
+    .otherwise("低活跃")
+)
+
+user_activity.groupBy("user_level").count().show()
+
+# 5. 转化漏斗
+funnel = df.groupBy("user_id").agg(
+    sum(when(col("action") == "view", 1).otherwise(0)).alias("views"),
+    sum(when(col("action") == "cart", 1).otherwise(0)).alias("carts"),
+    sum(when(col("action") == "purchase", 1).otherwise(0)).alias("purchases")
+)
+
+funnel_stats = funnel.agg(
+    count("*").alias("total_users"),
+    sum("views").alias("total_views"),
+    sum("carts").alias("total_carts"),
+    sum("purchases").alias("total_purchases")
+)
+
+funnel_stats.show()
+
+# 计算转化率
+funnel_stats = funnel_stats.withColumn(
+    "view_to_cart_rate",
+    col("total_carts") / col("total_views") * 100
+).withColumn(
+    "cart_to_purchase_rate",
+    col("total_purchases") / col("total_carts") * 100
+)
+
+funnel_stats.show()
+
+# 保存结果
+dau.write.mode("overwrite").parquet("output/dau")
+top_items.write.mode("overwrite").parquet("output/top_items")
+user_activity.write.mode("overwrite").parquet("output/user_activity")
+```
+
+## 第四部分：Spark SQL
+
+### 使用SQL查询
+
+```python
+# 注册临时表
+df.createOrReplaceTempView("users")
+
+# SQL查询
+result = spark.sql("""
+    SELECT 
+        gender,
+        COUNT(*) as count,
+        AVG(age) as avg_age,
+        MAX(salary) as max_salary
+    FROM users
+    WHERE age > 25
+    GROUP BY gender
+    ORDER BY count DESC
+""")
+
+result.show()
+
+# 复杂查询
+result = spark.sql("""
+    WITH user_stats AS (
+        SELECT 
+            user_id,
+            COUNT(*) as action_count,
+            COUNT(DISTINCT item_id) as unique_items
+        FROM user_behavior
+        GROUP BY user_id
+    )
+    SELECT 
+        CASE 
+            WHEN action_count >= 100 THEN '高活跃'
+            WHEN action_count >= 10 THEN '中活跃'
+            ELSE '低活跃'
+        END as user_level,
+        COUNT(*) as user_count,
+        AVG(unique_items) as avg_unique_items
+    FROM user_stats
+    GROUP BY user_level
+""")
+
+result.show()
+```
+
+### 连接操作
+
+```python
+# 读取数据
+users = spark.read.csv("users.csv", header=True)
+orders = spark.read.csv("orders.csv", header=True)
+
+# 内连接
+result = users.join(orders, users.user_id == orders.user_id, "inner")
+
+# 左连接
+result = users.join(orders, "user_id", "left")
+
+# 右连接
+result = users.join(orders, "user_id", "right")
+
+# 全外连接
+result = users.join(orders, "user_id", "outer")
+
+# 多表连接
+items = spark.read.csv("items.csv", header=True)
+result = users.join(orders, "user_id") \
+    .join(items, "item_id")
+
+# SQL方式
+users.createOrReplaceTempView("users")
+orders.createOrReplaceTempView("orders")
+
+result = spark.sql("""
+    SELECT 
+        u.name,
+        u.age,
+        o.order_id,
+        o.amount
+    FROM users u
+    LEFT JOIN orders o ON u.user_id = o.user_id
+""")
+```
+
+## 第五部分：性能优化
+
+### 1. 缓存
+
+```python
+# 缓存数据到内存
+df.cache()
+df.persist()
+
+# 使用缓存
+df.filter(df.age > 25).count()  # 第一次：从磁盘读取
+df.filter(df.age > 30).count()  # 第二次：从内存读取，快！
+
+# 释放缓存
+df.unpersist()
+```
+
+### 2. 分区
+
+```python
+# 重新分区
+df.repartition(10)  # 增加分区
+df.coalesce(2)  # 减少分区
+
+# 按列分区
+df.repartition("date")
+
+# 保存时分区
+df.write.partitionBy("date", "hour").parquet("output/")
+```
+
+### 3. 广播变量
+
+```python
+# 小表广播到所有节点
+small_df = spark.read.csv("small.csv")
+from pyspark.sql.functions import broadcast
+
+result = large_df.join(broadcast(small_df), "key")
+```
+
+### 4. 避免Shuffle
+
+```python
+# 坏：会触发shuffle
+df.groupBy("key").count()
+
+# 好：先过滤再分组
+df.filter(df.value > 100).groupBy("key").count()
+
+# 使用reduceByKey代替groupByKey
+rdd.reduceByKey(lambda x, y: x + y)  # 好
+rdd.groupByKey().mapValues(sum)  # 坏
+```
+
+## 总结
+
+Spark是大数据处理的利器：
+
+1. **RDD**：底层API，灵活强大
+2. **DataFrame**：高层API，简洁高效
+3. **Spark SQL**：用SQL处理大数据
+4. **性能优化**：缓存、分区、广播
+
+**下一步**：
+- 学习Spark Streaming（实时处理）
+- 学习Spark MLlib（机器学习）
+- 学习Spark GraphX（图计算）
+
+记住：**Spark不是魔法，是工具。多练习！**
+
+## 练习题
+
+1. 分析淘宝用户行为数据集
+2. 实现协同过滤推荐算法
+3. 处理Twitter情感分析
+4. 构建实时监控系统
+
+下一章：Kafka消息队列（即将推出）
+

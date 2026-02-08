@@ -1,0 +1,704 @@
+---
+sidebar_position: 1
+title: MySQL - 从入门到精通
+---
+
+# MySQL - 最流行的开源数据库
+
+MySQL是世界上最流行的开源关系型数据库。这一章教你**从基础到高级的MySQL技术**。
+
+## 第一部分：MySQL基础
+
+### 安装和配置
+
+**Docker方式（推荐）**：
+```bash
+# 启动MySQL
+docker run -d --name mysql \
+  -e MYSQL_ROOT_PASSWORD=password \
+  -p 3306:3306 \
+  mysql:8.0
+
+# 进入MySQL
+docker exec -it mysql mysql -uroot -ppassword
+```
+
+**连接MySQL**：
+```bash
+# 命令行连接
+mysql -h localhost -u root -p
+
+# 查看版本
+SELECT VERSION();
+
+# 查看当前用户
+SELECT USER();
+```
+
+### 数据库操作
+
+```sql
+-- 创建数据库
+CREATE DATABASE ecommerce CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 查看数据库
+SHOW DATABASES;
+
+-- 使用数据库
+USE ecommerce;
+
+-- 删除数据库
+DROP DATABASE IF EXISTS test_db;
+```
+
+### 表操作
+
+```sql
+-- 创建表
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    age INT,
+    gender ENUM('M', 'F', 'Other'),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_username (username),
+    INDEX idx_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 查看表结构
+DESC users;
+SHOW CREATE TABLE users;
+
+-- 修改表
+ALTER TABLE users ADD COLUMN phone VARCHAR(20);
+ALTER TABLE users MODIFY COLUMN age TINYINT;
+ALTER TABLE users DROP COLUMN phone;
+ALTER TABLE users ADD INDEX idx_age (age);
+
+-- 删除表
+DROP TABLE IF EXISTS temp_table;
+```
+
+## 第二部分：CRUD操作
+
+### 插入数据
+
+```sql
+-- 单行插入
+INSERT INTO users (username, email, password, age, gender)
+VALUES ('alice', 'alice@example.com', 'hashed_password', 25, 'F');
+
+-- 多行插入
+INSERT INTO users (username, email, password, age, gender) VALUES
+('bob', 'bob@example.com', 'hashed_password', 30, 'M'),
+('charlie', 'charlie@example.com', 'hashed_password', 28, 'M'),
+('diana', 'diana@example.com', 'hashed_password', 26, 'F');
+
+-- 插入并返回ID
+INSERT INTO users (username, email, password) 
+VALUES ('eve', 'eve@example.com', 'hashed_password');
+SELECT LAST_INSERT_ID();
+
+-- 插入或更新（ON DUPLICATE KEY）
+INSERT INTO users (id, username, email, password)
+VALUES (1, 'alice', 'alice@example.com', 'new_password')
+ON DUPLICATE KEY UPDATE password = VALUES(password);
+```
+
+### 查询数据
+
+```sql
+-- 基本查询
+SELECT * FROM users;
+SELECT username, email FROM users;
+
+-- 条件查询
+SELECT * FROM users WHERE age > 25;
+SELECT * FROM users WHERE gender = 'F' AND age BETWEEN 20 AND 30;
+SELECT * FROM users WHERE username LIKE 'a%';
+SELECT * FROM users WHERE email IN ('alice@example.com', 'bob@example.com');
+
+-- 排序
+SELECT * FROM users ORDER BY age DESC;
+SELECT * FROM users ORDER BY age DESC, created_at ASC;
+
+-- 限制结果
+SELECT * FROM users LIMIT 10;
+SELECT * FROM users LIMIT 10 OFFSET 20;  -- 分页
+
+-- 去重
+SELECT DISTINCT gender FROM users;
+
+-- 聚合函数
+SELECT COUNT(*) FROM users;
+SELECT AVG(age) FROM users;
+SELECT MAX(age), MIN(age) FROM users;
+SELECT SUM(age) FROM users;
+
+-- 分组
+SELECT gender, COUNT(*) as count, AVG(age) as avg_age
+FROM users
+GROUP BY gender;
+
+-- HAVING过滤
+SELECT gender, COUNT(*) as count
+FROM users
+GROUP BY gender
+HAVING count > 10;
+```
+
+### 更新数据
+
+```sql
+-- 更新单行
+UPDATE users SET age = 26 WHERE username = 'alice';
+
+-- 更新多行
+UPDATE users SET age = age + 1 WHERE gender = 'M';
+
+-- 更新多个字段
+UPDATE users 
+SET email = 'newemail@example.com', updated_at = NOW()
+WHERE id = 1;
+```
+
+### 删除数据
+
+```sql
+-- 删除单行
+DELETE FROM users WHERE id = 1;
+
+-- 删除多行
+DELETE FROM users WHERE age < 18;
+
+-- 清空表（保留结构）
+TRUNCATE TABLE users;
+```
+
+## 第三部分：高级查询
+
+### 连接查询
+
+```sql
+-- 创建订单表
+CREATE TABLE orders (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status ENUM('pending', 'paid', 'shipped', 'completed') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- 内连接
+SELECT u.username, o.id as order_id, o.total_amount
+FROM users u
+INNER JOIN orders o ON u.id = o.user_id;
+
+-- 左连接（包含没有订单的用户）
+SELECT u.username, COUNT(o.id) as order_count
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+GROUP BY u.id, u.username;
+
+-- 右连接
+SELECT u.username, o.id as order_id
+FROM users u
+RIGHT JOIN orders o ON u.id = o.user_id;
+
+-- 自连接（查找同龄用户）
+SELECT u1.username as user1, u2.username as user2, u1.age
+FROM users u1
+JOIN users u2 ON u1.age = u2.age AND u1.id < u2.id;
+```
+
+### 子查询
+
+```sql
+-- WHERE子查询
+SELECT username FROM users
+WHERE id IN (
+    SELECT user_id FROM orders WHERE total_amount > 1000
+);
+
+-- FROM子查询
+SELECT avg_age FROM (
+    SELECT AVG(age) as avg_age FROM users GROUP BY gender
+) t;
+
+-- EXISTS子查询
+SELECT username FROM users u
+WHERE EXISTS (
+    SELECT 1 FROM orders o WHERE o.user_id = u.id
+);
+
+-- 标量子查询
+SELECT username, age,
+    (SELECT AVG(age) FROM users) as avg_age
+FROM users;
+```
+
+### 窗口函数（MySQL 8.0+）
+
+```sql
+-- ROW_NUMBER：排名
+SELECT 
+    username,
+    age,
+    ROW_NUMBER() OVER (ORDER BY age DESC) as rank
+FROM users;
+
+-- RANK：排名（允许并列）
+SELECT 
+    username,
+    age,
+    RANK() OVER (ORDER BY age DESC) as rank
+FROM users;
+
+-- 分组排名
+SELECT 
+    username,
+    gender,
+    age,
+    ROW_NUMBER() OVER (PARTITION BY gender ORDER BY age DESC) as rank_in_gender
+FROM users;
+
+-- LAG/LEAD：访问前后行
+SELECT 
+    username,
+    age,
+    LAG(age, 1) OVER (ORDER BY age) as prev_age,
+    LEAD(age, 1) OVER (ORDER BY age) as next_age
+FROM users;
+
+-- 累计和
+SELECT 
+    username,
+    age,
+    SUM(age) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as cumsum
+FROM users;
+```
+
+### CTE（公共表表达式）
+
+```sql
+-- 简单CTE
+WITH high_value_users AS (
+    SELECT user_id, SUM(total_amount) as total
+    FROM orders
+    GROUP BY user_id
+    HAVING total > 10000
+)
+SELECT u.username, h.total
+FROM users u
+JOIN high_value_users h ON u.id = h.user_id;
+
+-- 递归CTE（组织架构）
+WITH RECURSIVE org_tree AS (
+    -- 基础查询：顶层
+    SELECT id, name, manager_id, 1 as level
+    FROM employees
+    WHERE manager_id IS NULL
+    
+    UNION ALL
+    
+    -- 递归查询：下级
+    SELECT e.id, e.name, e.manager_id, o.level + 1
+    FROM employees e
+    JOIN org_tree o ON e.manager_id = o.id
+)
+SELECT * FROM org_tree;
+```
+
+## 第四部分：索引优化
+
+### 索引类型
+
+```sql
+-- 普通索引
+CREATE INDEX idx_username ON users(username);
+
+-- 唯一索引
+CREATE UNIQUE INDEX idx_email ON users(email);
+
+-- 复合索引
+CREATE INDEX idx_age_gender ON users(age, gender);
+
+-- 全文索引
+CREATE FULLTEXT INDEX idx_content ON articles(content);
+
+-- 查看索引
+SHOW INDEX FROM users;
+
+-- 删除索引
+DROP INDEX idx_username ON users;
+```
+
+### 索引原理
+
+```sql
+-- B+树索引
+-- 主键索引（聚簇索引）：叶子节点存储完整数据
+-- 二级索引：叶子节点存储主键值
+
+-- 查看执行计划
+EXPLAIN SELECT * FROM users WHERE username = 'alice';
+
+-- 强制使用索引
+SELECT * FROM users FORCE INDEX (idx_username) WHERE username = 'alice';
+
+-- 忽略索引
+SELECT * FROM users IGNORE INDEX (idx_username) WHERE username = 'alice';
+```
+
+### 索引优化技巧
+
+```sql
+-- ✅ 好的查询：使用索引
+SELECT * FROM users WHERE age = 25;
+
+-- ❌ 坏的查询：索引失效
+SELECT * FROM users WHERE age + 1 = 26;  -- 在列上使用函数
+SELECT * FROM users WHERE age != 25;     -- 不等于
+SELECT * FROM users WHERE age IS NULL;   -- NULL值
+SELECT * FROM users WHERE username LIKE '%alice';  -- 前缀模糊
+
+-- 复合索引最左前缀原则
+CREATE INDEX idx_abc ON table(a, b, c);
+-- ✅ 可以使用索引：WHERE a=1, WHERE a=1 AND b=2, WHERE a=1 AND b=2 AND c=3
+-- ❌ 不能使用索引：WHERE b=2, WHERE c=3, WHERE b=2 AND c=3
+
+-- 覆盖索引：查询的列都在索引中
+CREATE INDEX idx_username_email ON users(username, email);
+SELECT username, email FROM users WHERE username = 'alice';  -- 不需要回表
+```
+
+## 第五部分：事务和锁
+
+### 事务基础
+
+```sql
+-- 开始事务
+START TRANSACTION;
+
+-- 执行操作
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+
+-- 提交事务
+COMMIT;
+
+-- 回滚事务
+ROLLBACK;
+
+-- 设置保存点
+SAVEPOINT sp1;
+-- 回滚到保存点
+ROLLBACK TO sp1;
+```
+
+### 事务隔离级别
+
+```sql
+-- 查看隔离级别
+SELECT @@transaction_isolation;
+
+-- 设置隔离级别
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+-- 四种隔离级别
+-- 1. READ UNCOMMITTED：读未提交（脏读）
+-- 2. READ COMMITTED：读已提交（不可重复读）
+-- 3. REPEATABLE READ：可重复读（幻读）- MySQL默认
+-- 4. SERIALIZABLE：串行化（最高级别）
+```
+
+### 锁机制
+
+```sql
+-- 共享锁（S锁）：读锁
+SELECT * FROM users WHERE id = 1 LOCK IN SHARE MODE;
+
+-- 排他锁（X锁）：写锁
+SELECT * FROM users WHERE id = 1 FOR UPDATE;
+
+-- 表锁
+LOCK TABLES users READ;
+UNLOCK TABLES;
+
+-- 查看锁
+SHOW OPEN TABLES WHERE In_use > 0;
+SELECT * FROM information_schema.innodb_locks;
+```
+
+## 第六部分：性能优化
+
+### 慢查询分析
+
+```sql
+-- 开启慢查询日志
+SET GLOBAL slow_query_log = 'ON';
+SET GLOBAL long_query_time = 2;  -- 超过2秒的查询
+
+-- 查看慢查询
+SHOW VARIABLES LIKE 'slow_query%';
+
+-- 分析慢查询
+-- 使用mysqldumpslow工具
+```
+
+### 查询优化
+
+```python
+import mysql.connector
+import time
+
+class QueryOptimizer:
+    """查询优化示例"""
+    
+    def __init__(self):
+        self.conn = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='password',
+            database='ecommerce'
+        )
+        self.cursor = self.conn.cursor()
+    
+    def bad_query(self):
+        """❌ 坏的查询：N+1问题"""
+        start = time.time()
+        
+        # 查询所有用户
+        self.cursor.execute("SELECT id, username FROM users LIMIT 100")
+        users = self.cursor.fetchall()
+        
+        # 为每个用户查询订单（N+1次查询）
+        for user_id, username in users:
+            self.cursor.execute(
+                "SELECT COUNT(*) FROM orders WHERE user_id = %s",
+                (user_id,)
+            )
+            count = self.cursor.fetchone()[0]
+            print(f"{username}: {count} orders")
+        
+        print(f"耗时: {time.time() - start:.2f}秒")
+    
+    def good_query(self):
+        """✅ 好的查询：JOIN一次查询"""
+        start = time.time()
+        
+        self.cursor.execute("""
+            SELECT u.username, COUNT(o.id) as order_count
+            FROM users u
+            LEFT JOIN orders o ON u.id = o.user_id
+            WHERE u.id <= 100
+            GROUP BY u.id, u.username
+        """)
+        
+        for username, count in self.cursor.fetchall():
+            print(f"{username}: {count} orders")
+        
+        print(f"耗时: {time.time() - start:.2f}秒")
+    
+    def use_index(self):
+        """使用索引优化"""
+        # ❌ 坏：全表扫描
+        self.cursor.execute("SELECT * FROM users WHERE age > 25")
+        
+        # ✅ 好：使用索引
+        self.cursor.execute("SELECT * FROM users WHERE age = 25")
+    
+    def batch_insert(self):
+        """批量插入优化"""
+        # ❌ 坏：逐条插入
+        start = time.time()
+        for i in range(1000):
+            self.cursor.execute(
+                "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
+                (f'user{i}', f'user{i}@example.com', 'password')
+            )
+        self.conn.commit()
+        print(f"逐条插入耗时: {time.time() - start:.2f}秒")
+        
+        # ✅ 好：批量插入
+        start = time.time()
+        values = [(f'user{i}', f'user{i}@example.com', 'password') for i in range(1000)]
+        self.cursor.executemany(
+            "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
+            values
+        )
+        self.conn.commit()
+        print(f"批量插入耗时: {time.time() - start:.2f}秒")
+```
+
+### 表设计优化
+
+```sql
+-- 1. 选择合适的数据类型
+-- ❌ 坏
+CREATE TABLE bad_table (
+    id VARCHAR(255),  -- 应该用BIGINT
+    age VARCHAR(10),  -- 应该用TINYINT
+    price VARCHAR(20) -- 应该用DECIMAL
+);
+
+-- ✅ 好
+CREATE TABLE good_table (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    age TINYINT UNSIGNED,
+    price DECIMAL(10,2)
+);
+
+-- 2. 避免NULL值
+CREATE TABLE products (
+    id BIGINT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL DEFAULT '',
+    stock INT NOT NULL DEFAULT 0
+);
+
+-- 3. 使用ENUM代替字符串
+CREATE TABLE orders (
+    id BIGINT PRIMARY KEY,
+    status ENUM('pending', 'paid', 'shipped', 'completed') NOT NULL
+);
+```
+
+## 第七部分：实战项目
+
+### 项目：电商数据库设计
+
+```sql
+-- 用户表
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email (email)
+) ENGINE=InnoDB;
+
+-- 商品表
+CREATE TABLE products (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(200) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0,
+    category_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_category (category_id),
+    INDEX idx_price (price)
+) ENGINE=InnoDB;
+
+-- 订单表
+CREATE TABLE orders (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status ENUM('pending', 'paid', 'shipped', 'completed', 'cancelled') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_user (user_id),
+    INDEX idx_status (status),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB;
+
+-- 订单明细表
+CREATE TABLE order_items (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    INDEX idx_order (order_id),
+    INDEX idx_product (product_id)
+) ENGINE=InnoDB;
+
+-- 购物车表
+CREATE TABLE cart (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_product (user_id, product_id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+) ENGINE=InnoDB;
+
+-- 常用查询
+
+-- 1. 用户订单统计
+SELECT 
+    u.username,
+    COUNT(o.id) as order_count,
+    SUM(o.total_amount) as total_spent
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+GROUP BY u.id, u.username
+ORDER BY total_spent DESC
+LIMIT 10;
+
+-- 2. 热门商品
+SELECT 
+    p.name,
+    SUM(oi.quantity) as total_sold,
+    SUM(oi.quantity * oi.price) as revenue
+FROM products p
+JOIN order_items oi ON p.id = oi.product_id
+JOIN orders o ON oi.order_id = o.id
+WHERE o.status = 'completed'
+GROUP BY p.id, p.name
+ORDER BY total_sold DESC
+LIMIT 20;
+
+-- 3. 用户购买行为分析
+WITH user_orders AS (
+    SELECT 
+        user_id,
+        COUNT(*) as order_count,
+        SUM(total_amount) as total_amount,
+        MAX(created_at) as last_order_date
+    FROM orders
+    WHERE status = 'completed'
+    GROUP BY user_id
+)
+SELECT 
+    u.username,
+    uo.order_count,
+    uo.total_amount,
+    uo.last_order_date,
+    DATEDIFF(NOW(), uo.last_order_date) as days_since_last_order
+FROM users u
+JOIN user_orders uo ON u.id = uo.user_id
+ORDER BY uo.total_amount DESC;
+```
+
+## 总结
+
+MySQL是强大的关系型数据库：
+
+1. **ACID事务**：保证数据一致性
+2. **丰富索引**：B+树、全文索引
+3. **高性能**：查询优化、缓存
+4. **易用性**：标准SQL、工具丰富
+
+记住：**好的数据库设计是性能的基础**！
+
+## 练习题
+
+1. 设计一个博客系统的数据库
+2. 优化慢查询
+3. 实现分库分表
+4. 搭建主从复制
+
+下一章：[MongoDB文档数据库](./mongodb.mdx)
+

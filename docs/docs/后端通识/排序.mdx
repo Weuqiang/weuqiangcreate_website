@@ -1,0 +1,321 @@
+---
+sidebarDepth: 4
+---
+# 排序算法
+
+排序算法是计算机科学的基础，不同算法适用于不同场景。
+
+## 算法复杂度对比
+
+| 算法 | 平均时间 | 最坏时间 | 空间复杂度 | 稳定性 | 适用场景 |
+|------|---------|---------|-----------|--------|---------|
+| 冒泡排序 | O(n²) | O(n²) | O(1) | 稳定 | 小数据集 |
+| 选择排序 | O(n²) | O(n²) | O(1) | 不稳定 | 小数据集 |
+| 插入排序 | O(n²) | O(n²) | O(1) | 稳定 | 小数据集、基本有序 |
+| 快速排序 | O(n log n) | O(n²) | O(log n) | 不稳定 | 大数据集 |
+| 归并排序 | O(n log n) | O(n log n) | O(n) | 稳定 | 大数据集、需要稳定性 |
+| 堆排序 | O(n log n) | O(n log n) | O(1) | 不稳定 | 大数据集 |
+
+## 冒泡排序
+
+**原理**：重复遍历数组，比较相邻元素并交换，每轮将最大值"冒泡"到末尾。
+
+**特点**：
+- 简单易懂，代码量少
+- 性能较差，不适合大数据集
+- 稳定排序
+
+```javascript
+function bubbleSort(arr) {
+  const len = arr.length;
+  for (let i = 0; i < len - 1; i++) {
+    let swapped = false;
+    for (let j = 0; j < len - 1 - i; j++) {
+      if (arr[j] > arr[j + 1]) {
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        swapped = true;
+      }
+    }
+    // 优化：如果一轮没有交换，说明已经有序
+    if (!swapped) break;
+  }
+  return arr;
+}
+
+// 测试
+console.log(bubbleSort([9, 8, 7, 6, 2, 3, 4, 5, 1, 10]));
+// [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+```
+
+## 选择排序
+
+**原理**：每轮从未排序部分选出最小值，放到已排序部分的末尾。
+
+**特点**：
+- 交换次数少（最多 n-1 次）
+- 不稳定排序
+- 性能略优于冒泡
+
+```javascript
+function selectionSort(arr) {
+  const len = arr.length;
+  for (let i = 0; i < len - 1; i++) {
+    let minIndex = i;
+    for (let j = i + 1; j < len; j++) {
+      if (arr[j] < arr[minIndex]) {
+        minIndex = j;
+      }
+    }
+    if (minIndex !== i) {
+      [arr[i], arr[minIndex]] = [arr[minIndex], arr[i]];
+    }
+  }
+  return arr;
+}
+```
+
+## 插入排序
+
+**原理**：将数组分为已排序和未排序两部分，每次从未排序部分取一个元素插入到已排序部分的正确位置。
+
+**特点**：
+- 对基本有序的数组效率高
+- 稳定排序
+- 适合小数据集
+
+```javascript
+function insertionSort(arr) {
+  const len = arr.length;
+  for (let i = 1; i < len; i++) {
+    const current = arr[i];
+    let j = i - 1;
+    // 将大于 current 的元素后移
+    while (j >= 0 && arr[j] > current) {
+      arr[j + 1] = arr[j];
+      j--;
+    }
+    arr[j + 1] = current;
+  }
+  return arr;
+}
+```
+
+## 快速排序
+
+**原理**：选择基准值（pivot），将小于基准的放左边，大于基准的放右边，递归处理左右两部分。
+
+**特点**：
+- 平均性能最好的排序算法之一
+- 不稳定排序
+- 最坏情况 O(n²)，但可通过随机选择基准优化
+
+```javascript
+function quickSort(arr) {
+  if (arr.length <= 1) return arr;
+  
+  const pivotIndex = Math.floor(arr.length / 2);
+  const pivot = arr.splice(pivotIndex, 1)[0];
+  const left = [];
+  const right = [];
+  
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] < pivot) {
+      left.push(arr[i]);
+    } else {
+      right.push(arr[i]);
+    }
+  }
+  
+  return [...quickSort(left), pivot, ...quickSort(right)];
+}
+
+// 原地快排（更高效）
+function quickSortInPlace(arr, left = 0, right = arr.length - 1) {
+  if (left >= right) return arr;
+  
+  const pivotIndex = partition(arr, left, right);
+  quickSortInPlace(arr, left, pivotIndex - 1);
+  quickSortInPlace(arr, pivotIndex + 1, right);
+  
+  return arr;
+}
+
+function partition(arr, left, right) {
+  const pivot = arr[right];
+  let i = left - 1;
+  
+  for (let j = left; j < right; j++) {
+    if (arr[j] < pivot) {
+      i++;
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+  
+  [arr[i + 1], arr[right]] = [arr[right], arr[i + 1]];
+  return i + 1;
+}
+```
+
+## 归并排序
+
+**原理**：分治法，将数组分成两半，递归排序后合并。
+
+**特点**：
+- 稳定排序
+- 时间复杂度稳定 O(n log n)
+- 需要额外空间 O(n)
+
+```javascript
+function mergeSort(arr) {
+  if (arr.length <= 1) return arr;
+  
+  const mid = Math.floor(arr.length / 2);
+  const left = mergeSort(arr.slice(0, mid));
+  const right = mergeSort(arr.slice(mid));
+  
+  return merge(left, right);
+}
+
+function merge(left, right) {
+  const result = [];
+  let i = 0, j = 0;
+  
+  while (i < left.length && j < right.length) {
+    if (left[i] < right[j]) {
+      result.push(left[i++]);
+    } else {
+      result.push(right[j++]);
+    }
+  }
+  
+  return result.concat(left.slice(i)).concat(right.slice(j));
+}
+```
+
+## 堆排序
+
+**原理**：利用堆这种数据结构，构建最大堆，每次取出堆顶元素（最大值）。
+
+**特点**：
+- 时间复杂度稳定 O(n log n)
+- 原地排序，空间复杂度 O(1)
+- 不稳定排序
+
+```javascript
+function heapSort(arr) {
+  const len = arr.length;
+  
+  // 构建最大堆
+  for (let i = Math.floor(len / 2) - 1; i >= 0; i--) {
+    heapify(arr, len, i);
+  }
+  
+  // 排序
+  for (let i = len - 1; i > 0; i--) {
+    [arr[0], arr[i]] = [arr[i], arr[0]];
+    heapify(arr, i, 0);
+  }
+  
+  return arr;
+}
+
+function heapify(arr, len, i) {
+  let largest = i;
+  const left = 2 * i + 1;
+  const right = 2 * i + 2;
+  
+  if (left < len && arr[left] > arr[largest]) {
+    largest = left;
+  }
+  
+  if (right < len && arr[right] > arr[largest]) {
+    largest = right;
+  }
+  
+  if (largest !== i) {
+    [arr[i], arr[largest]] = [arr[largest], arr[i]];
+    heapify(arr, len, largest);
+  }
+}
+```
+
+## 计数排序
+
+**原理**：统计每个值出现的次数，然后按顺序输出。
+
+**特点**：
+- 非比较排序
+- 时间复杂度 O(n + k)，k 为数据范围
+- 适合整数排序，数据范围不大的场景
+
+```javascript
+function countingSort(arr) {
+  if (arr.length === 0) return arr;
+  
+  const max = Math.max(...arr);
+  const min = Math.min(...arr);
+  const range = max - min + 1;
+  const count = new Array(range).fill(0);
+  const result = [];
+  
+  // 统计每个值出现的次数
+  for (let i = 0; i < arr.length; i++) {
+    count[arr[i] - min]++;
+  }
+  
+  // 按顺序输出
+  for (let i = 0; i < range; i++) {
+    while (count[i] > 0) {
+      result.push(i + min);
+      count[i]--;
+    }
+  }
+  
+  return result;
+}
+```
+
+## 实际应用场景
+
+### 小数据集（< 50）
+使用**插入排序**，简单高效。
+
+### 大数据集
+使用**快速排序**或**归并排序**。
+
+### 需要稳定性
+使用**归并排序**或**插入排序**。
+
+### 数据基本有序
+使用**插入排序**，时间复杂度接近 O(n)。
+
+### 整数排序且范围不大
+使用**计数排序**，线性时间复杂度。
+
+### JavaScript 内置排序
+```javascript
+// Array.prototype.sort() 使用 Timsort（归并+插入的混合算法）
+const arr = [9, 8, 7, 6, 2, 3, 4, 5, 1, 10];
+arr.sort((a, b) => a - b);  // 升序
+arr.sort((a, b) => b - a);  // 降序
+```
+
+## 性能测试
+
+```javascript
+function benchmark(sortFn, arr, name) {
+  const start = performance.now();
+  sortFn([...arr]);
+  const end = performance.now();
+  console.log(`${name}: ${(end - start).toFixed(2)}ms`);
+}
+
+const testData = Array.from({ length: 10000 }, () => Math.floor(Math.random() * 10000));
+
+benchmark(bubbleSort, testData, '冒泡排序');
+benchmark(selectionSort, testData, '选择排序');
+benchmark(insertionSort, testData, '插入排序');
+benchmark(quickSort, testData, '快速排序');
+benchmark(mergeSort, testData, '归并排序');
+benchmark(heapSort, testData, '堆排序');
+```

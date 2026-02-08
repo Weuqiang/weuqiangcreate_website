@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
-export default function HoverText({ text, explanation }) {
+function HoverText({ text, explanation }) {
   const [isHovering, setIsHovering] = useState(false);
   const [offset, setOffset] = useState(0);
   const tooltipRef = useRef(null);
@@ -72,3 +73,9 @@ export default function HoverText({ text, explanation }) {
   );
 }
 
+HoverText.propTypes = {
+  text: PropTypes.string.isRequired,
+  explanation: PropTypes.string.isRequired,
+};
+
+export default HoverText;

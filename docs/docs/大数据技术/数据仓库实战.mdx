@@ -1,0 +1,696 @@
+---
+sidebar_position: 7
+title: 数据仓库实战 - 构建企业级数仓
+---
+
+# 数据仓库实战 - 从理论到落地
+
+这一章带你**从零构建一个完整的企业级数据仓库**，涵盖架构设计、ETL开发、数据建模的全流程。
+
+## 第一部分：数据仓库基础
+
+### 什么是数据仓库？
+
+**数据仓库（Data Warehouse）**：面向主题的、集成的、稳定的、反映历史变化的数据集合。
+
+**数据库 vs 数据仓库**：
+
+| 特性 | 数据库（OLTP） | 数据仓库（OLAP） |
+|------|---------------|-----------------|
+| 用途 | 事务处理 | 分析决策 |
+| 数据量 | GB-TB | TB-PB |
+| 查询 | 简单、频繁 | 复杂、批量 |
+| 更新 | 实时更新 | 定期加载 |
+| 设计 | 范式化 | 维度建模 |
+
+### 数据仓库架构
+
+```
+┌─────────────────────────────────────────────────┐
+│              数据源层（Source）                  │
+│  业务数据库、日志、API、爬虫                     │
+└─────────────────────────────────────────────────┘
+                    ↓ 数据采集
+┌─────────────────────────────────────────────────┐
+│              ODS层（原始数据层）                 │
+│  原始数据，保持源系统结构                        │
+└─────────────────────────────────────────────────┘
+                    ↓ 数据清洗
+┌─────────────────────────────────────────────────┐
+│              DWD层（明细数据层）                 │
+│  清洗后的明细数据，维度建模                      │
+└─────────────────────────────────────────────────┘
+                    ↓ 数据汇总
+┌─────────────────────────────────────────────────┐
+│              DWS层（汇总数据层）                 │
+│  轻度汇总，按主题聚合                           │
+└─────────────────────────────────────────────────┘
+                    ↓ 数据应用
+┌─────────────────────────────────────────────────┐
+│              ADS层（应用数据层）                 │
+│  面向业务的统计指标                             │
+└─────────────────────────────────────────────────┘
+```
+
+## 第二部分：维度建模
+
+### 星型模型
+
+```
+        ┌──────────┐
+        │ 日期维度  │
+        └──────────┘
+              ↓
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│ 用户维度  │→ │ 事实表   │ ←│ 商品维度  │
+└──────────┘  └──────────┘  └──────────┘
+              ↑
+        ┌──────────┐
+        │ 地区维度  │
+        └──────────┘
+```
+
+### 雪花模型
+
+```
+        ┌──────────┐
+        │ 日期维度  │
+        └──────────┘
+              ↓
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│ 用户维度  │→ │ 事实表   │ ←│ 商品维度  │
+└──────────┘  └──────────┘  └──────────┘
+      ↓              ↑              ↓
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│ 城市维度  │  │ 地区维度  │  │ 类目维度  │
+└──────────┘  └──────────┘  └──────────┘
+```
+
+## 第三部分：实战项目 - 电商数据仓库
+
+### 需求分析
+
+**业务需求**：
+1. 每日销售报表
+2. 用户行为分析
+3. 商品销售排行
+4. 用户价值分析
+5. 流量分析
+
+### 数据源
+
+```sql
+-- 业务数据库表
+-- 用户表
+CREATE TABLE users (
+    user_id BIGINT,
+    username VARCHAR(50),
+    gender VARCHAR(10),
+    birthday DATE,
+    city VARCHAR(50),
+    register_time TIMESTAMP
+);
+
+-- 商品表
+CREATE TABLE products (
+    product_id BIGINT,
+    product_name VARCHAR(200),
+    category_id BIGINT,
+    price DECIMAL(10,2),
+    stock INT
+);
+
+-- 订单表
+CREATE TABLE orders (
+    order_id BIGINT,
+    user_id BIGINT,
+    order_time TIMESTAMP,
+    total_amount DECIMAL(10,2),
+    status VARCHAR(20)
+);
+
+-- 订单明细表
+CREATE TABLE order_items (
+    order_id BIGINT,
+    product_id BIGINT,
+    quantity INT,
+    price DECIMAL(10,2)
+);
+
+-- 用户行为日志
+CREATE TABLE user_logs (
+    log_id BIGINT,
+    user_id BIGINT,
+    action VARCHAR(20),
+    item_id BIGINT,
+    timestamp TIMESTAMP
+);
+```
+
+### ODS层：原始数据层
+
+```sql
+-- 创建ODS层表（Hive）
+
+-- ODS用户表
+CREATE EXTERNAL TABLE ods_users (
+    user_id BIGINT,
+    username STRING,
+    gender STRING,
+    birthday STRING,
+    city STRING,
+    register_time STRING
+)
+PARTITIONED BY (dt STRING)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+LOCATION '/warehouse/ods/users';
+
+-- ODS订单表
+CREATE EXTERNAL TABLE ods_orders (
+    order_id BIGINT,
+    user_id BIGINT,
+    order_time STRING,
+    total_amount DECIMAL(10,2),
+    status STRING
+)
+PARTITIONED BY (dt STRING)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+LOCATION '/warehouse/ods/orders';
+
+-- 数据导入脚本
+-- 使用Sqoop从MySQL导入到HDFS
+sqoop import \
+  --connect jdbc:mysql://localhost:3306/ecommerce \
+  --username root \
+  --password password \
+  --table orders \
+  --hive-import \
+  --hive-table ods_orders \
+  --hive-partition-key dt \
+  --hive-partition-value '2024-01-01' \
+  --target-dir /warehouse/ods/orders/dt=2024-01-01
+```
+
+### DWD层：明细数据层
+
+```sql
+-- 维度表
+
+-- 日期维度表
+CREATE TABLE dwd_dim_date (
+    date_id STRING,
+    date_value DATE,
+    year INT,
+    quarter INT,
+    month INT,
+    week INT,
+    day INT,
+    weekday INT,
+    is_weekend INT,
+    is_holiday INT
+)
+STORED AS PARQUET;
+
+-- 插入日期维度数据
+INSERT INTO dwd_dim_date
+SELECT 
+    date_format(date_value, 'yyyyMMdd') as date_id,
+    date_value,
+    year(date_value) as year,
+    quarter(date_value) as quarter,
+    month(date_value) as month,
+    weekofyear(date_value) as week,
+    day(date_value) as day,
+    dayofweek(date_value) as weekday,
+    CASE WHEN dayofweek(date_value) IN (1,7) THEN 1 ELSE 0 END as is_weekend,
+    0 as is_holiday
+FROM (
+    SELECT date_add('2020-01-01', pos) as date_value
+    FROM (SELECT posexplode(split(space(1825), ' '))) t
+) dates;
+
+-- 用户维度表
+CREATE TABLE dwd_dim_user (
+    user_id BIGINT,
+    username STRING,
+    gender STRING,
+    age INT,
+    city STRING,
+    register_date STRING,
+    user_level STRING
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET;
+
+-- 商品维度表
+CREATE TABLE dwd_dim_product (
+    product_id BIGINT,
+    product_name STRING,
+    category_id BIGINT,
+    category_name STRING,
+    price DECIMAL(10,2)
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET;
+
+-- 事实表
+
+-- 订单事实表
+CREATE TABLE dwd_fact_order (
+    order_id BIGINT,
+    user_id BIGINT,
+    product_id BIGINT,
+    quantity INT,
+    price DECIMAL(10,2),
+    amount DECIMAL(10,2),
+    order_time STRING,
+    date_id STRING
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET;
+
+-- ETL：从ODS到DWD
+INSERT OVERWRITE TABLE dwd_fact_order PARTITION(dt='2024-01-01')
+SELECT 
+    o.order_id,
+    o.user_id,
+    oi.product_id,
+    oi.quantity,
+    oi.price,
+    oi.quantity * oi.price as amount,
+    o.order_time,
+    date_format(o.order_time, 'yyyyMMdd') as date_id
+FROM ods_orders o
+JOIN ods_order_items oi ON o.order_id = oi.order_id
+WHERE o.dt = '2024-01-01'
+  AND o.status = 'completed';
+```
+
+### DWS层：汇总数据层
+
+```sql
+-- 用户主题汇总
+
+-- 用户每日汇总表
+CREATE TABLE dws_user_daily (
+    user_id BIGINT,
+    order_count BIGINT,
+    order_amount DECIMAL(10,2),
+    view_count BIGINT,
+    cart_count BIGINT
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET;
+
+-- ETL：计算用户每日指标
+INSERT OVERWRITE TABLE dws_user_daily PARTITION(dt='2024-01-01')
+SELECT 
+    user_id,
+    COUNT(DISTINCT order_id) as order_count,
+    SUM(amount) as order_amount,
+    SUM(CASE WHEN action='view' THEN 1 ELSE 0 END) as view_count,
+    SUM(CASE WHEN action='cart' THEN 1 ELSE 0 END) as cart_count
+FROM (
+    -- 订单数据
+    SELECT user_id, order_id, amount, NULL as action
+    FROM dwd_fact_order
+    WHERE dt = '2024-01-01'
+    
+    UNION ALL
+    
+    -- 行为数据
+    SELECT user_id, NULL as order_id, NULL as amount, action
+    FROM ods_user_logs
+    WHERE dt = '2024-01-01'
+) t
+GROUP BY user_id;
+
+-- 商品主题汇总
+
+-- 商品每日汇总表
+CREATE TABLE dws_product_daily (
+    product_id BIGINT,
+    order_count BIGINT,
+    sales_quantity BIGINT,
+    sales_amount DECIMAL(10,2),
+    view_count BIGINT
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET;
+
+-- ETL：计算商品每日指标
+INSERT OVERWRITE TABLE dws_product_daily PARTITION(dt='2024-01-01')
+SELECT 
+    product_id,
+    COUNT(DISTINCT order_id) as order_count,
+    SUM(quantity) as sales_quantity,
+    SUM(amount) as sales_amount,
+    SUM(CASE WHEN action='view' THEN 1 ELSE 0 END) as view_count
+FROM (
+    SELECT product_id, order_id, quantity, amount, NULL as action
+    FROM dwd_fact_order
+    WHERE dt = '2024-01-01'
+    
+    UNION ALL
+    
+    SELECT item_id as product_id, NULL, NULL, NULL, action
+    FROM ods_user_logs
+    WHERE dt = '2024-01-01'
+) t
+GROUP BY product_id;
+```
+
+### ADS层：应用数据层
+
+```sql
+-- 每日销售报表
+CREATE TABLE ads_sales_daily (
+    date_id STRING,
+    order_count BIGINT,
+    user_count BIGINT,
+    sales_amount DECIMAL(10,2),
+    avg_order_amount DECIMAL(10,2)
+)
+STORED AS PARQUET;
+
+INSERT INTO ads_sales_daily
+SELECT 
+    dt as date_id,
+    SUM(order_count) as order_count,
+    COUNT(DISTINCT user_id) as user_count,
+    SUM(order_amount) as sales_amount,
+    AVG(order_amount) as avg_order_amount
+FROM dws_user_daily
+WHERE dt = '2024-01-01'
+GROUP BY dt;
+
+-- 商品销售排行
+CREATE TABLE ads_product_top (
+    date_id STRING,
+    product_id BIGINT,
+    product_name STRING,
+    sales_quantity BIGINT,
+    sales_amount DECIMAL(10,2),
+    rank INT
+)
+STORED AS PARQUET;
+
+INSERT INTO ads_product_top
+SELECT 
+    dt as date_id,
+    p.product_id,
+    d.product_name,
+    p.sales_quantity,
+    p.sales_amount,
+    ROW_NUMBER() OVER (PARTITION BY dt ORDER BY p.sales_amount DESC) as rank
+FROM dws_product_daily p
+JOIN dwd_dim_product d ON p.product_id = d.product_id
+WHERE p.dt = '2024-01-01'
+  AND d.dt = '2024-01-01';
+
+-- 用户价值分析（RFM）
+CREATE TABLE ads_user_rfm (
+    user_id BIGINT,
+    recency INT,
+    frequency BIGINT,
+    monetary DECIMAL(10,2),
+    r_score INT,
+    f_score INT,
+    m_score INT,
+    rfm_score STRING,
+    user_level STRING
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET;
+
+INSERT OVERWRITE TABLE ads_user_rfm PARTITION(dt='2024-01-01')
+WITH user_metrics AS (
+    SELECT 
+        user_id,
+        DATEDIFF('2024-01-01', MAX(dt)) as recency,
+        SUM(order_count) as frequency,
+        SUM(order_amount) as monetary
+    FROM dws_user_daily
+    WHERE dt <= '2024-01-01'
+    GROUP BY user_id
+),
+user_scores AS (
+    SELECT 
+        user_id,
+        recency,
+        frequency,
+        monetary,
+        NTILE(5) OVER (ORDER BY recency) as r_score,
+        NTILE(5) OVER (ORDER BY frequency DESC) as f_score,
+        NTILE(5) OVER (ORDER BY monetary DESC) as m_score
+    FROM user_metrics
+)
+SELECT 
+    user_id,
+    recency,
+    frequency,
+    monetary,
+    r_score,
+    f_score,
+    m_score,
+    CONCAT(r_score, f_score, m_score) as rfm_score,
+    CASE 
+        WHEN r_score >= 4 AND f_score >= 4 AND m_score >= 4 THEN '重要价值客户'
+        WHEN r_score >= 4 AND f_score >= 4 THEN '重要发展客户'
+        WHEN r_score >= 4 AND m_score >= 4 THEN '重要保持客户'
+        WHEN r_score >= 4 THEN '重要挽留客户'
+        WHEN f_score >= 4 AND m_score >= 4 THEN '一般价值客户'
+        ELSE '一般客户'
+    END as user_level
+FROM user_scores;
+```
+
+## 第四部分：ETL调度
+
+### Airflow调度脚本
+
+```python
+from airflow import DAG
+from airflow.operators.bash import BashOperator
+from datetime import datetime, timedelta
+
+default_args = {
+    'owner': 'data_team',
+    'depends_on_past': False,
+    'start_date': datetime(2024, 1, 1),
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'retries': 3,
+    'retry_delay': timedelta(minutes=5),
+}
+
+dag = DAG(
+    'ecommerce_etl',
+    default_args=default_args,
+    description='电商数据仓库ETL',
+    schedule_interval='0 2 * * *',  # 每天凌晨2点执行
+    catchup=False
+)
+
+# ODS层数据导入
+ods_import = BashOperator(
+    task_id='ods_import',
+    bash_command='sh /scripts/ods_import.sh {{ ds }}',
+    dag=dag
+)
+
+# DWD层数据处理
+dwd_process = BashOperator(
+    task_id='dwd_process',
+    bash_command='hive -f /scripts/dwd_process.sql -hivevar dt={{ ds }}',
+    dag=dag
+)
+
+# DWS层数据汇总
+dws_aggregate = BashOperator(
+    task_id='dws_aggregate',
+    bash_command='hive -f /scripts/dws_aggregate.sql -hivevar dt={{ ds }}',
+    dag=dag
+)
+
+# ADS层数据应用
+ads_report = BashOperator(
+    task_id='ads_report',
+    bash_command='hive -f /scripts/ads_report.sql -hivevar dt={{ ds }}',
+    dag=dag
+)
+
+# 数据质量检查
+data_quality_check = BashOperator(
+    task_id='data_quality_check',
+    bash_command='python /scripts/data_quality_check.py {{ ds }}',
+    dag=dag
+)
+
+# 定义依赖关系
+ods_import >> dwd_process >> dws_aggregate >> ads_report >> data_quality_check
+```
+
+## 第五部分：数据质量
+
+### 数据质量检查
+
+```python
+import happybase
+from datetime import datetime
+
+class DataQualityChecker:
+    """数据质量检查"""
+    
+    def __init__(self):
+        self.checks = []
+        self.results = []
+    
+    def check_null_rate(self, table, column, threshold=0.1):
+        """检查空值率"""
+        query = f"""
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN {column} IS NULL THEN 1 ELSE 0 END) as null_count
+        FROM {table}
+        WHERE dt = '{{{{ ds }}}}'
+        """
+        # 执行查询
+        # null_rate = null_count / total
+        # return null_rate < threshold
+        pass
+    
+    def check_duplicate_rate(self, table, key_columns):
+        """检查重复率"""
+        key_cols = ', '.join(key_columns)
+        query = f"""
+        SELECT 
+            COUNT(*) as total,
+            COUNT(DISTINCT {key_cols}) as distinct_count
+        FROM {table}
+        WHERE dt = '{{{{ ds }}}}'
+        """
+        # duplicate_rate = 1 - distinct_count / total
+        pass
+    
+    def check_data_freshness(self, table, time_column, hours=24):
+        """检查数据新鲜度"""
+        query = f"""
+        SELECT MAX({time_column}) as max_time
+        FROM {table}
+        WHERE dt = '{{{{ ds }}}}'
+        """
+        # 检查最新数据是否在指定时间内
+        pass
+    
+    def check_data_volume(self, table, min_count=1000):
+        """检查数据量"""
+        query = f"""
+        SELECT COUNT(*) as count
+        FROM {table}
+        WHERE dt = '{{{{ ds }}}}'
+        """
+        # return count >= min_count
+        pass
+    
+    def run_all_checks(self):
+        """运行所有检查"""
+        print("开始数据质量检查...")
+        
+        # 执行所有检查
+        for check in self.checks:
+            result = check()
+            self.results.append(result)
+        
+        # 生成报告
+        self.generate_report()
+    
+    def generate_report(self):
+        """生成检查报告"""
+        print("\n数据质量检查报告")
+        print("=" * 50)
+        
+        passed = sum(1 for r in self.results if r['status'] == 'pass')
+        failed = len(self.results) - passed
+        
+        print(f"总检查项: {len(self.results)}")
+        print(f"通过: {passed}")
+        print(f"失败: {failed}")
+        
+        if failed > 0:
+            print("\n失败项:")
+            for r in self.results:
+                if r['status'] == 'fail':
+                    print(f"  - {r['name']}: {r['message']}")
+```
+
+## 第六部分：性能优化
+
+### 1. 分区策略
+
+```sql
+-- 按日期分区
+CREATE TABLE orders
+PARTITIONED BY (dt STRING);
+
+-- 多级分区
+CREATE TABLE logs
+PARTITIONED BY (dt STRING, hour STRING);
+
+-- 动态分区
+SET hive.exec.dynamic.partition=true;
+SET hive.exec.dynamic.partition.mode=nonstrict;
+```
+
+### 2. 文件格式优化
+
+```sql
+-- 使用列式存储
+CREATE TABLE data_orc
+STORED AS ORC
+TBLPROPERTIES ("orc.compress"="SNAPPY");
+
+-- 使用Parquet
+CREATE TABLE data_parquet
+STORED AS PARQUET;
+```
+
+### 3. 查询优化
+
+```sql
+-- 使用CBO
+SET hive.cbo.enable=true;
+
+-- 收集统计信息
+ANALYZE TABLE orders COMPUTE STATISTICS;
+ANALYZE TABLE orders COMPUTE STATISTICS FOR COLUMNS;
+
+-- Map Join
+SELECT /*+ MAPJOIN(small_table) */
+    *
+FROM large_table
+JOIN small_table ON large_table.id = small_table.id;
+```
+
+## 总结
+
+数据仓库是企业数据资产的核心：
+
+1. **分层架构**：ODS → DWD → DWS → ADS
+2. **维度建模**：星型模型、雪花模型
+3. **ETL流程**：数据采集、清洗、转换、加载
+4. **数据质量**：完整性、准确性、及时性
+
+记住：**数据仓库是持续演进的，不是一次性项目**！
+
+## 练习题
+
+1. 设计一个金融数据仓库
+2. 实现拉链表
+3. 优化慢查询
+4. 构建实时数仓
+
+上一章：[HBase列式存储](./HBase列式存储.mdx)
+

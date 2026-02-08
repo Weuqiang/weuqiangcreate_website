@@ -1,0 +1,654 @@
+# 进阶
+
+## Unsafe Rust
+
+Rust的核心优势之一是内存安全，编译器会在编译时进行严格的检查。但在某些场景下，我们需要绕过这些检查来实现一些底层操作，这时就需要使用`unsafe`关键字。
+
+### Unsafe超能力
+
+在`unsafe`块中，你可以执行以下五种操作：
+
+1. **解引用裸指针**
+2. **调用unsafe函数或方法**
+3. **访问或修改可变静态变量**
+4. **实现unsafe trait**
+5. **访问union的字段**
+
+### 裸指针（Raw Pointers）
+
+裸指针类似于引用，但不受借用检查器的约束。
+
+```rust
+fn main() {
+    let mut num = 5;
+
+    // 创建裸指针（在安全代码中也可以创建）
+    let r1 = &num as *const i32;        // 不可变裸指针
+    let r2 = &mut num as *mut i32;      // 可变裸指针
+
+    // 解引用裸指针必须在unsafe块中
+    unsafe {
+        println!("r1: {}", *r1);
+        println!("r2: {}", *r2);
+    }
+}
+```
+
+**裸指针的特点：**
+- 允许忽略借用规则，可以同时拥有可变和不可变指针
+- 不保证指向有效的内存
+- 允许为空
+- 不会自动清理内存
+
+### 调用Unsafe函数
+
+```rust
+unsafe fn dangerous() {
+    println!("这是一个unsafe函数");
+}
+
+fn main() {
+    unsafe {
+        dangerous();
+    }
+}
+```
+
+### 创建Unsafe代码的安全抽象
+
+```rust
+use std::slice;
+
+fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
+    let len = slice.len();
+    let ptr = slice.as_mut_ptr();
+
+    assert!(mid <= len);
+
+    unsafe {
+        (
+            slice::from_raw_parts_mut(ptr, mid),
+            slice::from_raw_parts_mut(ptr.add(mid), len - mid),
+        )
+    }
+}
+
+fn main() {
+    let mut v = vec![1, 2, 3, 4, 5, 6];
+    let (left, right) = split_at_mut(&mut v, 3);
+    
+    println!("left: {:?}", left);   // [1, 2, 3]
+    println!("right: {:?}", right); // [4, 5, 6]
+}
+```
+
+### 使用extern调用外部代码
+
+```rust
+extern "C" {
+    fn abs(input: i32) -> i32;
+}
+
+fn main() {
+    unsafe {
+        println!("C语言的abs(-3) = {}", abs(-3));
+    }
+}
+```
+
+### 访问或修改可变静态变量
+
+```rust
+static mut COUNTER: u32 = 0;
+
+fn add_to_count(inc: u32) {
+    unsafe {
+        COUNTER += inc;
+    }
+}
+
+fn main() {
+    add_to_count(3);
+
+    unsafe {
+        println!("COUNTER: {}", COUNTER);
+    }
+}
+```
+
+### 实现Unsafe Trait
+
+```rust
+unsafe trait Foo {
+    // 方法定义
+}
+
+unsafe impl Foo for i32 {
+    // 方法实现
+}
+```
+
+### 访问Union的字段
+
+```rust
+#[repr(C)]
+union MyUnion {
+    f1: u32,
+    f2: f32,
+}
+
+fn main() {
+    let u = MyUnion { f1: 1 };
+    
+    unsafe {
+        println!("u.f1: {}", u.f1);
+        println!("u.f2: {}", u.f2);
+    }
+}
+```
+
+## Advanced Traits
+
+### 关联类型（Associated Types）
+
+关联类型是trait中的类型占位符，实现trait时需要指定具体类型。
+
+```rust
+pub trait Iterator {
+    type Item;  // 关联类型
+
+    fn next(&mut self) -> Option<Self::Item>;
+}
+
+struct Counter {
+    count: u32,
+}
+
+impl Iterator for Counter {
+    type Item = u32;  // 指定关联类型
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.count += 1;
+        if self.count < 6 {
+            Some(self.count)
+        } else {
+            None
+        }
+    }
+}
+```
+
+**关联类型 vs 泛型：**
+
+```rust
+// 使用泛型（可以为同一类型实现多次）
+pub trait Iterator<T> {
+    fn next(&mut self) -> Option<T>;
+}
+
+// 使用关联类型（每个类型只能实现一次）
+pub trait Iterator {
+    type Item;
+    fn next(&mut self) -> Option<Self::Item>;
+}
+```
+
+### 默认泛型参数和运算符重载
+
+```rust
+use std::ops::Add;
+
+#[derive(Debug, PartialEq)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, other: Point) -> Point {
+        Point {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+fn main() {
+    let p1 = Point { x: 1, y: 2 };
+    let p2 = Point { x: 3, y: 4 };
+    
+    println!("{:?}", p1 + p2);  // Point { x: 4, y: 6 }
+}
+```
+
+**默认泛型参数：**
+
+```rust
+trait Add<Rhs=Self> {  // Rhs默认为Self
+    type Output;
+    fn add(self, rhs: Rhs) -> Self::Output;
+}
+
+// 不同类型相加
+struct Millimeters(u32);
+struct Meters(u32);
+
+impl Add<Meters> for Millimeters {
+    type Output = Millimeters;
+
+    fn add(self, other: Meters) -> Millimeters {
+        Millimeters(self.0 + (other.0 * 1000))
+    }
+}
+```
+
+### 完全限定语法（Fully Qualified Syntax）
+
+当多个trait有同名方法时，需要使用完全限定语法来消除歧义。
+
+```rust
+trait Pilot {
+    fn fly(&self);
+}
+
+trait Wizard {
+    fn fly(&self);
+}
+
+struct Human;
+
+impl Pilot for Human {
+    fn fly(&self) {
+        println!("机长在此");
+    }
+}
+
+impl Wizard for Human {
+    fn fly(&self) {
+        println!("飞起来！");
+    }
+}
+
+impl Human {
+    fn fly(&self) {
+        println!("*疯狂挥动手臂*");
+    }
+}
+
+fn main() {
+    let person = Human;
+    
+    person.fly();           // 调用Human的fly
+    Pilot::fly(&person);    // 调用Pilot的fly
+    Wizard::fly(&person);   // 调用Wizard的fly
+}
+```
+
+**关联函数的完全限定语法：**
+
+```rust
+trait Animal {
+    fn baby_name() -> String;
+}
+
+struct Dog;
+
+impl Dog {
+    fn baby_name() -> String {
+        String::from("Spot")
+    }
+}
+
+impl Animal for Dog {
+    fn baby_name() -> String {
+        String::from("puppy")
+    }
+}
+
+fn main() {
+    println!("A baby dog is called a {}", Dog::baby_name());
+    // 完全限定语法
+    println!("A baby dog is called a {}", <Dog as Animal>::baby_name());
+}
+```
+
+### Supertraits
+
+要求实现某个trait的类型也必须实现另一个trait。
+
+```rust
+use std::fmt;
+
+trait OutlinePrint: fmt::Display {  // 要求实现Display
+    fn outline_print(&self) {
+        let output = self.to_string();
+        let len = output.len();
+        println!("{}", "*".repeat(len + 4));
+        println!("*{}*", " ".repeat(len + 2));
+        println!("* {} *", output);
+        println!("*{}*", " ".repeat(len + 2));
+        println!("{}", "*".repeat(len + 4));
+    }
+}
+
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+impl OutlinePrint for Point {}
+
+fn main() {
+    let p = Point { x: 1, y: 3 };
+    p.outline_print();
+}
+```
+
+### Newtype模式
+
+使用元组结构体包装外部类型，以便为其实现外部trait。
+
+```rust
+use std::fmt;
+
+struct Wrapper(Vec<String>);
+
+impl fmt::Display for Wrapper {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[{}]", self.0.join(", "))
+    }
+}
+
+fn main() {
+    let w = Wrapper(vec![String::from("hello"), String::from("world")]);
+    println!("w = {}", w);
+}
+```
+
+## Advanced Types
+
+### 类型别名（Type Aliases）
+
+使用`type`关键字创建类型别名。
+
+```rust
+type Kilometers = i32;
+
+let x: i32 = 5;
+let y: Kilometers = 5;
+
+println!("x + y = {}", x + y);
+```
+
+**减少重复：**
+
+```rust
+type Thunk = Box<dyn Fn() + Send + 'static>;
+
+let f: Thunk = Box::new(|| println!("hi"));
+
+fn takes_long_type(f: Thunk) {
+    // --snip--
+}
+
+fn returns_long_type() -> Thunk {
+    // --snip--
+    Box::new(|| ())
+}
+```
+
+### Never类型（!）
+
+`!`类型表示永不返回的函数。
+
+```rust
+fn bar() -> ! {
+    panic!("这个函数永不返回");
+}
+
+fn main() {
+    let guess: u32 = match guess.trim().parse() {
+        Ok(num) => num,
+        Err(_) => continue,  // continue的类型是!
+    };
+}
+```
+
+### 动态大小类型（DST）
+
+Rust需要在编译时知道类型的大小，但某些类型的大小只能在运行时确定。
+
+```rust
+// str是DST，大小未知
+let s1: str = "Hello";  // 错误！
+
+// &str是已知大小的（指针+长度）
+let s2: &str = "Hello";  // 正确
+```
+
+**Sized Trait：**
+
+```rust
+// 泛型函数默认要求T: Sized
+fn generic<T>(t: T) {
+    // --snip--
+}
+
+// 等价于
+fn generic<T: Sized>(t: T) {
+    // --snip--
+}
+
+// 放宽限制
+fn generic<T: ?Sized>(t: &T) {  // ?Sized表示可能是DST
+    // --snip--
+}
+```
+
+## Advanced Functions
+
+### 函数指针
+
+函数可以作为参数传递。
+
+```rust
+fn add_one(x: i32) -> i32 {
+    x + 1
+}
+
+fn do_twice(f: fn(i32) -> i32, arg: i32) -> i32 {
+    f(arg) + f(arg)
+}
+
+fn main() {
+    let answer = do_twice(add_one, 5);
+    println!("The answer is: {}", answer);  // 12
+}
+```
+
+**函数指针 vs 闭包：**
+
+```rust
+// 函数指针实现了所有三个闭包trait（Fn、FnMut、FnOnce）
+fn returns_closure() -> Box<dyn Fn(i32) -> i32> {
+    Box::new(|x| x + 1)
+}
+
+// 可以传递函数指针或闭包
+let list_of_numbers = vec![1, 2, 3];
+let list_of_strings: Vec<String> = list_of_numbers
+    .iter()
+    .map(|i| i.to_string())  // 闭包
+    .collect();
+
+let list_of_strings: Vec<String> = list_of_numbers
+    .iter()
+    .map(ToString::to_string)  // 函数指针
+    .collect();
+```
+
+### 返回闭包
+
+闭包由trait表示，不能直接返回，需要使用trait对象。
+
+```rust
+fn returns_closure() -> Box<dyn Fn(i32) -> i32> {
+    Box::new(|x| x + 1)
+}
+
+fn main() {
+    let f = returns_closure();
+    println!("{}", f(5));  // 6
+}
+```
+
+## 宏（Macro）
+
+宏是一种元编程，通过在编译时对指定的源代码进行替换（即宏展开）可实现各种进阶的能力。Rust中的宏分为**声明宏**（*declarative macros*）和以下三种**过程宏**（ *procedural macros*）
+
+- 派生宏（*Custom `#[derive]` macros*）
+- 属性宏（*Attribute-like macros*）
+- 函数式宏（*Function-like macros*）
+
+声明宏和过程宏中的函数式宏在功能上十分贴近，使用上也都和普通函数非常相似，二者区别在于声明宏主要是做字符串层面上的匹配与替换，而过程宏是基于Token流乃至语法树层面上的操作。另外相较于普通函数的功能来说，宏最大的特别是在编译时进行展开，具备更强大的表达能力。
+
+### 声明宏
+
+#### 定义
+
+``` rust
+#[macro_export]
+macro_rules! vec {
+    ( $( $x:expr ),* ) => {
+        {
+            let mut temp_vec = Vec::new();
+            $(
+                temp_vec.push($x);
+            )*
+            temp_vec
+        }
+    };
+}
+```
+
+#### 使用
+
+``` rust
+let v: Vec<u32> = vec![1, 2, 3];
+```
+
+
+
+### 过程宏
+
+#### 派生宏
+
+派生宏主要被结构体或枚举类型进行消费，最常见的做法是给结构体提供某个Trait的默认实现。
+
+#### 定义
+
+``` rust
+use proc_macro::TokenStream;
+use quote::quote;
+use syn;
+
+#[proc_macro_derive(HelloMacro)]
+pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
+    // Construct a representation of Rust code as a syntax tree
+    // that we can manipulate
+    let ast = syn::parse(input).unwrap();
+
+    // Build the trait implementation
+    impl_hello_macro(&ast)
+}
+
+fn impl_hello_macro(ast: &syn::DeriveInput) -> TokenStream {
+    let name = &ast.ident;
+    let gen = quote! {
+        impl HelloMacro for #name {
+            fn hello_macro() {
+                println!("Hello, Macro! My name is {}!", stringify!(#name));
+            }
+        }
+    };
+    gen.into()
+}
+```
+
+#### 使用
+
+``` rust
+use hello_macro::HelloMacro;
+use hello_macro_derive::HelloMacro;
+
+#[derive(HelloMacro)]
+struct Pancakes;
+
+fn main() {
+    Pancakes::hello_macro();
+}
+```
+
+
+
+
+
+#### 属性宏
+
+属性宏不仅可以被用来替换结构体和枚举，还能替换函数等源代码的内容，并且使用属性宏的时候可以接收更多额外的参数。
+
+#### 定义
+
+``` rust
+#[proc_macro_attribute]
+pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
+}
+```
+
+
+
+#### 使用
+
+``` rust
+#[route(GET, "/")]
+fn index() {
+}
+```
+
+
+
+
+
+#### 函数式宏
+
+函数式宏在使用上类似于直接调用函数。
+
+#### 定义
+
+``` rust
+#[proc_macro]
+pub fn sql(input: TokenStream) -> TokenStream {
+}
+```
+
+
+
+#### 使用
+
+``` rust
+let sql = sql!(SELECT * FROM posts WHERE id=1);
+```
+
+
+
+
+
+

@@ -1,0 +1,715 @@
+---
+sidebar_position: 2
+title: 概率统计 - 理解AI的不确定性
+---
+
+# 概率统计 - AI如何做决策
+
+AI不是算命的，它给出的是**概率**。这一章教你理解AI是怎么处理不确定性的。
+
+## 第一部分：概率基础
+
+### 什么是概率？
+
+**概率就是可能性的数字表示**，范围是0到1。
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 抛硬币实验
+def flip_coin(n=1000):
+    """抛n次硬币，统计正面概率"""
+    results = np.random.choice(['正', '反'], size=n)
+    prob_head = np.sum(results == '正') / n
+    return prob_head
+
+# 多次实验
+experiments = [10, 100, 1000, 10000]
+for n in experiments:
+    prob = flip_coin(n)
+    print(f"抛{n:5d}次，正面概率: {prob:.4f}")
+
+# 可视化：大数定律
+n_flips = np.arange(1, 1001)
+cumulative_probs = []
+
+results = np.random.choice([0, 1], size=1000)
+for i in range(1, 1001):
+    cumulative_probs.append(np.mean(results[:i]))
+
+plt.figure(figsize=(10, 6))
+plt.plot(n_flips, cumulative_probs, label='实际概率')
+plt.axhline(y=0.5, color='r', linestyle='--', label='理论概率')
+plt.xlabel('抛硬币次数')
+plt.ylabel('正面概率')
+plt.title('大数定律：次数越多，越接近理论值')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+### AI中的概率
+
+**1. 分类问题：输出概率分布**
+
+```python
+# 图像分类
+predictions = np.array([0.7, 0.2, 0.1])
+classes = ['猫', '狗', '鸟']
+
+print("预测结果:")
+for cls, prob in zip(classes, predictions):
+    print(f"  {cls}: {prob:.1%}")
+
+# 最可能的类别
+predicted_class = classes[np.argmax(predictions)]
+confidence = np.max(predictions)
+print(f"\n预测: {predicted_class} (置信度: {confidence:.1%})")
+```
+
+**2. 生成问题：采样概率分布**
+
+```python
+# 文本生成：下一个词的概率
+vocab = ['的', '是', '在', '了', '和']
+probs = np.array([0.3, 0.25, 0.2, 0.15, 0.1])
+
+# 按概率采样
+next_word = np.random.choice(vocab, p=probs)
+print(f"下一个词: {next_word}")
+
+# 多次采样看分布
+samples = np.random.choice(vocab, size=1000, p=probs)
+for word in vocab:
+    count = np.sum(samples == word)
+    print(f"{word}: {count/1000:.2%} (理论: {probs[vocab.index(word)]:.2%})")
+```
+
+### 条件概率 - 已知信息下的概率
+
+```python
+# P(A|B) = P(A and B) / P(B)
+
+# 例子：疾病检测
+P_disease = 0.01  # 1%的人有病
+P_positive_given_disease = 0.99  # 有病的人99%测出阳性
+P_positive_given_healthy = 0.05  # 健康的人5%误测为阳性
+
+# 问：测出阳性，真的有病的概率是多少？
+
+# P(阳性) = P(阳性|有病)×P(有病) + P(阳性|健康)×P(健康)
+P_positive = (P_positive_given_disease * P_disease + 
+              P_positive_given_healthy * (1 - P_disease))
+
+# P(有病|阳性) = P(阳性|有病)×P(有病) / P(阳性)
+P_disease_given_positive = (P_positive_given_disease * P_disease) / P_positive
+
+print(f"测出阳性，真的有病的概率: {P_disease_given_positive:.1%}")
+print("惊讶吗？只有16.6%！")
+```
+
+**AI应用：垃圾邮件分类**
+
+```python
+class SpamClassifier:
+    """朴素贝叶斯垃圾邮件分类器"""
+    
+    def __init__(self):
+        self.word_probs = {}
+        self.spam_prob = 0.5
+    
+    def train(self, emails, labels):
+        """训练：统计概率"""
+        # 统计垃圾邮件比例
+        self.spam_prob = np.mean(labels)
+        
+        # 统计每个词在垃圾邮件和正常邮件中的概率
+        spam_emails = [email for email, label in zip(emails, labels) if label == 1]
+        ham_emails = [email for email, label in zip(emails, labels) if label == 0]
+        
+        all_words = set()
+        for email in emails:
+            all_words.update(email.split())
+        
+        for word in all_words:
+            # 在垃圾邮件中出现的概率
+            spam_count = sum(1 for email in spam_emails if word in email)
+            spam_prob = (spam_count + 1) / (len(spam_emails) + 2)  # 拉普拉斯平滑
+            
+            # 在正常邮件中出现的概率
+            ham_count = sum(1 for email in ham_emails if word in email)
+            ham_prob = (ham_count + 1) / (len(ham_emails) + 2)
+            
+            self.word_probs[word] = (spam_prob, ham_prob)
+    
+    def predict(self, email):
+        """预测：应用贝叶斯定理"""
+        words = email.split()
+        
+        # 对数概率（避免下溢）
+        log_spam_prob = np.log(self.spam_prob)
+        log_ham_prob = np.log(1 - self.spam_prob)
+        
+        for word in words:
+            if word in self.word_probs:
+                spam_prob, ham_prob = self.word_probs[word]
+                log_spam_prob += np.log(spam_prob)
+                log_ham_prob += np.log(ham_prob)
+        
+        # 归一化
+        spam_score = np.exp(log_spam_prob)
+        ham_score = np.exp(log_ham_prob)
+        
+        spam_probability = spam_score / (spam_score + ham_score)
+        
+        return spam_probability
+
+# 使用
+emails = [
+    "恭喜中奖 点击领取",
+    "会议时间改到明天",
+    "免费赠送 立即领取",
+    "项目进度报告",
+    "限时优惠 马上抢购",
+    "周末聚餐通知"
+]
+labels = [1, 0, 1, 0, 1, 0]  # 1=垃圾邮件, 0=正常邮件
+
+classifier = SpamClassifier()
+classifier.train(emails, labels)
+
+# 测试
+test_emails = [
+    "恭喜获得免费礼品",
+    "明天开会讨论项目"
+]
+
+for email in test_emails:
+    prob = classifier.predict(email)
+    print(f"'{email}' 是垃圾邮件的概率: {prob:.1%}")
+```
+
+## 第二部分：期望和方差
+
+### 期望 - 平均值
+
+**期望就是长期平均值**。
+
+```python
+# 掷骰子的期望
+dice_values = np.array([1, 2, 3, 4, 5, 6])
+probabilities = np.array([1/6] * 6)
+
+expectation = np.sum(dice_values * probabilities)
+print(f"掷骰子的期望: {expectation}")  # 3.5
+
+# 验证：实际掷10000次
+results = np.random.randint(1, 7, size=10000)
+print(f"实际平均: {np.mean(results):.2f}")
+
+# 可视化
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.bar(dice_values, probabilities)
+plt.axvline(x=expectation, color='r', linestyle='--', label=f'期望={expectation}')
+plt.xlabel('点数')
+plt.ylabel('概率')
+plt.title('骰子概率分布')
+plt.legend()
+
+plt.subplot(1, 2, 2)
+plt.hist(results, bins=6, density=True, alpha=0.7, edgecolor='black')
+plt.axvline(x=np.mean(results), color='r', linestyle='--', label=f'实际均值={np.mean(results):.2f}')
+plt.xlabel('点数')
+plt.ylabel('频率')
+plt.title('10000次实验结果')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+```
+
+**AI应用：强化学习中的期望回报**
+
+```python
+class SimpleAgent:
+    """简单的强化学习智能体"""
+    
+    def __init__(self):
+        # 动作的期望回报（初始估计）
+        self.Q = {
+            '左': 0,
+            '右': 0,
+            '上': 0,
+            '下': 0
+        }
+        self.counts = {action: 0 for action in self.Q}
+    
+    def choose_action(self, epsilon=0.1):
+        """ε-贪心策略"""
+        if np.random.random() < epsilon:
+            # 探索：随机选择
+            return np.random.choice(list(self.Q.keys()))
+        else:
+            # 利用：选择期望回报最大的
+            return max(self.Q, key=self.Q.get)
+    
+    def update(self, action, reward):
+        """更新期望回报"""
+        self.counts[action] += 1
+        n = self.counts[action]
+        
+        # 增量更新：Q(a) = Q(a) + (1/n) * (reward - Q(a))
+        self.Q[action] += (reward - self.Q[action]) / n
+    
+    def train(self, env, episodes=1000):
+        """训练"""
+        for episode in range(episodes):
+            action = self.choose_action()
+            reward = env.get_reward(action)
+            self.update(action, reward)
+            
+            if episode % 100 == 0:
+                print(f"Episode {episode}:")
+                for action, q in self.Q.items():
+                    print(f"  {action}: {q:.2f}")
+
+# 模拟环境
+class Environment:
+    def __init__(self):
+        # 真实的期望回报
+        self.true_rewards = {
+            '左': 1,
+            '右': 5,
+            '上': 3,
+            '下': 2
+        }
+    
+    def get_reward(self, action):
+        """返回带噪声的回报"""
+        mean = self.true_rewards[action]
+        return mean + np.random.randn()
+
+# 训练
+env = Environment()
+agent = SimpleAgent()
+agent.train(env, episodes=1000)
+
+print("\n最终学到的期望回报:")
+for action, q in agent.Q.items():
+    true_q = env.true_rewards[action]
+    print(f"{action}: 学到={q:.2f}, 真实={true_q:.2f}")
+```
+
+### 方差 - 波动程度
+
+**方差衡量数据的离散程度**。
+
+```python
+# 两组数据
+data1 = np.array([5, 5, 5, 5, 5])
+data2 = np.array([1, 3, 5, 7, 9])
+data3 = np.array([0, 0, 5, 10, 10])
+
+print("均值相同，方差不同:")
+for i, data in enumerate([data1, data2, data3], 1):
+    mean = np.mean(data)
+    var = np.var(data)
+    std = np.std(data)
+    print(f"数据{i}: 均值={mean:.1f}, 方差={var:.1f}, 标准差={std:.1f}")
+
+# 可视化
+plt.figure(figsize=(12, 4))
+for i, data in enumerate([data1, data2, data3], 1):
+    plt.subplot(1, 3, i)
+    plt.scatter(range(len(data)), data, s=100)
+    plt.axhline(y=np.mean(data), color='r', linestyle='--', label=f'均值={np.mean(data):.1f}')
+    plt.ylim(-1, 11)
+    plt.title(f'数据{i} (方差={np.var(data):.1f})')
+    plt.legend()
+    plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+```
+
+**AI应用：批归一化（Batch Normalization）**
+
+```python
+class BatchNorm:
+    """批归一化层"""
+    
+    def __init__(self, num_features, eps=1e-5, momentum=0.1):
+        self.eps = eps
+        self.momentum = momentum
+        
+        # 可学习参数
+        self.gamma = np.ones(num_features)
+        self.beta = np.zeros(num_features)
+        
+        # 运行时统计
+        self.running_mean = np.zeros(num_features)
+        self.running_var = np.ones(num_features)
+    
+    def forward(self, x, training=True):
+        """前向传播"""
+        if training:
+            # 计算批次的均值和方差
+            batch_mean = np.mean(x, axis=0)
+            batch_var = np.var(x, axis=0)
+            
+            # 更新运行时统计
+            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean
+            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * batch_var
+            
+            # 归一化
+            x_norm = (x - batch_mean) / np.sqrt(batch_var + self.eps)
+        else:
+            # 测试时使用运行时统计
+            x_norm = (x - self.running_mean) / np.sqrt(self.running_var + self.eps)
+        
+        # 缩放和平移
+        out = self.gamma * x_norm + self.beta
+        
+        return out
+
+# 测试
+np.random.seed(42)
+x = np.random.randn(100, 10) * 10 + 50  # 均值50，标准差10
+
+bn = BatchNorm(num_features=10)
+
+print("归一化前:")
+print(f"  均值: {np.mean(x, axis=0)[:3]}")
+print(f"  方差: {np.var(x, axis=0)[:3]}")
+
+x_norm = bn.forward(x, training=True)
+
+print("\n归一化后:")
+print(f"  均值: {np.mean(x_norm, axis=0)[:3]}")
+print(f"  方差: {np.var(x_norm, axis=0)[:3]}")
+
+# 可视化
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.hist(x[:, 0], bins=30, alpha=0.7, edgecolor='black')
+plt.title(f'归一化前\n均值={np.mean(x[:, 0]):.1f}, 方差={np.var(x[:, 0]):.1f}')
+plt.xlabel('值')
+plt.ylabel('频数')
+
+plt.subplot(1, 2, 2)
+plt.hist(x_norm[:, 0], bins=30, alpha=0.7, edgecolor='black')
+plt.title(f'归一化后\n均值={np.mean(x_norm[:, 0]):.1f}, 方差={np.var(x_norm[:, 0]):.1f}')
+plt.xlabel('值')
+plt.ylabel('频数')
+
+plt.tight_layout()
+plt.show()
+```
+
+## 第三部分：常见分布
+
+### 正态分布（高斯分布）
+
+**最重要的分布，自然界中最常见**。
+
+```python
+from scipy import stats
+
+# 标准正态分布：均值0，方差1
+mu, sigma = 0, 1
+x = np.linspace(-4, 4, 1000)
+y = stats.norm.pdf(x, mu, sigma)
+
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.plot(x, y, linewidth=2)
+plt.fill_between(x, y, alpha=0.3)
+plt.title('标准正态分布 N(0,1)')
+plt.xlabel('x')
+plt.ylabel('概率密度')
+plt.grid(True)
+
+# 不同参数的正态分布
+plt.subplot(1, 2, 2)
+for mu, sigma in [(0, 1), (0, 2), (2, 1)]:
+    y = stats.norm.pdf(x, mu, sigma)
+    plt.plot(x, y, label=f'μ={mu}, σ={sigma}', linewidth=2)
+plt.title('不同参数的正态分布')
+plt.xlabel('x')
+plt.ylabel('概率密度')
+plt.legend()
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+# 68-95-99.7规则
+print("正态分布的性质:")
+print(f"68%的数据在 [μ-σ, μ+σ] 内")
+print(f"95%的数据在 [μ-2σ, μ+2σ] 内")
+print(f"99.7%的数据在 [μ-3σ, μ+3σ] 内")
+```
+
+**AI应用：权重初始化**
+
+```python
+def initialize_weights(shape, method='xavier'):
+    """初始化神经网络权重"""
+    if method == 'xavier':
+        # Xavier初始化：适用于tanh和sigmoid
+        fan_in, fan_out = shape
+        limit = np.sqrt(6 / (fan_in + fan_out))
+        return np.random.uniform(-limit, limit, shape)
+    
+    elif method == 'he':
+        # He初始化：适用于ReLU
+        fan_in = shape[0]
+        std = np.sqrt(2 / fan_in)
+        return np.random.randn(*shape) * std
+    
+    elif method == 'normal':
+        # 普通正态分布
+        return np.random.randn(*shape) * 0.01
+
+# 比较不同初始化方法
+methods = ['xavier', 'he', 'normal']
+shape = (100, 100)
+
+plt.figure(figsize=(15, 4))
+for i, method in enumerate(methods, 1):
+    weights = initialize_weights(shape, method)
+    
+    plt.subplot(1, 3, i)
+    plt.hist(weights.flatten(), bins=50, alpha=0.7, edgecolor='black')
+    plt.title(f'{method}初始化\n均值={np.mean(weights):.4f}, 方差={np.var(weights):.4f}')
+    plt.xlabel('权重值')
+    plt.ylabel('频数')
+    plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+```
+
+### 伯努利分布和二项分布
+
+```python
+# 伯努利分布：抛一次硬币
+p = 0.7  # 正面概率
+result = np.random.binomial(1, p)
+print(f"抛一次硬币: {'正面' if result == 1 else '反面'}")
+
+# 二项分布：抛n次硬币
+n = 10
+results = np.random.binomial(n, p, size=1000)
+
+plt.figure(figsize=(10, 6))
+plt.hist(results, bins=range(n+2), alpha=0.7, edgecolor='black', density=True)
+
+# 理论分布
+x = range(n+1)
+y = [stats.binom.pmf(k, n, p) for k in x]
+plt.plot(x, y, 'ro-', linewidth=2, markersize=8, label='理论分布')
+
+plt.xlabel('正面次数')
+plt.ylabel('概率')
+plt.title(f'二项分布 B({n}, {p})')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+## 第四部分：实战项目
+
+### 项目1：A/B测试
+
+```python
+class ABTest:
+    """A/B测试工具"""
+    
+    def __init__(self):
+        self.results = {'A': [], 'B': []}
+    
+    def add_result(self, version, success):
+        """添加实验结果"""
+        self.results[version].append(1 if success else 0)
+    
+    def get_stats(self, version):
+        """获取统计信息"""
+        data = self.results[version]
+        n = len(data)
+        successes = sum(data)
+        rate = successes / n if n > 0 else 0
+        
+        # 95%置信区间
+        se = np.sqrt(rate * (1 - rate) / n) if n > 0 else 0
+        ci_lower = rate - 1.96 * se
+        ci_upper = rate + 1.96 * se
+        
+        return {
+            'n': n,
+            'successes': successes,
+            'rate': rate,
+            'ci': (ci_lower, ci_upper)
+        }
+    
+    def compare(self):
+        """比较A和B"""
+        stats_a = self.get_stats('A')
+        stats_b = self.get_stats('B')
+        
+        print("A/B测试结果:")
+        print(f"\nA版本:")
+        print(f"  样本数: {stats_a['n']}")
+        print(f"  成功率: {stats_a['rate']:.2%}")
+        print(f"  95%置信区间: [{stats_a['ci'][0]:.2%}, {stats_a['ci'][1]:.2%}]")
+        
+        print(f"\nB版本:")
+        print(f"  样本数: {stats_b['n']}")
+        print(f"  成功率: {stats_b['rate']:.2%}")
+        print(f"  95%置信区间: [{stats_b['ci'][0]:.2%}, {stats_b['ci'][1]:.2%}]")
+        
+        # 显著性检验
+        if stats_a['ci'][1] < stats_b['ci'][0]:
+            print("\n结论: B版本显著优于A版本 ✓")
+        elif stats_b['ci'][1] < stats_a['ci'][0]:
+            print("\n结论: A版本显著优于B版本 ✓")
+        else:
+            print("\n结论: 无显著差异，需要更多数据")
+
+# 模拟A/B测试
+test = ABTest()
+
+# A版本：转化率10%
+for _ in range(1000):
+    success = np.random.random() < 0.10
+    test.add_result('A', success)
+
+# B版本：转化率12%
+for _ in range(1000):
+    success = np.random.random() < 0.12
+    test.add_result('B', success)
+
+test.compare()
+```
+
+### 项目2：异常检测
+
+```python
+class AnomalyDetector:
+    """基于正态分布的异常检测"""
+    
+    def __init__(self, threshold=0.01):
+        self.threshold = threshold
+        self.mean = None
+        self.std = None
+    
+    def fit(self, X):
+        """训练：学习正常数据的分布"""
+        self.mean = np.mean(X, axis=0)
+        self.std = np.std(X, axis=0)
+    
+    def probability(self, X):
+        """计算数据点的概率"""
+        # 假设各维度独立，概率相乘
+        probs = np.ones(len(X))
+        for i in range(X.shape[1]):
+            probs *= stats.norm.pdf(X[:, i], self.mean[i], self.std[i])
+        return probs
+    
+    def predict(self, X):
+        """预测是否异常"""
+        probs = self.probability(X)
+        return probs < self.threshold
+    
+    def visualize(self, X, y_true=None):
+        """可视化（2维数据）"""
+        if X.shape[1] != 2:
+            print("只能可视化2维数据")
+            return
+        
+        # 预测
+        y_pred = self.predict(X)
+        
+        plt.figure(figsize=(12, 5))
+        
+        # 真实标签
+        if y_true is not None:
+            plt.subplot(1, 2, 1)
+            plt.scatter(X[y_true==0, 0], X[y_true==0, 1], c='blue', label='正常', alpha=0.6)
+            plt.scatter(X[y_true==1, 0], X[y_true==1, 1], c='red', label='异常', alpha=0.6)
+            plt.title('真实标签')
+            plt.legend()
+            plt.grid(True)
+        
+        # 预测结果
+        plt.subplot(1, 2, 2)
+        plt.scatter(X[~y_pred, 0], X[~y_pred, 1], c='blue', label='正常', alpha=0.6)
+        plt.scatter(X[y_pred, 0], X[y_pred, 1], c='red', label='异常', alpha=0.6)
+        
+        # 画出决策边界
+        xx, yy = np.meshgrid(
+            np.linspace(X[:, 0].min()-1, X[:, 0].max()+1, 100),
+            np.linspace(X[:, 1].min()-1, X[:, 1].max()+1, 100)
+        )
+        Z = self.probability(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+        plt.contour(xx, yy, Z, levels=[self.threshold], colors='green', linewidths=2)
+        
+        plt.title('预测结果')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.tight_layout()
+        plt.show()
+
+# 生成数据
+np.random.seed(42)
+
+# 正常数据：正态分布
+X_normal = np.random.randn(300, 2)
+
+# 异常数据：远离中心
+X_anomaly = np.random.uniform(-4, 4, (20, 2))
+
+X = np.vstack([X_normal, X_anomaly])
+y = np.array([0]*300 + [1]*20)
+
+# 训练（只用正常数据）
+detector = AnomalyDetector(threshold=0.01)
+detector.fit(X_normal)
+
+# 检测
+detector.visualize(X, y)
+
+# 评估
+y_pred = detector.predict(X)
+from sklearn.metrics import classification_report
+print(classification_report(y, y_pred, target_names=['正常', '异常']))
+```
+
+## 总结
+
+概率统计让AI能处理不确定性：
+
+1. **概率**：量化不确定性
+2. **条件概率**：贝叶斯推理
+3. **期望**：平均表现
+4. **方差**：稳定性
+5. **分布**：数据的模式
+
+记住：**AI不是给确定答案，而是给概率分布**！
+
+## 练习题
+
+1. 实现一个朴素贝叶斯文本分类器
+2. 用正态分布做数据增强
+3. 实现Dropout（用伯努利分布）
+4. 做一个简单的A/B测试分析
+
+下一章：微积分与优化（即将推出）
+

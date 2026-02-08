@@ -1,0 +1,497 @@
+---
+sidebar_position: 3
+title: 大数据技术
+---
+
+import DocCardList from '@theme/DocCardList';
+
+# 大数据技术 - 从入门到实战
+
+大数据不是"数据很大"那么简单。这是一套完整的技术体系，让你能**存储、处理、分析海量数据**。
+
+## 什么是大数据？
+
+### 大数据的5V特征
+
+1. **Volume（体量大）**：TB、PB级别的数据
+2. **Velocity（速度快）**：实时产生、实时处理
+3. **Variety（种类多）**：结构化、半结构化、非结构化
+4. **Value（价值密度低）**：有用信息占比小
+5. **Veracity（真实性）**：数据质量参差不齐
+
+### 为什么需要大数据技术？
+
+```python
+# 传统方式：单机处理
+data = load_all_data()  # 内存爆了！
+result = process(data)  # 要跑一个月！
+
+# 大数据方式：分布式处理
+data = load_distributed()  # 分散在多台机器
+result = parallel_process(data)  # 并行处理，1小时搞定
+```
+
+## 大数据技术栈
+
+```
+┌─────────────────────────────────────┐
+│        数据应用层                    │
+│  BI报表、机器学习、实时监控          │
+└─────────────────────────────────────┘
+           ↑
+┌─────────────────────────────────────┐
+│        数据分析层                    │
+│  Spark、Flink、Hive、Presto         │
+└─────────────────────────────────────┘
+           ↑
+┌─────────────────────────────────────┐
+│        数据存储层                    │
+│  HDFS、HBase、Kafka、Redis          │
+└─────────────────────────────────────┘
+           ↑
+┌─────────────────────────────────────┐
+│        数据采集层                    │
+│  Flume、Sqoop、Logstash、Kafka      │
+└─────────────────────────────────────┘
+           ↑
+┌─────────────────────────────────────┐
+│        数据源                        │
+│  数据库、日志、API、爬虫             │
+└─────────────────────────────────────┘
+```
+
+## 学习路线
+
+### 第一阶段：基础入门（2-3周）
+
+**目标**：理解大数据概念，搭建环境
+
+1. **Linux基础**
+   - 文件操作、进程管理
+   - Shell脚本
+   - 网络配置
+
+2. **Hadoop生态**
+   - HDFS：分布式文件系统
+   - MapReduce：分布式计算
+   - YARN：资源管理
+
+3. **实战项目**：WordCount、日志分析
+
+### 第二阶段：核心技术（4-6周）
+
+**目标**：掌握主流大数据框架
+
+1. **Spark**
+   - RDD、DataFrame、Dataset
+   - Spark SQL
+   - Spark Streaming
+
+2. **Hive**
+   - SQL on Hadoop
+   - 数据仓库
+   - ETL流程
+
+3. **HBase**
+   - NoSQL数据库
+   - 列式存储
+   - 实时查询
+
+4. **实战项目**：用户行为分析、推荐系统
+
+### 第三阶段：实时计算（3-4周）
+
+**目标**：处理实时数据流
+
+1. **Kafka**
+   - 消息队列
+   - 发布订阅
+   - 流式数据
+
+2. **Flink**
+   - 流批一体
+   - 实时计算
+   - 状态管理
+
+3. **实战项目**：实时监控、实时推荐
+
+### 第四阶段：数据仓库（3-4周）
+
+**目标**：构建企业级数据仓库
+
+1. **数仓理论**
+   - 维度建模
+   - 事实表、维度表
+   - 数据分层
+
+2. **数仓工具**
+   - Hive
+   - Presto
+   - ClickHouse
+
+3. **实战项目**：电商数据仓库
+
+### 第五阶段：综合实战（持续）
+
+**目标**：解决实际业务问题
+
+1. **离线数仓**：T+1数据分析
+2. **实时数仓**：实时大屏
+3. **数据湖**：统一数据管理
+4. **机器学习**：大数据+AI
+
+## 核心技术详解
+
+### 1. Hadoop - 大数据基石
+
+**HDFS：分布式文件系统**
+
+```bash
+# 上传文件到HDFS
+hdfs dfs -put local_file.txt /user/data/
+
+# 查看文件
+hdfs dfs -ls /user/data/
+
+# 读取文件
+hdfs dfs -cat /user/data/local_file.txt
+
+# 下载文件
+hdfs dfs -get /user/data/local_file.txt ./
+```
+
+**MapReduce：分布式计算**
+
+```python
+# WordCount示例
+from mrjob.job import MRJob
+
+class WordCount(MRJob):
+    
+    def mapper(self, _, line):
+        """Map阶段：拆分单词"""
+        for word in line.split():
+            yield word.lower(), 1
+    
+    def reducer(self, word, counts):
+        """Reduce阶段：汇总计数"""
+        yield word, sum(counts)
+
+if __name__ == '__main__':
+    WordCount.run()
+```
+
+### 2. Spark - 快速大数据处理
+
+**为什么Spark比MapReduce快？**
+
+- **内存计算**：数据缓存在内存
+- **DAG优化**：智能执行计划
+- **丰富API**：比MapReduce简单
+
+**Spark基础**
+
+```python
+from pyspark.sql import SparkSession
+
+# 创建Spark会话
+spark = SparkSession.builder \
+    .appName("MyApp") \
+    .getOrCreate()
+
+# 读取数据
+df = spark.read.csv("data.csv", header=True, inferSchema=True)
+
+# 数据处理
+result = df.filter(df.age > 18) \
+    .groupBy("city") \
+    .count() \
+    .orderBy("count", ascending=False)
+
+# 显示结果
+result.show()
+
+# 保存结果
+result.write.csv("output/")
+```
+
+### 3. Kafka - 消息队列
+
+**发布消息**
+
+```python
+from kafka import KafkaProducer
+import json
+
+producer = KafkaProducer(
+    bootstrap_servers=['localhost:9092'],
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+# 发送消息
+producer.send('user_events', {
+    'user_id': 123,
+    'event': 'click',
+    'timestamp': '2024-01-01 10:00:00'
+})
+
+producer.flush()
+```
+
+**消费消息**
+
+```python
+from kafka import KafkaConsumer
+import json
+
+consumer = KafkaConsumer(
+    'user_events',
+    bootstrap_servers=['localhost:9092'],
+    value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+)
+
+for message in consumer:
+    event = message.value
+    print(f"User {event['user_id']} {event['event']} at {event['timestamp']}")
+```
+
+### 4. Hive - SQL on Hadoop
+
+```sql
+-- 创建表
+CREATE TABLE users (
+    user_id INT,
+    name STRING,
+    age INT,
+    city STRING
+)
+PARTITIONED BY (date STRING)
+STORED AS PARQUET;
+
+-- 加载数据
+LOAD DATA INPATH '/data/users.csv' 
+INTO TABLE users PARTITION (date='2024-01-01');
+
+-- 查询
+SELECT city, COUNT(*) as user_count
+FROM users
+WHERE age > 18
+GROUP BY city
+ORDER BY user_count DESC
+LIMIT 10;
+
+-- 创建视图
+CREATE VIEW active_users AS
+SELECT *
+FROM users
+WHERE last_login > '2024-01-01';
+```
+
+## 实战项目
+
+### 项目1：用户行为分析系统
+
+**需求**：分析网站用户行为，生成报表
+
+**技术栈**：
+- 数据采集：Flume
+- 数据存储：HDFS
+- 数据处理：Spark
+- 数据查询：Hive
+- 数据可视化：Superset
+
+**实现步骤**：
+
+1. **采集日志**
+```bash
+# Flume配置
+agent.sources = r1
+agent.sinks = k1
+agent.channels = c1
+
+agent.sources.r1.type = exec
+agent.sources.r1.command = tail -F /var/log/nginx/access.log
+
+agent.sinks.k1.type = hdfs
+agent.sinks.k1.hdfs.path = /user/logs/%Y%m%d
+
+agent.channels.c1.type = memory
+```
+
+2. **处理数据**
+```python
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+spark = SparkSession.builder.appName("LogAnalysis").getOrCreate()
+
+# 读取日志
+logs = spark.read.text("/user/logs/20240101")
+
+# 解析日志
+parsed = logs.select(
+    regexp_extract('value', r'(\d+\.\d+\.\d+\.\d+)', 1).alias('ip'),
+    regexp_extract('value', r'"(GET|POST) (.*?) HTTP', 2).alias('url'),
+    regexp_extract('value', r'HTTP/\d\.\d" (\d+)', 1).alias('status')
+)
+
+# 统计分析
+url_stats = parsed.groupBy('url').agg(
+    count('*').alias('pv'),
+    countDistinct('ip').alias('uv')
+).orderBy('pv', ascending=False)
+
+# 保存结果
+url_stats.write.mode('overwrite').saveAsTable('url_stats')
+```
+
+3. **查询报表**
+```sql
+-- 每日PV/UV
+SELECT 
+    date,
+    SUM(pv) as total_pv,
+    SUM(uv) as total_uv
+FROM url_stats
+GROUP BY date;
+
+-- 热门页面TOP10
+SELECT url, pv, uv
+FROM url_stats
+ORDER BY pv DESC
+LIMIT 10;
+```
+
+### 项目2：实时推荐系统
+
+**需求**：根据用户实时行为推荐商品
+
+**技术栈**：
+- 消息队列：Kafka
+- 实时计算：Flink
+- 存储：Redis
+- 模型：Spark MLlib
+
+**架构**：
+```
+用户行为 → Kafka → Flink → Redis → 推荐API
+                      ↓
+                   更新模型
+```
+
+**实现**：
+
+```python
+from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.datastream.connectors import FlinkKafkaConsumer
+from pyflink.common.serialization import SimpleStringSchema
+
+env = StreamExecutionEnvironment.get_execution_environment()
+
+# 从Kafka读取
+kafka_consumer = FlinkKafkaConsumer(
+    topics='user_events',
+    deserialization_schema=SimpleStringSchema(),
+    properties={'bootstrap.servers': 'localhost:9092'}
+)
+
+stream = env.add_source(kafka_consumer)
+
+# 实时计算用户兴趣
+def calculate_interest(events):
+    # 统计用户最近浏览的商品类别
+    category_counts = {}
+    for event in events:
+        category = event['category']
+        category_counts[category] = category_counts.get(category, 0) + 1
+    
+    # 返回Top3类别
+    return sorted(category_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+
+# 生成推荐
+def generate_recommendations(user_id, interests):
+    # 从Redis获取该类别的热门商品
+    recommendations = []
+    for category, _ in interests:
+        items = redis_client.zrevrange(f'hot_items:{category}', 0, 9)
+        recommendations.extend(items)
+    
+    # 保存到Redis
+    redis_client.setex(f'rec:{user_id}', 3600, json.dumps(recommendations))
+
+stream.key_by(lambda x: x['user_id']) \
+    .window(TumblingEventTimeWindows.of(Time.minutes(5))) \
+    .apply(calculate_interest) \
+    .map(lambda x: generate_recommendations(x[0], x[1]))
+
+env.execute("RealTimeRecommendation")
+```
+
+## 学习资源
+
+### 在线课程
+- **Coursera**：Big Data Specialization
+- **Udacity**：Data Engineer Nanodegree
+- **B站**：尚硅谷大数据教程
+
+### 书籍
+- 《Hadoop权威指南》
+- 《Spark快速大数据分析》
+- 《Kafka权威指南》
+- 《数据密集型应用系统设计》
+
+### 实践平台
+- **本地搭建**：Docker Compose
+- **云平台**：阿里云DataWorks、AWS EMR
+- **开源项目**：参与Spark、Flink开发
+
+## 职业发展
+
+### 大数据工程师技能树
+
+```
+基础技能
+├── Linux
+├── Python/Java/Scala
+├── SQL
+└── 数据结构与算法
+
+核心技能
+├── Hadoop生态
+├── Spark
+├── Kafka
+├── Flink
+└── 数据仓库
+
+进阶技能
+├── 性能优化
+├── 架构设计
+├── 机器学习
+└── 实时计算
+```
+
+### 职业路径
+
+1. **初级**：数据开发工程师
+   - 写ETL脚本
+   - 维护数据管道
+   - 生成报表
+
+2. **中级**：大数据工程师
+   - 设计数据架构
+   - 优化性能
+   - 解决复杂问题
+
+3. **高级**：大数据架构师
+   - 规划技术选型
+   - 设计整体架构
+   - 带领团队
+
+## 开始学习
+
+选择一个章节开始你的大数据之旅：
+
+<DocCardList />
+
+记住：**大数据不是理论，是实践**。边学边做，多动手！
+

@@ -1,4 +1,808 @@
 ---
 sidebar_position: 18
-title: （编写中）🐏网络编程
+title: 网络编程
 ---
+
+# 网络编程
+
+## 概述
+
+网络编程是指通过计算机网络进行数据通信的程序设计。在C语言中，主要通过Socket API来实现网络通信。
+
+Socket（套接字）是网络通信的端点，它提供了一种进程间通信（IPC）的机制，使得不同主机上的进程可以通过网络进行数据交换。
+
+## Socket基础
+
+### Socket类型
+
+1. **流式Socket（SOCK_STREAM）**
+   - 基于TCP协议
+   - 面向连接
+   - 可靠的、有序的、双向的字节流传输
+   - 适用于需要可靠传输的场景
+
+2. **数据报Socket（SOCK_DGRAM）**
+   - 基于UDP协议
+   - 无连接
+   - 不可靠的数据报传输
+   - 适用于对实时性要求高的场景
+
+### 网络字节序
+
+网络传输使用大端字节序（Big-Endian），而主机可能使用小端字节序（Little-Endian）。需要使用转换函数：
+
+```c showLineNumbers
+#include <arpa/inet.h>
+
+// 主机字节序转网络字节序
+uint32_t htonl(uint32_t hostlong);    // 32位
+uint16_t htons(uint16_t hostshort);   // 16位
+
+// 网络字节序转主机字节序
+uint32_t ntohl(uint32_t netlong);     // 32位
+uint16_t ntohs(uint16_t netshort);    // 16位
+```
+
+### IP地址转换
+
+```c showLineNumbers
+#include <arpa/inet.h>
+
+// 字符串IP转二进制
+int inet_pton(int af, const char *src, void *dst);
+
+// 二进制IP转字符串
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+
+// 示例
+struct sockaddr_in addr;
+inet_pton(AF_INET, "192.168.1.1", &addr.sin_addr);
+
+char ip_str[INET_ADDRSTRLEN];
+inet_ntop(AF_INET, &addr.sin_addr, ip_str, INET_ADDRSTRLEN);
+```
+
+## TCP编程
+
+### TCP服务器
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+    int server_fd, client_fd;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    char buffer[BUFFER_SIZE];
+    
+    // 1. 创建socket
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        perror("socket创建失败");
+        exit(EXIT_FAILURE);
+    }
+    
+    // 设置socket选项，允许地址重用
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    
+    // 2. 绑定地址和端口
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;  // 监听所有网卡
+    server_addr.sin_port = htons(PORT);
+    
+    if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        perror("bind失败");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+    
+    // 3. 监听
+    if (listen(server_fd, 5) < 0) {
+        perror("listen失败");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+    
+    printf("服务器启动，监听端口 %d...\n", PORT);
+    
+    // 4. 接受连接
+    while (1) {
+        client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+        if (client_fd < 0) {
+            perror("accept失败");
+            continue;
+        }
+        
+        char client_ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
+        printf("客户端连接: %s:%d\n", client_ip, ntohs(client_addr.sin_port));
+        
+        // 5. 接收和发送数据
+        memset(buffer, 0, BUFFER_SIZE);
+        int bytes_read = recv(client_fd, buffer, BUFFER_SIZE - 1, 0);
+        if (bytes_read > 0) {
+            printf("收到消息: %s\n", buffer);
+            
+            // 回显消息
+            send(client_fd, buffer, bytes_read, 0);
+        }
+        
+        // 6. 关闭客户端连接
+        close(client_fd);
+    }
+    
+    // 7. 关闭服务器socket
+    close(server_fd);
+    return 0;
+}
+```
+
+### TCP客户端
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+#define SERVER_IP "127.0.0.1"
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+    int sock_fd;
+    struct sockaddr_in server_addr;
+    char buffer[BUFFER_SIZE];
+    
+    // 1. 创建socket
+    sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock_fd < 0) {
+        perror("socket创建失败");
+        exit(EXIT_FAILURE);
+    }
+    
+    // 2. 设置服务器地址
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT);
+    inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr);
+    
+    // 3. 连接服务器
+    if (connect(sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        perror("连接失败");
+        close(sock_fd);
+        exit(EXIT_FAILURE);
+    }
+    
+    printf("已连接到服务器 %s:%d\n", SERVER_IP, PORT);
+    
+    // 4. 发送数据
+    const char* message = "Hello, Server!";
+    send(sock_fd, message, strlen(message), 0);
+    printf("发送消息: %s\n", message);
+    
+    // 5. 接收数据
+    memset(buffer, 0, BUFFER_SIZE);
+    int bytes_read = recv(sock_fd, buffer, BUFFER_SIZE - 1, 0);
+    if (bytes_read > 0) {
+        printf("收到回复: %s\n", buffer);
+    }
+    
+    // 6. 关闭连接
+    close(sock_fd);
+    return 0;
+}
+```
+
+### 多客户端并发服务器（多线程）
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+void* handle_client(void* arg) {
+    int client_fd = *(int*)arg;
+    free(arg);
+    
+    char buffer[BUFFER_SIZE];
+    
+    while (1) {
+        memset(buffer, 0, BUFFER_SIZE);
+        int bytes_read = recv(client_fd, buffer, BUFFER_SIZE - 1, 0);
+        
+        if (bytes_read <= 0) {
+            printf("客户端断开连接\n");
+            break;
+        }
+        
+        printf("收到消息: %s\n", buffer);
+        
+        // 回显消息
+        send(client_fd, buffer, bytes_read, 0);
+    }
+    
+    close(client_fd);
+    return NULL;
+}
+
+int main() {
+    int server_fd;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    
+    // 创建socket
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        perror("socket创建失败");
+        exit(EXIT_FAILURE);
+    }
+    
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    
+    // 绑定
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+    
+    if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        perror("bind失败");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+    
+    // 监听
+    if (listen(server_fd, 10) < 0) {
+        perror("listen失败");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+    
+    printf("服务器启动，监听端口 %d...\n", PORT);
+    
+    // 接受连接
+    while (1) {
+        int* client_fd = malloc(sizeof(int));
+        *client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+        
+        if (*client_fd < 0) {
+            perror("accept失败");
+            free(client_fd);
+            continue;
+        }
+        
+        char client_ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
+        printf("新客户端连接: %s:%d\n", client_ip, ntohs(client_addr.sin_port));
+        
+        // 创建线程处理客户端
+        pthread_t thread;
+        pthread_create(&thread, NULL, handle_client, client_fd);
+        pthread_detach(thread);  // 分离线程，自动回收资源
+    }
+    
+    close(server_fd);
+    return 0;
+}
+```
+
+## UDP编程
+
+### UDP服务器
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+    int sock_fd;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    char buffer[BUFFER_SIZE];
+    
+    // 1. 创建socket
+    sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock_fd < 0) {
+        perror("socket创建失败");
+        exit(EXIT_FAILURE);
+    }
+    
+    // 2. 绑定地址和端口
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+    
+    if (bind(sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        perror("bind失败");
+        close(sock_fd);
+        exit(EXIT_FAILURE);
+    }
+    
+    printf("UDP服务器启动，监听端口 %d...\n", PORT);
+    
+    // 3. 接收和发送数据
+    while (1) {
+        memset(buffer, 0, BUFFER_SIZE);
+        
+        int bytes_read = recvfrom(sock_fd, buffer, BUFFER_SIZE - 1, 0,
+                                  (struct sockaddr*)&client_addr, &client_len);
+        
+        if (bytes_read > 0) {
+            char client_ip[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
+            printf("收到来自 %s:%d 的消息: %s\n", 
+                   client_ip, ntohs(client_addr.sin_port), buffer);
+            
+            // 回显消息
+            sendto(sock_fd, buffer, bytes_read, 0,
+                   (struct sockaddr*)&client_addr, client_len);
+        }
+    }
+    
+    close(sock_fd);
+    return 0;
+}
+```
+
+### UDP客户端
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+#define SERVER_IP "127.0.0.1"
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+    int sock_fd;
+    struct sockaddr_in server_addr;
+    char buffer[BUFFER_SIZE];
+    
+    // 1. 创建socket
+    sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock_fd < 0) {
+        perror("socket创建失败");
+        exit(EXIT_FAILURE);
+    }
+    
+    // 2. 设置服务器地址
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT);
+    inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr);
+    
+    // 3. 发送数据
+    const char* message = "Hello, UDP Server!";
+    sendto(sock_fd, message, strlen(message), 0,
+           (struct sockaddr*)&server_addr, sizeof(server_addr));
+    printf("发送消息: %s\n", message);
+    
+    // 4. 接收数据
+    memset(buffer, 0, BUFFER_SIZE);
+    socklen_t server_len = sizeof(server_addr);
+    int bytes_read = recvfrom(sock_fd, buffer, BUFFER_SIZE - 1, 0,
+                              (struct sockaddr*)&server_addr, &server_len);
+    
+    if (bytes_read > 0) {
+        printf("收到回复: %s\n", buffer);
+    }
+    
+    close(sock_fd);
+    return 0;
+}
+```
+
+## I/O多路复用
+
+### select
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+#define MAX_CLIENTS 10
+
+int main() {
+    int server_fd, client_fds[MAX_CLIENTS];
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    fd_set read_fds;
+    int max_fd, activity;
+    char buffer[BUFFER_SIZE];
+    
+    // 初始化客户端数组
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        client_fds[i] = 0;
+    }
+    
+    // 创建服务器socket
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+    
+    bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+    listen(server_fd, 5);
+    
+    printf("服务器启动，使用select监听端口 %d...\n", PORT);
+    
+    while (1) {
+        // 清空文件描述符集合
+        FD_ZERO(&read_fds);
+        
+        // 添加服务器socket
+        FD_SET(server_fd, &read_fds);
+        max_fd = server_fd;
+        
+        // 添加客户端socket
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            int fd = client_fds[i];
+            if (fd > 0) {
+                FD_SET(fd, &read_fds);
+            }
+            if (fd > max_fd) {
+                max_fd = fd;
+            }
+        }
+        
+        // 等待活动
+        activity = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+        
+        if (activity < 0) {
+            perror("select错误");
+            continue;
+        }
+        
+        // 检查服务器socket（新连接）
+        if (FD_ISSET(server_fd, &read_fds)) {
+            int new_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+            
+            printf("新连接，socket fd: %d\n", new_fd);
+            
+            // 添加到客户端数组
+            for (int i = 0; i < MAX_CLIENTS; i++) {
+                if (client_fds[i] == 0) {
+                    client_fds[i] = new_fd;
+                    break;
+                }
+            }
+        }
+        
+        // 检查客户端socket（数据到达）
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            int fd = client_fds[i];
+            
+            if (FD_ISSET(fd, &read_fds)) {
+                memset(buffer, 0, BUFFER_SIZE);
+                int bytes_read = recv(fd, buffer, BUFFER_SIZE - 1, 0);
+                
+                if (bytes_read == 0) {
+                    // 客户端断开
+                    printf("客户端断开，socket fd: %d\n", fd);
+                    close(fd);
+                    client_fds[i] = 0;
+                } else {
+                    // 回显消息
+                    printf("收到消息: %s\n", buffer);
+                    send(fd, buffer, bytes_read, 0);
+                }
+            }
+        }
+    }
+    
+    close(server_fd);
+    return 0;
+}
+```
+
+### epoll（Linux）
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/epoll.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <fcntl.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+#define MAX_EVENTS 10
+
+// 设置非阻塞
+void set_nonblocking(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
+int main() {
+    int server_fd, epoll_fd;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    struct epoll_event ev, events[MAX_EVENTS];
+    char buffer[BUFFER_SIZE];
+    
+    // 创建服务器socket
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    set_nonblocking(server_fd);
+    
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+    
+    bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+    listen(server_fd, 5);
+    
+    // 创建epoll实例
+    epoll_fd = epoll_create1(0);
+    if (epoll_fd < 0) {
+        perror("epoll_create1失败");
+        exit(EXIT_FAILURE);
+    }
+    
+    // 添加服务器socket到epoll
+    ev.events = EPOLLIN;
+    ev.data.fd = server_fd;
+    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &ev);
+    
+    printf("服务器启动，使用epoll监听端口 %d...\n", PORT);
+    
+    while (1) {
+        int nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+        
+        for (int i = 0; i < nfds; i++) {
+            if (events[i].data.fd == server_fd) {
+                // 新连接
+                int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+                set_nonblocking(client_fd);
+                
+                printf("新连接，socket fd: %d\n", client_fd);
+                
+                ev.events = EPOLLIN | EPOLLET;  // 边缘触发
+                ev.data.fd = client_fd;
+                epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev);
+            } else {
+                // 客户端数据
+                int client_fd = events[i].data.fd;
+                memset(buffer, 0, BUFFER_SIZE);
+                int bytes_read = recv(client_fd, buffer, BUFFER_SIZE - 1, 0);
+                
+                if (bytes_read <= 0) {
+                    printf("客户端断开，socket fd: %d\n", client_fd);
+                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                    close(client_fd);
+                } else {
+                    printf("收到消息: %s\n", buffer);
+                    send(client_fd, buffer, bytes_read, 0);
+                }
+            }
+        }
+    }
+    
+    close(server_fd);
+    close(epoll_fd);
+    return 0;
+}
+```
+
+## HTTP服务器示例
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 4096
+
+const char* http_response = 
+    "HTTP/1.1 200 OK\r\n"
+    "Content-Type: text/html; charset=UTF-8\r\n"
+    "Connection: close\r\n"
+    "\r\n"
+    "<!DOCTYPE html>"
+    "<html>"
+    "<head><title>C HTTP Server</title></head>"
+    "<body>"
+    "<h1>Hello from C HTTP Server!</h1>"
+    "<p>这是一个用C语言编写的简单HTTP服务器</p>"
+    "</body>"
+    "</html>";
+
+int main() {
+    int server_fd, client_fd;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    char buffer[BUFFER_SIZE];
+    
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+    
+    bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+    listen(server_fd, 5);
+    
+    printf("HTTP服务器启动: http://localhost:%d\n", PORT);
+    
+    while (1) {
+        client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+        
+        memset(buffer, 0, BUFFER_SIZE);
+        recv(client_fd, buffer, BUFFER_SIZE - 1, 0);
+        
+        printf("收到HTTP请求:\n%s\n", buffer);
+        
+        send(client_fd, http_response, strlen(http_response), 0);
+        
+        close(client_fd);
+    }
+    
+    close(server_fd);
+    return 0;
+}
+```
+
+## 注意事项
+
+### 错误处理
+
+```c showLineNumbers
+#include <errno.h>
+
+int result = connect(sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+if (result < 0) {
+    if (errno == ECONNREFUSED) {
+        printf("连接被拒绝\n");
+    } else if (errno == ETIMEDOUT) {
+        printf("连接超时\n");
+    } else {
+        perror("连接失败");
+    }
+}
+```
+
+### 超时设置
+
+```c showLineNumbers
+#include <sys/time.h>
+
+struct timeval timeout;
+timeout.tv_sec = 5;   // 5秒
+timeout.tv_usec = 0;
+
+// 设置接收超时
+setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+// 设置发送超时
+setsockopt(sock_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+```
+
+### 优雅关闭
+
+```c showLineNumbers
+// 关闭写端，但仍可接收数据
+shutdown(sock_fd, SHUT_WR);
+
+// 关闭读端，但仍可发送数据
+shutdown(sock_fd, SHUT_RD);
+
+// 完全关闭
+shutdown(sock_fd, SHUT_RDWR);
+close(sock_fd);
+```
+
+## 常见问题
+
+### 1. Address already in use
+
+使用`SO_REUSEADDR`选项：
+
+```c showLineNumbers
+int opt = 1;
+setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+```
+
+### 2. Broken pipe
+
+对方关闭连接后继续写入会产生SIGPIPE信号，可以忽略该信号：
+
+```c showLineNumbers
+#include <signal.h>
+
+signal(SIGPIPE, SIG_IGN);
+```
+
+### 3. 粘包问题
+
+TCP是流式协议，需要自定义协议来分隔消息：
+
+```c showLineNumbers
+// 方案1：固定长度
+// 方案2：使用分隔符（如\n）
+// 方案3：消息头包含长度信息
+
+struct message {
+    uint32_t length;  // 消息长度
+    char data[];      // 消息内容
+};
+```
+
+## 编译和运行
+
+```bash
+# TCP服务器
+gcc tcp_server.c -o tcp_server
+./tcp_server
+
+# TCP客户端
+gcc tcp_client.c -o tcp_client
+./tcp_client
+
+# 多线程服务器（需要链接pthread库）
+gcc multi_thread_server.c -pthread -o multi_thread_server
+./multi_thread_server
+```
+
+## 相关资源
+
+- [Beej's Guide to Network Programming](https://beej.us/guide/bgnet/)
+- [Linux Socket Programming](https://www.gnu.org/software/libc/manual/html_node/Sockets.html)
+- [TCP/IP详解](https://en.wikipedia.org/wiki/TCP/IP_Illustrated)

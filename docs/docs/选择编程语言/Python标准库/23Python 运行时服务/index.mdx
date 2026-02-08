@@ -1,4 +1,752 @@
 ---
 sidebar_position: 23
-title: Python 运行时服务
+title: 23Python 运行时服务
 ---
+
+# Python 运行时服务
+
+:::info 章节概述
+本章节介绍 Python 运行时服务相关的模块，这些模块提供了与 Python 解释器及其环境交互的功能。
+:::
+
+## sys - 系统特定的参数和函数
+
+`sys` 模块提供了对解释器使用或维护的一些变量的访问，以及与解释器强烈交互的函数。
+
+### 常用变量和函数
+
+#### sys.argv
+
+命令行参数列表，第一个元素是脚本名称。
+
+```python
+import sys
+
+# 运行: python script.py arg1 arg2
+print(sys.argv)  # ['script.py', 'arg1', 'arg2']
+
+# 获取命令行参数
+if len(sys.argv) > 1:
+    filename = sys.argv[1]
+    print(f"处理文件: {filename}")
+```
+
+#### sys.path
+
+模块搜索路径列表。
+
+```python
+import sys
+
+# 查看模块搜索路径
+print(sys.path)
+
+# 添加自定义路径
+sys.path.append('/path/to/my/modules')
+
+# 插入到开头（优先搜索）
+sys.path.insert(0, '/path/to/priority/modules')
+```
+
+#### sys.version 和 sys.version_info
+
+Python 版本信息。
+
+```python
+import sys
+
+print(sys.version)
+# 3.9.7 (default, Sep 16 2021, 13:09:58)
+# [GCC 7.5.0]
+
+print(sys.version_info)
+# sys.version_info(major=3, minor=9, micro=7, releaselevel='final', serial=0)
+
+# 检查 Python 版本
+if sys.version_info < (3, 6):
+    print("需要 Python 3.6 或更高版本")
+    sys.exit(1)
+```
+
+#### sys.platform
+
+平台标识符。
+
+```python
+import sys
+
+print(sys.platform)  # 'linux', 'darwin', 'win32' 等
+
+# 根据平台执行不同操作
+if sys.platform == 'win32':
+    print("Windows 系统")
+elif sys.platform == 'darwin':
+    print("macOS 系统")
+elif sys.platform.startswith('linux'):
+    print("Linux 系统")
+```
+
+#### sys.exit()
+
+退出程序。
+
+```python
+import sys
+
+def main():
+    try:
+        # 执行操作
+        result = process_data()
+        if not result:
+            print("处理失败")
+            sys.exit(1)  # 非零退出码表示错误
+    except Exception as e:
+        print(f"错误: {e}")
+        sys.exit(1)
+    
+    sys.exit(0)  # 成功退出
+
+if __name__ == '__main__':
+    main()
+```
+
+#### sys.stdin, sys.stdout, sys.stderr
+
+标准输入、输出和错误流。
+
+```python
+import sys
+
+# 标准输出
+sys.stdout.write("Hello World\n")
+
+# 标准错误
+sys.stderr.write("Error message\n")
+
+# 标准输入
+print("请输入内容:")
+line = sys.stdin.readline()
+print(f"你输入了: {line}")
+
+# 重定向输出
+import io
+old_stdout = sys.stdout
+sys.stdout = io.StringIO()
+
+print("这不会显示在控制台")
+output = sys.stdout.getvalue()
+
+sys.stdout = old_stdout
+print(f"捕获的输出: {output}")
+```
+
+#### sys.modules
+
+已导入模块的字典。
+
+```python
+import sys
+
+# 查看已导入的模块
+print(sys.modules.keys())
+
+# 检查模块是否已导入
+if 'numpy' in sys.modules:
+    print("NumPy 已导入")
+
+# 删除已导入的模块（强制重新导入）
+if 'mymodule' in sys.modules:
+    del sys.modules['mymodule']
+```
+
+#### sys.getrecursionlimit() 和 sys.setrecursionlimit()
+
+获取和设置最大递归深度。
+
+```python
+import sys
+
+# 获取当前递归限制
+print(sys.getrecursionlimit())  # 默认通常是 1000
+
+# 设置新的递归限制
+sys.setrecursionlimit(2000)
+
+# 递归函数示例
+def factorial(n):
+    if n <= 1:
+        return 1
+    return n * factorial(n - 1)
+```
+
+#### sys.getsizeof()
+
+返回对象的大小（字节）。
+
+```python
+import sys
+
+# 查看对象大小
+print(sys.getsizeof(1))           # int
+print(sys.getsizeof("hello"))     # str
+print(sys.getsizeof([1, 2, 3]))   # list
+print(sys.getsizeof({'a': 1}))    # dict
+
+# 比较不同数据结构的内存占用
+numbers = list(range(1000))
+print(f"列表大小: {sys.getsizeof(numbers)} 字节")
+
+numbers_tuple = tuple(range(1000))
+print(f"元组大小: {sys.getsizeof(numbers_tuple)} 字节")
+```
+
+### 实用示例
+
+#### 进度条实现
+
+```python
+import sys
+import time
+
+def progress_bar(current, total, bar_length=50):
+    """显示进度条"""
+    percent = current / total
+    arrow = '=' * int(percent * bar_length)
+    spaces = ' ' * (bar_length - len(arrow))
+    
+    sys.stdout.write(f'\r[{arrow}{spaces}] {int(percent * 100)}%')
+    sys.stdout.flush()
+
+# 使用示例
+for i in range(101):
+    progress_bar(i, 100)
+    time.sleep(0.05)
+print("\n完成!")
+```
+
+#### 命令行工具
+
+```python
+import sys
+
+def main():
+    """简单的命令行工具"""
+    if len(sys.argv) < 2:
+        print("用法: python script.py <command> [args]")
+        sys.exit(1)
+    
+    command = sys.argv[1]
+    
+    if command == 'hello':
+        name = sys.argv[2] if len(sys.argv) > 2 else 'World'
+        print(f"Hello, {name}!")
+    elif command == 'version':
+        print(f"Python {sys.version}")
+    else:
+        print(f"未知命令: {command}")
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
+```
+
+## atexit - 退出处理器
+
+`atexit` 模块定义了注册和注销清理函数的函数。
+
+### 基本用法
+
+```python
+import atexit
+
+def cleanup():
+    """程序退出时执行的清理函数"""
+    print("执行清理操作...")
+    # 关闭文件、数据库连接等
+
+# 注册退出处理器
+atexit.register(cleanup)
+
+# 也可以使用装饰器
+@atexit.register
+def goodbye():
+    print("再见!")
+
+print("程序运行中...")
+# 程序结束时会自动调用 cleanup() 和 goodbye()
+```
+
+### 带参数的退出处理器
+
+```python
+import atexit
+
+def save_data(filename, data):
+    """保存数据到文件"""
+    print(f"保存数据到 {filename}")
+    with open(filename, 'w') as f:
+        f.write(data)
+
+# 注册带参数的处理器
+data_to_save = "重要数据"
+atexit.register(save_data, 'output.txt', data_to_save)
+
+print("程序运行中...")
+```
+
+### 实用示例
+
+```python
+import atexit
+import tempfile
+import os
+
+class TempFileManager:
+    """临时文件管理器"""
+    def __init__(self):
+        self.temp_files = []
+        atexit.register(self.cleanup)
+    
+    def create_temp_file(self):
+        """创建临时文件"""
+        fd, path = tempfile.mkstemp()
+        os.close(fd)
+        self.temp_files.append(path)
+        return path
+    
+    def cleanup(self):
+        """清理所有临时文件"""
+        print("清理临时文件...")
+        for path in self.temp_files:
+            try:
+                os.remove(path)
+                print(f"删除: {path}")
+            except OSError:
+                pass
+
+# 使用示例
+manager = TempFileManager()
+temp_file = manager.create_temp_file()
+print(f"创建临时文件: {temp_file}")
+# 程序退出时自动清理
+```
+
+## traceback - 打印或检索堆栈回溯
+
+`traceback` 模块提供了提取、格式化和打印 Python 程序堆栈跟踪的标准接口。
+
+### 基本用法
+
+```python
+import traceback
+import sys
+
+def function_c():
+    """可能出错的函数"""
+    return 1 / 0
+
+def function_b():
+    function_c()
+
+def function_a():
+    function_b()
+
+try:
+    function_a()
+except Exception as e:
+    # 打印完整的堆栈跟踪
+    traceback.print_exc()
+    
+    # 获取堆栈跟踪字符串
+    tb_str = traceback.format_exc()
+    print("\n捕获的异常信息:")
+    print(tb_str)
+```
+
+### 格式化异常信息
+
+```python
+import traceback
+import sys
+
+try:
+    result = 10 / 0
+except:
+    # 获取异常信息
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    
+    # 格式化异常
+    lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+    print(''.join(lines))
+    
+    # 只打印堆栈
+    traceback.print_tb(exc_traceback)
+    
+    # 提取堆栈信息
+    tb_list = traceback.extract_tb(exc_traceback)
+    for frame in tb_list:
+        print(f"文件: {frame.filename}, 行: {frame.lineno}, 函数: {frame.name}")
+```
+
+### 实用示例：错误日志记录
+
+```python
+import traceback
+import logging
+from datetime import datetime
+
+# 配置日志
+logging.basicConfig(
+    filename='error.log',
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+def safe_execute(func, *args, **kwargs):
+    """安全执行函数并记录错误"""
+    try:
+        return func(*args, **kwargs)
+    except Exception as e:
+        # 记录详细的错误信息
+        error_msg = f"函数 {func.__name__} 执行失败\n"
+        error_msg += f"参数: args={args}, kwargs={kwargs}\n"
+        error_msg += f"异常: {str(e)}\n"
+        error_msg += traceback.format_exc()
+        
+        logging.error(error_msg)
+        print(f"错误已记录到日志文件")
+        return None
+
+# 使用示例
+def risky_operation(x, y):
+    return x / y
+
+result = safe_execute(risky_operation, 10, 0)
+```
+
+## __main__ - 顶层脚本环境
+
+`__main__` 是顶层代码执行的作用域名称。
+
+### 基本用法
+
+```python
+# mymodule.py
+
+def main():
+    """主函数"""
+    print("执行主程序")
+
+def helper_function():
+    """辅助函数"""
+    print("辅助功能")
+
+# 只在直接运行时执行
+if __name__ == '__main__':
+    main()
+```
+
+### 模块和脚本双重用途
+
+```python
+# calculator.py
+
+def add(a, b):
+    """加法"""
+    return a + b
+
+def subtract(a, b):
+    """减法"""
+    return a - b
+
+def main():
+    """命令行接口"""
+    import sys
+    
+    if len(sys.argv) != 4:
+        print("用法: python calculator.py <num1> <op> <num2>")
+        print("示例: python calculator.py 10 + 5")
+        sys.exit(1)
+    
+    num1 = float(sys.argv[1])
+    op = sys.argv[2]
+    num2 = float(sys.argv[3])
+    
+    if op == '+':
+        result = add(num1, num2)
+    elif op == '-':
+        result = subtract(num1, num2)
+    else:
+        print(f"不支持的操作: {op}")
+        sys.exit(1)
+    
+    print(f"{num1} {op} {num2} = {result}")
+
+if __name__ == '__main__':
+    main()
+else:
+    # 作为模块导入时的初始化代码
+    print("calculator 模块已导入")
+```
+
+### 包的 __main__.py
+
+```python
+# mypackage/__main__.py
+# 使得包可以用 python -m mypackage 运行
+
+from . import core
+
+def main():
+    """包的主入口"""
+    print("运行 mypackage")
+    core.run()
+
+if __name__ == '__main__':
+    main()
+```
+
+## warnings - 警告控制
+
+`warnings` 模块用于控制警告消息的显示。
+
+### 发出警告
+
+```python
+import warnings
+
+def deprecated_function():
+    """已弃用的函数"""
+    warnings.warn(
+        "deprecated_function 已弃用，请使用 new_function",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    print("执行旧功能")
+
+def new_function():
+    """新函数"""
+    print("执行新功能")
+
+# 使用
+deprecated_function()
+```
+
+### 警告过滤
+
+```python
+import warnings
+
+# 忽略所有警告
+warnings.filterwarnings('ignore')
+
+# 将警告转换为错误
+warnings.filterwarnings('error')
+
+# 只显示一次警告
+warnings.filterwarnings('once')
+
+# 总是显示警告
+warnings.filterwarnings('always')
+
+# 忽略特定类型的警告
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+# 使用正则表达式过滤
+warnings.filterwarnings('ignore', message='.*deprecated.*')
+```
+
+### 自定义警告类别
+
+```python
+import warnings
+
+class CustomWarning(UserWarning):
+    """自定义警告类别"""
+    pass
+
+def risky_operation(value):
+    """可能有风险的操作"""
+    if value < 0:
+        warnings.warn(
+            f"负值 {value} 可能导致意外结果",
+            CustomWarning
+        )
+    return abs(value)
+
+# 使用
+result = risky_operation(-5)
+```
+
+### 上下文管理器
+
+```python
+import warnings
+
+def test_function():
+    warnings.warn("这是一个警告", UserWarning)
+
+# 临时捕获警告
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    test_function()  # 不会显示警告
+
+# 记录警告
+with warnings.catch_warnings(record=True) as w:
+    warnings.simplefilter("always")
+    test_function()
+    
+    if w:
+        print(f"捕获到 {len(w)} 个警告")
+        for warning in w:
+            print(f"  - {warning.message}")
+```
+
+## 实践应用
+
+### 应用程序框架
+
+```python
+import sys
+import atexit
+import logging
+import traceback
+import warnings
+
+class Application:
+    """应用程序基类"""
+    
+    def __init__(self, name):
+        self.name = name
+        self.setup_logging()
+        self.register_cleanup()
+    
+    def setup_logging(self):
+        """配置日志"""
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(f'{self.name}.log'),
+                logging.StreamHandler(sys.stdout)
+            ]
+        )
+        self.logger = logging.getLogger(self.name)
+    
+    def register_cleanup(self):
+        """注册清理函数"""
+        atexit.register(self.cleanup)
+    
+    def cleanup(self):
+        """清理资源"""
+        self.logger.info("应用程序正在关闭...")
+        # 执行清理操作
+    
+    def run(self):
+        """运行应用程序"""
+        try:
+            self.logger.info(f"启动 {self.name}")
+            self.main()
+        except KeyboardInterrupt:
+            self.logger.info("用户中断")
+            sys.exit(0)
+        except Exception as e:
+            self.logger.error(f"发生错误: {e}")
+            self.logger.error(traceback.format_exc())
+            sys.exit(1)
+    
+    def main(self):
+        """主逻辑（子类实现）"""
+        raise NotImplementedError
+
+# 使用示例
+class MyApp(Application):
+    def main(self):
+        print("应用程序运行中...")
+        # 实现具体逻辑
+
+if __name__ == '__main__':
+    app = MyApp("MyApplication")
+    app.run()
+```
+
+## 最佳实践
+
+### 1. 命令行参数处理
+
+```python
+import sys
+
+def parse_args():
+    """解析命令行参数"""
+    if len(sys.argv) < 2:
+        print("用法: python script.py <command> [options]")
+        print("命令:")
+        print("  start  - 启动服务")
+        print("  stop   - 停止服务")
+        print("  status - 查看状态")
+        sys.exit(1)
+    
+    return sys.argv[1], sys.argv[2:]
+
+if __name__ == '__main__':
+    command, options = parse_args()
+    # 处理命令
+```
+
+### 2. 优雅退出
+
+```python
+import atexit
+import signal
+import sys
+
+def signal_handler(signum, frame):
+    """信号处理器"""
+    print(f"\n收到信号 {signum}，正在退出...")
+    sys.exit(0)
+
+def cleanup():
+    """清理函数"""
+    print("执行清理操作...")
+
+# 注册信号处理器
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+# 注册清理函数
+atexit.register(cleanup)
+```
+
+### 3. 错误处理和日志
+
+```python
+import sys
+import logging
+import traceback
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def safe_main():
+    """安全的主函数"""
+    try:
+        # 主逻辑
+        pass
+    except Exception as e:
+        logger.error(f"错误: {e}")
+        logger.debug(traceback.format_exc())
+        return 1
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(safe_main())
+```
+
+## 相关资源
+
+- [Python 官方文档 - sys](https://docs.python.org/zh-cn/3/library/sys.html)
+- [Python 官方文档 - atexit](https://docs.python.org/zh-cn/3/library/atexit.html)
+- [Python 官方文档 - traceback](https://docs.python.org/zh-cn/3/library/traceback.html)
+- [Python 官方文档 - warnings](https://docs.python.org/zh-cn/3/library/warnings.html)
+- [Python 官方文档 - __main__](https://docs.python.org/zh-cn/3/library/__main__.html)

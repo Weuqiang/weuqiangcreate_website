@@ -1,0 +1,756 @@
+---
+sidebar_position: 1
+title: 线性代数 - 从零到神经网络
+---
+
+# 线性代数 - AI的计算语言
+
+别被"线性代数"这个名字吓到。这一章会带你从**最基础的概念**开始，一步步理解为什么神经网络需要线性代数，以及怎么用。
+
+## 第一部分：向量 - 一串有意义的数字
+
+### 什么是向量？
+
+最简单的理解：**向量就是一串数字**。
+
+```python
+import numpy as np
+
+# 这就是一个向量
+v = np.array([1, 2, 3])
+print(v)  # [1 2 3]
+```
+
+但这串数字有**方向**和**大小**：
+
+```python
+import matplotlib.pyplot as plt
+
+# 画一个向量
+plt.figure(figsize=(6, 6))
+plt.arrow(0, 0, 3, 2, head_width=0.3, head_length=0.3, fc='blue', ec='blue')
+plt.xlim(-1, 5)
+plt.ylim(-1, 5)
+plt.grid(True)
+plt.axhline(y=0, color='k', linewidth=0.5)
+plt.axvline(x=0, color='k', linewidth=0.5)
+plt.title('向量 [3, 2]')
+plt.show()
+```
+
+### 向量在AI中表示什么？
+
+**1. 特征向量**
+
+```python
+# 一个人的特征
+person = np.array([
+    175,  # 身高(cm)
+    70,   # 体重(kg)
+    25,   # 年龄
+    1     # 性别(1=男, 0=女)
+])
+
+# 一张图片的特征
+image_features = np.array([
+    0.8,  # 红色程度
+    0.3,  # 绿色程度
+    0.1,  # 蓝色程度
+    0.9,  # 亮度
+    0.2   # 对比度
+])
+```
+
+**2. 词向量**
+
+```python
+# 用向量表示词的含义
+word_king = np.array([0.5, 0.8, 0.1, 0.3])
+word_queen = np.array([0.5, 0.8, 0.9, 0.3])
+word_man = np.array([0.5, 0.1, 0.1, 0.2])
+word_woman = np.array([0.5, 0.1, 0.9, 0.2])
+
+# 神奇的词向量运算
+# king - man + woman ≈ queen
+result = word_king - word_man + word_woman
+print("king - man + woman =", result)
+print("queen =", word_queen)
+print("相似度:", np.dot(result, word_queen))
+```
+
+**3. 神经网络的输入输出**
+
+```python
+# 输入：一张28x28的图片，展平成784维向量
+image = np.random.rand(28, 28)
+input_vector = image.flatten()
+print("输入向量维度:", input_vector.shape)  # (784,)
+
+# 输出：10个类别的概率
+output_vector = np.array([0.1, 0.05, 0.6, 0.05, 0.1, 0.02, 0.03, 0.02, 0.02, 0.01])
+print("预测类别:", np.argmax(output_vector))  # 2
+```
+
+### 向量的基本运算
+
+**1. 向量加法**
+
+```python
+v1 = np.array([1, 2])
+v2 = np.array([3, 1])
+v3 = v1 + v2
+print(v3)  # [4 3]
+
+# 可视化
+plt.figure(figsize=(6, 6))
+plt.arrow(0, 0, v1[0], v1[1], head_width=0.2, fc='blue', ec='blue', label='v1')
+plt.arrow(0, 0, v2[0], v2[1], head_width=0.2, fc='red', ec='red', label='v2')
+plt.arrow(0, 0, v3[0], v3[1], head_width=0.2, fc='green', ec='green', label='v1+v2')
+plt.xlim(-1, 5)
+plt.ylim(-1, 4)
+plt.grid(True)
+plt.legend()
+plt.title('向量加法')
+plt.show()
+```
+
+**AI应用：特征融合**
+
+```python
+# 图像特征 + 文本特征 = 多模态特征
+image_feature = np.array([0.8, 0.3, 0.1])
+text_feature = np.array([0.2, 0.5, 0.7])
+multimodal_feature = image_feature + text_feature
+print("多模态特征:", multimodal_feature)
+```
+
+**2. 数乘（缩放）**
+
+```python
+v = np.array([2, 3])
+v_scaled = 2 * v
+print(v_scaled)  # [4 6]
+
+# 可视化
+plt.figure(figsize=(6, 6))
+plt.arrow(0, 0, v[0], v[1], head_width=0.3, fc='blue', ec='blue', label='v')
+plt.arrow(0, 0, v_scaled[0], v_scaled[1], head_width=0.3, fc='red', ec='red', label='2v')
+plt.xlim(-1, 7)
+plt.ylim(-1, 7)
+plt.grid(True)
+plt.legend()
+plt.title('向量数乘')
+plt.show()
+```
+
+**AI应用：学习率调整**
+
+```python
+# 梯度下降
+gradient = np.array([0.5, -0.3, 0.8])
+learning_rate = 0.01
+
+# 参数更新：往梯度反方向走一小步
+update = -learning_rate * gradient
+print("参数更新量:", update)
+```
+
+**3. 点积（内积）**
+
+```python
+v1 = np.array([1, 2, 3])
+v2 = np.array([4, 5, 6])
+
+# 点积：对应元素相乘再相加
+dot_product = np.dot(v1, v2)
+print(dot_product)  # 1*4 + 2*5 + 3*6 = 32
+
+# 手动计算验证
+manual = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]
+print(manual)  # 32
+```
+
+**点积的几何意义：相似度**
+
+```python
+# 两个向量越相似，点积越大
+v1 = np.array([1, 0])
+v2 = np.array([1, 0])  # 完全相同
+v3 = np.array([0, 1])  # 垂直
+v4 = np.array([-1, 0]) # 相反
+
+print("相同方向:", np.dot(v1, v2))  # 1
+print("垂直:", np.dot(v1, v3))      # 0
+print("相反方向:", np.dot(v1, v4))  # -1
+```
+
+**AI应用：计算相似度**
+
+```python
+# 计算两个句子的相似度
+sentence1 = np.array([0.8, 0.3, 0.5, 0.2])  # 句子1的向量表示
+sentence2 = np.array([0.7, 0.4, 0.6, 0.1])  # 句子2的向量表示
+
+# 余弦相似度
+def cosine_similarity(v1, v2):
+    dot = np.dot(v1, v2)
+    norm1 = np.linalg.norm(v1)
+    norm2 = np.linalg.norm(v2)
+    return dot / (norm1 * norm2)
+
+similarity = cosine_similarity(sentence1, sentence2)
+print(f"相似度: {similarity:.3f}")
+```
+
+### 实战：手写一个推荐系统
+
+```python
+class SimpleRecommender:
+    """基于向量相似度的推荐系统"""
+    
+    def __init__(self):
+        # 用户特征：[年龄, 性别, 收入, 教育]
+        self.users = {
+            'Alice': np.array([25, 0, 5000, 16]),
+            'Bob': np.array([30, 1, 8000, 18]),
+            'Charlie': np.array([28, 1, 6000, 16]),
+            'Diana': np.array([26, 0, 5500, 16])
+        }
+        
+        # 商品特征：[价格, 科技感, 时尚度, 实用性]
+        self.items = {
+            'iPhone': np.array([1000, 0.9, 0.8, 0.7]),
+            'Book': np.array([30, 0.3, 0.2, 0.9]),
+            'Shoes': np.array([100, 0.2, 0.9, 0.8]),
+            'Laptop': np.array([1500, 0.95, 0.5, 0.85])
+        }
+    
+    def normalize(self, v):
+        """归一化向量"""
+        return v / np.linalg.norm(v)
+    
+    def recommend(self, user_name, top_k=2):
+        """为用户推荐商品"""
+        user_vec = self.normalize(self.users[user_name])
+        
+        scores = {}
+        for item_name, item_vec in self.items.items():
+            item_vec_norm = self.normalize(item_vec)
+            # 计算相似度
+            score = np.dot(user_vec, item_vec_norm)
+            scores[item_name] = score
+        
+        # 排序
+        sorted_items = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        
+        print(f"\n为 {user_name} 推荐商品:")
+        for item, score in sorted_items[:top_k]:
+            print(f"  {item}: {score:.3f}")
+        
+        return sorted_items[:top_k]
+
+# 使用
+recommender = SimpleRecommender()
+recommender.recommend('Alice')
+recommender.recommend('Bob')
+```
+
+## 第二部分：矩阵 - 批量处理的利器
+
+### 什么是矩阵？
+
+**矩阵就是二维数组，是向量的扩展**。
+
+```python
+# 这是一个矩阵
+A = np.array([
+    [1, 2, 3],
+    [4, 5, 6]
+])
+print(A)
+# [[1 2 3]
+#  [4 5 6]]
+
+print("形状:", A.shape)  # (2, 3) - 2行3列
+```
+
+### 矩阵在AI中表示什么？
+
+**1. 一批数据**
+
+```python
+# 一批图片：32张28x28的图片
+batch_images = np.random.rand(32, 28, 28)
+print("批次大小:", batch_images.shape)
+
+# 一批特征：100个样本，每个10维
+batch_features = np.random.rand(100, 10)
+print("特征矩阵:", batch_features.shape)
+```
+
+**2. 神经网络的权重**
+
+```python
+# 输入层10个神经元，隐藏层20个神经元
+# 权重矩阵：10x20
+W = np.random.randn(10, 20) * 0.01
+print("权重矩阵形状:", W.shape)
+
+# 每一列是一个神经元的权重
+print("第一个神经元的权重:", W[:, 0])
+```
+
+**3. 图像**
+
+```python
+# 灰度图像就是矩阵
+image = np.random.rand(28, 28)
+plt.imshow(image, cmap='gray')
+plt.title('28x28 灰度图像')
+plt.colorbar()
+plt.show()
+
+# RGB图像是3个矩阵
+color_image = np.random.rand(28, 28, 3)
+plt.imshow(color_image)
+plt.title('28x28 彩色图像')
+plt.show()
+```
+
+### 矩阵乘法 - 神经网络的核心
+
+**为什么需要矩阵乘法？**
+
+```python
+# 不用矩阵乘法：慢
+def slow_forward(X, W):
+    """X: (batch, input_dim), W: (input_dim, output_dim)"""
+    batch_size = X.shape[0]
+    output_dim = W.shape[1]
+    output = np.zeros((batch_size, output_dim))
+    
+    for i in range(batch_size):
+        for j in range(output_dim):
+            for k in range(X.shape[1]):
+                output[i, j] += X[i, k] * W[k, j]
+    
+    return output
+
+# 用矩阵乘法：快100倍
+def fast_forward(X, W):
+    return np.dot(X, W)
+
+# 测试速度
+import time
+
+X = np.random.rand(100, 784)
+W = np.random.rand(784, 128)
+
+start = time.time()
+result1 = slow_forward(X, W)
+time1 = time.time() - start
+
+start = time.time()
+result2 = fast_forward(X, W)
+time2 = time.time() - start
+
+print(f"慢速方法: {time1:.4f}秒")
+print(f"快速方法: {time2:.4f}秒")
+print(f"加速: {time1/time2:.1f}倍")
+print(f"结果相同: {np.allclose(result1, result2)}")
+```
+
+**矩阵乘法的规则**
+
+```python
+# A: (m, n) × B: (n, p) = C: (m, p)
+A = np.array([
+    [1, 2],
+    [3, 4]
+])  # 2x2
+
+B = np.array([
+    [5, 6, 7],
+    [8, 9, 10]
+])  # 2x3
+
+C = np.dot(A, B)  # 2x3
+print(C)
+# [[21 24 27]
+#  [47 54 61]]
+
+# 手算验证第一个元素
+# C[0,0] = A[0,0]*B[0,0] + A[0,1]*B[1,0]
+#        = 1*5 + 2*8 = 21 ✓
+```
+
+**神经网络中的矩阵乘法**
+
+```python
+# 输入：1个样本，784维（28x28图片展平）
+X = np.random.rand(1, 784)
+
+# 第一层：784 -> 128
+W1 = np.random.randn(784, 128) * 0.01
+b1 = np.zeros((1, 128))
+Z1 = np.dot(X, W1) + b1
+A1 = np.maximum(0, Z1)  # ReLU
+
+# 第二层：128 -> 64
+W2 = np.random.randn(128, 64) * 0.01
+b2 = np.zeros((1, 64))
+Z2 = np.dot(A1, W2) + b2
+A2 = np.maximum(0, Z2)
+
+# 输出层：64 -> 10
+W3 = np.random.randn(64, 10) * 0.01
+b3 = np.zeros((1, 10))
+Z3 = np.dot(A2, W3) + b3
+
+# Softmax
+exp_scores = np.exp(Z3)
+probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+
+print("输入形状:", X.shape)
+print("输出形状:", probs.shape)
+print("预测类别:", np.argmax(probs))
+print("各类别概率:", probs[0])
+```
+
+### 矩阵转置 - 调整形状
+
+```python
+A = np.array([
+    [1, 2, 3],
+    [4, 5, 6]
+])
+print("原矩阵 (2x3):")
+print(A)
+
+print("\n转置后 (3x2):")
+print(A.T)
+
+# 转置的性质
+B = np.array([[7, 8], [9, 10], [11, 12]])
+print("\n(AB)^T = B^T A^T")
+print("左边:", np.dot(A, B).T)
+print("右边:", np.dot(B.T, A.T))
+```
+
+**AI应用：计算相似度矩阵**
+
+```python
+# 5个句子，每个100维
+sentences = np.random.rand(5, 100)
+
+# 计算所有句子两两之间的相似度
+# similarity[i,j] = dot(sentences[i], sentences[j])
+similarity = np.dot(sentences, sentences.T)
+
+print("相似度矩阵形状:", similarity.shape)  # (5, 5)
+print("\n相似度矩阵:")
+print(similarity)
+
+# 可视化
+plt.imshow(similarity, cmap='hot')
+plt.colorbar()
+plt.title('句子相似度矩阵')
+plt.xlabel('句子ID')
+plt.ylabel('句子ID')
+plt.show()
+```
+
+### 实战：从零实现一个神经网络
+
+```python
+class NeuralNetwork:
+    """两层神经网络"""
+    
+    def __init__(self, input_size, hidden_size, output_size):
+        # 初始化权重
+        self.W1 = np.random.randn(input_size, hidden_size) * 0.01
+        self.b1 = np.zeros((1, hidden_size))
+        
+        self.W2 = np.random.randn(hidden_size, output_size) * 0.01
+        self.b2 = np.zeros((1, output_size))
+    
+    def relu(self, Z):
+        """ReLU激活函数"""
+        return np.maximum(0, Z)
+    
+    def relu_derivative(self, Z):
+        """ReLU导数"""
+        return (Z > 0).astype(float)
+    
+    def softmax(self, Z):
+        """Softmax"""
+        exp_Z = np.exp(Z - np.max(Z, axis=1, keepdims=True))
+        return exp_Z / np.sum(exp_Z, axis=1, keepdims=True)
+    
+    def forward(self, X):
+        """前向传播"""
+        # 第一层
+        self.Z1 = np.dot(X, self.W1) + self.b1
+        self.A1 = self.relu(self.Z1)
+        
+        # 第二层
+        self.Z2 = np.dot(self.A1, self.W2) + self.b2
+        self.A2 = self.softmax(self.Z2)
+        
+        return self.A2
+    
+    def backward(self, X, y, learning_rate=0.01):
+        """反向传播"""
+        m = X.shape[0]
+        
+        # 输出层梯度
+        dZ2 = self.A2.copy()
+        dZ2[range(m), y] -= 1
+        dZ2 /= m
+        
+        # 第二层权重梯度
+        dW2 = np.dot(self.A1.T, dZ2)
+        db2 = np.sum(dZ2, axis=0, keepdims=True)
+        
+        # 第一层梯度
+        dA1 = np.dot(dZ2, self.W2.T)
+        dZ1 = dA1 * self.relu_derivative(self.Z1)
+        
+        # 第一层权重梯度
+        dW1 = np.dot(X.T, dZ1)
+        db1 = np.sum(dZ1, axis=0, keepdims=True)
+        
+        # 更新权重
+        self.W1 -= learning_rate * dW1
+        self.b1 -= learning_rate * db1
+        self.W2 -= learning_rate * dW2
+        self.b2 -= learning_rate * db2
+    
+    def train(self, X, y, epochs=1000, learning_rate=0.01):
+        """训练"""
+        losses = []
+        
+        for epoch in range(epochs):
+            # 前向传播
+            probs = self.forward(X)
+            
+            # 计算损失
+            correct_logprobs = -np.log(probs[range(len(y)), y])
+            loss = np.sum(correct_logprobs) / len(y)
+            losses.append(loss)
+            
+            # 反向传播
+            self.backward(X, y, learning_rate)
+            
+            if epoch % 100 == 0:
+                acc = np.mean(np.argmax(probs, axis=1) == y)
+                print(f"Epoch {epoch}, Loss: {loss:.4f}, Acc: {acc:.4f}")
+        
+        return losses
+    
+    def predict(self, X):
+        """预测"""
+        probs = self.forward(X)
+        return np.argmax(probs, axis=1)
+
+# 使用：鸢尾花分类
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# 加载数据
+iris = load_iris()
+X, y = iris.data, iris.target
+
+# 划分训练集和测试集
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 标准化
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# 训练
+model = NeuralNetwork(input_size=4, hidden_size=10, output_size=3)
+losses = model.train(X_train, y_train, epochs=1000, learning_rate=0.1)
+
+# 测试
+y_pred = model.predict(X_test)
+accuracy = np.mean(y_pred == y_test)
+print(f"\n测试集准确率: {accuracy:.4f}")
+
+# 可视化损失
+plt.plot(losses)
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('训练损失曲线')
+plt.grid(True)
+plt.show()
+```
+
+## 第三部分：高级概念
+
+### 特征值和特征向量
+
+```python
+# 特征向量：矩阵变换后方向不变的向量
+A = np.array([
+    [4, 2],
+    [1, 3]
+])
+
+# 计算特征值和特征向量
+eigenvalues, eigenvectors = np.linalg.eig(A)
+
+print("特征值:", eigenvalues)
+print("特征向量:")
+print(eigenvectors)
+
+# 验证：A·v = λ·v
+v1 = eigenvectors[:, 0]
+lambda1 = eigenvalues[0]
+
+print("\nA·v =", np.dot(A, v1))
+print("λ·v =", lambda1 * v1)
+```
+
+**AI应用：PCA降维**
+
+```python
+class PCA:
+    """主成分分析"""
+    
+    def __init__(self, n_components):
+        self.n_components = n_components
+    
+    def fit(self, X):
+        """训练"""
+        # 中心化
+        self.mean = np.mean(X, axis=0)
+        X_centered = X - self.mean
+        
+        # 计算协方差矩阵
+        cov = np.dot(X_centered.T, X_centered) / len(X)
+        
+        # 计算特征值和特征向量
+        eigenvalues, eigenvectors = np.linalg.eig(cov)
+        
+        # 按特征值排序
+        idx = eigenvalues.argsort()[::-1]
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
+        
+        # 选择前n个主成分
+        self.components = eigenvectors[:, :self.n_components]
+        self.explained_variance = eigenvalues[:self.n_components]
+        
+        return self
+    
+    def transform(self, X):
+        """降维"""
+        X_centered = X - self.mean
+        return np.dot(X_centered, self.components)
+    
+    def inverse_transform(self, X_reduced):
+        """还原"""
+        return np.dot(X_reduced, self.components.T) + self.mean
+
+# 使用
+X = np.random.rand(100, 50)  # 100个样本，50维
+
+pca = PCA(n_components=10)
+pca.fit(X)
+
+X_reduced = pca.transform(X)
+print("原始维度:", X.shape)
+print("降维后:", X_reduced.shape)
+
+X_restored = pca.inverse_transform(X_reduced)
+print("还原后:", X_restored.shape)
+
+# 计算信息保留率
+variance_ratio = np.sum(pca.explained_variance) / np.sum(np.var(X, axis=0))
+print(f"信息保留率: {variance_ratio:.2%}")
+```
+
+### 奇异值分解(SVD)
+
+```python
+# SVD: A = U·Σ·V^T
+A = np.random.rand(5, 3)
+
+U, S, VT = np.linalg.svd(A, full_matrices=False)
+
+print("A形状:", A.shape)
+print("U形状:", U.shape)
+print("S形状:", S.shape)
+print("VT形状:", VT.shape)
+
+# 重构
+A_reconstructed = np.dot(U * S, VT)
+print("\n重构误差:", np.linalg.norm(A - A_reconstructed))
+```
+
+**AI应用：图像压缩**
+
+```python
+def compress_image(image, k):
+    """用SVD压缩图像"""
+    # 对每个颜色通道做SVD
+    compressed = np.zeros_like(image)
+    
+    for i in range(3):  # RGB三个通道
+        U, S, VT = np.linalg.svd(image[:, :, i], full_matrices=False)
+        
+        # 只保留前k个奇异值
+        compressed[:, :, i] = np.dot(U[:, :k] * S[:k], VT[:k, :])
+    
+    return np.clip(compressed, 0, 1)
+
+# 加载图片
+from skimage import data
+image = data.astronaut() / 255.0
+
+# 压缩
+compressed_10 = compress_image(image, 10)
+compressed_50 = compress_image(image, 50)
+
+# 可视化
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+axes[0].imshow(image)
+axes[0].set_title('原图')
+axes[1].imshow(compressed_10)
+axes[1].set_title('k=10')
+axes[2].imshow(compressed_50)
+axes[2].set_title('k=50')
+plt.show()
+
+# 计算压缩率
+original_size = image.size
+compressed_size = (image.shape[0] * 10 + 10 + 10 * image.shape[1]) * 3
+print(f"压缩率: {compressed_size / original_size:.2%}")
+```
+
+## 总结
+
+线性代数是AI的基础语言：
+
+1. **向量**：表示特征、词义、数据点
+2. **矩阵**：批量处理、神经网络权重
+3. **矩阵乘法**：神经网络的核心运算
+4. **特征分解**：PCA降维、理解数据结构
+5. **SVD**：推荐系统、图像压缩
+
+记住：**不需要手算，但要理解概念，会用工具**！
+
+## 练习题
+
+1. 实现一个简单的线性回归（用矩阵运算）
+2. 用SVD实现一个推荐系统
+3. 实现批归一化（Batch Normalization）
+4. 手写一个卷积层（用矩阵运算）
+
+下一章：[概率统计](./概率统计.mdx)
+

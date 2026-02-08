@@ -1,0 +1,850 @@
+---
+sidebar_position: 10
+title: 大语言模型
+---
+
+# 大语言模型（Large Language Models）
+
+:::info 章节概述
+本章节介绍大语言模型的原理、架构、训练方法和应用，涵盖GPT、BERT、LLaMA等主流模型。
+:::
+
+## 什么是大语言模型
+
+**大语言模型（LLM）** 是基于Transformer架构，在海量文本数据上训练的深度学习模型，具有强大的语言理解和生成能力。
+
+### LLM的特点
+
+**规模化**：
+- 参数量：从数亿到数千亿（GPT-3: 175B, GPT-4: 1.7T+）
+- 训练数据：TB级文本数据
+- 计算资源：数千块GPU/TPU
+
+**涌现能力（Emergent Abilities）**：
+- 上下文学习（In-Context Learning）
+- 思维链推理（Chain-of-Thought）
+- 指令遵循（Instruction Following）
+
+**通用性**：
+- 零样本学习（Zero-Shot）
+- 少样本学习（Few-Shot）
+- 多任务处理
+
+## LLM发展历程
+
+### 第一阶段：预训练语言模型（2018-2019）
+
+**BERT（2018）**
+- 双向编码器
+- 掩码语言模型（MLM）
+- 下游任务微调
+
+**GPT-2（2019）**
+- 单向解码器
+- 自回归语言模型
+- 1.5B参数
+
+### 第二阶段：大规模LLM（2020-2022）
+
+**GPT-3（2020）**
+- 175B参数
+- Few-Shot Learning
+- 强大的生成能力
+
+**T5、BART、mT5**
+- 编码器-解码器架构
+- 多任务统一框架
+
+### 第三阶段：对齐与应用（2022-至今）
+
+**ChatGPT（2022.11）**
+- 基于GPT-3.5
+- RLHF对齐
+- 对话能力突破
+
+**GPT-4（2023.03）**
+- 多模态能力
+- 更强推理能力
+- 更长上下文
+
+**开源LLM爆发**
+- LLaMA系列（Meta）
+- Mistral系列
+- Qwen系列（阿里）
+- ChatGLM系列（智谱）
+
+## LLM核心技术
+
+### 1. Transformer架构
+
+```python
+import torch
+import torch.nn as nn
+import math
+
+class MultiHeadAttention(nn.Module):
+    """多头注意力机制"""
+    
+    def __init__(self, d_model, num_heads):
+        super().__init__()
+        assert d_model % num_heads == 0
+        
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+        
+        # Q, K, V投影
+        self.W_q = nn.Linear(d_model, d_model)
+        self.W_k = nn.Linear(d_model, d_model)
+        self.W_v = nn.Linear(d_model, d_model)
+        
+        # 输出投影
+        self.W_o = nn.Linear(d_model, d_model)
+    
+    def scaled_dot_product_attention(self, Q, K, V, mask=None):
+        """缩放点积注意力"""
+        # Q, K, V: (batch, num_heads, seq_len, d_k)
+        
+        # 计算注意力分数
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(self.d_k)
+        
+        # 应用mask（用于因果注意力）
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, -1e9)
+        
+        # Softmax归一化
+        attention_weights = torch.softmax(scores, dim=-1)
+        
+        # 加权求和
+        output = torch.matmul(attention_weights, V)
+        
+        return output, attention_weights
+    
+    def forward(self, x, mask=None):
+        batch_size, seq_len, _ = x.shape
+        
+        # 线性投影并分头
+        Q = self.W_q(x).view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2)
+        K = self.W_k(x).view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2)
+        V = self.W_v(x).view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2)
+        
+        # 注意力计算
+        output, attention_weights = self.scaled_dot_product_attention(Q, K, V, mask)
+        
+        # 合并多头
+        output = output.transpose(1, 2).contiguous().view(batch_size, seq_len, self.d_model)
+        
+        # 输出投影
+        output = self.W_o(output)
+        
+        return output, attention_weights
+
+
+class FeedForward(nn.Module):
+    """前馈神经网络"""
+    
+    def __init__(self, d_model, d_ff, dropout=0.1):
+        super().__init__()
+        self.linear1 = nn.Linear(d_model, d_ff)
+        self.linear2 = nn.Linear(d_ff, d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.activation = nn.GELU()
+    
+    def forward(self, x):
+        return self.linear2(self.dropout(self.activation(self.linear1(x))))
+
+
+class TransformerBlock(nn.Module):
+    """Transformer块"""
+    
+    def __init__(self, d_model, num_heads, d_ff, dropout=0.1):
+        super().__init__()
+        
+        # 多头注意力
+        self.attention = MultiHeadAttention(d_model, num_heads)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.dropout1 = nn.Dropout(dropout)
+        
+        # 前馈网络
+        self.ffn = FeedForward(d_model, d_ff, dropout)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.dropout2 = nn.Dropout(dropout)
+    
+    def forward(self, x, mask=None):
+        # 注意力 + 残差连接
+        attn_output, _ = self.attention(x, mask)
+        x = self.norm1(x + self.dropout1(attn_output))
+        
+        # 前馈 + 残差连接
+        ffn_output = self.ffn(x)
+        x = self.norm2(x + self.dropout2(ffn_output))
+        
+        return x
+
+
+class GPTModel(nn.Module):
+    """简化的GPT模型"""
+    
+    def __init__(self, vocab_size, d_model, num_heads, num_layers, d_ff, max_seq_len, dropout=0.1):
+        super().__init__()
+        
+        self.d_model = d_model
+        
+        # Token嵌入
+        self.token_embedding = nn.Embedding(vocab_size, d_model)
+        
+        # 位置编码
+        self.position_embedding = nn.Embedding(max_seq_len, d_model)
+        
+        # Transformer块
+        self.blocks = nn.ModuleList([
+            TransformerBlock(d_model, num_heads, d_ff, dropout)
+            for _ in range(num_layers)
+        ])
+        
+        # 输出层
+        self.ln_f = nn.LayerNorm(d_model)
+        self.head = nn.Linear(d_model, vocab_size, bias=False)
+        
+        self.dropout = nn.Dropout(dropout)
+    
+    def forward(self, x):
+        batch_size, seq_len = x.shape
+        
+        # Token嵌入
+        token_emb = self.token_embedding(x)
+        
+        # 位置编码
+        positions = torch.arange(0, seq_len, device=x.device).unsqueeze(0)
+        pos_emb = self.position_embedding(positions)
+        
+        # 组合嵌入
+        x = self.dropout(token_emb + pos_emb)
+        
+        # 因果mask（防止看到未来信息）
+        mask = torch.tril(torch.ones(seq_len, seq_len, device=x.device)).unsqueeze(0).unsqueeze(0)
+        
+        # 通过Transformer块
+        for block in self.blocks:
+            x = block(x, mask)
+        
+        # 输出
+        x = self.ln_f(x)
+        logits = self.head(x)
+        
+        return logits
+
+# 创建模型
+model = GPTModel(
+    vocab_size=50257,
+    d_model=768,
+    num_heads=12,
+    num_layers=12,
+    d_ff=3072,
+    max_seq_len=1024
+)
+
+print(f"模型参数量: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M")
+```
+
+### 2. 预训练方法
+
+**自回归语言模型（GPT系列）**：
+
+```python
+def autoregressive_loss(model, input_ids, labels):
+    """
+    自回归语言模型损失
+    预测下一个token
+    """
+    # 前向传播
+    logits = model(input_ids)
+    
+    # 计算交叉熵损失
+    # logits: (batch, seq_len, vocab_size)
+    # labels: (batch, seq_len)
+    loss = nn.CrossEntropyLoss()(
+        logits.view(-1, logits.size(-1)),
+        labels.view(-1)
+    )
+    
+    return loss
+
+# 训练示例
+optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
+
+for batch in dataloader:
+    input_ids = batch['input_ids']
+    labels = batch['labels']
+    
+    # 前向传播
+    loss = autoregressive_loss(model, input_ids, labels)
+    
+    # 反向传播
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+```
+
+**掩码语言模型（BERT系列）**：
+
+```python
+def masked_language_model_loss(model, input_ids, labels, mask_token_id):
+    """
+    掩码语言模型损失
+    预测被mask的token
+    """
+    # 随机mask 15%的token
+    mask_prob = 0.15
+    mask = torch.rand(input_ids.shape) < mask_prob
+    
+    # 保存原始token作为标签
+    labels = input_ids.clone()
+    labels[~mask] = -100  # 只计算mask位置的损失
+    
+    # 替换为[MASK]
+    input_ids[mask] = mask_token_id
+    
+    # 前向传播
+    logits = model(input_ids)
+    
+    # 计算损失
+    loss = nn.CrossEntropyLoss()(
+        logits.view(-1, logits.size(-1)),
+        labels.view(-1)
+    )
+    
+    return loss
+```
+
+### 3. 微调方法
+
+**全参数微调（Full Fine-Tuning）**：
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
+
+# 加载预训练模型
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+
+# 准备数据
+def tokenize_function(examples):
+    return tokenizer(examples["text"], truncation=True, max_length=512)
+
+tokenized_datasets = dataset.map(tokenize_function, batched=True)
+
+# 训练配置
+training_args = TrainingArguments(
+    output_dir="./results",
+    num_train_epochs=3,
+    per_device_train_batch_size=4,
+    learning_rate=2e-5,
+    warmup_steps=500,
+    logging_steps=100,
+)
+
+# 训练
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_datasets["train"],
+)
+
+trainer.train()
+```
+
+**LoRA（Low-Rank Adaptation）**：
+
+```python
+from peft import LoraConfig, get_peft_model
+
+# LoRA配置
+lora_config = LoraConfig(
+    r=8,  # 秩
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj"],  # 应用LoRA的模块
+    lora_dropout=0.1,
+    bias="none",
+)
+
+# 应用LoRA
+model = get_peft_model(model, lora_config)
+
+# 查看可训练参数
+model.print_trainable_parameters()
+# 输出: trainable params: 294,912 || all params: 124,439,808 || trainable%: 0.24%
+```
+
+**P-Tuning / Prompt Tuning**：
+
+```python
+class PromptTuning(nn.Module):
+    """Prompt Tuning实现"""
+    
+    def __init__(self, model, num_virtual_tokens, embedding_dim):
+        super().__init__()
+        self.model = model
+        self.num_virtual_tokens = num_virtual_tokens
+        
+        # 可学习的soft prompt
+        self.soft_prompt = nn.Parameter(
+            torch.randn(num_virtual_tokens, embedding_dim)
+        )
+    
+    def forward(self, input_ids):
+        # 获取输入嵌入
+        inputs_embeds = self.model.get_input_embeddings()(input_ids)
+        
+        # 在前面添加soft prompt
+        batch_size = inputs_embeds.shape[0]
+        soft_prompt_batch = self.soft_prompt.unsqueeze(0).expand(batch_size, -1, -1)
+        
+        # 拼接
+        inputs_embeds = torch.cat([soft_prompt_batch, inputs_embeds], dim=1)
+        
+        # 前向传播
+        outputs = self.model(inputs_embeds=inputs_embeds)
+        
+        return outputs
+```
+
+### 4. RLHF（人类反馈强化学习）
+
+```python
+class RewardModel(nn.Module):
+    """奖励模型"""
+    
+    def __init__(self, base_model):
+        super().__init__()
+        self.base_model = base_model
+        self.reward_head = nn.Linear(base_model.config.hidden_size, 1)
+    
+    def forward(self, input_ids):
+        # 获取最后一层隐藏状态
+        outputs = self.base_model(input_ids, output_hidden_states=True)
+        last_hidden_state = outputs.hidden_states[-1]
+        
+        # 取最后一个token的隐藏状态
+        last_token_hidden = last_hidden_state[:, -1, :]
+        
+        # 计算奖励
+        reward = self.reward_head(last_token_hidden)
+        
+        return reward
+
+
+def ppo_loss(policy_model, ref_model, reward_model, states, actions, old_log_probs):
+    """
+    PPO损失函数
+    """
+    # 当前策略的log概率
+    logits = policy_model(states)
+    log_probs = torch.log_softmax(logits, dim=-1)
+    action_log_probs = log_probs.gather(-1, actions.unsqueeze(-1)).squeeze(-1)
+    
+    # 重要性采样比率
+    ratio = torch.exp(action_log_probs - old_log_probs)
+    
+    # 计算奖励
+    rewards = reward_model(states)
+    
+    # 参考模型的KL散度惩罚
+    ref_logits = ref_model(states)
+    ref_log_probs = torch.log_softmax(ref_logits, dim=-1)
+    kl_penalty = torch.sum(
+        torch.exp(log_probs) * (log_probs - ref_log_probs),
+        dim=-1
+    )
+    
+    # PPO目标
+    advantages = rewards - 0.1 * kl_penalty
+    
+    # Clipped surrogate objective
+    epsilon = 0.2
+    surr1 = ratio * advantages
+    surr2 = torch.clamp(ratio, 1 - epsilon, 1 + epsilon) * advantages
+    
+    loss = -torch.min(surr1, surr2).mean()
+    
+    return loss
+```
+
+## 主流LLM对比
+
+### GPT系列
+
+**GPT-3.5 / GPT-4**
+- **架构**: Decoder-only Transformer
+- **参数**: GPT-3.5: 175B, GPT-4: 1.7T+
+- **特点**: 
+  - 强大的生成能力
+  - 上下文学习
+  - 多模态（GPT-4）
+- **应用**: ChatGPT, API服务
+
+### 开源LLM
+
+**LLaMA系列（Meta）**
+
+```python
+from transformers import LlamaForCausalLM, LlamaTokenizer
+
+# 加载LLaMA模型
+model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
+tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+
+# 生成文本
+prompt = "Once upon a time"
+inputs = tokenizer(prompt, return_tensors="pt")
+outputs = model.generate(**inputs, max_length=100)
+text = tokenizer.decode(outputs[0])
+print(text)
+```
+
+**特点**:
+- 开源可商用
+- 多种规模（7B, 13B, 70B）
+- 优秀的性能
+
+**Mistral系列**
+- Mistral-7B: 性能超越LLaMA-13B
+- Mixtral-8x7B: MoE架构
+- 长上下文支持（32K）
+
+**Qwen系列（阿里）**
+- 多语言支持
+- 代码能力强
+- 工具调用
+
+### 对比表格
+
+| 模型 | 参数量 | 上下文长度 | 开源 | 多模态 | 特点 |
+|------|--------|-----------|------|--------|------|
+| GPT-4 | 1.7T+ | 128K | ❌ | ✅ | 最强性能 |
+| Claude 3 | ? | 200K | ❌ | ✅ | 长上下文 |
+| Gemini Pro | ? | 32K | ❌ | ✅ | Google |
+| LLaMA-2-70B | 70B | 4K | ✅ | ❌ | 开源标杆 |
+| Mistral-7B | 7B | 32K | ✅ | ❌ | 高性价比 |
+| Qwen-72B | 72B | 32K | ✅ | ✅ | 中文友好 |
+
+## LLM应用开发
+
+### 1. 使用Transformers库
+
+```python
+from transformers import pipeline
+
+# 文本生成
+generator = pipeline("text-generation", model="gpt2")
+result = generator("The future of AI is", max_length=50, num_return_sequences=3)
+
+for i, text in enumerate(result):
+    print(f"\n生成{i+1}: {text['generated_text']}")
+
+# 问答
+qa_pipeline = pipeline("question-answering")
+context = "Paris is the capital of France. It is known for the Eiffel Tower."
+question = "What is Paris known for?"
+answer = qa_pipeline(question=question, context=context)
+print(f"答案: {answer['answer']}")
+
+# 文本分类
+classifier = pipeline("sentiment-analysis")
+result = classifier("I love this product!")
+print(result)
+```
+
+### 2. 使用LangChain
+
+```python
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+
+# 创建LLM
+llm = OpenAI(temperature=0.7)
+
+# 创建Prompt模板
+template = """
+你是一个专业的{role}。
+请回答以下问题：{question}
+"""
+
+prompt = PromptTemplate(
+    input_variables=["role", "question"],
+    template=template
+)
+
+# 创建Chain
+chain = LLMChain(llm=llm, prompt=prompt)
+
+# 运行
+result = chain.run(role="Python程序员", question="如何优化代码性能？")
+print(result)
+```
+
+### 3. RAG（检索增强生成）
+
+```python
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.chains import RetrievalQA
+from langchain.llms import OpenAI
+
+# 准备文档
+documents = [
+    "Python是一种高级编程语言。",
+    "机器学习是人工智能的一个分支。",
+    "深度学习使用神经网络。"
+]
+
+# 创建向量数据库
+embeddings = OpenAIEmbeddings()
+vectorstore = FAISS.from_texts(documents, embeddings)
+
+# 创建检索QA链
+qa_chain = RetrievalQA.from_chain_type(
+    llm=OpenAI(),
+    chain_type="stuff",
+    retriever=vectorstore.as_retriever()
+)
+
+# 查询
+query = "什么是深度学习？"
+answer = qa_chain.run(query)
+print(answer)
+```
+
+### 4. Function Calling
+
+```python
+import json
+from openai import OpenAI
+
+client = OpenAI()
+
+# 定义函数
+functions = [
+    {
+        "name": "get_weather",
+        "description": "获取指定城市的天气",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string",
+                    "description": "城市名称"
+                }
+            },
+            "required": ["city"]
+        }
+    }
+]
+
+# 调用
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "北京今天天气怎么样？"}],
+    functions=functions,
+    function_call="auto"
+)
+
+# 处理函数调用
+if response.choices[0].message.function_call:
+    function_name = response.choices[0].message.function_call.name
+    arguments = json.loads(response.choices[0].message.function_call.arguments)
+    
+    print(f"调用函数: {function_name}")
+    print(f"参数: {arguments}")
+```
+
+## Prompt Engineering
+
+### 基本原则
+
+**1. 清晰明确**
+```
+❌ 差: 写点东西
+✅ 好: 写一篇500字的文章，介绍人工智能在医疗领域的应用
+```
+
+**2. 提供上下文**
+```
+你是一个专业的Python程序员。
+用户是初学者，需要简单易懂的解释。
+请解释什么是列表推导式，并给出3个实用例子。
+```
+
+**3. 使用示例（Few-Shot）**
+```
+将以下句子翻译成英文：
+
+输入: 今天天气很好
+输出: The weather is nice today
+
+输入: 我喜欢编程
+输出: I love programming
+
+输入: 人工智能很有趣
+输出:
+```
+
+### 高级技巧
+
+**思维链（Chain-of-Thought）**
+```
+问题: 一个商店有23个苹果，卖出了17个，又进了30个，现在有多少个？
+
+让我们一步步思考:
+1. 初始: 23个苹果
+2. 卖出17个后: 23 - 17 = 6个
+3. 又进30个后: 6 + 30 = 36个
+
+答案: 36个苹果
+```
+
+**自我一致性（Self-Consistency）**
+```python
+# 生成多个答案，选择最一致的
+answers = []
+for _ in range(5):
+    response = llm.generate(prompt)
+    answers.append(response)
+
+# 投票选择最常见的答案
+from collections import Counter
+most_common = Counter(answers).most_common(1)[0][0]
+```
+
+**ReAct（推理+行动）**
+```
+问题: 2024年奥运会在哪里举办？
+
+思考: 我需要查找2024年奥运会的举办地
+行动: 搜索[2024年奥运会举办地]
+观察: 2024年夏季奥运会将在法国巴黎举办
+思考: 我已经找到了答案
+答案: 2024年奥运会在法国巴黎举办
+```
+
+## 模型评估
+
+### 自动评估指标
+
+**困惑度（Perplexity）**
+```python
+def calculate_perplexity(model, tokenizer, text):
+    """计算困惑度"""
+    encodings = tokenizer(text, return_tensors='pt')
+    
+    with torch.no_grad():
+        outputs = model(**encodings, labels=encodings['input_ids'])
+        loss = outputs.loss
+    
+    perplexity = torch.exp(loss)
+    return perplexity.item()
+```
+
+**BLEU（机器翻译）**
+```python
+from nltk.translate.bleu_score import sentence_bleu
+
+reference = [['this', 'is', 'a', 'test']]
+candidate = ['this', 'is', 'test']
+
+score = sentence_bleu(reference, candidate)
+print(f'BLEU score: {score}')
+```
+
+**ROUGE（文本摘要）**
+```python
+from rouge import Rouge
+
+rouge = Rouge()
+
+hypothesis = "the cat is on the mat"
+reference = "the cat sat on the mat"
+
+scores = rouge.get_scores(hypothesis, reference)
+print(scores)
+```
+
+### 人工评估
+
+**评估维度**:
+- 准确性（Accuracy）
+- 流畅性（Fluency）
+- 相关性（Relevance）
+- 一致性（Consistency）
+- 安全性（Safety）
+
+## 最佳实践
+
+### 1. 模型选择
+
+- **任务复杂度**: 简单任务用小模型，复杂任务用大模型
+- **成本考虑**: 平衡性能和成本
+- **延迟要求**: 实时应用选择快速模型
+- **隐私要求**: 敏感数据使用本地部署
+
+### 2. Prompt优化
+
+- 迭代测试不同的prompt
+- 使用温度参数控制创造性
+- 设置合理的max_tokens
+- 使用stop sequences
+
+### 3. 安全性
+
+- 内容过滤
+- 输入验证
+- 输出审核
+- 防止prompt注入
+
+### 4. 成本优化
+
+- 缓存常见查询
+- 批处理请求
+- 使用更小的模型
+- 优化prompt长度
+
+## 未来趋势
+
+**更大的模型**
+- 参数量持续增长
+- 更强的涌现能力
+
+**更长的上下文**
+- 从4K到100K+
+- 处理更复杂的任务
+
+**多模态融合**
+- 文本+图像+音频+视频
+- 统一的多模态模型
+
+**更好的对齐**
+- 更安全、更有用
+- 减少幻觉
+
+**效率提升**
+- 量化、剪枝
+- 更快的推理速度
+
+## 总结
+
+**关键要点**:
+1. LLM基于Transformer架构
+2. 预训练+微调是主流范式
+3. RLHF实现人类对齐
+4. Prompt Engineering很重要
+5. 选择合适的模型和方法
+
+**学习建议**:
+- 理解Transformer原理
+- 实践不同的微调方法
+- 学习Prompt Engineering
+- 关注最新研究进展
+
+<DocCardList />
+

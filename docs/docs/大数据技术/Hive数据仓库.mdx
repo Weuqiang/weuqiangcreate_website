@@ -1,0 +1,692 @@
+---
+sidebar_position: 5
+title: Hive - SQL on Hadoop
+---
+
+# Hive - 用SQL查询大数据
+
+Hive让你可以用SQL查询HDFS上的数据。这一章教你**用Hive构建数据仓库**。
+
+## 第一部分：理解Hive
+
+### 为什么需要Hive？
+
+**问题**：HDFS上有TB级数据，想做统计分析，但不会写MapReduce怎么办？
+
+**传统方式**：
+```python
+# 写MapReduce - 太复杂！
+class Mapper:
+    def map(self, key, value):
+        # 100行代码...
+```
+
+**Hive方式**：
+```sql
+-- 用SQL - 简单！
+SELECT category, COUNT(*) as count
+FROM products
+GROUP BY category;
+```
+
+### Hive架构
+
+```
+┌─────────────────────────────────────┐
+│          Client（客户端）            │
+│      JDBC/ODBC/CLI                  │
+└─────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────┐
+│          Hive Server                │
+│      解析SQL、生成执行计划           │
+└─────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────┐
+│          Metastore                  │
+│      存储表结构、分区信息            │
+└─────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────┐
+│          Execution Engine           │
+│      MapReduce/Spark/Tez            │
+└─────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────┐
+│          HDFS                       │
+│      存储实际数据                    │
+└─────────────────────────────────────┘
+```
+
+## 第二部分：快速开始
+
+### 使用Docker搭建Hive
+
+```yaml
+# docker-compose.yml
+version: '3'
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    environment:
+      - CLUSTER_NAME=test
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    environment:
+      - HIVE_CORE_CONF_javax_jdo_option_ConnectionURL=jdbc:postgresql://hive-metastore/metastore
+    ports:
+      - "10000:10000"
+    depends_on:
+      - hive-metastore
+
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870 datanode:9864 hive-metastore-postgresql:5432
+    ports:
+      - "9083:9083"
+
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+```
+
+```bash
+# 启动
+docker-compose up -d
+
+# 进入Hive
+docker exec -it hive-server bash
+hive
+```
+
+### 基本操作
+
+```sql
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS mydb;
+
+-- 使用数据库
+USE mydb;
+
+-- 查看数据库
+SHOW DATABASES;
+
+-- 删除数据库
+DROP DATABASE IF EXISTS mydb CASCADE;
+```
+
+## 第三部分：表操作
+
+### 创建表
+
+```sql
+-- 内部表（管理表）
+CREATE TABLE users (
+    user_id INT,
+    name STRING,
+    age INT,
+    city STRING,
+    register_date DATE
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE;
+
+-- 外部表
+CREATE EXTERNAL TABLE logs (
+    timestamp STRING,
+    level STRING,
+    message STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LOCATION '/user/logs/';
+
+-- 分区表
+CREATE TABLE orders (
+    order_id STRING,
+    user_id STRING,
+    amount DOUBLE,
+    status STRING
+)
+PARTITIONED BY (date STRING, hour STRING)
+STORED AS PARQUET;
+
+-- 分桶表
+CREATE TABLE products (
+    product_id STRING,
+    name STRING,
+    price DOUBLE,
+    category STRING
+)
+CLUSTERED BY (product_id) INTO 10 BUCKETS
+STORED AS ORC;
+```
+
+### 加载数据
+
+```sql
+-- 从本地文件加载
+LOAD DATA LOCAL INPATH '/tmp/users.csv' 
+INTO TABLE users;
+
+-- 从HDFS加载
+LOAD DATA INPATH '/user/data/users.csv' 
+INTO TABLE users;
+
+-- 插入数据
+INSERT INTO TABLE users 
+VALUES (1, 'Alice', 25, 'Beijing', '2024-01-01');
+
+-- 从查询结果插入
+INSERT INTO TABLE users
+SELECT user_id, name, age, city, register_date
+FROM temp_users
+WHERE age > 18;
+
+-- 覆盖插入
+INSERT OVERWRITE TABLE users
+SELECT * FROM temp_users;
+
+-- 动态分区插入
+SET hive.exec.dynamic.partition=true;
+SET hive.exec.dynamic.partition.mode=nonstrict;
+
+INSERT INTO TABLE orders PARTITION(date, hour)
+SELECT order_id, user_id, amount, status, 
+       DATE(order_time) as date,
+       HOUR(order_time) as hour
+FROM raw_orders;
+```
+
+## 第四部分：查询操作
+
+### 基本查询
+
+```sql
+-- 简单查询
+SELECT * FROM users LIMIT 10;
+
+-- 条件过滤
+SELECT name, age, city
+FROM users
+WHERE age > 25 AND city = 'Beijing';
+
+-- 排序
+SELECT name, age
+FROM users
+ORDER BY age DESC
+LIMIT 10;
+
+-- 分组聚合
+SELECT city, COUNT(*) as user_count, AVG(age) as avg_age
+FROM users
+GROUP BY city
+HAVING user_count > 100
+ORDER BY user_count DESC;
+
+-- 去重
+SELECT DISTINCT city FROM users;
+```
+
+### 连接查询
+
+```sql
+-- 内连接
+SELECT u.name, o.order_id, o.amount
+FROM users u
+JOIN orders o ON u.user_id = o.user_id;
+
+-- 左连接
+SELECT u.name, o.order_id, o.amount
+FROM users u
+LEFT JOIN orders o ON u.user_id = o.user_id;
+
+-- 多表连接
+SELECT u.name, o.order_id, p.product_name, od.quantity
+FROM users u
+JOIN orders o ON u.user_id = o.user_id
+JOIN order_details od ON o.order_id = od.order_id
+JOIN products p ON od.product_id = p.product_id;
+
+-- Map Join（小表广播）
+SELECT /*+ MAPJOIN(small_table) */
+    a.*, b.*
+FROM large_table a
+JOIN small_table b ON a.key = b.key;
+```
+
+### 子查询
+
+```sql
+-- WHERE子查询
+SELECT name, age
+FROM users
+WHERE user_id IN (
+    SELECT user_id 
+    FROM orders 
+    WHERE amount > 1000
+);
+
+-- FROM子查询
+SELECT city, avg_age
+FROM (
+    SELECT city, AVG(age) as avg_age
+    FROM users
+    GROUP BY city
+) t
+WHERE avg_age > 30;
+
+-- WITH子句（CTE）
+WITH high_value_users AS (
+    SELECT user_id, SUM(amount) as total_amount
+    FROM orders
+    GROUP BY user_id
+    HAVING total_amount > 10000
+)
+SELECT u.name, h.total_amount
+FROM users u
+JOIN high_value_users h ON u.user_id = h.user_id;
+```
+
+### 窗口函数
+
+```sql
+-- ROW_NUMBER：排名
+SELECT 
+    name,
+    city,
+    age,
+    ROW_NUMBER() OVER (PARTITION BY city ORDER BY age DESC) as rank
+FROM users;
+
+-- RANK：排名（允许并列）
+SELECT 
+    product_name,
+    category,
+    sales,
+    RANK() OVER (PARTITION BY category ORDER BY sales DESC) as rank
+FROM products;
+
+-- LAG/LEAD：访问前后行
+SELECT 
+    date,
+    sales,
+    LAG(sales, 1) OVER (ORDER BY date) as prev_sales,
+    LEAD(sales, 1) OVER (ORDER BY date) as next_sales
+FROM daily_sales;
+
+-- 累计和
+SELECT 
+    date,
+    amount,
+    SUM(amount) OVER (ORDER BY date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as cumsum
+FROM orders;
+
+-- 移动平均
+SELECT 
+    date,
+    value,
+    AVG(value) OVER (ORDER BY date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as ma7
+FROM metrics;
+```
+
+## 第五部分：分区和分桶
+
+### 分区表
+
+```sql
+-- 创建分区表
+CREATE TABLE logs (
+    timestamp STRING,
+    level STRING,
+    message STRING
+)
+PARTITIONED BY (date STRING, hour STRING)
+STORED AS PARQUET;
+
+-- 添加分区
+ALTER TABLE logs ADD PARTITION (date='2024-01-01', hour='00');
+
+-- 查看分区
+SHOW PARTITIONS logs;
+
+-- 删除分区
+ALTER TABLE logs DROP PARTITION (date='2024-01-01', hour='00');
+
+-- 查询特定分区
+SELECT * FROM logs
+WHERE date='2024-01-01' AND hour='00';
+
+-- 分区裁剪（只扫描需要的分区）
+SELECT COUNT(*) FROM logs
+WHERE date BETWEEN '2024-01-01' AND '2024-01-07';
+```
+
+### 分桶表
+
+```sql
+-- 创建分桶表
+CREATE TABLE users_bucketed (
+    user_id INT,
+    name STRING,
+    age INT
+)
+CLUSTERED BY (user_id) INTO 10 BUCKETS
+STORED AS ORC;
+
+-- 插入数据（需要设置）
+SET hive.enforce.bucketing=true;
+
+INSERT INTO TABLE users_bucketed
+SELECT user_id, name, age FROM users;
+
+-- 分桶表的优势：高效采样
+SELECT * FROM users_bucketed
+TABLESAMPLE(BUCKET 1 OUT OF 10 ON user_id);
+```
+
+## 第六部分：性能优化
+
+### 1. 文件格式
+
+```sql
+-- Parquet：列式存储，压缩率高
+CREATE TABLE data_parquet (
+    id INT,
+    name STRING,
+    value DOUBLE
+)
+STORED AS PARQUET;
+
+-- ORC：优化的列式存储
+CREATE TABLE data_orc (
+    id INT,
+    name STRING,
+    value DOUBLE
+)
+STORED AS ORC
+TBLPROPERTIES ("orc.compress"="SNAPPY");
+
+-- 性能对比
+-- TextFile: 1GB
+-- Parquet: 200MB (5x压缩)
+-- ORC: 150MB (6.7x压缩)
+```
+
+### 2. 执行引擎
+
+```sql
+-- 使用Tez（比MapReduce快3-10倍）
+SET hive.execution.engine=tez;
+
+-- 使用Spark
+SET hive.execution.engine=spark;
+```
+
+### 3. 向量化执行
+
+```sql
+-- 开启向量化
+SET hive.vectorized.execution.enabled=true;
+SET hive.vectorized.execution.reduce.enabled=true;
+```
+
+### 4. CBO优化
+
+```sql
+-- 收集统计信息
+ANALYZE TABLE users COMPUTE STATISTICS;
+ANALYZE TABLE users COMPUTE STATISTICS FOR COLUMNS;
+
+-- 开启CBO
+SET hive.cbo.enable=true;
+SET hive.compute.query.using.stats=true;
+```
+
+## 第七部分：实战项目
+
+### 项目：电商数据分析
+
+```sql
+-- 1. 创建表结构
+
+-- 用户表
+CREATE TABLE users (
+    user_id STRING,
+    name STRING,
+    age INT,
+    gender STRING,
+    city STRING,
+    register_date DATE
+)
+STORED AS PARQUET;
+
+-- 商品表
+CREATE TABLE products (
+    product_id STRING,
+    name STRING,
+    category STRING,
+    price DOUBLE
+)
+STORED AS PARQUET;
+
+-- 订单表（分区）
+CREATE TABLE orders (
+    order_id STRING,
+    user_id STRING,
+    product_id STRING,
+    quantity INT,
+    amount DOUBLE,
+    order_time TIMESTAMP
+)
+PARTITIONED BY (date STRING)
+STORED AS PARQUET;
+
+-- 2. 数据分析
+
+-- 每日销售统计
+SELECT 
+    date,
+    COUNT(DISTINCT order_id) as order_count,
+    COUNT(DISTINCT user_id) as user_count,
+    SUM(amount) as total_amount,
+    AVG(amount) as avg_amount
+FROM orders
+GROUP BY date
+ORDER BY date;
+
+-- 商品销售排行
+SELECT 
+    p.name,
+    p.category,
+    COUNT(o.order_id) as order_count,
+    SUM(o.quantity) as total_quantity,
+    SUM(o.amount) as total_amount
+FROM orders o
+JOIN products p ON o.product_id = p.product_id
+WHERE o.date >= '2024-01-01'
+GROUP BY p.name, p.category
+ORDER BY total_amount DESC
+LIMIT 20;
+
+-- 用户价值分析（RFM）
+WITH user_rfm AS (
+    SELECT 
+        user_id,
+        DATEDIFF(CURRENT_DATE, MAX(order_time)) as recency,
+        COUNT(order_id) as frequency,
+        SUM(amount) as monetary
+    FROM orders
+    GROUP BY user_id
+)
+SELECT 
+    user_id,
+    recency,
+    frequency,
+    monetary,
+    CASE 
+        WHEN recency <= 30 AND frequency >= 10 AND monetary >= 10000 THEN '高价值'
+        WHEN recency <= 90 AND frequency >= 5 AND monetary >= 5000 THEN '中价值'
+        ELSE '低价值'
+    END as user_level
+FROM user_rfm;
+
+-- 用户留存分析
+WITH first_order AS (
+    SELECT 
+        user_id,
+        MIN(date) as first_date
+    FROM orders
+    GROUP BY user_id
+),
+retention AS (
+    SELECT 
+        f.first_date,
+        DATEDIFF(o.date, f.first_date) as days_since_first,
+        COUNT(DISTINCT o.user_id) as retained_users
+    FROM first_order f
+    JOIN orders o ON f.user_id = o.user_id
+    GROUP BY f.first_date, DATEDIFF(o.date, f.first_date)
+)
+SELECT 
+    first_date,
+    days_since_first,
+    retained_users,
+    retained_users * 100.0 / FIRST_VALUE(retained_users) OVER (PARTITION BY first_date ORDER BY days_since_first) as retention_rate
+FROM retention
+ORDER BY first_date, days_since_first;
+
+-- 商品关联分析
+SELECT 
+    a.product_id as product_a,
+    b.product_id as product_b,
+    COUNT(*) as co_purchase_count
+FROM (
+    SELECT order_id, product_id FROM orders
+) a
+JOIN (
+    SELECT order_id, product_id FROM orders
+) b ON a.order_id = b.order_id AND a.product_id < b.product_id
+GROUP BY a.product_id, b.product_id
+HAVING co_purchase_count >= 10
+ORDER BY co_purchase_count DESC
+LIMIT 50;
+```
+
+### 项目：用户行为漏斗分析
+
+```sql
+-- 创建用户行为表
+CREATE TABLE user_behavior (
+    user_id STRING,
+    action STRING,  -- view, click, cart, purchase
+    item_id STRING,
+    timestamp TIMESTAMP
+)
+PARTITIONED BY (date STRING)
+STORED AS PARQUET;
+
+-- 漏斗分析
+WITH funnel AS (
+    SELECT 
+        date,
+        COUNT(DISTINCT CASE WHEN action = 'view' THEN user_id END) as view_users,
+        COUNT(DISTINCT CASE WHEN action = 'click' THEN user_id END) as click_users,
+        COUNT(DISTINCT CASE WHEN action = 'cart' THEN user_id END) as cart_users,
+        COUNT(DISTINCT CASE WHEN action = 'purchase' THEN user_id END) as purchase_users
+    FROM user_behavior
+    GROUP BY date
+)
+SELECT 
+    date,
+    view_users,
+    click_users,
+    cart_users,
+    purchase_users,
+    click_users * 100.0 / view_users as view_to_click_rate,
+    cart_users * 100.0 / click_users as click_to_cart_rate,
+    purchase_users * 100.0 / cart_users as cart_to_purchase_rate
+FROM funnel
+ORDER BY date;
+```
+
+## 第八部分：UDF自定义函数
+
+### Python UDF
+
+```python
+# my_udf.py
+import sys
+
+# 读取输入
+for line in sys.stdin:
+    line = line.strip()
+    # 处理逻辑
+    result = line.upper()
+    print(result)
+```
+
+```sql
+-- 添加脚本
+ADD FILE /path/to/my_udf.py;
+
+-- 使用UDF
+SELECT TRANSFORM(name)
+USING 'python my_udf.py'
+AS upper_name
+FROM users;
+```
+
+### Java UDF
+
+```java
+// MyUDF.java
+import org.apache.hadoop.hive.ql.exec.UDF;
+
+public class MyUDF extends UDF {
+    public String evaluate(String input) {
+        if (input == null) return null;
+        return input.toUpperCase();
+    }
+}
+```
+
+```sql
+-- 创建函数
+CREATE FUNCTION my_upper AS 'com.example.MyUDF'
+USING JAR 'hdfs:///user/hive/lib/my-udf.jar';
+
+-- 使用函数
+SELECT my_upper(name) FROM users;
+```
+
+## 总结
+
+Hive让大数据分析变简单：
+
+1. **SQL接口**：不需要写MapReduce
+2. **分区分桶**：高效查询
+3. **多种格式**：Parquet、ORC压缩存储
+4. **可扩展**：UDF自定义函数
+
+记住：**Hive是数据仓库，不是数据库**！
+
+## 练习题
+
+1. 设计一个电商数据仓库
+2. 实现用户画像分析
+3. 优化慢查询
+4. 实现自定义UDF
+
+下一章：HBase列式存储（即将推出）
+
