@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkweuqiangcreate_website=globalThis.webpackChunkweuqiangcreate_website||[]).push([[86366],{86366(e,a,c){c.d(a,{createArchitectureServices:()=>i.S});var i=c(38980);c(87960)}}]);
