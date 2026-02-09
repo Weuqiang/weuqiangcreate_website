@@ -36,6 +36,20 @@ jobs:
       - name: Build website
         run: npm run build
 
+      - name: Verify build output
+        run: |
+          if [ ! -d "build" ]; then
+            echo "Error: Build directory not found!"
+            exit 1
+          fi
+          if [ ! -f "build/index.html" ]; then
+            echo "Error: index.html not found in build directory!"
+            exit 1
+          fi
+          echo "Build verification successful!"
+          echo "Build size: $(du -sh build | cut -f1)"
+          echo "Files count: $(find build -type f | wc -l)"
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
@@ -54,3 +68,10 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      
+      - name: Deployment summary
+        run: |
+          echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed URL:** ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Time:** $(date)" >> $GITHUB_STEP_SUMMARY

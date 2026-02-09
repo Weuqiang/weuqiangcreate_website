@@ -37,7 +37,8 @@
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,mdx}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md,mdx}\""
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md,mdx}\"",
+    "verify:deployment": "node scripts/verify-deployment.js"
   },
   "dependencies": {
     "@docsearch/js": "^3.9.0",
