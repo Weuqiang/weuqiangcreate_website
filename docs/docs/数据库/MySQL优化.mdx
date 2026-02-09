@@ -1,0 +1,324 @@
+---
+sidebar_position: 1
+title: MySQL深入优化
+---
+
+# MySQL深入优化
+
+MySQL是最流行的关系型数据库，掌握其优化技巧对于构建高性能系统至关重要。
+
+## 索引优化
+
+### 索引类型
+
+```sql
+-- 主键索引
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50)
+);
+
+-- 唯一索引
+CREATE UNIQUE INDEX idx_email ON users(email);
+
+-- 普通索引
+CREATE INDEX idx_name ON users(name);
+
+-- 复合索引
+CREATE INDEX idx_name_age ON users(name, age);
+
+-- 全文索引
+CREATE FULLTEXT INDEX idx_content ON articles(content);
+```
+
+### 索引优化原则
+
+```sql
+-- 1. 最左前缀原则
+CREATE INDEX idx_abc ON table(a, b, c);
+-- 可以使用: a, ab, abc
+-- 不能使用: b, c, bc
+
+-- 2. 避免索引失效
+-- ❌ 错误：使用函数
+SELECT * FROM users WHERE YEAR(created_at) = 2024;
+-- ✅ 正确：直接比较
+SELECT * FROM users WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01';
+
+-- ❌ 错误：使用LIKE前缀通配符
+SELECT * FROM users WHERE name LIKE '%john%';
+-- ✅ 正确：后缀通配符
+SELECT * FROM users WHERE name LIKE 'john%';
+
+-- 3. 覆盖索引
+CREATE INDEX idx_name_age ON users(name, age);
+-- 只查询索引列，不需要回表
+SELECT name, age FROM users WHERE name = 'John';
+```
+
+## 查询优化
+
+### EXPLAIN分析
+
+```sql
+EXPLAIN SELECT * FROM orders 
+WHERE user_id = 1 AND status = 'completed';
+
+-- 关键字段：
+-- type: ALL(全表扫描) < index < range < ref < eq_ref < const
+-- key: 使用的索引
+-- rows: 扫描的行数
+-- Extra: 额外信息
+```
+
+### 慢查询优化
+
+```sql
+-- 开启慢查询日志
+SET GLOBAL slow_query_log = 'ON';
+SET GLOBAL long_query_time = 2;  -- 2秒
+
+-- 分析慢查询
+-- 使用mysqldumpslow工具
+```
+
+### 查询优化技巧
+
+```sql
+-- 1. 避免SELECT *
+-- ❌ 错误
+SELECT * FROM users WHERE id = 1;
+-- ✅ 正确
+SELECT id, name, email FROM users WHERE id = 1;
+
+-- 2. 使用LIMIT
+SELECT * FROM users ORDER BY created_at DESC LIMIT 10;
+
+-- 3. 避免子查询，使用JOIN
+-- ❌ 错误
+SELECT * FROM orders WHERE user_id IN (
+    SELECT id FROM users WHERE status = 'active'
+);
+-- ✅ 正确
+SELECT o.* FROM orders o
+INNER JOIN users u ON o.user_id = u.id
+WHERE u.status = 'active';
+
+-- 4. 批量插入
+-- ❌ 错误：逐条插入
+INSERT INTO users (name) VALUES ('Alice');
+INSERT INTO users (name) VALUES ('Bob');
+-- ✅ 正确：批量插入
+INSERT INTO users (name) VALUES ('Alice'), ('Bob'), ('Charlie');
+
+-- 5. 分页优化
+-- ❌ 错误：OFFSET很大时性能差
+SELECT * FROM users ORDER BY id LIMIT 10000, 10;
+-- ✅ 正确：使用WHERE条件
+SELECT * FROM users WHERE id > 10000 ORDER BY id LIMIT 10;
+```
+
+## 事务与锁
+
+### 事务隔离级别
+
+```sql
+-- 查看隔离级别
+SELECT @@transaction_isolation;
+
+-- 设置隔离级别
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+-- 四种隔离级别：
+-- 1. READ UNCOMMITTED（读未提交）
+-- 2. READ COMMITTED（读已提交）
+-- 3. REPEATABLE READ（可重复读，MySQL默认）
+-- 4. SERIALIZABLE（串行化）
+```
+
+### 锁机制
+
+```sql
+-- 行锁
+BEGIN;
+SELECT * FROM users WHERE id = 1 FOR UPDATE;  -- 排他锁
+UPDATE users SET balance = balance - 100 WHERE id = 1;
+COMMIT;
+
+-- 共享锁
+SELECT * FROM users WHERE id = 1 LOCK IN SHARE MODE;
+
+-- 死锁检测
+SHOW ENGINE INNODB STATUS;
+```
+
+## 主从复制
+
+### 主库配置
+
+```ini
+# my.cnf
+[mysqld]
+server-id = 1
+log-bin = mysql-bin
+binlog-format = ROW
+```
+
+### 从库配置
+
+```ini
+# my.cnf
+[mysqld]
+server-id = 2
+relay-log = mysql-relay-bin
+read-only = 1
+```
+
+### 配置主从
+
+```sql
+-- 主库：创建复制用户
+CREATE USER 'repl'@'%' IDENTIFIED BY 'password';
+GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
+
+-- 主库：查看binlog位置
+SHOW MASTER STATUS;
+
+-- 从库：配置主库信息
+CHANGE MASTER TO
+    MASTER_HOST='192.168.1.10',
+    MASTER_USER='repl',
+    MASTER_PASSWORD='password',
+    MASTER_LOG_FILE='mysql-bin.000001',
+    MASTER_LOG_POS=154;
+
+-- 从库：启动复制
+START SLAVE;
+
+-- 从库：查看状态
+SHOW SLAVE STATUS\G
+```
+
+## 分库分表
+
+### 垂直拆分
+
+```sql
+-- 按业务拆分
+-- 用户库
+CREATE DATABASE user_db;
+-- 订单库
+CREATE DATABASE order_db;
+-- 商品库
+CREATE DATABASE product_db;
+```
+
+### 水平拆分
+
+```sql
+-- 按用户ID哈希分表
+CREATE TABLE users_0 LIKE users;
+CREATE TABLE users_1 LIKE users;
+CREATE TABLE users_2 LIKE users;
+CREATE TABLE users_3 LIKE users;
+
+-- 路由规则：user_id % 4
+```
+
+### 分片策略
+
+```python
+def get_table_name(user_id, table_count=4):
+    """根据用户ID计算表名"""
+    table_index = user_id % table_count
+    return f"users_{table_index}"
+
+def get_db_name(user_id, db_count=2):
+    """根据用户ID计算数据库名"""
+    db_index = (user_id // 1000000) % db_count
+    return f"user_db_{db_index}"
+```
+
+## 性能监控
+
+### 关键指标
+
+```sql
+-- 查看连接数
+SHOW STATUS LIKE 'Threads_connected';
+SHOW STATUS LIKE 'Max_used_connections';
+
+-- 查看QPS/TPS
+SHOW GLOBAL STATUS LIKE 'Questions';
+SHOW GLOBAL STATUS LIKE 'Com_commit';
+
+-- 查看缓存命中率
+SHOW STATUS LIKE 'Qcache_hits';
+SHOW STATUS LIKE 'Qcache_inserts';
+
+-- 查看InnoDB状态
+SHOW ENGINE INNODB STATUS;
+
+-- 查看表大小
+SELECT 
+    table_schema,
+    table_name,
+    ROUND(data_length / 1024 / 1024, 2) AS data_mb,
+    ROUND(index_length / 1024 / 1024, 2) AS index_mb
+FROM information_schema.tables
+WHERE table_schema = 'mydb'
+ORDER BY data_length DESC;
+```
+
+## 备份恢复
+
+### 逻辑备份
+
+```bash
+# mysqldump备份
+mysqldump -u root -p \
+    --single-transaction \
+    --master-data=2 \
+    --databases mydb > backup.sql
+
+# 恢复
+mysql -u root -p mydb < backup.sql
+```
+
+### 物理备份
+
+```bash
+# xtrabackup备份
+xtrabackup --backup \
+    --target-dir=/backup/full \
+    --user=root \
+    --password=password
+
+# 准备备份
+xtrabackup --prepare --target-dir=/backup/full
+
+# 恢复
+xtrabackup --copy-back --target-dir=/backup/full
+```
+
+## 最佳实践
+
+1. **合理使用索引**：不是越多越好
+2. **定期分析表**：ANALYZE TABLE
+3. **避免大事务**：及时提交
+4. **使用连接池**：减少连接开销
+5. **读写分离**：主库写，从库读
+6. **定期备份**：全量+增量
+7. **监控告警**：及时发现问题
+8. **参数调优**：根据业务调整配置
+
+## 总结
+
+MySQL优化的核心是：
+- ✅ 合理设计索引
+- ✅ 优化SQL查询
+- ✅ 理解事务和锁
+- ✅ 配置主从复制
+- ✅ 实施分库分表
+- ✅ 做好监控和备份
+

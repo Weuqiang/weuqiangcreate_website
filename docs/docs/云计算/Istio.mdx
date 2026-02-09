@@ -1,0 +1,183 @@
+---
+sidebar_position: 3
+title: 服务网格Istio
+---
+
+# 服务网格Istio
+
+Istio是一个开源的服务网格，提供流量管理、安全、可观测性等功能。
+
+## 核心功能
+
+### 流量管理
+
+```yaml
+# VirtualService - 流量路由
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+    - reviews
+  http:
+  - match:
+    - headers:
+        end-user:
+          exact: jason
+    route:
+    - destination:
+        host: reviews
+        subset: v2
+  - route:
+    - destination:
+        host: reviews
+        subset: v1
+      weight: 80
+    - destination:
+        host: reviews
+        subset: v2
+      weight: 20
+```
+
+### 熔断器
+
+```yaml
+# DestinationRule - 熔断配置
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 1
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 2
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+```
+
+### 重试策略
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ratings
+spec:
+  hosts:
+  - ratings
+  http:
+  - route:
+    - destination:
+        host: ratings
+        subset: v1
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+```
+
+### 超时配置
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - route:
+    - destination:
+        host: reviews
+        subset: v1
+    timeout: 10s
+```
+
+## 安全功能
+
+### mTLS配置
+
+```yaml
+# PeerAuthentication
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT
+```
+
+### 授权策略
+
+```yaml
+# AuthorizationPolicy
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-read
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: httpbin
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/default/sa/sleep"]
+    to:
+    - operation:
+        methods: ["GET"]
+```
+
+## 可观测性
+
+### 分布式追踪
+
+Istio自动集成Jaeger进行分布式追踪。
+
+### 指标收集
+
+```yaml
+# 自定义指标
+apiVersion: config.istio.io/v1alpha2
+kind: metric
+metadata:
+  name: doublerequestcount
+  namespace: istio-system
+spec:
+  value: "2"
+  dimensions:
+    source: source.workload.name | "unknown"
+    destination: destination.workload.name | "unknown"
+  monitored_resource_type: '"UNSPECIFIED"'
+```
+
+## 最佳实践
+
+1. **渐进式部署**: 先在测试环境验证
+2. **流量镜像**: 使用流量镜像测试新版本
+3. **金丝雀发布**: 逐步增加新版本流量
+4. **监控告警**: 配置完善的监控
+5. **mTLS**: 启用服务间加密通信
+

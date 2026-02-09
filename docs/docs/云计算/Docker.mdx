@@ -1,0 +1,148 @@
+---
+sidebar_position: 2
+title: Docker深入实战
+---
+
+# Docker深入实战
+
+Docker是容器化技术的代表，让应用部署变得简单高效。
+
+## Dockerfile最佳实践
+
+```dockerfile
+# 多阶段构建
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+EXPOSE 3000
+CMD ["node", "dist/index.js"]
+```
+
+## Docker Compose实战
+
+```yaml
+version: '3.8'
+
+services:
+  web:
+    build: ./web
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+      - redis
+    environment:
+      - API_URL=http://api:8000
+    networks:
+      - frontend
+      - backend
+
+  api:
+    build: ./api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/mydb
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./api:/app
+    networks:
+      - backend
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=mydb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - web
+    networks:
+      - frontend
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  frontend:
+  backend:
+```
+
+## 常用命令
+
+```bash
+# 镜像操作
+docker build -t myapp:v1.0 .
+docker images
+docker rmi <image-id>
+docker tag myapp:v1.0 registry.com/myapp:v1.0
+docker push registry.com/myapp:v1.0
+
+# 容器操作
+docker run -d -p 8080:80 --name web nginx
+docker ps
+docker ps -a
+docker stop <container-id>
+docker rm <container-id>
+docker logs -f <container-id>
+docker exec -it <container-id> /bin/sh
+
+# 网络操作
+docker network create mynetwork
+docker network ls
+docker network inspect mynetwork
+
+# 数据卷操作
+docker volume create myvolume
+docker volume ls
+docker volume inspect myvolume
+
+# Docker Compose
+docker-compose up -d
+docker-compose down
+docker-compose logs -f
+docker-compose ps
+docker-compose exec api sh
+```
+
+## 最佳实践
+
+1. **使用多阶段构建**减小镜像大小
+2. **使用.dockerignore**排除不必要文件
+3. **合并RUN命令**减少层数
+4. **使用Alpine镜像**作为基础镜像
+5. **不要在容器中存储数据**使用Volume
+6. **设置健康检查**HEALTHCHECK指令
+7. **使用非root用户**运行容器
+

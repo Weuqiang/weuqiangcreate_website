@@ -1,0 +1,292 @@
+---
+sidebar_position: 1
+title: Kubernetes入门与实战
+---
+
+# Kubernetes入门与实战
+
+Kubernetes（K8s）是目前最流行的容器编排平台，用于自动化部署、扩展和管理容器化应用。
+
+## 核心概念
+
+### Pod
+
+```yaml
+# pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.21
+    ports:
+    - containerPort: 80
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+```
+
+### Deployment
+
+```yaml
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+```
+
+### Service
+
+```yaml
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: LoadBalancer
+```
+
+### ConfigMap
+
+```yaml
+# configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  database_url: "postgresql://localhost:5432/mydb"
+  log_level: "info"
+  max_connections: "100"
+```
+
+### Secret
+
+```yaml
+# secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+type: Opaque
+data:
+  username: YWRtaW4=  # base64编码的admin
+  password: cGFzc3dvcmQ=  # base64编码的password
+```
+
+## 实战部署
+
+### 完整的微服务部署
+
+```yaml
+# microservice-deployment.yaml
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+        version: v1
+    spec:
+      containers:
+      - name: user-service
+        image: myregistry/user-service:v1.0
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: database_url
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: password
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "500m"
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: production
+spec:
+  selector:
+    app: user-service
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: ClusterIP
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: user-service-ingress
+  namespace: production
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /users
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 80
+```
+
+## 自动扩缩容
+
+### HPA（水平Pod自动扩缩容）
+
+```yaml
+# hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: user-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: user-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+```
+
+## 常用命令
+
+```bash
+# 查看资源
+kubectl get pods
+kubectl get deployments
+kubectl get services
+kubectl get nodes
+
+# 查看详情
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+kubectl logs -f <pod-name>  # 实时日志
+
+# 创建资源
+kubectl apply -f deployment.yaml
+kubectl create -f service.yaml
+
+# 删除资源
+kubectl delete pod <pod-name>
+kubectl delete -f deployment.yaml
+
+# 进入容器
+kubectl exec -it <pod-name> -- /bin/bash
+
+# 端口转发
+kubectl port-forward <pod-name> 8080:80
+
+# 扩缩容
+kubectl scale deployment <name> --replicas=5
+
+# 滚动更新
+kubectl set image deployment/<name> <container>=<image>
+kubectl rollout status deployment/<name>
+kubectl rollout undo deployment/<name>
+```
+
+## 最佳实践
+
+1. **资源限制**: 始终设置requests和limits
+2. **健康检查**: 配置liveness和readiness探针
+3. **标签管理**: 使用有意义的标签
+4. **命名空间**: 使用namespace隔离环境
+5. **配置分离**: 使用ConfigMap和Secret
+6. **滚动更新**: 使用RollingUpdate策略
+7. **监控日志**: 集成Prometheus和ELK
+
+## 总结
+
+Kubernetes的核心是：
+- ✅ 理解Pod、Service、Deployment等核心概念
+- ✅ 掌握YAML配置文件编写
+- ✅ 熟练使用kubectl命令
+- ✅ 配置健康检查和资源限制
+- ✅ 实现自动扩缩容和滚动更新
+
