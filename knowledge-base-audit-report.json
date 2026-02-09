@@ -1,0 +1,316 @@
+{
+  "totalFiles": 357,
+  "emptyFiles": [
+    "选择编程语言\\Python标准库\\13网络和进程间通信\\socket.mdx",
+    "选择编程语言\\Python标准库\\6文件和目录访问\\pathlib.mdx"
+  ],
+  "shortFiles": [
+    {
+      "path": "前端开发\\canvas\\index.mdx",
+      "length": 163
+    },
+    {
+      "path": "前端开发\\infra\\index.mdx",
+      "length": 237
+    },
+    {
+      "path": "大模型的应用\\index.mdx",
+      "length": 340
+    },
+    {
+      "path": "机器学习\\序列处理\\VisionTransformer.mdx",
+      "length": 322
+    },
+    {
+      "path": "机器学习\\序列处理\\手写多模态大模型.mdx",
+      "length": 199
+    },
+    {
+      "path": "机器学习\\网格数据\\AlexNet.mdx",
+      "length": 320
+    },
+    {
+      "path": "机器学习\\网格数据\\ResNet.mdx",
+      "length": 282
+    },
+    {
+      "path": "机器学习\\网格数据\\YOLO.mdx",
+      "length": 364
+    },
+    {
+      "path": "选择编程语言\\C\\9字符串和字符串函数.mdx",
+      "length": 191
+    },
+    {
+      "path": "选择编程语言\\HTML\\index.mdx",
+      "length": 215
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\1. basic\\index.mdx",
+      "length": 141
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\10. bom\\index.mdx",
+      "length": 409
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\11. elements\\index.mdx",
+      "length": 179
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\2. types\\index.mdx",
+      "length": 230
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\3. operators\\index.mdx",
+      "length": 168
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\4. features\\index.mdx",
+      "length": 143
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\5. stdlib\\index.mdx",
+      "length": 276
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\6. oop\\index.mdx",
+      "length": 155
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\7. async\\index.mdx",
+      "length": 129
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\8. dom\\index.mdx",
+      "length": 292
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\9. events\\index.mdx",
+      "length": 305
+    },
+    {
+      "path": "选择编程语言\\JavaScript\\index.mdx",
+      "length": 146
+    },
+    {
+      "path": "选择编程语言\\node\\index.mdx",
+      "length": 221
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\10加密服务\\index.mdx",
+      "length": 328
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\11通用操作系统服务\\index.mdx",
+      "length": 336
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\11通用操作系统服务\\logging.mdx",
+      "length": 139
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\12命令行界面库\\index.mdx",
+      "length": 332
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\14互联网数据处理\\index.mdx",
+      "length": 334
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\15结构化标记处理工具\\index.mdx",
+      "length": 338
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\16互联网协议和支持\\index.mdx",
+      "length": 336
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\17多媒体服务\\index.mdx",
+      "length": 330
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\18国际化\\index.mdx",
+      "length": 326
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\19使用 Tk 创建图形用户界面\\index.mdx",
+      "length": 348
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\1文本处理服务\\index.mdx",
+      "length": 330
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\20开发工具\\index.mdx",
+      "length": 328
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\21调试和分析\\index.mdx",
+      "length": 330
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\22软件打包和分发\\index.mdx",
+      "length": 334
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\24自定义 Python 解释器\\index.mdx",
+      "length": 348
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\25导入模块\\index.mdx",
+      "length": 328
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\26Python 语言服务\\index.mdx",
+      "length": 342
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\2二进制数据服务\\index.mdx",
+      "length": 332
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\3数据类型\\index.mdx",
+      "length": 326
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\3数据类型\\时间.mdx",
+      "length": 75
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\4数字和数学模块\\index.mdx",
+      "length": 332
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\5函数式编程模块\\index.mdx",
+      "length": 332
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\6文件和目录访问\\glob.mdx",
+      "length": 441
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\6文件和目录访问\\index.mdx",
+      "length": 332
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\6文件和目录访问\\tempfile.mdx",
+      "length": 143
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\7数据持久化\\index.mdx",
+      "length": 328
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\7数据持久化\\pickle.mdx",
+      "length": 110
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\8数据压缩和存档\\index.mdx",
+      "length": 332
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\9文件格式\\csv.mdx",
+      "length": 91
+    },
+    {
+      "path": "选择编程语言\\Python标准库\\9文件格式\\index.mdx",
+      "length": 326
+    },
+    {
+      "path": "选择编程语言\\react\\index.mdx",
+      "length": 174
+    }
+  ],
+  "missingIndex": [
+    "绯荤粺璁捐"
+  ],
+  "moduleStats": {
+    "人工智能": {
+      "files": 14,
+      "words": 19722,
+      "codeBlocks": 175,
+      "emptyFiles": 0,
+      "shortFiles": 0
+    },
+    "前端开发": {
+      "files": 26,
+      "words": 14244,
+      "codeBlocks": 369,
+      "emptyFiles": 0,
+      "shortFiles": 2
+    },
+    "后端通识": {
+      "files": 10,
+      "words": 18512,
+      "codeBlocks": 221.5,
+      "emptyFiles": 0,
+      "shortFiles": 0
+    },
+    "大数据技术": {
+      "files": 8,
+      "words": 10210,
+      "codeBlocks": 145,
+      "emptyFiles": 0,
+      "shortFiles": 0
+    },
+    "大模型的应用": {
+      "files": 8,
+      "words": 2441,
+      "codeBlocks": 45,
+      "emptyFiles": 0,
+      "shortFiles": 1
+    },
+    "数学基础": {
+      "files": 5,
+      "words": 6154,
+      "codeBlocks": 68,
+      "emptyFiles": 0,
+      "shortFiles": 0
+    },
+    "数据库": {
+      "files": 4,
+      "words": 5187,
+      "codeBlocks": 60,
+      "emptyFiles": 0,
+      "shortFiles": 0
+    },
+    "机器学习": {
+      "files": 19,
+      "words": 20772,
+      "codeBlocks": 136,
+      "emptyFiles": 0,
+      "shortFiles": 5
+    },
+    "系统设计": {
+      "files": 1,
+      "words": 666,
+      "codeBlocks": 10,
+      "emptyFiles": 0,
+      "shortFiles": 0
+    },
+    "编程外的基础": {
+      "files": 13,
+      "words": 13223,
+      "codeBlocks": 211,
+      "emptyFiles": 0,
+      "shortFiles": 0
+    },
+    "选择编程语言": {
+      "files": 247,
+      "words": 119015,
+      "codeBlocks": 3617,
+      "emptyFiles": 2,
+      "shortFiles": 46
+    },
+    "项目管理": {
+      "files": 2,
+      "words": 1396,
+      "codeBlocks": 21,
+      "emptyFiles": 0,
+      "shortFiles": 0
+    }
+  },
+  "totalWords": 231542,
+  "totalCodeBlocks": 5078.5
+}
