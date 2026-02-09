@@ -1,0 +1,455 @@
+---
+sidebar_position: 2
+title: 加密与认证
+---
+
+# 加密与认证
+
+加密技术是保护数据安全的基础，认证机制确保用户身份的合法性。
+
+## 加密算法
+
+### 对称加密（AES）
+
+```javascript
+const crypto = require('crypto');
+
+// 加密
+function encrypt(text, key) {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), iv);
+  
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  
+  return {
+    iv: iv.toString('hex'),
+    data: encrypted
+  };
+}
+
+// 解密
+function decrypt(encrypted, key) {
+  const iv = Buffer.from(encrypted.iv, 'hex');
+  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
+  
+  let decrypted = decipher.update(encrypted.data, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  
+  return decrypted;
+}
+
+// 使用
+const key = crypto.randomBytes(32);  // 256位密钥
+const encrypted = encrypt('Hello World', key);
+const decrypted = decrypt(encrypted, key);
+```
+
+### 非对称加密（RSA）
+
+```javascript
+const crypto = require('crypto');
+
+// 生成密钥对
+const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  publicKeyEncoding: {
+    type: 'spki',
+    format: 'pem'
+  },
+  privateKeyEncoding: {
+    type: 'pkcs8',
+    format: 'pem'
+  }
+});
+
+// 公钥加密
+function encryptWithPublicKey(text, publicKey) {
+  return crypto.publicEncrypt(
+    {
+      key: publicKey,
+      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
+    },
+    Buffer.from(text)
+  ).toString('base64');
+}
+
+// 私钥解密
+function decryptWithPrivateKey(encrypted, privateKey) {
+  return crypto.privateDecrypt(
+    {
+      key: privateKey,
+      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
+    },
+    Buffer.from(encrypted, 'base64')
+  ).toString('utf8');
+}
+
+// 使用
+const encrypted = encryptWithPublicKey('Secret Message', publicKey);
+const decrypted = decryptWithPrivateKey(encrypted, privateKey);
+```
+
+### 哈希算法
+
+```javascript
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
+
+// SHA-256
+function sha256(text) {
+  return crypto.createHash('sha256').update(text).digest('hex');
+}
+
+// HMAC
+function hmac(text, secret) {
+  return crypto.createHmac('sha256', secret).update(text).digest('hex');
+}
+
+// bcrypt（密码哈希）
+async function hashPassword(password) {
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
+}
+
+async function verifyPassword(password, hash) {
+  return await bcrypt.compare(password, hash);
+}
+
+// Argon2（更安全的密码哈希）
+const argon2 = require('argon2');
+
+async function hashPasswordArgon2(password) {
+  return await argon2.hash(password, {
+    type: argon2.argon2id,
+    memoryCost: 2 ** 16,
+    timeCost: 3,
+    parallelism: 1
+  });
+}
+
+async function verifyPasswordArgon2(password, hash) {
+  return await argon2.verify(hash, password);
+}
+```
+
+## 数字签名
+
+```javascript
+// 生成签名
+function sign(data, privateKey) {
+  const sign = crypto.createSign('SHA256');
+  sign.update(data);
+  return sign.sign(privateKey, 'base64');
+}
+
+// 验证签名
+function verify(data, signature, publicKey) {
+  const verify = crypto.createVerify('SHA256');
+  verify.update(data);
+  return verify.verify(publicKey, signature, 'base64');
+}
+
+// 使用
+const data = 'Important message';
+const signature = sign(data, privateKey);
+const isValid = verify(data, signature, publicKey);
+```
+
+## JWT认证
+
+### 完整实现
+
+```javascript
+const jwt = require('jsonwebtoken');
+const redis = require('redis');
+
+const redisClient = redis.createClient();
+
+class AuthService {
+  // 生成访问令牌（短期）
+  generateAccessToken(user) {
+    return jwt.sign(
+      { 
+        id: user.id,
+        username: user.username,
+        role: user.role
+      },
+      process.env.JWT_ACCESS_SECRET,
+      { expiresIn: '15m' }
+    );
+  }
+  
+  // 生成刷新令牌（长期）
+  generateRefreshToken(user) {
+    const token = jwt.sign(
+      { id: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    // 存储到Redis
+    redisClient.setex(
+      `refresh_token:${user.id}`,
+      7 * 24 * 60 * 60,
+      token
+    );
+    
+    return token;
+  }
+  
+  // 验证访问令牌
+  verifyAccessToken(token) {
+    try {
+      return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    } catch (error) {
+      throw new Error('Invalid access token');
+    }
+  }
+  
+  // 刷新令牌
+  async refreshAccessToken(refreshToken) {
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+      
+      // 验证Redis中的令牌
+      const storedToken = await redisClient.get(`refresh_token:${decoded.id}`);
+      if (storedToken !== refreshToken) {
+        throw new Error('Invalid refresh token');
+      }
+      
+      // 获取用户信息
+      const user = await User.findById(decoded.id);
+      
+      // 生成新的访问令牌
+      return this.generateAccessToken(user);
+    } catch (error) {
+      throw new Error('Invalid refresh token');
+    }
+  }
+  
+  // 登出（撤销令牌）
+  async logout(userId) {
+    await redisClient.del(`refresh_token:${userId}`);
+  }
+}
+
+// 中间件
+function authenticate(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+  
+  try {
+    const authService = new AuthService();
+    req.user = authService.verifyAccessToken(token);
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+```
+
+## OAuth 2.0
+
+### 授权码模式
+
+```javascript
+const express = require('express');
+const axios = require('axios');
+
+const app = express();
+
+// 1. 重定向到授权服务器
+app.get('/auth/github', (req, res) => {
+  const authUrl = 'https://github.com/login/oauth/authorize';
+  const params = new URLSearchParams({
+    client_id: process.env.GITHUB_CLIENT_ID,
+    redirect_uri: 'http://localhost:3000/auth/github/callback',
+    scope: 'user:email'
+  });
+  
+  res.redirect(`${authUrl}?${params}`);
+});
+
+// 2. 处理回调
+app.get('/auth/github/callback', async (req, res) => {
+  const { code } = req.query;
+  
+  try {
+    // 3. 用授权码换取访问令牌
+    const tokenResponse = await axios.post(
+      'https://github.com/login/oauth/access_token',
+      {
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code: code
+      },
+      {
+        headers: { Accept: 'application/json' }
+      }
+    );
+    
+    const accessToken = tokenResponse.data.access_token;
+    
+    // 4. 使用访问令牌获取用户信息
+    const userResponse = await axios.get('https://api.github.com/user', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    
+    const user = userResponse.data;
+    
+    // 5. 创建本地会话
+    req.session.user = user;
+    
+    res.redirect('/dashboard');
+  } catch (error) {
+    res.status(500).json({ error: 'Authentication failed' });
+  }
+});
+```
+
+## SSO单点登录
+
+### CAS协议实现
+
+```javascript
+class CASClient {
+  constructor(casServerUrl, serviceUrl) {
+    this.casServerUrl = casServerUrl;
+    this.serviceUrl = serviceUrl;
+  }
+  
+  // 生成登录URL
+  getLoginUrl() {
+    return `${this.casServerUrl}/login?service=${encodeURIComponent(this.serviceUrl)}`;
+  }
+  
+  // 验证票据
+  async validateTicket(ticket) {
+    const validateUrl = `${this.casServerUrl}/serviceValidate`;
+    const params = new URLSearchParams({
+      service: this.serviceUrl,
+      ticket: ticket
+    });
+    
+    const response = await axios.get(`${validateUrl}?${params}`);
+    
+    // 解析XML响应
+    const user = this.parseValidationResponse(response.data);
+    return user;
+  }
+  
+  // 登出
+  getLogoutUrl() {
+    return `${this.casServerUrl}/logout?service=${encodeURIComponent(this.serviceUrl)}`;
+  }
+}
+
+// 使用
+app.get('/login', (req, res) => {
+  const cas = new CASClient(
+    'https://cas.example.com',
+    'http://myapp.com'
+  );
+  res.redirect(cas.getLoginUrl());
+});
+
+app.get('/auth/callback', async (req, res) => {
+  const { ticket } = req.query;
+  const cas = new CASClient(
+    'https://cas.example.com',
+    'http://myapp.com'
+  );
+  
+  try {
+    const user = await cas.validateTicket(ticket);
+    req.session.user = user;
+    res.redirect('/dashboard');
+  } catch (error) {
+    res.status(401).json({ error: 'Authentication failed' });
+  }
+});
+```
+
+## 多因素认证（MFA）
+
+### TOTP实现
+
+```javascript
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
+
+// 生成密钥
+function generateSecret(username) {
+  return speakeasy.generateSecret({
+    name: `MyApp (${username})`,
+    length: 32
+  });
+}
+
+// 生成二维码
+async function generateQRCode(secret) {
+  return await QRCode.toDataURL(secret.otpauth_url);
+}
+
+// 验证TOTP
+function verifyTOTP(token, secret) {
+  return speakeasy.totp.verify({
+    secret: secret,
+    encoding: 'base32',
+    token: token,
+    window: 2  // 允许前后2个时间窗口
+  });
+}
+
+// 使用
+app.post('/api/mfa/setup', authenticate, async (req, res) => {
+  const secret = generateSecret(req.user.username);
+  const qrCode = await generateQRCode(secret);
+  
+  // 保存secret到数据库
+  await User.update(req.user.id, {
+    mfa_secret: secret.base32
+  });
+  
+  res.json({ qrCode });
+});
+
+app.post('/api/mfa/verify', authenticate, async (req, res) => {
+  const { token } = req.body;
+  const user = await User.findById(req.user.id);
+  
+  const isValid = verifyTOTP(token, user.mfa_secret);
+  
+  if (isValid) {
+    req.session.mfaVerified = true;
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+```
+
+## 最佳实践
+
+1. **使用强加密算法**：AES-256、RSA-2048
+2. **密钥管理**：使用环境变量或密钥管理服务
+3. **令牌过期**：设置合理的过期时间
+4. **刷新令牌**：实现令牌刷新机制
+5. **HTTPS**：始终使用HTTPS传输
+6. **多因素认证**：提高账户安全性
+7. **审计日志**：记录认证事件
+
+## 总结
+
+加密与认证的核心是：
+- ✅ 理解对称和非对称加密
+- ✅ 使用安全的哈希算法
+- ✅ 实现JWT认证
+- ✅ 集成OAuth 2.0
+- ✅ 配置SSO单点登录
+- ✅ 启用多因素认证
+
