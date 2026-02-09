@@ -78,4 +78,4 @@ HoverText.propTypes = {
   explanation: PropTypes.string.isRequired,
 };
 
-export default HoverText;
+export default React.memo(HoverText);

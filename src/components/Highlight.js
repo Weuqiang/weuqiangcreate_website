@@ -33,4 +33,4 @@ Highlight.propTypes = {
   color: PropTypes.string,
 };
 
-export default Highlight;
+export default React.memo(Highlight);

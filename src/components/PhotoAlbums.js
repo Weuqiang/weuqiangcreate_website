@@ -1,4 +1,7 @@
+import React from 'react';
+import PropTypes from 'prop-types';
 import { PhotoAlbum } from "react-photo-album";
+
 const breakpoints = [1080, 640, 384, 256, 128, 96, 64, 48];
 
 const unsplashLink = (id, width, height) =>
@@ -28,7 +31,13 @@ const photos = unsplashPhotos.map((photo) => ({
   }),
 }));
 
-export const PhotoAlbums = () => (
-  <PhotoAlbum photos={photos} layout="rows" />
+const PhotoAlbums = ({ layout = "rows" }) => (
+  <PhotoAlbum photos={photos} layout={layout} />
 );
+
+PhotoAlbums.propTypes = {
+  layout: PropTypes.oneOf(['rows', 'columns', 'masonry']),
+};
+
+export default React.memo(PhotoAlbums);
 

@@ -52,5 +52,5 @@ MarkmapHooks.propTypes = {
   initialMarkdown: PropTypes.string.isRequired,
 };
 
-export default MarkmapHooks;
+export default React.memo(MarkmapHooks);
 
