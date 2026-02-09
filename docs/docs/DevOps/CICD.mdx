@@ -1,0 +1,523 @@
+---
+sidebar_position: 1
+title: CI/CD实战
+---
+
+# CI/CD实战
+
+持续集成和持续部署是现代软件开发的核心实践。
+
+## GitHub Actions
+
+### 基础工作流
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linter
+      run: npm run lint
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage/lcov.info
+```
+
+### 构建和部署
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build
+      run: npm run build
+      env:
+        NODE_ENV: production
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/
+  
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: dist
+        path: dist/
+    
+    - name: Deploy to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "dist/*"
+        target: "/var/www/app"
+    
+    - name: Restart service
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /var/www/app
+          pm2 restart app
+```
+
+### Docker构建和推送
+
+```yaml
+# .github/workflows/docker.yml
+name: Docker Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: myapp/api
+        tags: |
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+    
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+```
+
+## GitLab CI
+
+### 完整流水线
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+# 测试阶段
+test:
+  stage: test
+  image: node:18
+  cache:
+    paths:
+      - node_modules/
+  script:
+    - npm ci
+    - npm run lint
+    - npm test
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+
+# 构建阶段
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  only:
+    - main
+
+# 部署到测试环境
+deploy:staging:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$STAGING_SERVER "
+        docker pull $CI_REGISTRY_IMAGE:latest &&
+        docker stop app || true &&
+        docker rm app || true &&
+        docker run -d --name app -p 3000:3000 $CI_REGISTRY_IMAGE:latest
+      "
+  environment:
+    name: staging
+    url: https://staging.example.com
+  only:
+    - develop
+
+# 部署到生产环境
+deploy:production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+  script:
+    - ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$PROD_SERVER "
+        docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA &&
+        docker stop app || true &&
+        docker rm app || true &&
+        docker run -d --name app -p 3000:3000 $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+      "
+  environment:
+    name: production
+    url: https://example.com
+  when: manual
+  only:
+    - main
+```
+
+## Jenkins Pipeline
+
+### Jenkinsfile
+
+```groovy
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_REGISTRY = 'registry.example.com'
+        APP_NAME = 'myapp'
+        DOCKER_CREDENTIALS = credentials('docker-registry')
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm ci'
+            }
+        }
+        
+        stage('Lint') {
+            steps {
+                sh 'npm run lint'
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                sh 'npm test'
+            }
+            post {
+                always {
+                    junit 'test-results/**/*.xml'
+                    publishHTML([
+                        reportDir: 'coverage',
+                        reportFiles: 'index.html',
+                        reportName: 'Coverage Report'
+                    ])
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+        
+        stage('Docker Build') {
+            steps {
+                script {
+                    def image = docker.build("${DOCKER_REGISTRY}/${APP_NAME}:${BUILD_NUMBER}")
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", 'docker-registry') {
+                        image.push()
+                        image.push('latest')
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy to Staging') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                sh '''
+                    ssh deploy@staging-server "
+                        docker pull ${DOCKER_REGISTRY}/${APP_NAME}:latest
+                        docker-compose -f /opt/app/docker-compose.yml up -d
+                    "
+                '''
+            }
+        }
+        
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                input message: 'Deploy to production?', ok: 'Deploy'
+                sh '''
+                    ssh deploy@prod-server "
+                        docker pull ${DOCKER_REGISTRY}/${APP_NAME}:${BUILD_NUMBER}
+                        docker-compose -f /opt/app/docker-compose.yml up -d
+                    "
+                '''
+            }
+        }
+    }
+    
+    post {
+        success {
+            slackSend(
+                color: 'good',
+                message: "Build ${BUILD_NUMBER} succeeded: ${BUILD_URL}"
+            )
+        }
+        failure {
+            slackSend(
+                color: 'danger',
+                message: "Build ${BUILD_NUMBER} failed: ${BUILD_URL}"
+            )
+        }
+    }
+}
+```
+
+## 蓝绿部署
+
+```yaml
+# blue-green-deployment.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp
+spec:
+  selector:
+    app: myapp
+    version: blue  # 切换到green实现蓝绿部署
+  ports:
+  - port: 80
+    targetPort: 8080
+
+---
+# Blue版本
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: myapp
+        version: blue
+    spec:
+      containers:
+      - name: myapp
+        image: myapp:v1.0
+        ports:
+        - containerPort: 8080
+
+---
+# Green版本
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-green
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+      version: green
+  template:
+    metadata:
+      labels:
+        app: myapp
+        version: green
+    spec:
+      containers:
+      - name: myapp
+        image: myapp:v2.0
+        ports:
+        - containerPort: 8080
+```
+
+## 金丝雀发布
+
+```yaml
+# canary-deployment.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp
+spec:
+  selector:
+    app: myapp
+  ports:
+  - port: 80
+    targetPort: 8080
+
+---
+# 稳定版本（90%流量）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-stable
+spec:
+  replicas: 9
+  selector:
+    matchLabels:
+      app: myapp
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: myapp
+        version: stable
+    spec:
+      containers:
+      - name: myapp
+        image: myapp:v1.0
+
+---
+# 金丝雀版本（10%流量）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: myapp
+        version: canary
+    spec:
+      containers:
+      - name: myapp
+        image: myapp:v2.0
+```
+
+## 最佳实践
+
+1. **自动化一切**：构建、测试、部署
+2. **快速反馈**：尽早发现问题
+3. **小步快跑**：频繁小批量发布
+4. **回滚机制**：快速回滚到上一版本
+5. **环境一致性**：开发、测试、生产环境一致
+6. **监控告警**：实时监控部署状态
+7. **文档化**：记录部署流程
+
+## 总结
+
+CI/CD的核心是：
+- ✅ 自动化构建和测试
+- ✅ 容器化部署
+- ✅ 多环境管理
+- ✅ 蓝绿/金丝雀部署
+- ✅ 快速回滚机制
+- ✅ 持续监控和改进
+
