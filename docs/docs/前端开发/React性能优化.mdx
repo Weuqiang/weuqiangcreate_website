@@ -1,0 +1,729 @@
+---
+sidebar_position: 4
+title: React性能优化深度指南
+tags: [React, 性能优化, 前端]
+---
+
+# React性能优化深度指南
+
+性能优化是React应用开发中的重要环节，本文将深入探讨React性能优化的各种技巧和最佳实践。
+
+## 性能分析工具
+
+### React DevTools Profiler
+
+```jsx
+// 使用Profiler API记录性能
+import { Profiler } from 'react';
+
+function onRenderCallback(
+  id, // 组件的id
+  phase, // "mount" 或 "update"
+  actualDuration, // 本次更新花费的时间
+  baseDuration, // 不使用memoization的情况下渲染整棵子树需要的时间
+  startTime, // 本次更新开始的时间
+  commitTime, // 本次更新提交的时间
+  interactions // 本次更新的interactions集合
+) {
+  console.log(`${id} ${phase} took ${actualDuration}ms`);
+}
+
+function App() {
+  return (
+    <Profiler id="App" onRender={onRenderCallback}>
+      <Navigation />
+      <Main />
+    </Profiler>
+  );
+}
+```
+
+### Chrome DevTools Performance
+
+```javascript
+// 使用User Timing API标记性能
+performance.mark('component-render-start');
+// 渲染组件
+performance.mark('component-render-end');
+performance.measure(
+  'component-render',
+  'component-render-start',
+  'component-render-end'
+);
+```
+
+## 组件优化
+
+### React.memo
+
+```jsx
+// 避免不必要的重渲染
+const ExpensiveComponent = React.memo(({ data, onUpdate }) => {
+  console.log('ExpensiveComponent rendered');
+  return (
+    <div>
+      <h2>{data.title}</h2>
+      <button onClick={onUpdate}>Update</button>
+    </div>
+  );
+});
+
+// 自定义比较函数
+const MyComponent = React.memo(
+  ({ user }) => {
+    return <div>{user.name}</div>;
+  },
+  (prevProps, nextProps) => {
+    // 返回true表示不需要重渲染
+    return prevProps.user.id === nextProps.user.id;
+  }
+);
+
+// ❌ 错误用法：每次都创建新对象
+function Parent() {
+  return <ExpensiveComponent data={{ title: 'Hello' }} />;
+}
+
+// ✅ 正确用法：使用useMemo缓存对象
+function Parent() {
+  const data = useMemo(() => ({ title: 'Hello' }), []);
+  return <ExpensiveComponent data={data} />;
+}
+```
+
+### useMemo和useCallback
+
+```jsx
+import { useMemo, useCallback, useState } from 'react';
+
+function SearchResults({ query }) {
+  const [filter, setFilter] = useState('all');
+  
+  // ❌ 每次渲染都会重新计算
+  const filteredResults = expensiveFilter(query, filter);
+  
+  // ✅ 只在依赖变化时重新计算
+  const filteredResults = useMemo(
+    () => expensiveFilter(query, filter),
+    [query, filter]
+  );
+  
+  // ❌ 每次渲染都创建新函数
+  const handleClick = () => {
+    console.log('clicked');
+  };
+  
+  // ✅ 缓存函数引用
+  const handleClick = useCallback(() => {
+    console.log('clicked');
+  }, []);
+  
+  return (
+    <div>
+      <ResultList results={filteredResults} onClick={handleClick} />
+    </div>
+  );
+}
+
+// 实际案例：复杂计算
+function DataTable({ data, sortBy, filterBy }) {
+  const processedData = useMemo(() => {
+    console.log('Processing data...');
+    return data
+      .filter(item => item.category === filterBy)
+      .sort((a, b) => a[sortBy] - b[sortBy])
+      .map(item => ({
+        ...item,
+        displayName: `${item.firstName} ${item.lastName}`
+      }));
+  }, [data, sortBy, filterBy]);
+  
+  return (
+    <table>
+      {processedData.map(item => (
+        <tr key={item.id}>
+          <td>{item.displayName}</td>
+        </tr>
+      ))}
+    </table>
+  );
+}
+```
+
+### 避免内联对象和函数
+
+```jsx
+// ❌ 错误：每次渲染都创建新对象
+function Parent() {
+  return (
+    <Child
+      style={{ color: 'red' }}
+      onClick={() => console.log('clicked')}
+    />
+  );
+}
+
+// ✅ 正确：提取到外部或使用useMemo/useCallback
+const style = { color: 'red' };
+
+function Parent() {
+  const handleClick = useCallback(() => {
+    console.log('clicked');
+  }, []);
+  
+  return <Child style={style} onClick={handleClick} />;
+}
+```
+
+## 列表优化
+
+### 虚拟滚动
+
+```jsx
+import { FixedSizeList } from 'react-window';
+
+// 渲染大列表
+function VirtualList({ items }) {
+  const Row = ({ index, style }) => (
+    <div style={style}>
+      {items[index].name}
+    </div>
+  );
+  
+  return (
+    <FixedSizeList
+      height={600}
+      itemCount={items.length}
+      itemSize={50}
+      width="100%"
+    >
+      {Row}
+    </FixedSizeList>
+  );
+}
+
+// 使用react-virtualized的更复杂示例
+import { List, AutoSizer } from 'react-virtualized';
+
+function AdvancedList({ items }) {
+  const rowRenderer = ({ key, index, style }) => (
+    <div key={key} style={style}>
+      <h3>{items[index].title}</h3>
+      <p>{items[index].description}</p>
+    </div>
+  );
+  
+  return (
+    <AutoSizer>
+      {({ height, width }) => (
+        <List
+          width={width}
+          height={height}
+          rowCount={items.length}
+          rowHeight={100}
+          rowRenderer={rowRenderer}
+        />
+      )}
+    </AutoSizer>
+  );
+}
+```
+
+### 正确使用key
+
+```jsx
+// ❌ 错误：使用索引作为key
+{items.map((item, index) => (
+  <Item key={index} data={item} />
+))}
+
+// ✅ 正确：使用唯一ID
+{items.map(item => (
+  <Item key={item.id} data={item} />
+))}
+
+// ❌ 错误：使用随机值
+{items.map(item => (
+  <Item key={Math.random()} data={item} />
+))}
+
+// ✅ 正确：使用稳定的唯一标识
+{items.map(item => (
+  <Item key={`${item.type}-${item.id}`} data={item} />
+))}
+```
+
+## 代码分割
+
+### React.lazy和Suspense
+
+```jsx
+import { lazy, Suspense } from 'react';
+
+// 懒加载组件
+const HeavyComponent = lazy(() => import('./HeavyComponent'));
+const Dashboard = lazy(() => import('./Dashboard'));
+const Profile = lazy(() => import('./Profile'));
+
+function App() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
+// 预加载组件
+function Navigation() {
+  const handleMouseEnter = () => {
+    // 鼠标悬停时预加载
+    import('./Dashboard');
+  };
+  
+  return (
+    <nav>
+      <Link to="/dashboard" onMouseEnter={handleMouseEnter}>
+        Dashboard
+      </Link>
+    </nav>
+  );
+}
+```
+
+### 动态导入
+
+```jsx
+// 条件加载
+function Editor() {
+  const [showPreview, setShowPreview] = useState(false);
+  const [Preview, setPreview] = useState(null);
+  
+  const loadPreview = async () => {
+    if (!Preview) {
+      const module = await import('./Preview');
+      setPreview(() => module.default);
+    }
+    setShowPreview(true);
+  };
+  
+  return (
+    <div>
+      <textarea />
+      <button onClick={loadPreview}>Show Preview</button>
+      {showPreview && Preview && <Preview />}
+    </div>
+  );
+}
+```
+
+## 状态管理优化
+
+### Context优化
+
+```jsx
+// ❌ 问题：整个Context变化会导致所有消费者重渲染
+const AppContext = createContext();
+
+function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState('light');
+  
+  return (
+    <AppContext.Provider value={{ user, setUser, theme, setTheme }}>
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+// ✅ 解决方案1：拆分Context
+const UserContext = createContext();
+const ThemeContext = createContext();
+
+function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState('light');
+  
+  return (
+    <UserContext.Provider value={{ user, setUser }}>
+      <ThemeContext.Provider value={{ theme, setTheme }}>
+        {children}
+      </ThemeContext.Provider>
+    </UserContext.Provider>
+  );
+}
+
+// ✅ 解决方案2：使用useMemo缓存value
+function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState('light');
+  
+  const userValue = useMemo(() => ({ user, setUser }), [user]);
+  const themeValue = useMemo(() => ({ theme, setTheme }), [theme]);
+  
+  return (
+    <UserContext.Provider value={userValue}>
+      <ThemeContext.Provider value={themeValue}>
+        {children}
+      </ThemeContext.Provider>
+    </UserContext.Provider>
+  );
+}
+
+// ✅ 解决方案3：使用选择器
+function useUserSelector(selector) {
+  const { user } = useContext(UserContext);
+  return useMemo(() => selector(user), [user, selector]);
+}
+
+function UserName() {
+  const name = useUserSelector(user => user?.name);
+  return <div>{name}</div>;
+}
+```
+
+### 状态提升优化
+
+```jsx
+// ❌ 问题：状态过度提升导致不必要的重渲染
+function Parent() {
+  const [count, setCount] = useState(0);
+  const [text, setText] = useState('');
+  
+  return (
+    <div>
+      <Counter count={count} setCount={setCount} />
+      <Input text={text} setText={setText} />
+      <ExpensiveComponent />  {/* 不需要count和text，但会重渲染 */}
+    </div>
+  );
+}
+
+// ✅ 解决方案：状态下沉
+function Parent() {
+  return (
+    <div>
+      <CounterContainer />
+      <InputContainer />
+      <ExpensiveComponent />  {/* 不会重渲染 */}
+    </div>
+  );
+}
+
+function CounterContainer() {
+  const [count, setCount] = useState(0);
+  return <Counter count={count} setCount={setCount} />;
+}
+```
+
+## 渲染优化
+
+### 批量更新
+
+```jsx
+import { unstable_batchedUpdates } from 'react-dom';
+
+// React 18之前：手动批量更新
+function handleClick() {
+  unstable_batchedUpdates(() => {
+    setCount(c => c + 1);
+    setFlag(f => !f);
+    // 只会触发一次重渲染
+  });
+}
+
+// React 18：自动批量更新
+async function handleClick() {
+  setCount(c => c + 1);
+  setFlag(f => !f);
+  // 自动批量，只触发一次重渲染
+  
+  await fetch('/api');
+  setData(newData);  // 也会自动批量
+}
+
+// 退出自动批量
+import { flushSync } from 'react-dom';
+
+function handleClick() {
+  flushSync(() => {
+    setCount(c => c + 1);
+  });
+  // 立即重渲染
+  
+  setFlag(f => !f);
+  // 再次重渲染
+}
+```
+
+### 防抖和节流
+
+```jsx
+import { useMemo, useCallback } from 'react';
+import { debounce, throttle } from 'lodash';
+
+function SearchInput() {
+  // ❌ 错误：每次渲染都创建新的防抖函数
+  const handleSearch = debounce((value) => {
+    console.log('Searching:', value);
+  }, 300);
+  
+  // ✅ 正确：使用useMemo缓存防抖函数
+  const handleSearch = useMemo(
+    () => debounce((value) => {
+      console.log('Searching:', value);
+    }, 300),
+    []
+  );
+  
+  // 清理防抖函数
+  useEffect(() => {
+    return () => {
+      handleSearch.cancel();
+    };
+  }, [handleSearch]);
+  
+  return <input onChange={e => handleSearch(e.target.value)} />;
+}
+
+// 自定义防抖Hook
+function useDebounce(callback, delay) {
+  const callbackRef = useRef(callback);
+  
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+  
+  return useMemo(
+    () => debounce((...args) => callbackRef.current(...args), delay),
+    [delay]
+  );
+}
+
+// 使用
+function SearchInput() {
+  const handleSearch = useDebounce((value) => {
+    console.log('Searching:', value);
+  }, 300);
+  
+  return <input onChange={e => handleSearch(e.target.value)} />;
+}
+```
+
+## 图片优化
+
+### 懒加载图片
+
+```jsx
+// 使用Intersection Observer
+function LazyImage({ src, alt, placeholder }) {
+  const [imageSrc, setImageSrc] = useState(placeholder);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const imgRef = useRef();
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setImageSrc(src);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [src]);
+  
+  return (
+    <img
+      ref={imgRef}
+      src={imageSrc}
+      alt={alt}
+      onLoad={() => setIsLoaded(true)}
+      style={{ opacity: isLoaded ? 1 : 0.5 }}
+    />
+  );
+}
+
+// 使用loading="lazy"属性
+function SimpleImage({ src, alt }) {
+  return <img src={src} alt={alt} loading="lazy" />;
+}
+```
+
+### 响应式图片
+
+```jsx
+function ResponsiveImage({ src, alt }) {
+  return (
+    <picture>
+      <source
+        media="(min-width: 1200px)"
+        srcSet={`${src}-large.jpg 1x, ${src}-large@2x.jpg 2x`}
+      />
+      <source
+        media="(min-width: 768px)"
+        srcSet={`${src}-medium.jpg 1x, ${src}-medium@2x.jpg 2x`}
+      />
+      <img
+        src={`${src}-small.jpg`}
+        srcSet={`${src}-small@2x.jpg 2x`}
+        alt={alt}
+        loading="lazy"
+      />
+    </picture>
+  );
+}
+```
+
+## 网络优化
+
+### 数据预取
+
+```jsx
+// 预取数据
+function ProductList({ products }) {
+  const prefetchProduct = (id) => {
+    // 预取产品详情
+    queryClient.prefetchQuery(['product', id], () => fetchProduct(id));
+  };
+  
+  return (
+    <div>
+      {products.map(product => (
+        <Link
+          key={product.id}
+          to={`/product/${product.id}`}
+          onMouseEnter={() => prefetchProduct(product.id)}
+        >
+          {product.name}
+        </Link>
+      ))}
+    </div>
+  );
+}
+```
+
+### 请求合并
+
+```jsx
+// 使用DataLoader模式
+class DataLoader {
+  constructor(batchFn, options = {}) {
+    this.batchFn = batchFn;
+    this.cache = new Map();
+    this.queue = [];
+    this.batchScheduled = false;
+  }
+  
+  load(key) {
+    if (this.cache.has(key)) {
+      return Promise.resolve(this.cache.get(key));
+    }
+    
+    return new Promise((resolve, reject) => {
+      this.queue.push({ key, resolve, reject });
+      
+      if (!this.batchScheduled) {
+        this.batchScheduled = true;
+        process.nextTick(() => this.dispatch());
+      }
+    });
+  }
+  
+  dispatch() {
+    const queue = this.queue;
+    this.queue = [];
+    this.batchScheduled = false;
+    
+    const keys = queue.map(item => item.key);
+    
+    this.batchFn(keys).then(values => {
+      queue.forEach((item, index) => {
+        const value = values[index];
+        this.cache.set(item.key, value);
+        item.resolve(value);
+      });
+    });
+  }
+}
+
+// 使用
+const userLoader = new DataLoader(async (ids) => {
+  const response = await fetch(`/api/users?ids=${ids.join(',')}`);
+  return response.json();
+});
+
+function UserProfile({ userId }) {
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    userLoader.load(userId).then(setUser);
+  }, [userId]);
+  
+  return user ? <div>{user.name}</div> : <div>Loading...</div>;
+}
+```
+
+## 最佳实践总结
+
+### 性能检查清单
+
+```markdown
+✅ 使用React DevTools Profiler分析性能
+✅ 使用React.memo避免不必要的重渲染
+✅ 使用useMemo缓存复杂计算
+✅ 使用useCallback缓存函数引用
+✅ 避免在渲染中创建内联对象和函数
+✅ 为列表项使用稳定的key
+✅ 使用虚拟滚动处理大列表
+✅ 使用React.lazy和Suspense进行代码分割
+✅ 拆分Context避免不必要的重渲染
+✅ 使用防抖和节流优化频繁操作
+✅ 懒加载图片和组件
+✅ 预取关键数据
+✅ 合并网络请求
+```
+
+### 常见性能陷阱
+
+```jsx
+// ❌ 陷阱1：在渲染中创建新对象
+<Component style={{ margin: 10 }} />
+
+// ❌ 陷阱2：在渲染中创建新函数
+<button onClick={() => handleClick(id)} />
+
+// ❌ 陷阱3：过度使用Context
+<AppContext.Provider value={{ ...allAppState }} />
+
+// ❌ 陷阱4：不必要的状态提升
+// 将只有一个组件使用的状态提升到父组件
+
+// ❌ 陷阱5：使用索引作为key
+{items.map((item, index) => <Item key={index} />)}
+
+// ❌ 陷阱6：在useEffect中缺少依赖
+useEffect(() => {
+  doSomething(prop);
+}, []); // 缺少prop依赖
+```
+
+## 总结
+
+React性能优化的核心原则：
+- ✅ 减少不必要的渲染
+- ✅ 优化渲染性能
+- ✅ 减少包体积
+- ✅ 优化网络请求
+- ✅ 使用正确的工具分析和监控
+
+记住：**过早优化是万恶之源，先测量再优化！**
+
