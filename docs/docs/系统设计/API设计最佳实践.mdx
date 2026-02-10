@@ -1,0 +1,929 @@
+---
+sidebar_position: 8
+title: API设计最佳实践
+tags: [系统设计, API设计, RESTful, GraphQL]
+---
+
+# API设计最佳实践
+
+良好的API设计是系统成功的关键，本文将详细讲解API设计的最佳实践和常见模式。
+
+## RESTful API设计
+
+### 资源命名
+
+```javascript
+// ✅ 好的命名
+GET    /api/v1/users              // 获取用户列表
+GET    /api/v1/users/:id          // 获取单个用户
+POST   /api/v1/users              // 创建用户
+PUT    /api/v1/users/:id          // 更新用户
+DELETE /api/v1/users/:id          // 删除用户
+
+GET    /api/v1/users/:id/posts    // 获取用户的文章
+POST   /api/v1/users/:id/posts    // 为用户创建文章
+
+// ❌ 不好的命名
+GET    /api/v1/getUsers            // 动词不应出现在URL中
+POST   /api/v1/user/create         // 冗余的create
+GET    /api/v1/users/list          // 冗余的list
+DELETE /api/v1/deleteUser/:id     // 动词不应出现在URL中
+```
+
+### HTTP方法
+
+```javascript
+const httpMethods = {
+  // GET - 获取资源
+  GET: {
+    idempotent: true,
+    safe: true,
+    cacheable: true,
+    examples: [
+      'GET /users',
+      'GET /users/:id',
+      'GET /users/:id/posts'
+    ]
+  },
+  
+  // POST - 创建资源
+  POST: {
+    idempotent: false,
+    safe: false,
+    cacheable: false,
+    examples: [
+      'POST /users',
+      'POST /users/:id/posts'
+    ]
+  },
+  
+  // PUT - 完整更新资源
+  PUT: {
+    idempotent: true,
+    safe: false,
+    cacheable: false,
+    examples: [
+      'PUT /users/:id'
+    ]
+  },
+  
+  // PATCH - 部分更新资源
+  PATCH: {
+    idempotent: true,
+    safe: false,
+    cacheable: false,
+    examples: [
+      'PATCH /users/:id'
+    ]
+  },
+  
+  // DELETE - 删除资源
+  DELETE: {
+    idempotent: true,
+    safe: false,
+    cacheable: false,
+    examples: [
+      'DELETE /users/:id'
+    ]
+  }
+};
+```
+
+### 状态码
+
+```javascript
+const statusCodes = {
+  // 2xx 成功
+  200: 'OK - 请求成功',
+  201: 'Created - 资源创建成功',
+  204: 'No Content - 请求成功但无返回内容',
+  
+  // 3xx 重定向
+  301: 'Moved Permanently - 永久重定向',
+  302: 'Found - 临时重定向',
+  304: 'Not Modified - 资源未修改',
+  
+  // 4xx 客户端错误
+  400: 'Bad Request - 请求参数错误',
+  401: 'Unauthorized - 未认证',
+  403: 'Forbidden - 无权限',
+  404: 'Not Found - 资源不存在',
+  409: 'Conflict - 资源冲突',
+  422: 'Unprocessable Entity - 验证失败',
+  429: 'Too Many Requests - 请求过多',
+  
+  // 5xx 服务器错误
+  500: 'Internal Server Error - 服务器错误',
+  502: 'Bad Gateway - 网关错误',
+  503: 'Service Unavailable - 服务不可用',
+  504: 'Gateway Timeout - 网关超时'
+};
+
+// 使用示例
+class UserController {
+  async getUser(req, res) {
+    try {
+      const user = await User.findById(req.params.id);
+      
+      if (!user) {
+        return res.status(404).json({
+          error: 'User not found'
+        });
+      }
+      
+      res.status(200).json(user);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Internal server error'
+      });
+    }
+  }
+  
+  async createUser(req, res) {
+    try {
+      const user = await User.create(req.body);
+      
+      res.status(201).json(user);
+    } catch (error) {
+      if (error.name === 'ValidationError') {
+        return res.status(422).json({
+          error: 'Validation failed',
+          details: error.errors
+        });
+      }
+      
+      res.status(500).json({
+        error: 'Internal server error'
+      });
+    }
+  }
+}
+```
+
+### 请求响应格式
+
+```typescript
+// 统一响应格式
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  meta?: {
+    timestamp: number;
+    requestId: string;
+  };
+}
+
+// 成功响应
+const successResponse = <T>(data: T): ApiResponse<T> => ({
+  success: true,
+  data,
+  meta: {
+    timestamp: Date.now(),
+    requestId: generateRequestId()
+  }
+});
+
+// 错误响应
+const errorResponse = (code: string, message: string, details?: any): ApiResponse<never> => ({
+  success: false,
+  error: {
+    code,
+    message,
+    details
+  },
+  meta: {
+    timestamp: Date.now(),
+    requestId: generateRequestId()
+  }
+});
+
+// 分页响应
+interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// 使用示例
+app.get('/api/v1/users', async (req, res) => {
+  const { page = 1, pageSize = 20 } = req.query;
+  
+  const users = await User.find()
+    .skip((page - 1) * pageSize)
+    .limit(pageSize);
+  
+  const total = await User.countDocuments();
+  
+  res.json({
+    success: true,
+    data: users,
+    pagination: {
+      page: Number(page),
+      pageSize: Number(pageSize),
+      total,
+      totalPages: Math.ceil(total / pageSize)
+    },
+    meta: {
+      timestamp: Date.now(),
+      requestId: req.id
+    }
+  });
+});
+```
+
+## 版本控制
+
+### URL版本控制
+
+```javascript
+// 方式1：URL路径版本
+app.use('/api/v1', v1Router);
+app.use('/api/v2', v2Router);
+
+// v1版本
+const v1Router = express.Router();
+v1Router.get('/users', (req, res) => {
+  // v1逻辑
+});
+
+// v2版本
+const v2Router = express.Router();
+v2Router.get('/users', (req, res) => {
+  // v2逻辑
+});
+```
+
+### Header版本控制
+
+```javascript
+// 方式2：请求头版本
+app.use('/api', (req, res, next) => {
+  const version = req.headers['api-version'] || '1';
+  
+  if (version === '1') {
+    v1Handler(req, res);
+  } else if (version === '2') {
+    v2Handler(req, res);
+  } else {
+    res.status(400).json({
+      error: 'Unsupported API version'
+    });
+  }
+});
+```
+
+### 版本废弃策略
+
+```javascript
+class ApiVersionManager {
+  constructor() {
+    this.versions = {
+      'v1': {
+        status: 'deprecated',
+        deprecatedAt: '2024-01-01',
+        sunsetAt: '2024-06-01',
+        message: 'API v1 is deprecated. Please migrate to v2.'
+      },
+      'v2': {
+        status: 'active'
+      },
+      'v3': {
+        status: 'beta'
+      }
+    };
+  }
+  
+  checkVersion(version) {
+    const versionInfo = this.versions[version];
+    
+    if (!versionInfo) {
+      throw new Error('Version not found');
+    }
+    
+    if (versionInfo.status === 'deprecated') {
+      return {
+        warning: versionInfo.message,
+        sunsetAt: versionInfo.sunsetAt
+      };
+    }
+    
+    return null;
+  }
+  
+  middleware() {
+    return (req, res, next) => {
+      const version = this.extractVersion(req);
+      const warning = this.checkVersion(version);
+      
+      if (warning) {
+        res.set('Warning', `299 - "${warning.warning}"`);
+        res.set('Sunset', warning.sunsetAt);
+      }
+      
+      next();
+    };
+  }
+}
+```
+
+## 认证授权
+
+### JWT认证
+
+```javascript
+const jwt = require('jsonwebtoken');
+
+class AuthService {
+  generateToken(user) {
+    const payload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    };
+    
+    return jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '7d'
+    });
+  }
+  
+  verifyToken(token) {
+    try {
+      return jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
+  }
+  
+  middleware() {
+    return async (req, res, next) => {
+      const authHeader = req.headers.authorization;
+      
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({
+          error: 'No token provided'
+        });
+      }
+      
+      const token = authHeader.substring(7);
+      
+      try {
+        const decoded = this.verifyToken(token);
+        req.user = decoded;
+        next();
+      } catch (error) {
+        res.status(401).json({
+          error: 'Invalid token'
+        });
+      }
+    };
+  }
+}
+
+// 使用
+const authService = new AuthService();
+
+app.post('/api/v1/login', async (req, res) => {
+  const { email, password } = req.body;
+  
+  const user = await User.findOne({ email });
+  
+  if (!user || !await user.comparePassword(password)) {
+    return res.status(401).json({
+      error: 'Invalid credentials'
+    });
+  }
+  
+  const token = authService.generateToken(user);
+  
+  res.json({
+    success: true,
+    data: {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      }
+    }
+  });
+});
+
+// 受保护的路由
+app.get('/api/v1/profile', 
+  authService.middleware(),
+  async (req, res) => {
+    const user = await User.findById(req.user.userId);
+    res.json({ success: true, data: user });
+  }
+);
+```
+
+### 权限控制
+
+```javascript
+class PermissionMiddleware {
+  requireRole(...roles) {
+    return (req, res, next) => {
+      if (!req.user) {
+        return res.status(401).json({
+          error: 'Not authenticated'
+        });
+      }
+      
+      if (!roles.includes(req.user.role)) {
+        return res.status(403).json({
+          error: 'Insufficient permissions'
+        });
+      }
+      
+      next();
+    };
+  }
+  
+  requirePermission(...permissions) {
+    return async (req, res, next) => {
+      if (!req.user) {
+        return res.status(401).json({
+          error: 'Not authenticated'
+        });
+      }
+      
+      const userPermissions = await this.getUserPermissions(req.user.userId);
+      
+      const hasPermission = permissions.every(p => 
+        userPermissions.includes(p)
+      );
+      
+      if (!hasPermission) {
+        return res.status(403).json({
+          error: 'Insufficient permissions'
+        });
+      }
+      
+      next();
+    };
+  }
+}
+
+// 使用
+const permission = new PermissionMiddleware();
+
+app.delete('/api/v1/users/:id',
+  authService.middleware(),
+  permission.requireRole('admin'),
+  async (req, res) => {
+    await User.deleteById(req.params.id);
+    res.status(204).send();
+  }
+);
+```
+
+## 限流
+
+### 令牌桶算法
+
+```javascript
+class TokenBucket {
+  constructor(capacity, refillRate) {
+    this.capacity = capacity;      // 桶容量
+    this.tokens = capacity;        // 当前令牌数
+    this.refillRate = refillRate;  // 每秒补充令牌数
+    this.lastRefill = Date.now();
+  }
+  
+  refill() {
+    const now = Date.now();
+    const timePassed = (now - this.lastRefill) / 1000;
+    const tokensToAdd = timePassed * this.refillRate;
+    
+    this.tokens = Math.min(this.capacity, this.tokens + tokensToAdd);
+    this.lastRefill = now;
+  }
+  
+  consume(tokens = 1) {
+    this.refill();
+    
+    if (this.tokens >= tokens) {
+      this.tokens -= tokens;
+      return true;
+    }
+    
+    return false;
+  }
+}
+
+class RateLimiter {
+  constructor() {
+    this.buckets = new Map();
+  }
+  
+  middleware(options = {}) {
+    const {
+      capacity = 100,
+      refillRate = 10,
+      keyGenerator = (req) => req.ip
+    } = options;
+    
+    return (req, res, next) => {
+      const key = keyGenerator(req);
+      
+      if (!this.buckets.has(key)) {
+        this.buckets.set(key, new TokenBucket(capacity, refillRate));
+      }
+      
+      const bucket = this.buckets.get(key);
+      
+      if (bucket.consume()) {
+        res.set('X-RateLimit-Limit', capacity);
+        res.set('X-RateLimit-Remaining', Math.floor(bucket.tokens));
+        next();
+      } else {
+        res.status(429).json({
+          error: 'Too many requests',
+          retryAfter: Math.ceil((1 - bucket.tokens) / refillRate)
+        });
+      }
+    };
+  }
+}
+
+// 使用
+const rateLimiter = new RateLimiter();
+
+app.use('/api', rateLimiter.middleware({
+  capacity: 100,
+  refillRate: 10
+}));
+```
+
+### Redis限流
+
+```javascript
+class RedisRateLimiter {
+  constructor(redis) {
+    this.redis = redis;
+  }
+  
+  async checkLimit(key, limit, window) {
+    const now = Date.now();
+    const windowStart = now - window * 1000;
+    
+    // 使用Redis的Sorted Set
+    const multi = this.redis.multi();
+    
+    // 移除过期的请求
+    multi.zremrangebyscore(key, 0, windowStart);
+    
+    // 添加当前请求
+    multi.zadd(key, now, `${now}-${Math.random()}`);
+    
+    // 获取窗口内的请求数
+    multi.zcard(key);
+    
+    // 设置过期时间
+    multi.expire(key, window);
+    
+    const results = await multi.exec();
+    const count = results[2][1];
+    
+    return {
+      allowed: count <= limit,
+      remaining: Math.max(0, limit - count),
+      resetAt: now + window * 1000
+    };
+  }
+  
+  middleware(options = {}) {
+    const {
+      limit = 100,
+      window = 60,
+      keyGenerator = (req) => `ratelimit:${req.ip}`
+    } = options;
+    
+    return async (req, res, next) => {
+      const key = keyGenerator(req);
+      const result = await this.checkLimit(key, limit, window);
+      
+      res.set('X-RateLimit-Limit', limit);
+      res.set('X-RateLimit-Remaining', result.remaining);
+      res.set('X-RateLimit-Reset', result.resetAt);
+      
+      if (result.allowed) {
+        next();
+      } else {
+        res.status(429).json({
+          error: 'Too many requests',
+          retryAfter: Math.ceil((result.resetAt - Date.now()) / 1000)
+        });
+      }
+    };
+  }
+}
+```
+
+## 文档生成
+
+### OpenAPI/Swagger
+
+```javascript
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'My API',
+      version: '1.0.0',
+      description: 'API documentation'
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Development server'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    }
+  },
+  apis: ['./routes/*.js']
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+/**
+ * @swagger
+ * /api/v1/users:
+ *   get:
+ *     summary: Get all users
+ *     tags: [Users]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ */
+app.get('/api/v1/users', getUsers);
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - email
+ *         - name
+ *       properties:
+ *         id:
+ *           type: string
+ *         email:
+ *           type: string
+ *         name:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ */
+```
+
+## GraphQL API
+
+### Schema定义
+
+```graphql
+type User {
+  id: ID!
+  email: String!
+  name: String!
+  posts: [Post!]!
+  createdAt: DateTime!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  author: User!
+  comments: [Comment!]!
+  createdAt: DateTime!
+}
+
+type Comment {
+  id: ID!
+  content: String!
+  author: User!
+  post: Post!
+  createdAt: DateTime!
+}
+
+type Query {
+  user(id: ID!): User
+  users(page: Int, pageSize: Int): UserConnection!
+  post(id: ID!): Post
+  posts(authorId: ID, page: Int, pageSize: Int): PostConnection!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+  updateUser(id: ID!, input: UpdateUserInput!): User!
+  deleteUser(id: ID!): Boolean!
+  
+  createPost(input: CreatePostInput!): Post!
+  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  deletePost(id: ID!): Boolean!
+}
+
+input CreateUserInput {
+  email: String!
+  name: String!
+  password: String!
+}
+
+input UpdateUserInput {
+  email: String
+  name: String
+}
+
+type UserConnection {
+  edges: [UserEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type UserEdge {
+  node: User!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+```
+
+### Resolver实现
+
+```javascript
+const resolvers = {
+  Query: {
+    user: async (_, { id }, context) => {
+      return await context.dataSources.userAPI.getUser(id);
+    },
+    
+    users: async (_, { page = 1, pageSize = 20 }, context) => {
+      const users = await context.dataSources.userAPI.getUsers({
+        page,
+        pageSize
+      });
+      
+      return {
+        edges: users.map(user => ({
+          node: user,
+          cursor: Buffer.from(user.id).toString('base64')
+        })),
+        pageInfo: {
+          hasNextPage: users.length === pageSize,
+          hasPreviousPage: page > 1
+        },
+        totalCount: await context.dataSources.userAPI.getUserCount()
+      };
+    }
+  },
+  
+  Mutation: {
+    createUser: async (_, { input }, context) => {
+      return await context.dataSources.userAPI.createUser(input);
+    },
+    
+    updateUser: async (_, { id, input }, context) => {
+      return await context.dataSources.userAPI.updateUser(id, input);
+    }
+  },
+  
+  User: {
+    posts: async (user, _, context) => {
+      return await context.dataSources.postAPI.getPostsByAuthor(user.id);
+    }
+  },
+  
+  Post: {
+    author: async (post, _, context) => {
+      return await context.dataSources.userAPI.getUser(post.authorId);
+    },
+    
+    comments: async (post, _, context) => {
+      return await context.dataSources.commentAPI.getCommentsByPost(post.id);
+    }
+  }
+};
+```
+
+## 错误处理
+
+```javascript
+class ApiError extends Error {
+  constructor(code, message, statusCode = 500, details = null) {
+    super(message);
+    this.code = code;
+    this.statusCode = statusCode;
+    this.details = details;
+  }
+}
+
+// 错误类型
+class ValidationError extends ApiError {
+  constructor(message, details) {
+    super('VALIDATION_ERROR', message, 422, details);
+  }
+}
+
+class NotFoundError extends ApiError {
+  constructor(resource) {
+    super('NOT_FOUND', `${resource} not found`, 404);
+  }
+}
+
+class UnauthorizedError extends ApiError {
+  constructor(message = 'Unauthorized') {
+    super('UNAUTHORIZED', message, 401);
+  }
+}
+
+// 全局错误处理
+app.use((error, req, res, next) => {
+  console.error(error);
+  
+  if (error instanceof ApiError) {
+    return res.status(error.statusCode).json({
+      success: false,
+      error: {
+        code: error.code,
+        message: error.message,
+        details: error.details
+      }
+    });
+  }
+  
+  // 未知错误
+  res.status(500).json({
+    success: false,
+    error: {
+      code: 'INTERNAL_ERROR',
+      message: 'Internal server error'
+    }
+  });
+});
+```
+
+## 总结
+
+API设计最佳实践：
+- 🎯 **RESTful设计**：资源命名 + HTTP方法 + 状态码
+- 🔐 **认证授权**：JWT + 权限控制
+- 🚦 **限流保护**：令牌桶 + Redis限流
+- 📝 **文档生成**：OpenAPI/Swagger
+- 🔄 **版本控制**：URL版本 + 废弃策略
+- ⚠️ **错误处理**：统一错误格式
+
+记住：**好的API设计是易用、一致、可扩展的！**
+

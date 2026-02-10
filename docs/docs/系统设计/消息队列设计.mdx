@@ -1,0 +1,859 @@
+---
+sidebar_position: 9
+title: 消息队列设计与实现
+tags: [系统设计, 消息队列, Kafka, RabbitMQ]
+---
+
+# 消息队列设计与实现
+
+消息队列是分布式系统的核心组件，本文将详细讲解消息队列的设计原理和实现方案。
+
+## 消息队列基础
+
+### 核心概念
+
+```javascript
+const mqConcepts = {
+  // 生产者
+  producer: {
+    role: '发送消息',
+    responsibilities: [
+      '消息序列化',
+      '选择分区',
+      '发送确认'
+    ]
+  },
+  
+  // 消费者
+  consumer: {
+    role: '接收消息',
+    responsibilities: [
+      '消息反序列化',
+      '业务处理',
+      '提交偏移量'
+    ]
+  },
+  
+  // 主题/队列
+  topic: {
+    role: '消息分类',
+    features: [
+      '多分区',
+      '持久化',
+      '顺序保证'
+    ]
+  },
+  
+  // 消费组
+  consumerGroup: {
+    role: '负载均衡',
+    features: [
+      '分区分配',
+      '故障转移',
+      '水平扩展'
+    ]
+  }
+};
+```
+
+### 消息模型
+
+```javascript
+// 点对点模型
+class QueueModel {
+  constructor() {
+    this.queue = [];
+    this.consumers = [];
+  }
+  
+  send(message) {
+    this.queue.push(message);
+    this.notifyConsumer();
+  }
+  
+  receive() {
+    return this.queue.shift();
+  }
+  
+  notifyConsumer() {
+    // 轮询分配给消费者
+    if (this.consumers.length > 0) {
+      const consumer = this.consumers[this.currentIndex % this.consumers.length];
+      consumer.onMessage(this.receive());
+      this.currentIndex++;
+    }
+  }
+}
+
+// 发布订阅模型
+class PubSubModel {
+  constructor() {
+    this.topics = new Map();
+  }
+  
+  subscribe(topic, subscriber) {
+    if (!this.topics.has(topic)) {
+      this.topics.set(topic, []);
+    }
+    this.topics.get(topic).push(subscriber);
+  }
+  
+  publish(topic, message) {
+    const subscribers = this.topics.get(topic) || [];
+    
+    // 广播给所有订阅者
+    for (const subscriber of subscribers) {
+      subscriber.onMessage(message);
+    }
+  }
+}
+```
+
+## Kafka实现
+
+### Producer实现
+
+```javascript
+const { Kafka } = require('kafkajs');
+
+class KafkaProducer {
+  constructor(brokers) {
+    this.kafka = new Kafka({
+      clientId: 'my-app',
+      brokers
+    });
+    
+    this.producer = this.kafka.producer({
+      // 配置
+      allowAutoTopicCreation: true,
+      transactionTimeout: 30000
+    });
+  }
+  
+  async connect() {
+    await this.producer.connect();
+  }
+  
+  async send(topic, messages) {
+    try {
+      const result = await this.producer.send({
+        topic,
+        messages: messages.map(msg => ({
+          key: msg.key,
+          value: JSON.stringify(msg.value),
+          partition: msg.partition,
+          headers: msg.headers
+        }))
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      throw error;
+    }
+  }
+  
+  // 批量发送
+  async sendBatch(topic, messages) {
+    const batch = this.producer.sendBatch({
+      topicMessages: [{
+        topic,
+        messages: messages.map(msg => ({
+          value: JSON.stringify(msg)
+        }))
+      }]
+    });
+    
+    return await batch;
+  }
+  
+  // 事务发送
+  async sendTransaction(topic, messages) {
+    const transaction = await this.producer.transaction();
+    
+    try {
+      await transaction.send({
+        topic,
+        messages: messages.map(msg => ({
+          value: JSON.stringify(msg)
+        }))
+      });
+      
+      await transaction.commit();
+    } catch (error) {
+      await transaction.abort();
+      throw error;
+    }
+  }
+  
+  async disconnect() {
+    await this.producer.disconnect();
+  }
+}
+
+// 使用示例
+const producer = new KafkaProducer(['localhost:9092']);
+
+await producer.connect();
+
+await producer.send('user-events', [
+  {
+    key: 'user-123',
+    value: {
+      type: 'user_created',
+      userId: '123',
+      timestamp: Date.now()
+    }
+  }
+]);
+```
+
+### Consumer实现
+
+```javascript
+class KafkaConsumer {
+  constructor(brokers, groupId) {
+    this.kafka = new Kafka({
+      clientId: 'my-app',
+      brokers
+    });
+    
+    this.consumer = this.kafka.consumer({
+      groupId,
+      sessionTimeout: 30000,
+      heartbeatInterval: 3000
+    });
+    
+    this.handlers = new Map();
+  }
+  
+  async connect() {
+    await this.consumer.connect();
+  }
+  
+  async subscribe(topics) {
+    await this.consumer.subscribe({
+      topics,
+      fromBeginning: false
+    });
+  }
+  
+  registerHandler(topic, handler) {
+    this.handlers.set(topic, handler);
+  }
+  
+  async run() {
+    await this.consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        const handler = this.handlers.get(topic);
+        
+        if (!handler) {
+          console.warn(`No handler for topic: ${topic}`);
+          return;
+        }
+        
+        try {
+          const value = JSON.parse(message.value.toString());
+          
+          await handler({
+            topic,
+            partition,
+            offset: message.offset,
+            key: message.key?.toString(),
+            value,
+            headers: message.headers,
+            timestamp: message.timestamp
+          });
+          
+        } catch (error) {
+          console.error('Error processing message:', error);
+          // 错误处理：重试、死信队列等
+          await this.handleError(topic, message, error);
+        }
+      }
+    });
+  }
+  
+  async handleError(topic, message, error) {
+    // 发送到死信队列
+    await producer.send(`${topic}.dlq`, [{
+      value: {
+        originalMessage: message,
+        error: error.message,
+        timestamp: Date.now()
+      }
+    }]);
+  }
+  
+  async disconnect() {
+    await this.consumer.disconnect();
+  }
+}
+
+// 使用示例
+const consumer = new KafkaConsumer(['localhost:9092'], 'my-group');
+
+await consumer.connect();
+await consumer.subscribe(['user-events']);
+
+consumer.registerHandler('user-events', async (message) => {
+  console.log('Received message:', message.value);
+  
+  // 业务处理
+  await processUserEvent(message.value);
+});
+
+await consumer.run();
+```
+
+## RabbitMQ实现
+
+### 生产者
+
+```javascript
+const amqp = require('amqplib');
+
+class RabbitMQProducer {
+  constructor(url) {
+    this.url = url;
+    this.connection = null;
+    this.channel = null;
+  }
+  
+  async connect() {
+    this.connection = await amqp.connect(this.url);
+    this.channel = await this.connection.createChannel();
+  }
+  
+  async sendToQueue(queue, message, options = {}) {
+    // 确保队列存在
+    await this.channel.assertQueue(queue, {
+      durable: true,
+      ...options
+    });
+    
+    // 发送消息
+    const sent = this.channel.sendToQueue(
+      queue,
+      Buffer.from(JSON.stringify(message)),
+      {
+        persistent: true,
+        contentType: 'application/json'
+      }
+    );
+    
+    if (!sent) {
+      // 等待drain事件
+      await new Promise(resolve => {
+        this.channel.once('drain', resolve);
+      });
+    }
+  }
+  
+  async publishToExchange(exchange, routingKey, message, options = {}) {
+    // 声明交换机
+    await this.channel.assertExchange(exchange, 'topic', {
+      durable: true,
+      ...options
+    });
+    
+    // 发布消息
+    this.channel.publish(
+      exchange,
+      routingKey,
+      Buffer.from(JSON.stringify(message)),
+      {
+        persistent: true,
+        contentType: 'application/json'
+      }
+    );
+  }
+  
+  async close() {
+    await this.channel.close();
+    await this.connection.close();
+  }
+}
+
+// 使用示例
+const producer = new RabbitMQProducer('amqp://localhost');
+await producer.connect();
+
+// 发送到队列
+await producer.sendToQueue('tasks', {
+  type: 'email',
+  to: 'user@example.com',
+  subject: 'Hello'
+});
+
+// 发布到交换机
+await producer.publishToExchange(
+  'events',
+  'user.created',
+  { userId: '123' }
+);
+```
+
+### 消费者
+
+```javascript
+class RabbitMQConsumer {
+  constructor(url) {
+    this.url = url;
+    this.connection = null;
+    this.channel = null;
+  }
+  
+  async connect() {
+    this.connection = await amqp.connect(this.url);
+    this.channel = await this.connection.createChannel();
+    
+    // 设置预取数量
+    await this.channel.prefetch(10);
+  }
+  
+  async consumeQueue(queue, handler, options = {}) {
+    // 确保队列存在
+    await this.channel.assertQueue(queue, {
+      durable: true,
+      ...options
+    });
+    
+    // 消费消息
+    await this.channel.consume(queue, async (msg) => {
+      if (!msg) return;
+      
+      try {
+        const content = JSON.parse(msg.content.toString());
+        
+        await handler(content, msg);
+        
+        // 确认消息
+        this.channel.ack(msg);
+        
+      } catch (error) {
+        console.error('Error processing message:', error);
+        
+        // 拒绝消息并重新入队
+        this.channel.nack(msg, false, true);
+      }
+    });
+  }
+  
+  async subscribeToExchange(exchange, pattern, handler) {
+    // 声明交换机
+    await this.channel.assertExchange(exchange, 'topic', {
+      durable: true
+    });
+    
+    // 创建临时队列
+    const { queue } = await this.channel.assertQueue('', {
+      exclusive: true
+    });
+    
+    // 绑定队列到交换机
+    await this.channel.bindQueue(queue, exchange, pattern);
+    
+    // 消费消息
+    await this.consumeQueue(queue, handler);
+  }
+  
+  async close() {
+    await this.channel.close();
+    await this.connection.close();
+  }
+}
+
+// 使用示例
+const consumer = new RabbitMQConsumer('amqp://localhost');
+await consumer.connect();
+
+// 消费队列
+await consumer.consumeQueue('tasks', async (message) => {
+  console.log('Processing task:', message);
+  await processTask(message);
+});
+
+// 订阅交换机
+await consumer.subscribeToExchange(
+  'events',
+  'user.*',
+  async (message) => {
+    console.log('User event:', message);
+  }
+);
+```
+
+## 消息可靠性
+
+### 生产者确认
+
+```javascript
+class ReliableProducer {
+  constructor(producer) {
+    this.producer = producer;
+    this.pendingMessages = new Map();
+  }
+  
+  async sendWithConfirm(topic, message) {
+    const messageId = this.generateMessageId();
+    
+    // 保存待确认消息
+    this.pendingMessages.set(messageId, {
+      topic,
+      message,
+      timestamp: Date.now(),
+      retries: 0
+    });
+    
+    try {
+      await this.producer.send(topic, [{
+        key: messageId,
+        value: message
+      }]);
+      
+      // 确认成功
+      this.pendingMessages.delete(messageId);
+      
+    } catch (error) {
+      // 重试
+      await this.retry(messageId);
+    }
+  }
+  
+  async retry(messageId) {
+    const pending = this.pendingMessages.get(messageId);
+    
+    if (!pending) return;
+    
+    if (pending.retries >= 3) {
+      // 超过重试次数，记录失败
+      console.error('Message failed after retries:', pending);
+      this.pendingMessages.delete(messageId);
+      return;
+    }
+    
+    pending.retries++;
+    
+    // 指数退避
+    const delay = Math.pow(2, pending.retries) * 1000;
+    
+    setTimeout(async () => {
+      try {
+        await this.producer.send(pending.topic, [{
+          key: messageId,
+          value: pending.message
+        }]);
+        
+        this.pendingMessages.delete(messageId);
+      } catch (error) {
+        await this.retry(messageId);
+      }
+    }, delay);
+  }
+  
+  generateMessageId() {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+}
+```
+
+### 消费者幂等性
+
+```javascript
+class IdempotentConsumer {
+  constructor(consumer, redis) {
+    this.consumer = consumer;
+    this.redis = redis;
+  }
+  
+  async processMessage(message, handler) {
+    const messageId = message.key || this.getMessageId(message);
+    
+    // 检查是否已处理
+    const processed = await this.redis.get(`processed:${messageId}`);
+    
+    if (processed) {
+      console.log('Message already processed:', messageId);
+      return;
+    }
+    
+    // 处理消息
+    await handler(message);
+    
+    // 标记为已处理（24小时过期）
+    await this.redis.setex(`processed:${messageId}`, 86400, '1');
+  }
+  
+  getMessageId(message) {
+    // 根据消息内容生成唯一ID
+    const crypto = require('crypto');
+    return crypto
+      .createHash('md5')
+      .update(JSON.stringify(message))
+      .digest('hex');
+  }
+}
+```
+
+## 延迟队列
+
+```javascript
+class DelayQueue {
+  constructor(redis) {
+    this.redis = redis;
+    this.queueKey = 'delay_queue';
+  }
+  
+  async add(message, delaySeconds) {
+    const executeAt = Date.now() + delaySeconds * 1000;
+    
+    await this.redis.zadd(
+      this.queueKey,
+      executeAt,
+      JSON.stringify(message)
+    );
+  }
+  
+  async poll() {
+    const now = Date.now();
+    
+    // 获取到期的消息
+    const messages = await this.redis.zrangebyscore(
+      this.queueKey,
+      0,
+      now,
+      'LIMIT',
+      0,
+      100
+    );
+    
+    if (messages.length === 0) {
+      return [];
+    }
+    
+    // 删除已获取的消息
+    await this.redis.zremrangebyscore(this.queueKey, 0, now);
+    
+    return messages.map(msg => JSON.parse(msg));
+  }
+  
+  async start(handler) {
+    setInterval(async () => {
+      const messages = await this.poll();
+      
+      for (const message of messages) {
+        try {
+          await handler(message);
+        } catch (error) {
+          console.error('Error processing delayed message:', error);
+        }
+      }
+    }, 1000);
+  }
+}
+
+// 使用示例
+const delayQueue = new DelayQueue(redis);
+
+// 添加延迟消息
+await delayQueue.add({
+  type: 'reminder',
+  userId: '123',
+  message: 'Your order is ready'
+}, 3600); // 1小时后执行
+
+// 启动轮询
+delayQueue.start(async (message) => {
+  console.log('Processing delayed message:', message);
+  await sendNotification(message);
+});
+```
+
+## 死信队列
+
+```javascript
+class DeadLetterQueue {
+  constructor(producer, consumer) {
+    this.producer = producer;
+    this.consumer = consumer;
+    this.maxRetries = 3;
+  }
+  
+  async handleFailedMessage(topic, message, error) {
+    const retries = message.retries || 0;
+    
+    if (retries < this.maxRetries) {
+      // 重试
+      await this.retry(topic, message, retries + 1);
+    } else {
+      // 发送到死信队列
+      await this.sendToDLQ(topic, message, error);
+    }
+  }
+  
+  async retry(topic, message, retries) {
+    // 指数退避
+    const delay = Math.pow(2, retries) * 1000;
+    
+    setTimeout(async () => {
+      await this.producer.send(topic, [{
+        value: {
+          ...message,
+          retries
+        }
+      }]);
+    }, delay);
+  }
+  
+  async sendToDLQ(topic, message, error) {
+    const dlqTopic = `${topic}.dlq`;
+    
+    await this.producer.send(dlqTopic, [{
+      value: {
+        originalTopic: topic,
+        originalMessage: message,
+        error: error.message,
+        stack: error.stack,
+        timestamp: Date.now()
+      }
+    }]);
+    
+    console.error('Message sent to DLQ:', {
+      topic: dlqTopic,
+      message
+    });
+  }
+  
+  async processDLQ(dlqTopic, handler) {
+    await this.consumer.subscribe([dlqTopic]);
+    
+    this.consumer.registerHandler(dlqTopic, async (message) => {
+      // 人工处理或记录
+      await handler(message.value);
+    });
+  }
+}
+```
+
+## 消息顺序性
+
+```javascript
+class OrderedMessageProcessor {
+  constructor() {
+    this.processing = new Map();
+  }
+  
+  async process(message, handler) {
+    const key = message.key;
+    
+    // 等待同一key的前序消息处理完成
+    while (this.processing.has(key)) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    
+    this.processing.set(key, true);
+    
+    try {
+      await handler(message);
+    } finally {
+      this.processing.delete(key);
+    }
+  }
+}
+
+// Kafka分区保证顺序
+class PartitionedProducer {
+  async send(topic, messages) {
+    // 相同key的消息发送到同一分区
+    await this.producer.send({
+      topic,
+      messages: messages.map(msg => ({
+        key: msg.userId, // 使用userId作为分区键
+        value: JSON.stringify(msg),
+        partition: this.getPartition(msg.userId)
+      }))
+    });
+  }
+  
+  getPartition(key) {
+    // 一致性哈希
+    const hash = this.hashCode(key);
+    return hash % this.partitionCount;
+  }
+  
+  hashCode(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+}
+```
+
+## 监控告警
+
+```javascript
+class MessageQueueMonitor {
+  async monitor() {
+    // 1. 消息积压
+    const lag = await this.getConsumerLag();
+    if (lag > 10000) {
+      await this.alert('High consumer lag', { lag });
+    }
+    
+    // 2. 消费速率
+    const consumeRate = await this.getConsumeRate();
+    if (consumeRate < 100) {
+      await this.alert('Low consume rate', { consumeRate });
+    }
+    
+    // 3. 错误率
+    const errorRate = await this.getErrorRate();
+    if (errorRate > 0.01) {
+      await this.alert('High error rate', { errorRate });
+    }
+    
+    // 4. 死信队列大小
+    const dlqSize = await this.getDLQSize();
+    if (dlqSize > 1000) {
+      await this.alert('DLQ size too large', { dlqSize });
+    }
+  }
+  
+  async getConsumerLag() {
+    // 获取消费者延迟
+    const admin = this.kafka.admin();
+    await admin.connect();
+    
+    const groups = await admin.fetchOffsets({
+      groupId: 'my-group'
+    });
+    
+    let totalLag = 0;
+    for (const topic of groups) {
+      for (const partition of topic.partitions) {
+        totalLag += partition.lag;
+      }
+    }
+    
+    await admin.disconnect();
+    return totalLag;
+  }
+}
+```
+
+## 总结
+
+消息队列设计的核心：
+- 📨 **消息模型**：点对点 + 发布订阅
+- 🔒 **可靠性**：生产者确认 + 消费者幂等
+- ⏰ **延迟队列**：定时任务 + 延迟处理
+- 💀 **死信队列**：失败重试 + 异常处理
+- 📊 **顺序保证**：分区键 + 顺序处理
+- 📈 **监控告警**：消息积压 + 错误率
+
+记住：**消息队列的本质是异步解耦和削峰填谷！**
+
