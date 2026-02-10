@@ -1,0 +1,975 @@
+---
+sidebar_position: 1
+title: 全栈电商项目实战
+tags: [实战项目, 电商, 全栈开发]
+---
+
+# 全栈电商项目实战
+
+本文将带你从零开始构建一个完整的电商系统，涵盖前后端、数据库、部署等全流程。
+
+## 项目概述
+
+### 技术栈
+
+```javascript
+const techStack = {
+  frontend: {
+    framework: 'React 18',
+    state: 'Redux Toolkit',
+    router: 'React Router v6',
+    ui: 'Ant Design',
+    request: 'Axios',
+    build: 'Vite'
+  },
+  
+  backend: {
+    runtime: 'Node.js 18',
+    framework: 'Express',
+    database: 'MySQL + Redis',
+    orm: 'Sequelize',
+    auth: 'JWT',
+    upload: 'Multer'
+  },
+  
+  deployment: {
+    server: 'Nginx',
+    container: 'Docker',
+    ci: 'GitHub Actions',
+    hosting: 'Vercel + Railway'
+  }
+};
+```
+
+### 功能模块
+
+```javascript
+const features = {
+  user: [
+    '用户注册/登录',
+    '个人信息管理',
+    '收货地址管理',
+    '订单管理'
+  ],
+  
+  product: [
+    '商品列表/详情',
+    '商品搜索/筛选',
+    '商品分类',
+    '商品评价'
+  ],
+  
+  cart: [
+    '购物车管理',
+    '商品数量调整',
+    '批量操作'
+  ],
+  
+  order: [
+    '订单创建',
+    '订单支付',
+    '订单状态跟踪',
+    '订单取消/退款'
+  ],
+  
+  admin: [
+    '商品管理',
+    '订单管理',
+    '用户管理',
+    '数据统计'
+  ]
+};
+```
+
+## 数据库设计
+
+### 表结构
+
+```sql
+-- 用户表
+CREATE TABLE users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  avatar VARCHAR(255),
+  phone VARCHAR(20),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_email (email),
+  INDEX idx_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 商品表
+CREATE TABLE products (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL,
+  stock INT NOT NULL DEFAULT 0,
+  category_id BIGINT,
+  images JSON,
+  status ENUM('active', 'inactive') DEFAULT 'active',
+  sales INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_category (category_id),
+  INDEX idx_status (status),
+  INDEX idx_price (price)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 订单表
+CREATE TABLE orders (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  order_no VARCHAR(50) UNIQUE NOT NULL,
+  total_amount DECIMAL(10, 2) NOT NULL,
+  status ENUM('pending', 'paid', 'shipped', 'completed', 'cancelled') DEFAULT 'pending',
+  payment_method VARCHAR(50),
+  shipping_address JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_user (user_id),
+  INDEX idx_order_no (order_no),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 订单详情表
+CREATE TABLE order_items (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  order_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  quantity INT NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_order (order_id),
+  INDEX idx_product (product_id),
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 购物车表
+CREATE TABLE cart_items (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_user_product (user_id, product_id),
+  INDEX idx_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+## 后端实现
+
+### 用户认证
+
+```javascript
+// models/User.js
+const { DataTypes } = require('sequelize');
+const bcrypt = require('bcrypt');
+
+module.exports = (sequelize) => {
+  const User = sequelize.define('User', {
+    id: {
+      type: DataTypes.BIGINT,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    username: {
+      type: DataTypes.STRING(50),
+      unique: true,
+      allowNull: false
+    },
+    email: {
+      type: DataTypes.STRING(100),
+      unique: true,
+      allowNull: false,
+      validate: {
+        isEmail: true
+      }
+    },
+    password: {
+      type: DataTypes.STRING(255),
+      allowNull: false
+    },
+    avatar: DataTypes.STRING(255),
+    phone: DataTypes.STRING(20)
+  }, {
+    hooks: {
+      beforeCreate: async (user) => {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    }
+  });
+  
+  User.prototype.comparePassword = async function(password) {
+    return await bcrypt.compare(password, this.password);
+  };
+  
+  return User;
+};
+
+// controllers/authController.js
+const jwt = require('jsonwebtoken');
+const { User } = require('../models');
+
+class AuthController {
+  // 注册
+  async register(req, res) {
+    try {
+      const { username, email, password } = req.body;
+      
+      // 检查用户是否存在
+      const existingUser = await User.findOne({
+        where: { [Op.or]: [{ email }, { username }] }
+      });
+      
+      if (existingUser) {
+        return res.status(400).json({
+          error: '用户名或邮箱已存在'
+        });
+      }
+      
+      // 创建用户
+      const user = await User.create({
+        username,
+        email,
+        password
+      });
+      
+      // 生成token
+      const token = jwt.sign(
+        { id: user.id, username: user.username },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      
+      res.status(201).json({
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email
+        },
+        token
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+  
+  // 登录
+  async login(req, res) {
+    try {
+      const { email, password } = req.body;
+      
+      // 查找用户
+      const user = await User.findOne({ where: { email } });
+      
+      if (!user) {
+        return res.status(401).json({
+          error: '邮箱或密码错误'
+        });
+      }
+      
+      // 验证密码
+      const isValid = await user.comparePassword(password);
+      
+      if (!isValid) {
+        return res.status(401).json({
+          error: '邮箱或密码错误'
+        });
+      }
+      
+      // 生成token
+      const token = jwt.sign(
+        { id: user.id, username: user.username },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          avatar: user.avatar
+        },
+        token
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+  
+  // 获取当前用户
+  async getCurrentUser(req, res) {
+    try {
+      const user = await User.findByPk(req.user.id, {
+        attributes: { exclude: ['password'] }
+      });
+      
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+}
+
+module.exports = new AuthController();
+
+// middleware/auth.js
+const jwt = require('jsonwebtoken');
+
+module.exports = (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({
+        error: '未提供认证令牌'
+      });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({
+      error: '无效的认证令牌'
+    });
+  }
+};
+```
+
+### 商品管理
+
+```javascript
+// controllers/productController.js
+const { Product, Category } = require('../models');
+const { Op } = require('sequelize');
+
+class ProductController {
+  // 获取商品列表
+  async getProducts(req, res) {
+    try {
+      const {
+        page = 1,
+        pageSize = 20,
+        category,
+        keyword,
+        minPrice,
+        maxPrice,
+        sortBy = 'created_at',
+        order = 'DESC'
+      } = req.query;
+      
+      const where = { status: 'active' };
+      
+      // 分类筛选
+      if (category) {
+        where.category_id = category;
+      }
+      
+      // 关键词搜索
+      if (keyword) {
+        where.name = {
+          [Op.like]: `%${keyword}%`
+        };
+      }
+      
+      // 价格筛选
+      if (minPrice || maxPrice) {
+        where.price = {};
+        if (minPrice) where.price[Op.gte] = minPrice;
+        if (maxPrice) where.price[Op.lte] = maxPrice;
+      }
+      
+      const { count, rows } = await Product.findAndCountAll({
+        where,
+        include: [{
+          model: Category,
+          attributes: ['id', 'name']
+        }],
+        limit: parseInt(pageSize),
+        offset: (page - 1) * pageSize,
+        order: [[sortBy, order]]
+      });
+      
+      res.json({
+        products: rows,
+        pagination: {
+          page: parseInt(page),
+          pageSize: parseInt(pageSize),
+          total: count,
+          totalPages: Math.ceil(count / pageSize)
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+  
+  // 获取商品详情
+  async getProduct(req, res) {
+    try {
+      const { id } = req.params;
+      
+      const product = await Product.findByPk(id, {
+        include: [{
+          model: Category,
+          attributes: ['id', 'name']
+        }]
+      });
+      
+      if (!product) {
+        return res.status(404).json({
+          error: '商品不存在'
+        });
+      }
+      
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+  
+  // 创建商品（管理员）
+  async createProduct(req, res) {
+    try {
+      const {
+        name,
+        description,
+        price,
+        stock,
+        category_id,
+        images
+      } = req.body;
+      
+      const product = await Product.create({
+        name,
+        description,
+        price,
+        stock,
+        category_id,
+        images
+      });
+      
+      res.status(201).json(product);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+  
+  // 更新商品
+  async updateProduct(req, res) {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const product = await Product.findByPk(id);
+      
+      if (!product) {
+        return res.status(404).json({
+          error: '商品不存在'
+        });
+      }
+      
+      await product.update(updates);
+      
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+}
+
+module.exports = new ProductController();
+```
+
+### 订单处理
+
+```javascript
+// controllers/orderController.js
+const { Order, OrderItem, Product, sequelize } = require('../models');
+
+class OrderController {
+  // 创建订单
+  async createOrder(req, res) {
+    const t = await sequelize.transaction();
+    
+    try {
+      const { items, shipping_address, payment_method } = req.body;
+      const userId = req.user.id;
+      
+      // 计算总金额并检查库存
+      let totalAmount = 0;
+      const orderItems = [];
+      
+      for (const item of items) {
+        const product = await Product.findByPk(item.product_id, {
+          transaction: t,
+          lock: true
+        });
+        
+        if (!product) {
+          throw new Error(`商品 ${item.product_id} 不存在`);
+        }
+        
+        if (product.stock < item.quantity) {
+          throw new Error(`商品 ${product.name} 库存不足`);
+        }
+        
+        // 扣减库存
+        await product.decrement('stock', {
+          by: item.quantity,
+          transaction: t
+        });
+        
+        // 增加销量
+        await product.increment('sales', {
+          by: item.quantity,
+          transaction: t
+        });
+        
+        totalAmount += product.price * item.quantity;
+        
+        orderItems.push({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: product.price
+        });
+      }
+      
+      // 生成订单号
+      const orderNo = `ORD${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+      
+      // 创建订单
+      const order = await Order.create({
+        user_id: userId,
+        order_no: orderNo,
+        total_amount: totalAmount,
+        payment_method,
+        shipping_address,
+        status: 'pending'
+      }, { transaction: t });
+      
+      // 创建订单详情
+      for (const item of orderItems) {
+        await OrderItem.create({
+          order_id: order.id,
+          ...item
+        }, { transaction: t });
+      }
+      
+      await t.commit();
+      
+      res.status(201).json({
+        order_id: order.id,
+        order_no: orderNo,
+        total_amount: totalAmount
+      });
+    } catch (error) {
+      await t.rollback();
+      res.status(500).json({ error: error.message });
+    }
+  }
+  
+  // 获取订单列表
+  async getOrders(req, res) {
+    try {
+      const { page = 1, pageSize = 10, status } = req.query;
+      const userId = req.user.id;
+      
+      const where = { user_id: userId };
+      if (status) where.status = status;
+      
+      const { count, rows } = await Order.findAndCountAll({
+        where,
+        include: [{
+          model: OrderItem,
+          include: [Product]
+        }],
+        limit: parseInt(pageSize),
+        offset: (page - 1) * pageSize,
+        order: [['created_at', 'DESC']]
+      });
+      
+      res.json({
+        orders: rows,
+        pagination: {
+          page: parseInt(page),
+          pageSize: parseInt(pageSize),
+          total: count,
+          totalPages: Math.ceil(count / pageSize)
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+  
+  // 取消订单
+  async cancelOrder(req, res) {
+    const t = await sequelize.transaction();
+    
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      
+      const order = await Order.findOne({
+        where: { id, user_id: userId },
+        include: [OrderItem],
+        transaction: t,
+        lock: true
+      });
+      
+      if (!order) {
+        throw new Error('订单不存在');
+      }
+      
+      if (order.status !== 'pending') {
+        throw new Error('订单状态不允许取消');
+      }
+      
+      // 恢复库存
+      for (const item of order.OrderItems) {
+        await Product.increment('stock', {
+          by: item.quantity,
+          where: { id: item.product_id },
+          transaction: t
+        });
+      }
+      
+      // 更新订单状态
+      await order.update({ status: 'cancelled' }, { transaction: t });
+      
+      await t.commit();
+      
+      res.json({ message: '订单已取消' });
+    } catch (error) {
+      await t.rollback();
+      res.status(500).json({ error: error.message });
+    }
+  }
+}
+
+module.exports = new OrderController();
+```
+
+## 前端实现
+
+### Redux状态管理
+
+```javascript
+// store/slices/authSlice.js
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '../../services/api';
+
+export const login = createAsyncThunk(
+  'auth/login',
+  async (credentials) => {
+    const response = await api.post('/auth/login', credentials);
+    localStorage.setItem('token', response.data.token);
+    return response.data;
+  }
+);
+
+export const register = createAsyncThunk(
+  'auth/register',
+  async (userData) => {
+    const response = await api.post('/auth/register', userData);
+    localStorage.setItem('token', response.data.token);
+    return response.data;
+  }
+);
+
+const authSlice = createSlice({
+  name: 'auth',
+  initialState: {
+    user: null,
+    token: localStorage.getItem('token'),
+    loading: false,
+    error: null
+  },
+  reducers: {
+    logout: (state) => {
+      state.user = null;
+      state.token = null;
+      localStorage.removeItem('token');
+    }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(login.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(login.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+      })
+      .addCase(login.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      });
+  }
+});
+
+export const { logout } = authSlice.actions;
+export default authSlice.reducer;
+
+// store/slices/cartSlice.js
+import { createSlice } from '@reduxjs/toolkit';
+
+const cartSlice = createSlice({
+  name: 'cart',
+  initialState: {
+    items: [],
+    total: 0
+  },
+  reducers: {
+    addToCart: (state, action) => {
+      const item = action.payload;
+      const existingItem = state.items.find(i => i.id === item.id);
+      
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        state.items.push({ ...item, quantity: 1 });
+      }
+      
+      state.total = state.items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+    },
+    
+    removeFromCart: (state, action) => {
+      state.items = state.items.filter(item => item.id !== action.payload);
+      state.total = state.items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+    },
+    
+    updateQuantity: (state, action) => {
+      const { id, quantity } = action.payload;
+      const item = state.items.find(i => i.id === id);
+      
+      if (item) {
+        item.quantity = quantity;
+        state.total = state.items.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+      }
+    },
+    
+    clearCart: (state) => {
+      state.items = [];
+      state.total = 0;
+    }
+  }
+});
+
+export const { addToCart, removeFromCart, updateQuantity, clearCart } = cartSlice.actions;
+export default cartSlice.reducer;
+```
+
+### 组件实现
+
+```jsx
+// pages/ProductList.jsx
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, Row, Col, Pagination, Input, Select, Slider } from 'antd';
+import api from '../services/api';
+
+const ProductList = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 20,
+    total: 0
+  });
+  const [filters, setFilters] = useState({
+    keyword: '',
+    category: null,
+    priceRange: [0, 10000]
+  });
+  
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    fetchProducts();
+  }, [pagination.page, filters]);
+  
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/products', {
+        params: {
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          keyword: filters.keyword,
+          category: filters.category,
+          minPrice: filters.priceRange[0],
+          maxPrice: filters.priceRange[1]
+        }
+      });
+      
+      setProducts(response.data.products);
+      setPagination(prev => ({
+        ...prev,
+        total: response.data.pagination.total
+      }));
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <div className="product-list">
+      <div className="filters">
+        <Input.Search
+          placeholder="搜索商品"
+          onSearch={(value) => setFilters(prev => ({ ...prev, keyword: value }))}
+          style={{ width: 300, marginRight: 16 }}
+        />
+        
+        <Select
+          placeholder="选择分类"
+          style={{ width: 200, marginRight: 16 }}
+          onChange={(value) => setFilters(prev => ({ ...prev, category: value }))}
+        >
+          <Select.Option value={null}>全部分类</Select.Option>
+          <Select.Option value={1}>电子产品</Select.Option>
+          <Select.Option value={2}>服装</Select.Option>
+        </Select>
+        
+        <div style={{ width: 300 }}>
+          <span>价格范围：</span>
+          <Slider
+            range
+            min={0}
+            max={10000}
+            value={filters.priceRange}
+            onChange={(value) => setFilters(prev => ({ ...prev, priceRange: value }))}
+          />
+        </div>
+      </div>
+      
+      <Row gutter={[16, 16]}>
+        {products.map(product => (
+          <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
+            <Card
+              hoverable
+              cover={<img alt={product.name} src={product.images[0]} />}
+              onClick={() => navigate(`/products/${product.id}`)}
+            >
+              <Card.Meta
+                title={product.name}
+                description={`¥${product.price}`}
+              />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+      
+      <Pagination
+        current={pagination.page}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onChange={(page) => setPagination(prev => ({ ...prev, page }))}
+        style={{ marginTop: 24, textAlign: 'center' }}
+      />
+    </div>
+  );
+};
+
+export default ProductList;
+```
+
+## 部署
+
+### Docker配置
+
+```dockerfile
+# Dockerfile (后端)
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
+```
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: ecommerce
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+  
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: mysql
+      DB_NAME: ecommerce
+      DB_USER: root
+      DB_PASSWORD: password
+      REDIS_HOST: redis
+      JWT_SECRET: your-secret-key
+    depends_on:
+      - mysql
+      - redis
+  
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
+```
+
+## 总结
+
+电商项目要点：
+- 🏗️ **架构设计**：前后端分离、RESTful API
+- 💾 **数据库**：合理设计表结构、索引优化
+- 🔐 **安全**：JWT认证、密码加密、SQL注入防护
+- 💰 **事务**：订单创建、库存扣减使用事务
+- 🚀 **性能**：Redis缓存、分页查询
+- 📦 **部署**：Docker容器化、CI/CD自动部署
+
+记住：**从MVP开始，逐步迭代优化！**
+
