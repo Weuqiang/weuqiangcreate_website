@@ -1,0 +1,909 @@
+---
+sidebar_position: 4
+title: 短链接系统设计
+tags: [系统设计, 短链接, URL缩短]
+---
+
+# 短链接系统设计
+
+短链接系统是经典的系统设计面试题，本文将详细讲解如何设计一个高性能、高可用的短链接服务。
+
+## 需求分析
+
+### 功能需求
+
+```javascript
+const functionalRequirements = {
+  // 核心功能
+  core: {
+    createShortURL: true,      // 生成短链接
+    redirect: true,            // 重定向到原始URL
+    customAlias: true,         // 自定义短链接
+    expiration: true           // 设置过期时间
+  },
+  
+  // 扩展功能
+  extended: {
+    analytics: true,           // 访问统计
+    qrCode: true,             // 生成二维码
+    bulkCreate: true,         // 批量生成
+    apiAccess: true           // API访问
+  }
+};
+```
+
+### 非功能需求
+
+```python
+# 容量估算
+每日新增短链接 = 100_000_000      # 1亿
+每日重定向请求 = 10_000_000_000   # 100亿
+读写比 = 100                      # 读写比100:1
+
+# QPS计算
+写QPS = 每日新增短链接 / 86400
+读QPS = 每日重定向请求 / 86400
+
+print(f"写QPS: {写QPS:,.0f}")      # 1,157 QPS
+print(f"读QPS: {读QPS:,.0f}")      # 115,740 QPS
+
+# 存储估算
+每条记录大小 = 500                # 500字节
+保存年限 = 5
+总记录数 = 每日新增短链接 * 365 * 保存年限
+总存储_TB = (总记录数 * 每条记录大小) / (1024 ** 4)
+
+print(f"总存储: {总存储_TB:.2f} TB")  # 8.53 TB
+
+# 带宽估算
+每次重定向响应 = 200              # 200字节
+峰值QPS = 读QPS * 2               # 峰值是平均的2倍
+带宽_Gbps = (峰值QPS * 每次重定向响应 * 8) / (1024 ** 3)
+
+print(f"带宽需求: {带宽_Gbps:.2f} Gbps")  # 0.04 Gbps
+```
+
+## 架构设计
+
+### 整体架构
+
+```
+┌─────────────┐
+│   客户端     │
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│     CDN     │  ← 缓存热点短链接
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│  负载均衡器  │
+└──────┬──────┘
+       │
+   ┌───┴───┐
+   ▼       ▼
+┌─────┐ ┌─────┐
+│ API │ │ API │
+│服务器│ │服务器│
+└──┬──┘ └──┬──┘
+   │       │
+   └───┬───┘
+       │
+   ┌───┴────┐
+   ▼        ▼
+┌──────┐ ┌──────┐
+│Redis │ │MySQL │
+│ 缓存  │ │数据库 │
+└──────┘ └──────┘
+```
+
+### API设计
+
+```typescript
+// 1. 创建短链接
+interface CreateShortURLRequest {
+  longURL: string;
+  customAlias?: string;
+  expireAt?: Date;
+  userId?: string;
+}
+
+interface CreateShortURLResponse {
+  shortURL: string;
+  shortCode: string;
+  longURL: string;
+  createdAt: Date;
+  expireAt?: Date;
+}
+
+// POST /api/v1/urls
+async function createShortURL(req: CreateShortURLRequest): Promise<CreateShortURLResponse> {
+  // 实现逻辑
+}
+
+// 2. 重定向
+// GET /:shortCode
+async function redirect(shortCode: string): Promise<void> {
+  const longURL = await getLongURL(shortCode);
+  if (!longURL) {
+    throw new Error('URL not found');
+  }
+  // 302重定向
+  response.redirect(302, longURL);
+}
+
+// 3. 获取统计信息
+interface AnalyticsResponse {
+  shortCode: string;
+  totalClicks: number;
+  uniqueClicks: number;
+  clicksByDate: Record<string, number>;
+  clicksByCountry: Record<string, number>;
+  clicksByDevice: Record<string, number>;
+}
+
+// GET /api/v1/urls/:shortCode/analytics
+async function getAnalytics(shortCode: string): Promise<AnalyticsResponse> {
+  // 实现逻辑
+}
+
+// 4. 删除短链接
+// DELETE /api/v1/urls/:shortCode
+async function deleteShortURL(shortCode: string): Promise<void> {
+  // 实现逻辑
+}
+```
+
+## 短码生成算法
+
+### 方案对比
+
+```javascript
+// 方案1：自增ID + Base62编码
+class AutoIncrementGenerator {
+  constructor() {
+    this.chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  }
+  
+  encode(id) {
+    if (id === 0) return this.chars[0];
+    
+    let result = '';
+    while (id > 0) {
+      result = this.chars[id % 62] + result;
+      id = Math.floor(id / 62);
+    }
+    return result;
+  }
+  
+  decode(shortCode) {
+    let id = 0;
+    for (let i = 0; i < shortCode.length; i++) {
+      id = id * 62 + this.chars.indexOf(shortCode[i]);
+    }
+    return id;
+  }
+  
+  async generate() {
+    // 从数据库获取自增ID
+    const id = await db.getNextID();
+    return this.encode(id);
+  }
+}
+
+// 优点：简单、唯一、可预测长度
+// 缺点：可被遍历、暴露业务量
+
+// 方案2：哈希 + 冲突检测
+class HashGenerator {
+  async generate(longURL) {
+    // MD5哈希取前7位
+    let shortCode = md5(longURL).substring(0, 7);
+    let attempts = 0;
+    
+    // 检测冲突
+    while (await this.exists(shortCode) && attempts < 10) {
+      shortCode = md5(longURL + attempts).substring(0, 7);
+      attempts++;
+    }
+    
+    if (attempts >= 10) {
+      throw new Error('Failed to generate unique short code');
+    }
+    
+    return shortCode;
+  }
+  
+  async exists(shortCode) {
+    return await redis.exists(`url:${shortCode}`);
+  }
+}
+
+// 优点：相同URL生成相同短码、不可预测
+// 缺点：可能冲突、需要检测
+
+// 方案3：Snowflake分布式ID
+class SnowflakeGenerator {
+  constructor(workerId, datacenterId) {
+    this.workerId = workerId;
+    this.datacenterId = datacenterId;
+    this.sequence = 0;
+    this.lastTimestamp = -1;
+    this.epoch = 1609459200000; // 2021-01-01
+  }
+  
+  generate() {
+    let timestamp = Date.now();
+    
+    if (timestamp < this.lastTimestamp) {
+      throw new Error('Clock moved backwards');
+    }
+    
+    if (timestamp === this.lastTimestamp) {
+      this.sequence = (this.sequence + 1) & 0xFFF;
+      if (this.sequence === 0) {
+        timestamp = this.waitNextMillis(this.lastTimestamp);
+      }
+    } else {
+      this.sequence = 0;
+    }
+    
+    this.lastTimestamp = timestamp;
+    
+    // 41位时间戳 + 5位数据中心 + 5位机器 + 12位序列号
+    const id = ((timestamp - this.epoch) << 22) |
+                (this.datacenterId << 17) |
+                (this.workerId << 12) |
+                this.sequence;
+    
+    return this.base62Encode(id);
+  }
+  
+  waitNextMillis(lastTimestamp) {
+    let timestamp = Date.now();
+    while (timestamp <= lastTimestamp) {
+      timestamp = Date.now();
+    }
+    return timestamp;
+  }
+  
+  base62Encode(num) {
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let result = '';
+    while (num > 0) {
+      result = chars[num % 62] + result;
+      num = Math.floor(num / 62);
+    }
+    return result || '0';
+  }
+}
+
+// 优点：分布式、高性能、唯一
+// 缺点：依赖时钟、实现复杂
+
+// 推荐方案：Snowflake + Base62
+const generator = new SnowflakeGenerator(1, 1);
+```
+
+## 数据库设计
+
+### Schema设计
+
+```sql
+-- URL映射表
+CREATE TABLE url_mappings (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    short_code VARCHAR(10) UNIQUE NOT NULL,
+    long_url TEXT NOT NULL,
+    user_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expire_at TIMESTAMP NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    
+    INDEX idx_short_code (short_code),
+    INDEX idx_user_id (user_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_expire_at (expire_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 访问统计表（时序数据）
+CREATE TABLE url_clicks (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    short_code VARCHAR(10) NOT NULL,
+    clicked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    referer TEXT,
+    country VARCHAR(2),
+    device_type VARCHAR(20),
+    
+    INDEX idx_short_code_time (short_code, clicked_at),
+    INDEX idx_clicked_at (clicked_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+PARTITION BY RANGE (UNIX_TIMESTAMP(clicked_at)) (
+    PARTITION p202401 VALUES LESS THAN (UNIX_TIMESTAMP('2024-02-01')),
+    PARTITION p202402 VALUES LESS THAN (UNIX_TIMESTAMP('2024-03-01')),
+    -- 按月分区
+);
+
+-- 用户表
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    api_key VARCHAR(64) UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    quota_limit INT DEFAULT 1000,
+    quota_used INT DEFAULT 0,
+    
+    INDEX idx_api_key (api_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### 分库分表策略
+
+```javascript
+class ShardingStrategy {
+  constructor(shardCount = 16) {
+    this.shardCount = shardCount;
+  }
+  
+  // 根据短码分片
+  getShardByShortCode(shortCode) {
+    // 使用短码的哈希值分片
+    const hash = this.hashCode(shortCode);
+    return hash % this.shardCount;
+  }
+  
+  // 根据用户ID分片
+  getShardByUserID(userID) {
+    return userID % this.shardCount;
+  }
+  
+  hashCode(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+  }
+  
+  // 获取数据库连接
+  getConnection(shortCode) {
+    const shard = this.getShardByShortCode(shortCode);
+    return this.connections[shard];
+  }
+}
+
+// 使用示例
+const sharding = new ShardingStrategy(16);
+const db = sharding.getConnection('abc123');
+```
+
+## 缓存策略
+
+### 多级缓存
+
+```javascript
+class CacheManager {
+  constructor() {
+    // L1: 本地缓存（LRU）
+    this.localCache = new LRUCache({
+      max: 10000,
+      ttl: 60 * 1000 // 1分钟
+    });
+    
+    // L2: Redis缓存
+    this.redis = new Redis({
+      host: 'localhost',
+      port: 6379
+    });
+  }
+  
+  async get(shortCode) {
+    // 1. 查本地缓存
+    let longURL = this.localCache.get(shortCode);
+    if (longURL) {
+      return longURL;
+    }
+    
+    // 2. 查Redis
+    longURL = await this.redis.get(`url:${shortCode}`);
+    if (longURL) {
+      this.localCache.set(shortCode, longURL);
+      return longURL;
+    }
+    
+    // 3. 查数据库
+    const record = await db.query(
+      'SELECT long_url, expire_at FROM url_mappings WHERE short_code = ?',
+      [shortCode]
+    );
+    
+    if (!record) {
+      // 缓存空值，防止缓存穿透
+      await this.redis.setex(`url:${shortCode}`, 60, 'NULL');
+      return null;
+    }
+    
+    // 检查过期
+    if (record.expire_at && new Date() > record.expire_at) {
+      return null;
+    }
+    
+    longURL = record.long_url;
+    
+    // 写入缓存
+    this.localCache.set(shortCode, longURL);
+    await this.redis.setex(`url:${shortCode}`, 3600, longURL);
+    
+    return longURL;
+  }
+  
+  async set(shortCode, longURL, ttl = 3600) {
+    this.localCache.set(shortCode, longURL);
+    await this.redis.setex(`url:${shortCode}`, ttl, longURL);
+  }
+  
+  async delete(shortCode) {
+    this.localCache.delete(shortCode);
+    await this.redis.del(`url:${shortCode}`);
+  }
+}
+```
+
+### 缓存预热
+
+```javascript
+class CacheWarmer {
+  async warmup() {
+    // 预热热门短链接
+    const hotURLs = await db.query(`
+      SELECT short_code, long_url 
+      FROM url_mappings 
+      WHERE created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ORDER BY (
+        SELECT COUNT(*) 
+        FROM url_clicks 
+        WHERE url_clicks.short_code = url_mappings.short_code
+      ) DESC
+      LIMIT 10000
+    `);
+    
+    // 批量写入Redis
+    const pipeline = redis.pipeline();
+    for (const url of hotURLs) {
+      pipeline.setex(`url:${url.short_code}`, 3600, url.long_url);
+    }
+    await pipeline.exec();
+    
+    console.log(`Warmed up ${hotURLs.length} URLs`);
+  }
+}
+```
+
+## 核心功能实现
+
+### 创建短链接
+
+```javascript
+class URLShortener {
+  async createShortURL(longURL, options = {}) {
+    const { customAlias, expireAt, userId } = options;
+    
+    // 1. 验证URL
+    if (!this.isValidURL(longURL)) {
+      throw new Error('Invalid URL');
+    }
+    
+    // 2. 检查是否已存在
+    if (!customAlias) {
+      const existing = await this.findByLongURL(longURL, userId);
+      if (existing && !existing.expire_at) {
+        return existing;
+      }
+    }
+    
+    // 3. 生成短码
+    let shortCode;
+    if (customAlias) {
+      // 自定义短码
+      if (await this.exists(customAlias)) {
+        throw new Error('Custom alias already exists');
+      }
+      shortCode = customAlias;
+    } else {
+      // 自动生成
+      shortCode = await this.generateShortCode();
+    }
+    
+    // 4. 存储到数据库
+    await db.query(
+      `INSERT INTO url_mappings 
+       (short_code, long_url, user_id, expire_at) 
+       VALUES (?, ?, ?, ?)`,
+      [shortCode, longURL, userId, expireAt]
+    );
+    
+    // 5. 写入缓存
+    await cache.set(shortCode, longURL);
+    
+    // 6. 返回结果
+    return {
+      shortURL: `https://short.url/${shortCode}`,
+      shortCode,
+      longURL,
+      createdAt: new Date(),
+      expireAt
+    };
+  }
+  
+  isValidURL(url) {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  
+  async findByLongURL(longURL, userId) {
+    return await db.query(
+      `SELECT * FROM url_mappings 
+       WHERE long_url = ? AND user_id = ? AND is_active = TRUE
+       ORDER BY created_at DESC LIMIT 1`,
+      [longURL, userId]
+    );
+  }
+  
+  async exists(shortCode) {
+    const count = await db.query(
+      'SELECT COUNT(*) as count FROM url_mappings WHERE short_code = ?',
+      [shortCode]
+    );
+    return count[0].count > 0;
+  }
+  
+  async generateShortCode() {
+    const generator = new SnowflakeGenerator(1, 1);
+    return generator.generate();
+  }
+}
+```
+
+### 重定向服务
+
+```javascript
+class RedirectService {
+  async redirect(req, res, shortCode) {
+    try {
+      // 1. 获取长URL
+      const longURL = await cache.get(shortCode);
+      
+      if (!longURL || longURL === 'NULL') {
+        return res.status(404).send('URL not found');
+      }
+      
+      // 2. 异步记录访问统计
+      this.trackClick(shortCode, req).catch(err => {
+        console.error('Failed to track click:', err);
+      });
+      
+      // 3. 302重定向
+      res.redirect(302, longURL);
+      
+    } catch (error) {
+      console.error('Redirect error:', error);
+      res.status(500).send('Internal server error');
+    }
+  }
+  
+  async trackClick(shortCode, req) {
+    // 提取信息
+    const clickData = {
+      shortCode,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      referer: req.headers['referer'],
+      country: await this.getCountry(req.ip),
+      deviceType: this.getDeviceType(req.headers['user-agent'])
+    };
+    
+    // 发送到消息队列（异步处理）
+    await messageQueue.publish('url.click', clickData);
+  }
+  
+  async getCountry(ip) {
+    // 使用IP地理位置库
+    return geoip.lookup(ip)?.country || 'Unknown';
+  }
+  
+  getDeviceType(userAgent) {
+    if (/mobile/i.test(userAgent)) return 'mobile';
+    if (/tablet/i.test(userAgent)) return 'tablet';
+    return 'desktop';
+  }
+}
+```
+
+### 统计分析
+
+```javascript
+class AnalyticsService {
+  async getAnalytics(shortCode, startDate, endDate) {
+    // 1. 总点击数
+    const totalClicks = await db.query(
+      `SELECT COUNT(*) as count 
+       FROM url_clicks 
+       WHERE short_code = ? AND clicked_at BETWEEN ? AND ?`,
+      [shortCode, startDate, endDate]
+    );
+    
+    // 2. 唯一点击数
+    const uniqueClicks = await db.query(
+      `SELECT COUNT(DISTINCT ip_address) as count 
+       FROM url_clicks 
+       WHERE short_code = ? AND clicked_at BETWEEN ? AND ?`,
+      [shortCode, startDate, endDate]
+    );
+    
+    // 3. 按日期统计
+    const clicksByDate = await db.query(
+      `SELECT DATE(clicked_at) as date, COUNT(*) as count 
+       FROM url_clicks 
+       WHERE short_code = ? AND clicked_at BETWEEN ? AND ?
+       GROUP BY DATE(clicked_at)
+       ORDER BY date`,
+      [shortCode, startDate, endDate]
+    );
+    
+    // 4. 按国家统计
+    const clicksByCountry = await db.query(
+      `SELECT country, COUNT(*) as count 
+       FROM url_clicks 
+       WHERE short_code = ? AND clicked_at BETWEEN ? AND ?
+       GROUP BY country
+       ORDER BY count DESC
+       LIMIT 10`,
+      [shortCode, startDate, endDate]
+    );
+    
+    // 5. 按设备统计
+    const clicksByDevice = await db.query(
+      `SELECT device_type, COUNT(*) as count 
+       FROM url_clicks 
+       WHERE short_code = ? AND clicked_at BETWEEN ? AND ?
+       GROUP BY device_type`,
+      [shortCode, startDate, endDate]
+    );
+    
+    return {
+      shortCode,
+      totalClicks: totalClicks[0].count,
+      uniqueClicks: uniqueClicks[0].count,
+      clicksByDate: this.formatTimeSeries(clicksByDate),
+      clicksByCountry: this.formatDistribution(clicksByCountry),
+      clicksByDevice: this.formatDistribution(clicksByDevice)
+    };
+  }
+  
+  formatTimeSeries(data) {
+    return data.reduce((acc, row) => {
+      acc[row.date] = row.count;
+      return acc;
+    }, {});
+  }
+  
+  formatDistribution(data) {
+    return data.reduce((acc, row) => {
+      acc[row.country || row.device_type] = row.count;
+      return acc;
+    }, {});
+  }
+}
+```
+
+## 性能优化
+
+### 1. 布隆过滤器
+
+```javascript
+class BloomFilter {
+  constructor(size = 10000000, hashCount = 7) {
+    this.size = size;
+    this.hashCount = hashCount;
+    this.bits = new Uint8Array(Math.ceil(size / 8));
+  }
+  
+  add(item) {
+    for (let i = 0; i < this.hashCount; i++) {
+      const hash = this.hash(item, i) % this.size;
+      const byteIndex = Math.floor(hash / 8);
+      const bitIndex = hash % 8;
+      this.bits[byteIndex] |= (1 << bitIndex);
+    }
+  }
+  
+  contains(item) {
+    for (let i = 0; i < this.hashCount; i++) {
+      const hash = this.hash(item, i) % this.size;
+      const byteIndex = Math.floor(hash / 8);
+      const bitIndex = hash % 8;
+      if ((this.bits[byteIndex] & (1 << bitIndex)) === 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  hash(item, seed) {
+    let hash = seed;
+    for (let i = 0; i < item.length; i++) {
+      hash = ((hash << 5) - hash) + item.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+}
+
+// 使用布隆过滤器快速判断短码是否存在
+const bloomFilter = new BloomFilter();
+
+async function exists(shortCode) {
+  // 先用布隆过滤器判断
+  if (!bloomFilter.contains(shortCode)) {
+    return false; // 一定不存在
+  }
+  
+  // 可能存在，查询数据库确认
+  return await db.exists(shortCode);
+}
+```
+
+### 2. 批量处理
+
+```javascript
+class BatchProcessor {
+  constructor() {
+    this.clickBuffer = [];
+    this.batchSize = 1000;
+    this.flushInterval = 5000; // 5秒
+    
+    setInterval(() => this.flush(), this.flushInterval);
+  }
+  
+  addClick(clickData) {
+    this.clickBuffer.push(clickData);
+    
+    if (this.clickBuffer.length >= this.batchSize) {
+      this.flush();
+    }
+  }
+  
+  async flush() {
+    if (this.clickBuffer.length === 0) return;
+    
+    const batch = this.clickBuffer.splice(0, this.batchSize);
+    
+    try {
+      await db.batchInsert('url_clicks', batch);
+    } catch (error) {
+      console.error('Failed to flush clicks:', error);
+      // 重试或记录到日志
+    }
+  }
+}
+```
+
+## 安全性
+
+### 1. 防止滥用
+
+```javascript
+class RateLimiter {
+  async checkLimit(userId, ip) {
+    // 用户限流
+    if (userId) {
+      const userKey = `rate:user:${userId}`;
+      const count = await redis.incr(userKey);
+      if (count === 1) {
+        await redis.expire(userKey, 3600); // 1小时
+      }
+      if (count > 100) {
+        throw new Error('User rate limit exceeded');
+      }
+    }
+    
+    // IP限流
+    const ipKey = `rate:ip:${ip}`;
+    const ipCount = await redis.incr(ipKey);
+    if (ipCount === 1) {
+      await redis.expire(ipKey, 3600);
+    }
+    if (ipCount > 10) {
+      throw new Error('IP rate limit exceeded');
+    }
+  }
+}
+```
+
+### 2. 恶意URL检测
+
+```javascript
+class URLValidator {
+  constructor() {
+    this.blacklist = new Set([
+      'malware.com',
+      'phishing.com'
+    ]);
+  }
+  
+  async validate(url) {
+    const domain = new URL(url).hostname;
+    
+    // 检查黑名单
+    if (this.blacklist.has(domain)) {
+      throw new Error('URL is blacklisted');
+    }
+    
+    // 调用安全API检查
+    const isSafe = await this.checkSafeBrowsing(url);
+    if (!isSafe) {
+      throw new Error('URL is unsafe');
+    }
+    
+    return true;
+  }
+  
+  async checkSafeBrowsing(url) {
+    // 调用Google Safe Browsing API
+    // 或其他安全检测服务
+    return true;
+  }
+}
+```
+
+## 监控告警
+
+```javascript
+class MonitoringSystem {
+  async monitor() {
+    // 1. QPS监控
+    const qps = await this.getQPS();
+    if (qps > 200000) {
+      await this.alert('High QPS', { qps });
+    }
+    
+    // 2. 缓存命中率
+    const hitRate = await this.getCacheHitRate();
+    if (hitRate < 0.8) {
+      await this.alert('Low cache hit rate', { hitRate });
+    }
+    
+    // 3. 错误率
+    const errorRate = await this.getErrorRate();
+    if (errorRate > 0.01) {
+      await this.alert('High error rate', { errorRate });
+    }
+    
+    // 4. 响应时间
+    const latency = await this.getLatency();
+    if (latency > 100) {
+      await this.alert('High latency', { latency });
+    }
+  }
+}
+```
+
+## 总结
+
+短链接系统设计的核心：
+- 🔑 **短码生成**：Snowflake + Base62保证唯一性
+- 💾 **存储设计**：分库分表 + 索引优化
+- 🚀 **缓存策略**：多级缓存 + 布隆过滤器
+- 📊 **统计分析**：异步处理 + 时序数据库
+- 🛡️ **安全防护**：限流 + URL验证
+- 📈 **性能优化**：批量处理 + CDN加速
+
+记住：**短链接系统的本质是高性能的键值存储和重定向服务！**
+
