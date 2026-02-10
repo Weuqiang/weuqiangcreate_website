@@ -1,0 +1,738 @@
+---
+sidebar_position: 4
+title: 微前端架构设计
+tags: [前端, 微前端, qiankun, Module Federation]
+---
+
+# 微前端架构设计
+
+微前端是将微服务理念应用于前端的架构模式，本文将详细讲解微前端的实现方案和最佳实践。
+
+## 微前端概念
+
+### 什么是微前端
+
+```javascript
+const microFrontendConcept = {
+  definition: '将前端应用拆分成多个独立的子应用',
+  
+  benefits: [
+    '技术栈无关：各子应用可使用不同框架',
+    '独立开发：团队独立开发部署',
+    '增量升级：逐步迁移老项目',
+    '独立部署：互不影响',
+    '团队自治：提高开发效率'
+  ],
+  
+  challenges: [
+    '应用隔离：样式、JS隔离',
+    '通信机制：主应用与子应用通信',
+    '路由管理：统一路由',
+    '性能优化：加载性能',
+    '公共依赖：避免重复加载'
+  ]
+};
+```
+
+## 实现方案对比
+
+### 1. iframe方案
+
+```javascript
+// 最简单的微前端方案
+class IframeMicroFrontend {
+  constructor(container) {
+    this.container = container;
+  }
+  
+  load(url) {
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    
+    this.container.appendChild(iframe);
+    
+    return iframe;
+  }
+  
+  // 通信
+  postMessage(data) {
+    this.iframe.contentWindow.postMessage(data, '*');
+  }
+}
+
+// 优缺点
+const iframeApproach = {
+  pros: [
+    '完美隔离：天然的沙箱环境',
+    '简单易用：无需额外配置',
+    '技术栈无关：任意框架'
+  ],
+  
+  cons: [
+    '性能问题：每个iframe都是独立的浏览器上下文',
+    '样式问题：无法共享样式',
+    '通信复杂：只能通过postMessage',
+    'SEO不友好：搜索引擎无法索引',
+    '用户体验差：刷新、前进后退问题'
+  ]
+};
+```
+
+### 2. single-spa方案
+
+```javascript
+// single-spa是最早的微前端框架
+import { registerApplication, start } from 'single-spa';
+
+// 注册子应用
+registerApplication({
+  name: 'app1',
+  app: () => System.import('app1'),
+  activeWhen: '/app1',
+  customProps: {
+    domElement: document.getElementById('app1-container')
+  }
+});
+
+registerApplication({
+  name: 'app2',
+  app: () => System.import('app2'),
+  activeWhen: '/app2'
+});
+
+// 启动
+start();
+
+// 子应用需要导出生命周期
+export async function bootstrap(props) {
+  // 初始化
+}
+
+export async function mount(props) {
+  // 挂载
+  ReactDOM.render(<App />, props.domElement);
+}
+
+export async function unmount(props) {
+  // 卸载
+  ReactDOM.unmountComponentAtNode(props.domElement);
+}
+```
+
+### 3. qiankun方案
+
+```javascript
+// qiankun是基于single-spa的微前端框架
+import { registerMicroApps, start } from 'qiankun';
+
+// 注册子应用
+registerMicroApps([
+  {
+    name: 'react-app',
+    entry: '//localhost:3000',
+    container: '#container',
+    activeRule: '/react',
+    props: {
+      data: { user: 'admin' }
+    }
+  },
+  {
+    name: 'vue-app',
+    entry: '//localhost:8080',
+    container: '#container',
+    activeRule: '/vue'
+  }
+]);
+
+// 启动
+start({
+  prefetch: true,        // 预加载
+  sandbox: true,         // 沙箱隔离
+  singular: false        // 是否单实例
+});
+
+// 子应用配置（React）
+// src/index.js
+function render(props = {}) {
+  const { container } = props;
+  ReactDOM.render(
+    <App />,
+    container ? container.querySelector('#root') : document.getElementById('root')
+  );
+}
+
+// 独立运行
+if (!window.__POWERED_BY_QIANKUN__) {
+  render();
+}
+
+// 导出生命周期
+export async function bootstrap() {
+  console.log('react app bootstraped');
+}
+
+export async function mount(props) {
+  console.log('react app mount', props);
+  render(props);
+}
+
+export async function unmount(props) {
+  const { container } = props;
+  ReactDOM.unmountComponentAtNode(
+    container ? container.querySelector('#root') : document.getElementById('root')
+  );
+}
+
+// webpack配置
+module.exports = {
+  output: {
+    library: 'reactApp',
+    libraryTarget: 'umd',
+    publicPath: '//localhost:3000/'
+  },
+  devServer: {
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+    }
+  }
+};
+```
+
+### 4. Module Federation
+
+```javascript
+// Webpack 5的Module Federation
+// 主应用 webpack.config.js
+const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
+
+module.exports = {
+  plugins: [
+    new ModuleFederationPlugin({
+      name: 'host',
+      remotes: {
+        app1: 'app1@http://localhost:3001/remoteEntry.js',
+        app2: 'app2@http://localhost:3002/remoteEntry.js'
+      },
+      shared: {
+        react: { singleton: true },
+        'react-dom': { singleton: true }
+      }
+    })
+  ]
+};
+
+// 使用远程模块
+import React, { lazy, Suspense } from 'react';
+
+const RemoteApp1 = lazy(() => import('app1/App'));
+const RemoteApp2 = lazy(() => import('app2/App'));
+
+function App() {
+  return (
+    <div>
+      <Suspense fallback="Loading App1...">
+        <RemoteApp1 />
+      </Suspense>
+      
+      <Suspense fallback="Loading App2...">
+        <RemoteApp2 />
+      </Suspense>
+    </div>
+  );
+}
+
+// 子应用 webpack.config.js
+module.exports = {
+  plugins: [
+    new ModuleFederationPlugin({
+      name: 'app1',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './App': './src/App'
+      },
+      shared: {
+        react: { singleton: true },
+        'react-dom': { singleton: true }
+      }
+    })
+  ]
+};
+```
+
+## qiankun深度实践
+
+### 主应用配置
+
+```javascript
+// main/src/micro-app.js
+import { registerMicroApps, start, initGlobalState } from 'qiankun';
+
+// 全局状态
+const initialState = {
+  user: null,
+  token: null
+};
+
+const actions = initGlobalState(initialState);
+
+// 监听状态变化
+actions.onGlobalStateChange((state, prev) => {
+  console.log('主应用监听到状态变化', state, prev);
+});
+
+// 注册子应用
+registerMicroApps(
+  [
+    {
+      name: 'react-app',
+      entry: process.env.REACT_APP_URL,
+      container: '#subapp-container',
+      activeRule: '/react',
+      props: {
+        actions,
+        data: { mainApp: 'data' }
+      }
+    },
+    {
+      name: 'vue-app',
+      entry: process.env.VUE_APP_URL,
+      container: '#subapp-container',
+      activeRule: '/vue',
+      props: { actions }
+    }
+  ],
+  {
+    // 生命周期钩子
+    beforeLoad: [
+      app => {
+        console.log('before load', app.name);
+      }
+    ],
+    beforeMount: [
+      app => {
+        console.log('before mount', app.name);
+      }
+    ],
+    afterMount: [
+      app => {
+        console.log('after mount', app.name);
+      }
+    ],
+    beforeUnmount: [
+      app => {
+        console.log('before unmount', app.name);
+      }
+    ],
+    afterUnmount: [
+      app => {
+        console.log('after unmount', app.name);
+      }
+    ]
+  }
+);
+
+// 启动配置
+start({
+  prefetch: 'all',           // 预加载策略
+  sandbox: {
+    strictStyleIsolation: true,  // 严格样式隔离
+    experimentalStyleIsolation: true
+  },
+  singular: false,           // 是否单实例
+  fetch: window.fetch        // 自定义fetch
+});
+
+export { actions };
+```
+
+### 子应用配置
+
+```javascript
+// react-app/src/index.js
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+import './public-path';
+
+let root = null;
+
+function render(props = {}) {
+  const { container, actions } = props;
+  
+  // 监听全局状态
+  if (actions) {
+    actions.onGlobalStateChange((state, prev) => {
+      console.log('子应用监听到状态变化', state, prev);
+    });
+  }
+  
+  root = ReactDOM.createRoot(
+    container ? container.querySelector('#root') : document.getElementById('root')
+  );
+  
+  root.render(<App actions={actions} />);
+}
+
+// 独立运行
+if (!window.__POWERED_BY_QIANKUN__) {
+  render();
+}
+
+// 生命周期
+export async function bootstrap() {
+  console.log('[react app] bootstraped');
+}
+
+export async function mount(props) {
+  console.log('[react app] mount', props);
+  render(props);
+}
+
+export async function unmount(props) {
+  console.log('[react app] unmount', props);
+  root.unmount();
+}
+
+export async function update(props) {
+  console.log('[react app] update', props);
+}
+
+// public-path.js
+if (window.__POWERED_BY_QIANKUN__) {
+  __webpack_public_path__ = window.__INJECTED_PUBLIC_PATH_BY_QIANKUN__;
+}
+
+// webpack.config.js
+module.exports = {
+  output: {
+    library: `${packageName}-[name]`,
+    libraryTarget: 'umd',
+    chunkLoadingGlobal: `webpackJsonp_${packageName}`,
+    publicPath: '//localhost:3000/'
+  },
+  devServer: {
+    port: 3000,
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+    }
+  }
+};
+```
+
+## 应用隔离
+
+### JS沙箱
+
+```javascript
+// 快照沙箱（单实例）
+class SnapshotSandbox {
+  constructor() {
+    this.windowSnapshot = {};
+    this.modifyPropsMap = {};
+  }
+  
+  active() {
+    // 保存window快照
+    for (const prop in window) {
+      this.windowSnapshot[prop] = window[prop];
+    }
+    
+    // 恢复上次修改
+    Object.keys(this.modifyPropsMap).forEach(prop => {
+      window[prop] = this.modifyPropsMap[prop];
+    });
+  }
+  
+  inactive() {
+    // 记录修改
+    for (const prop in window) {
+      if (window[prop] !== this.windowSnapshot[prop]) {
+        this.modifyPropsMap[prop] = window[prop];
+        window[prop] = this.windowSnapshot[prop];
+      }
+    }
+  }
+}
+
+// Proxy沙箱（多实例）
+class ProxySandbox {
+  constructor() {
+    this.running = false;
+    
+    const fakeWindow = Object.create(null);
+    
+    this.proxyWindow = new Proxy(fakeWindow, {
+      get: (target, prop) => {
+        return prop in target ? target[prop] : window[prop];
+      },
+      
+      set: (target, prop, value) => {
+        if (this.running) {
+          target[prop] = value;
+        }
+        return true;
+      },
+      
+      has: (target, prop) => {
+        return prop in target || prop in window;
+      }
+    });
+  }
+  
+  active() {
+    this.running = true;
+  }
+  
+  inactive() {
+    this.running = false;
+  }
+}
+```
+
+### 样式隔离
+
+```javascript
+// 1. Shadow DOM隔离
+class ShadowDOMIsolation {
+  mount(container, html) {
+    const shadowRoot = container.attachShadow({ mode: 'open' });
+    shadowRoot.innerHTML = html;
+  }
+}
+
+// 2. CSS Modules
+// 自动添加hash
+import styles from './App.module.css';
+
+function App() {
+  return <div className={styles.container}>App</div>;
+}
+
+// 3. CSS-in-JS
+import styled from 'styled-components';
+
+const Container = styled.div`
+  color: red;
+`;
+
+// 4. 动态样式作用域
+class StyleIsolation {
+  addPrefix(css, prefix) {
+    return css.replace(/([^\r\n,{}]+)(,(?=[^}]*{)|\s*{)/g, (match, selector) => {
+      return `${prefix} ${selector}`;
+    });
+  }
+  
+  mount(appName, css) {
+    const prefixedCss = this.addPrefix(css, `[data-qiankun="${appName}"]`);
+    const style = document.createElement('style');
+    style.innerHTML = prefixedCss;
+    document.head.appendChild(style);
+  }
+}
+```
+
+## 应用通信
+
+### 全局状态管理
+
+```javascript
+// 主应用
+import { initGlobalState } from 'qiankun';
+
+const initialState = {
+  user: null,
+  token: null,
+  theme: 'light'
+};
+
+const actions = initGlobalState(initialState);
+
+// 监听变化
+actions.onGlobalStateChange((state, prev) => {
+  console.log('状态变化', state, prev);
+});
+
+// 设置状态
+actions.setGlobalState({
+  user: { name: 'John', id: 1 }
+});
+
+// 子应用
+export async function mount(props) {
+  const { actions } = props;
+  
+  // 监听状态
+  actions.onGlobalStateChange((state, prev) => {
+    console.log('子应用收到状态', state);
+    // 更新子应用状态
+    store.dispatch({ type: 'UPDATE_USER', payload: state.user });
+  });
+  
+  // 修改状态
+  actions.setGlobalState({
+    token: 'new-token'
+  });
+}
+```
+
+### 自定义事件总线
+
+```javascript
+class EventBus {
+  constructor() {
+    this.events = {};
+  }
+  
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  }
+  
+  emit(event, data) {
+    if (this.events[event]) {
+      this.events[event].forEach(callback => callback(data));
+    }
+  }
+  
+  off(event, callback) {
+    if (this.events[event]) {
+      this.events[event] = this.events[event].filter(cb => cb !== callback);
+    }
+  }
+}
+
+// 全局事件总线
+window.__MICRO_APP_EVENT_BUS__ = new EventBus();
+
+// 主应用
+window.__MICRO_APP_EVENT_BUS__.on('user-login', (user) => {
+  console.log('用户登录', user);
+});
+
+// 子应用
+window.__MICRO_APP_EVENT_BUS__.emit('user-login', {
+  name: 'John',
+  id: 1
+});
+```
+
+## 性能优化
+
+### 预加载
+
+```javascript
+import { prefetchApps } from 'qiankun';
+
+// 预加载子应用
+prefetchApps([
+  { name: 'app1', entry: '//localhost:3001' },
+  { name: 'app2', entry: '//localhost:3002' }
+]);
+
+// 自定义预加载策略
+start({
+  prefetch(apps) {
+    // 空闲时预加载
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => {
+        apps.forEach(app => {
+          fetch(app.entry);
+        });
+      });
+    }
+    return [];
+  }
+});
+```
+
+### 公共依赖优化
+
+```javascript
+// webpack externals
+module.exports = {
+  externals: {
+    react: 'React',
+    'react-dom': 'ReactDOM',
+    'react-router-dom': 'ReactRouterDOM'
+  }
+};
+
+// 主应用加载公共依赖
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+
+// Module Federation共享依赖
+new ModuleFederationPlugin({
+  shared: {
+    react: {
+      singleton: true,
+      requiredVersion: '^18.0.0'
+    },
+    'react-dom': {
+      singleton: true,
+      requiredVersion: '^18.0.0'
+    }
+  }
+});
+```
+
+## 最佳实践
+
+```javascript
+const bestPractices = {
+  // 1. 应用拆分原则
+  splitting: {
+    byBusiness: '按业务模块拆分',
+    byTeam: '按团队拆分',
+    byTech: '按技术栈拆分'
+  },
+  
+  // 2. 路由设计
+  routing: {
+    mainApp: '主应用管理一级路由',
+    subApp: '子应用管理二级路由',
+    avoid: '避免路由冲突'
+  },
+  
+  // 3. 状态管理
+  state: {
+    global: '全局状态放主应用',
+    local: '局部状态放子应用',
+    communication: '通过事件通信'
+  },
+  
+  // 4. 样式规范
+  style: {
+    prefix: '使用CSS前缀',
+    modules: '使用CSS Modules',
+    scoped: '使用scoped样式'
+  },
+  
+  // 5. 性能优化
+  performance: {
+    prefetch: '预加载子应用',
+    cache: '缓存子应用资源',
+    lazy: '按需加载',
+    cdn: '使用CDN加速'
+  }
+};
+```
+
+## 总结
+
+微前端架构的核心：
+- 🏗️ **应用拆分**：按业务、团队、技术栈拆分
+- 🔒 **应用隔离**：JS沙箱、样式隔离
+- 📡 **应用通信**：全局状态、事件总线
+- 🚀 **性能优化**：预加载、公共依赖
+- 🛠️ **技术选型**：qiankun、Module Federation
+- 📋 **最佳实践**：路由、状态、样式规范
+
+记住：**微前端不是银弹，要根据实际情况选择合适的方案！**
+
