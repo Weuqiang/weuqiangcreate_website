@@ -1,0 +1,934 @@
+---
+sidebar_position: 6
+title: 搜索引擎架构设计
+tags: [系统设计, 搜索引擎, Elasticsearch, 全文检索]
+---
+
+# 搜索引擎架构设计
+
+搜索引擎是互联网的核心基础设施，本文将详细讲解如何设计一个高性能、高可用的搜索引擎系统。
+
+## 需求分析
+
+### 功能需求
+
+```javascript
+const requirements = {
+  // 核心功能
+  core: {
+    crawling: true,        // 网页爬取
+    indexing: true,        // 索引构建
+    searching: true,       // 搜索查询
+    ranking: true          // 结果排序
+  },
+  
+  // 搜索功能
+  search: {
+    fullText: true,        // 全文搜索
+    fuzzy: true,           // 模糊搜索
+    autocomplete: true,    // 自动补全
+    suggestion: true,      // 搜索建议
+    filter: true,          // 过滤条件
+    facet: true           // 分面搜索
+  },
+  
+  // 扩展功能
+  extended: {
+    imageSearch: true,     // 图片搜索
+    voiceSearch: true,     // 语音搜索
+    personalization: true, // 个性化
+    analytics: true        // 搜索分析
+  }
+};
+```
+
+### 非功能需求
+
+```python
+# 容量估算
+网页总数 = 10_000_000_000        # 100亿网页
+每日新增 = 100_000_000           # 1亿新增
+每日搜索 = 5_000_000_000         # 50亿搜索
+
+# QPS计算
+搜索QPS = 每日搜索 / 86400
+峰值QPS = 搜索QPS * 3
+
+print(f"平均QPS: {搜索QPS:,.0f}")
+print(f"峰值QPS: {峰值QPS:,.0f}")
+
+# 存储估算
+每页大小 = 100 * 1024            # 100KB
+索引膨胀率 = 0.3                 # 索引占原文30%
+总存储_PB = (网页总数 * 每页大小 * (1 + 索引膨胀率)) / (1024 ** 5)
+
+print(f"存储需求: {总存储_PB:.2f} PB")
+
+# 响应时间
+P99延迟 = 200                    # 200ms
+P95延迟 = 100                    # 100ms
+```
+
+## 架构设计
+
+### 整体架构
+
+```
+┌─────────────────────────────────────────┐
+│              爬虫系统                    │
+│  Crawler → URL Queue → Parser           │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│            索引系统                      │
+│  Indexer → Inverted Index → Storage     │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│            查询系统                      │
+│  Query Parser → Searcher → Ranker       │
+└─────────────────────────────────────────┘
+```
+
+### 技术选型
+
+```javascript
+const techStack = {
+  // 搜索引擎
+  searchEngine: {
+    elasticsearch: '分布式搜索',
+    solr: '企业级搜索',
+    custom: '自研引擎'
+  },
+  
+  // 爬虫框架
+  crawler: {
+    scrapy: 'Python爬虫',
+    puppeteer: 'JS渲染',
+    selenium: '动态页面'
+  },
+  
+  // 存储
+  storage: {
+    hdfs: '原始网页',
+    hbase: '结构化数据',
+    redis: '缓存热点'
+  },
+  
+  // 消息队列
+  queue: {
+    kafka: 'URL队列',
+    rabbitmq: '任务分发'
+  }
+};
+```
+
+## 爬虫系统
+
+### 分布式爬虫
+
+```python
+import asyncio
+import aiohttp
+from urllib.parse import urljoin, urlparse
+from bs4 import BeautifulSoup
+import hashlib
+
+class DistributedCrawler:
+    def __init__(self, redis_client, kafka_producer):
+        self.redis = redis_client
+        self.kafka = kafka_producer
+        self.visited = set()
+        self.max_depth = 5
+        
+    async def crawl(self, start_urls):
+        """开始爬取"""
+        # 初始化URL队列
+        for url in start_urls:
+            await self.add_url(url, depth=0)
+        
+        # 启动多个worker
+        workers = [
+            asyncio.create_task(self.worker(i))
+            for i in range(10)
+        ]
+        
+        await asyncio.gather(*workers)
+    
+    async def worker(self, worker_id):
+        """爬虫工作进程"""
+        async with aiohttp.ClientSession() as session:
+            while True:
+                # 从队列获取URL
+                url_data = await self.get_next_url()
+                
+                if not url_data:
+                    await asyncio.sleep(1)
+                    continue
+                
+                url, depth = url_data
+                
+                # 爬取页面
+                try:
+                    html = await self.fetch(session, url)
+                    
+                    # 解析页面
+                    links, content = await self.parse(html, url)
+                    
+                    # 保存内容
+                    await self.save_page(url, content)
+                    
+                    # 添加新链接
+                    if depth < self.max_depth:
+                        for link in links:
+                            await self.add_url(link, depth + 1)
+                    
+                except Exception as e:
+                    print(f"Error crawling {url}: {e}")
+    
+    async def fetch(self, session, url):
+        """获取网页内容"""
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; MyBot/1.0)'
+        }
+        
+        async with session.get(url, headers=headers, timeout=10) as response:
+            if response.status == 200:
+                return await response.text()
+            else:
+                raise Exception(f"HTTP {response.status}")
+    
+    async def parse(self, html, base_url):
+        """解析网页"""
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        # 提取链接
+        links = []
+        for a in soup.find_all('a', href=True):
+            link = urljoin(base_url, a['href'])
+            if self.is_valid_url(link):
+                links.append(link)
+        
+        # 提取内容
+        content = {
+            'title': soup.title.string if soup.title else '',
+            'text': soup.get_text(),
+            'meta': self.extract_meta(soup),
+            'headings': [h.get_text() for h in soup.find_all(['h1', 'h2', 'h3'])]
+        }
+        
+        return links, content
+    
+    def is_valid_url(self, url):
+        """验证URL"""
+        parsed = urlparse(url)
+        return (
+            parsed.scheme in ['http', 'https'] and
+            parsed.netloc and
+            not any(ext in url for ext in ['.pdf', '.jpg', '.png'])
+        )
+    
+    async def add_url(self, url, depth):
+        """添加URL到队列"""
+        url_hash = hashlib.md5(url.encode()).hexdigest()
+        
+        # 去重
+        if await self.redis.sismember('visited', url_hash):
+            return
+        
+        await self.redis.sadd('visited', url_hash)
+        
+        # 添加到队列（按优先级）
+        priority = self.calculate_priority(url, depth)
+        await self.redis.zadd('url_queue', {url: priority})
+    
+    async def get_next_url(self):
+        """获取下一个URL"""
+        result = await self.redis.zpopmax('url_queue')
+        if result:
+            url, priority = result[0]
+            depth = int(priority) % 10
+            return url, depth
+        return None
+    
+    def calculate_priority(self, url, depth):
+        """计算URL优先级"""
+        # 深度越小优先级越高
+        priority = (10 - depth) * 1000
+        
+        # 域名权重
+        domain = urlparse(url).netloc
+        domain_rank = self.get_domain_rank(domain)
+        priority += domain_rank
+        
+        return priority
+    
+    async def save_page(self, url, content):
+        """保存页面到Kafka"""
+        page_data = {
+            'url': url,
+            'content': content,
+            'crawled_at': time.time()
+        }
+        
+        await self.kafka.send('crawled_pages', page_data)
+```
+
+### URL去重
+
+```python
+class URLDeduplicator:
+    def __init__(self):
+        # 布隆过滤器
+        self.bloom_filter = BloomFilter(size=100000000, hash_count=7)
+        
+    def is_duplicate(self, url):
+        """检查URL是否重复"""
+        url_hash = self.normalize_url(url)
+        
+        if self.bloom_filter.contains(url_hash):
+            # 可能重复，查询数据库确认
+            return self.check_in_db(url_hash)
+        
+        # 一定不重复
+        self.bloom_filter.add(url_hash)
+        return False
+    
+    def normalize_url(self, url):
+        """URL规范化"""
+        parsed = urlparse(url)
+        
+        # 移除fragment
+        url = url.split('#')[0]
+        
+        # 移除默认端口
+        if parsed.port == 80 or parsed.port == 443:
+            url = url.replace(f':{parsed.port}', '')
+        
+        # 排序查询参数
+        if parsed.query:
+            params = sorted(parsed.query.split('&'))
+            url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{'&'.join(params)}"
+        
+        return hashlib.md5(url.encode()).hexdigest()
+```
+
+## 索引系统
+
+### 倒排索引
+
+```javascript
+class InvertedIndex {
+  constructor() {
+    this.index = new Map(); // term -> postings list
+    this.documents = new Map(); // docId -> document
+    this.docCount = 0;
+  }
+  
+  // 添加文档
+  addDocument(docId, content) {
+    this.docCount++;
+    this.documents.set(docId, content);
+    
+    // 分词
+    const tokens = this.tokenize(content);
+    
+    // 构建倒排索引
+    const termFreq = new Map();
+    
+    for (let i = 0; i < tokens.length; i++) {
+      const term = tokens[i];
+      
+      // 词频统计
+      termFreq.set(term, (termFreq.get(term) || 0) + 1);
+      
+      // 更新倒排索引
+      if (!this.index.has(term)) {
+        this.index.set(term, []);
+      }
+      
+      const postings = this.index.get(term);
+      let posting = postings.find(p => p.docId === docId);
+      
+      if (!posting) {
+        posting = {
+          docId,
+          positions: [],
+          tf: 0
+        };
+        postings.push(posting);
+      }
+      
+      posting.positions.push(i);
+      posting.tf++;
+    }
+    
+    // 计算TF-IDF
+    this.updateTFIDF(docId, termFreq);
+  }
+  
+  // 分词
+  tokenize(text) {
+    // 简单分词（实际应使用专业分词器）
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(token => token.length > 0);
+  }
+  
+  // 更新TF-IDF
+  updateTFIDF(docId, termFreq) {
+    for (const [term, tf] of termFreq) {
+      const postings = this.index.get(term);
+      const posting = postings.find(p => p.docId === docId);
+      
+      // TF: 词频
+      const termFrequency = tf / termFreq.size;
+      
+      // IDF: 逆文档频率
+      const docFrequency = postings.length;
+      const idf = Math.log(this.docCount / docFrequency);
+      
+      // TF-IDF
+      posting.tfidf = termFrequency * idf;
+    }
+  }
+  
+  // 搜索
+  search(query, limit = 10) {
+    const tokens = this.tokenize(query);
+    
+    // 获取所有相关文档
+    const docScores = new Map();
+    
+    for (const term of tokens) {
+      const postings = this.index.get(term) || [];
+      
+      for (const posting of postings) {
+        const score = docScores.get(posting.docId) || 0;
+        docScores.set(posting.docId, score + posting.tfidf);
+      }
+    }
+    
+    // 排序并返回
+    return Array.from(docScores.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([docId, score]) => ({
+        docId,
+        score,
+        document: this.documents.get(docId)
+      }));
+  }
+}
+
+// 使用示例
+const index = new InvertedIndex();
+
+index.addDocument(1, 'The quick brown fox jumps over the lazy dog');
+index.addDocument(2, 'A quick brown dog outpaces a quick fox');
+index.addDocument(3, 'The lazy cat sleeps all day');
+
+const results = index.search('quick fox');
+console.log(results);
+```
+
+### Elasticsearch集成
+
+```javascript
+class ElasticsearchIndexer {
+  constructor() {
+    this.client = new Client({
+      node: 'http://localhost:9200'
+    });
+  }
+  
+  async createIndex(indexName) {
+    await this.client.indices.create({
+      index: indexName,
+      body: {
+        settings: {
+          number_of_shards: 5,
+          number_of_replicas: 1,
+          analysis: {
+            analyzer: {
+              custom_analyzer: {
+                type: 'custom',
+                tokenizer: 'standard',
+                filter: ['lowercase', 'stop', 'snowball']
+              }
+            }
+          }
+        },
+        mappings: {
+          properties: {
+            url: { type: 'keyword' },
+            title: {
+              type: 'text',
+              analyzer: 'custom_analyzer',
+              fields: {
+                keyword: { type: 'keyword' }
+              }
+            },
+            content: {
+              type: 'text',
+              analyzer: 'custom_analyzer'
+            },
+            meta_description: { type: 'text' },
+            headings: { type: 'text' },
+            crawled_at: { type: 'date' },
+            page_rank: { type: 'float' }
+          }
+        }
+      }
+    });
+  }
+  
+  async indexDocument(indexName, doc) {
+    await this.client.index({
+      index: indexName,
+      body: doc
+    });
+  }
+  
+  async bulkIndex(indexName, docs) {
+    const body = docs.flatMap(doc => [
+      { index: { _index: indexName } },
+      doc
+    ]);
+    
+    const { body: bulkResponse } = await this.client.bulk({
+      refresh: true,
+      body
+    });
+    
+    if (bulkResponse.errors) {
+      console.error('Bulk indexing errors:', bulkResponse.errors);
+    }
+  }
+  
+  async search(indexName, query, options = {}) {
+    const {
+      from = 0,
+      size = 10,
+      filters = {},
+      sort = []
+    } = options;
+    
+    const { body } = await this.client.search({
+      index: indexName,
+      body: {
+        from,
+        size,
+        query: {
+          bool: {
+            must: [
+              {
+                multi_match: {
+                  query,
+                  fields: ['title^3', 'content', 'headings^2'],
+                  type: 'best_fields',
+                  fuzziness: 'AUTO'
+                }
+              }
+            ],
+            filter: Object.entries(filters).map(([field, value]) => ({
+              term: { [field]: value }
+            }))
+          }
+        },
+        highlight: {
+          fields: {
+            title: {},
+            content: {
+              fragment_size: 150,
+              number_of_fragments: 3
+            }
+          }
+        },
+        sort: sort.length > 0 ? sort : [
+          { _score: 'desc' },
+          { page_rank: 'desc' }
+        ]
+      }
+    });
+    
+    return {
+      total: body.hits.total.value,
+      results: body.hits.hits.map(hit => ({
+        id: hit._id,
+        score: hit._score,
+        source: hit._source,
+        highlight: hit.highlight
+      }))
+    };
+  }
+}
+```
+
+## 查询处理
+
+### 查询解析器
+
+```javascript
+class QueryParser {
+  parse(queryString) {
+    const query = {
+      terms: [],
+      phrases: [],
+      filters: {},
+      operators: []
+    };
+    
+    // 提取短语（引号内容）
+    const phraseRegex = /"([^"]+)"/g;
+    let match;
+    while ((match = phraseRegex.exec(queryString)) !== null) {
+      query.phrases.push(match[1]);
+      queryString = queryString.replace(match[0], '');
+    }
+    
+    // 提取过滤条件
+    const filterRegex = /(\w+):(\w+)/g;
+    while ((match = filterRegex.exec(queryString)) !== null) {
+      query.filters[match[1]] = match[2];
+      queryString = queryString.replace(match[0], '');
+    }
+    
+    // 提取操作符
+    const operatorRegex = /(AND|OR|NOT)/gi;
+    while ((match = operatorRegex.exec(queryString)) !== null) {
+      query.operators.push(match[1].toUpperCase());
+      queryString = queryString.replace(match[0], '');
+    }
+    
+    // 提取普通词项
+    query.terms = queryString
+      .trim()
+      .split(/\s+/)
+      .filter(term => term.length > 0);
+    
+    return query;
+  }
+  
+  buildElasticsearchQuery(parsedQuery) {
+    const must = [];
+    const should = [];
+    const mustNot = [];
+    
+    // 短语查询
+    for (const phrase of parsedQuery.phrases) {
+      must.push({
+        match_phrase: {
+          content: phrase
+        }
+      });
+    }
+    
+    // 词项查询
+    for (const term of parsedQuery.terms) {
+      should.push({
+        multi_match: {
+          query: term,
+          fields: ['title^3', 'content', 'headings^2']
+        }
+      });
+    }
+    
+    // 过滤条件
+    const filter = Object.entries(parsedQuery.filters).map(([field, value]) => ({
+      term: { [field]: value }
+    }));
+    
+    return {
+      bool: {
+        must,
+        should,
+        must_not: mustNot,
+        filter,
+        minimum_should_match: should.length > 0 ? 1 : 0
+      }
+    };
+  }
+}
+```
+
+### 自动补全
+
+```javascript
+class Autocomplete {
+  constructor(redis) {
+    this.redis = redis;
+  }
+  
+  async suggest(prefix, limit = 10) {
+    // 使用Redis的Sorted Set实现
+    const key = `autocomplete:${prefix.toLowerCase()}`;
+    
+    // 获取建议
+    const suggestions = await this.redis.zrevrange(key, 0, limit - 1, 'WITHSCORES');
+    
+    return suggestions
+      .filter((_, i) => i % 2 === 0)
+      .map((term, i) => ({
+        term,
+        score: suggestions[i * 2 + 1]
+      }));
+  }
+  
+  async addTerm(term, score = 1) {
+    // 为每个前缀添加词项
+    for (let i = 1; i <= term.length; i++) {
+      const prefix = term.substring(0, i).toLowerCase();
+      const key = `autocomplete:${prefix}`;
+      
+      await this.redis.zincrby(key, score, term);
+    }
+  }
+  
+  async updateFromSearchLog() {
+    // 从搜索日志更新热门搜索词
+    const searches = await this.getRecentSearches();
+    
+    for (const [term, count] of searches) {
+      await this.addTerm(term, count);
+    }
+  }
+}
+```
+
+## 排序算法
+
+### PageRank
+
+```python
+import numpy as np
+
+class PageRank:
+    def __init__(self, damping_factor=0.85, max_iterations=100, tolerance=1e-6):
+        self.d = damping_factor
+        self.max_iter = max_iterations
+        self.tol = tolerance
+    
+    def calculate(self, graph):
+        """
+        计算PageRank
+        graph: 邻接矩阵，graph[i][j] = 1 表示页面i链接到页面j
+        """
+        n = len(graph)
+        
+        # 初始化PageRank值
+        pr = np.ones(n) / n
+        
+        # 计算出链数
+        out_degree = np.sum(graph, axis=1)
+        out_degree[out_degree == 0] = 1  # 避免除零
+        
+        # 迭代计算
+        for iteration in range(self.max_iter):
+            pr_new = np.zeros(n)
+            
+            for i in range(n):
+                # 计算从其他页面传递来的PageRank
+                for j in range(n):
+                    if graph[j][i] == 1:
+                        pr_new[i] += pr[j] / out_degree[j]
+                
+                # 应用阻尼因子
+                pr_new[i] = (1 - self.d) / n + self.d * pr_new[i]
+            
+            # 检查收敛
+            if np.sum(np.abs(pr_new - pr)) < self.tol:
+                print(f"Converged after {iteration + 1} iterations")
+                break
+            
+            pr = pr_new
+        
+        return pr
+
+# 使用示例
+graph = np.array([
+    [0, 1, 1, 0],
+    [0, 0, 1, 1],
+    [1, 0, 0, 1],
+    [0, 0, 1, 0]
+])
+
+pagerank = PageRank()
+scores = pagerank.calculate(graph)
+print("PageRank scores:", scores)
+```
+
+### BM25排序
+
+```javascript
+class BM25Ranker {
+  constructor(k1 = 1.5, b = 0.75) {
+    this.k1 = k1; // 词频饱和参数
+    this.b = b;   // 长度归一化参数
+  }
+  
+  score(query, document, avgDocLength, docCount) {
+    const tokens = this.tokenize(query);
+    let score = 0;
+    
+    for (const term of tokens) {
+      // 词频
+      const tf = this.termFrequency(term, document);
+      
+      // 文档频率
+      const df = this.documentFrequency(term);
+      
+      // IDF
+      const idf = Math.log((docCount - df + 0.5) / (df + 0.5) + 1);
+      
+      // 文档长度归一化
+      const docLength = document.length;
+      const norm = 1 - this.b + this.b * (docLength / avgDocLength);
+      
+      // BM25得分
+      score += idf * (tf * (this.k1 + 1)) / (tf + this.k1 * norm);
+    }
+    
+    return score;
+  }
+  
+  termFrequency(term, document) {
+    const tokens = this.tokenize(document);
+    return tokens.filter(t => t === term).length;
+  }
+  
+  tokenize(text) {
+    return text.toLowerCase().split(/\s+/);
+  }
+}
+```
+
+## 性能优化
+
+### 1. 查询缓存
+
+```javascript
+class QueryCache {
+  constructor(redis, ttl = 3600) {
+    this.redis = redis;
+    this.ttl = ttl;
+  }
+  
+  async get(query) {
+    const key = `query:${this.hashQuery(query)}`;
+    const cached = await this.redis.get(key);
+    
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    
+    return null;
+  }
+  
+  async set(query, results) {
+    const key = `query:${this.hashQuery(query)}`;
+    await this.redis.setex(key, this.ttl, JSON.stringify(results));
+  }
+  
+  hashQuery(query) {
+    return crypto.createHash('md5').update(JSON.stringify(query)).digest('hex');
+  }
+}
+```
+
+### 2. 索引分片
+
+```javascript
+class IndexSharding {
+  constructor(shardCount = 10) {
+    this.shardCount = shardCount;
+  }
+  
+  getShardId(docId) {
+    return docId % this.shardCount;
+  }
+  
+  async search(query, limit = 10) {
+    // 并行搜索所有分片
+    const shardPromises = [];
+    
+    for (let i = 0; i < this.shardCount; i++) {
+      shardPromises.push(
+        this.searchShard(i, query, limit)
+      );
+    }
+    
+    const shardResults = await Promise.all(shardPromises);
+    
+    // 合并结果
+    return this.mergeResults(shardResults, limit);
+  }
+  
+  mergeResults(shardResults, limit) {
+    // 合并所有分片的结果
+    const allResults = shardResults.flat();
+    
+    // 按分数排序
+    allResults.sort((a, b) => b.score - a.score);
+    
+    // 返回top N
+    return allResults.slice(0, limit);
+  }
+}
+```
+
+## 监控告警
+
+```javascript
+class SearchMonitoring {
+  async monitor() {
+    // 1. 查询QPS
+    const qps = await this.getQueryQPS();
+    
+    // 2. 平均响应时间
+    const avgLatency = await this.getAverageLatency();
+    
+    // 3. 索引大小
+    const indexSize = await this.getIndexSize();
+    
+    // 4. 缓存命中率
+    const cacheHitRate = await this.getCacheHitRate();
+    
+    // 5. 错误率
+    const errorRate = await this.getErrorRate();
+    
+    // 记录指标
+    await this.recordMetrics({
+      qps,
+      avgLatency,
+      indexSize,
+      cacheHitRate,
+      errorRate
+    });
+    
+    // 告警
+    if (avgLatency > 200) {
+      await this.alert('High search latency', { avgLatency });
+    }
+    
+    if (errorRate > 0.01) {
+      await this.alert('High error rate', { errorRate });
+    }
+  }
+}
+```
+
+## 总结
+
+搜索引擎架构设计的核心：
+- 🕷️ **爬虫系统**：分布式爬取 + URL去重
+- 📚 **索引系统**：倒排索引 + TF-IDF + BM25
+- 🔍 **查询处理**：查询解析 + 自动补全
+- 📊 **排序算法**：PageRank + 相关性排序
+- 🚀 **性能优化**：查询缓存 + 索引分片
+- 📈 **监控告警**：实时监控 + 性能分析
+
+记住：**搜索引擎的本质是高效的信息检索和相关性排序！**
+
