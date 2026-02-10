@@ -1,0 +1,671 @@
+---
+sidebar_position: 6
+title: TypeScript高级特性与实战
+tags: [前端, TypeScript, 类型系统, 泛型]
+---
+
+# TypeScript高级特性与实战
+
+TypeScript是JavaScript的超集，本文将深入讲解TypeScript的高级特性和实战技巧。
+
+## 高级类型
+
+### 联合类型与交叉类型
+
+```typescript
+// 联合类型（Union Types）
+type Status = 'pending' | 'success' | 'error';
+type ID = string | number;
+
+function handleStatus(status: Status) {
+  switch (status) {
+    case 'pending':
+      console.log('加载中...');
+      break;
+    case 'success':
+      console.log('成功');
+      break;
+    case 'error':
+      console.log('失败');
+      break;
+  }
+}
+
+// 交叉类型（Intersection Types）
+interface Person {
+  name: string;
+  age: number;
+}
+
+interface Employee {
+  employeeId: string;
+  department: string;
+}
+
+type Staff = Person & Employee;
+
+const staff: Staff = {
+  name: 'John',
+  age: 30,
+  employeeId: 'E001',
+  department: 'IT'
+};
+
+// 类型守卫
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function processValue(value: string | number) {
+  if (isString(value)) {
+    console.log(value.toUpperCase());
+  } else {
+    console.log(value.toFixed(2));
+  }
+}
+```
+
+### 映射类型
+
+```typescript
+// Partial - 所有属性可选
+type Partial<T> = {
+  [P in keyof T]?: T[P];
+};
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+type PartialUser = Partial<User>;
+// { id?: number; name?: string; email?: string; }
+
+// Required - 所有属性必选
+type Required<T> = {
+  [P in keyof T]-?: T[P];
+};
+
+// Readonly - 所有属性只读
+type Readonly<T> = {
+  readonly [P in keyof T]: T[P];
+};
+
+// Pick - 选择部分属性
+type Pick<T, K extends keyof T> = {
+  [P in K]: T[P];
+};
+
+type UserBasic = Pick<User, 'id' | 'name'>;
+// { id: number; name: string; }
+
+// Omit - 排除部分属性
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+
+type UserWithoutEmail = Omit<User, 'email'>;
+// { id: number; name: string; }
+
+// Record - 创建对象类型
+type Record<K extends keyof any, T> = {
+  [P in K]: T;
+};
+
+type PageInfo = Record<'home' | 'about' | 'contact', { title: string; url: string }>;
+
+const pages: PageInfo = {
+  home: { title: 'Home', url: '/' },
+  about: { title: 'About', url: '/about' },
+  contact: { title: 'Contact', url: '/contact' }
+};
+```
+
+### 条件类型
+
+```typescript
+// 条件类型
+type IsString<T> = T extends string ? true : false;
+
+type A = IsString<string>;  // true
+type B = IsString<number>;  // false
+
+// 分布式条件类型
+type ToArray<T> = T extends any ? T[] : never;
+
+type StrOrNumArray = ToArray<string | number>;
+// string[] | number[]
+
+// infer关键字
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : never;
+
+function getUserInfo() {
+  return { name: 'John', age: 30 };
+}
+
+type UserInfo = ReturnType<typeof getUserInfo>;
+// { name: string; age: number; }
+
+// 提取Promise的值类型
+type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
+
+type Result = UnwrapPromise<Promise<string>>;  // string
+
+// 实用工具类型
+type NonNullable<T> = T extends null | undefined ? never : T;
+
+type Value = string | null | undefined;
+type NonNullValue = NonNullable<Value>;  // string
+
+// 提取函数参数类型
+type Parameters<T extends (...args: any) => any> = 
+  T extends (...args: infer P) => any ? P : never;
+
+function add(a: number, b: number) {
+  return a + b;
+}
+
+type AddParams = Parameters<typeof add>;  // [number, number]
+```
+
+## 泛型
+
+### 泛型函数
+
+```typescript
+// 基础泛型
+function identity<T>(arg: T): T {
+  return arg;
+}
+
+const num = identity<number>(42);
+const str = identity<string>('hello');
+
+// 泛型约束
+interface Lengthwise {
+  length: number;
+}
+
+function logLength<T extends Lengthwise>(arg: T): T {
+  console.log(arg.length);
+  return arg;
+}
+
+logLength('hello');        // ✓
+logLength([1, 2, 3]);      // ✓
+logLength({ length: 10 }); // ✓
+// logLength(42);          // ✗ 错误
+
+// 多个泛型参数
+function merge<T, U>(obj1: T, obj2: U): T & U {
+  return { ...obj1, ...obj2 };
+}
+
+const result = merge(
+  { name: 'John' },
+  { age: 30 }
+);
+// { name: string; age: number; }
+
+// 泛型默认值
+function createArray<T = string>(length: number, value: T): T[] {
+  return Array(length).fill(value);
+}
+
+const arr1 = createArray(3, 'x');     // string[]
+const arr2 = createArray<number>(3, 0); // number[]
+```
+
+### 泛型类
+
+```typescript
+class GenericNumber<T> {
+  zeroValue: T;
+  add: (x: T, y: T) => T;
+  
+  constructor(zeroValue: T, add: (x: T, y: T) => T) {
+    this.zeroValue = zeroValue;
+    this.add = add;
+  }
+}
+
+const myGenericNumber = new GenericNumber<number>(
+  0,
+  (x, y) => x + y
+);
+
+// 泛型接口
+interface Repository<T> {
+  find(id: string): Promise<T>;
+  findAll(): Promise<T[]>;
+  create(item: T): Promise<T>;
+  update(id: string, item: Partial<T>): Promise<T>;
+  delete(id: string): Promise<void>;
+}
+
+class UserRepository implements Repository<User> {
+  async find(id: string): Promise<User> {
+    // 实现
+  }
+  
+  async findAll(): Promise<User[]> {
+    // 实现
+  }
+  
+  async create(user: User): Promise<User> {
+    // 实现
+  }
+  
+  async update(id: string, user: Partial<User>): Promise<User> {
+    // 实现
+  }
+  
+  async delete(id: string): Promise<void> {
+    // 实现
+  }
+}
+```
+
+## 装饰器
+
+### 类装饰器
+
+```typescript
+// 类装饰器
+function sealed(constructor: Function) {
+  Object.seal(constructor);
+  Object.seal(constructor.prototype);
+}
+
+@sealed
+class Greeter {
+  greeting: string;
+  
+  constructor(message: string) {
+    this.greeting = message;
+  }
+}
+
+// 装饰器工厂
+function Component(options: { selector: string; template: string }) {
+  return function (constructor: Function) {
+    constructor.prototype.selector = options.selector;
+    constructor.prototype.template = options.template;
+  };
+}
+
+@Component({
+  selector: 'app-root',
+  template: '<h1>Hello</h1>'
+})
+class AppComponent {}
+
+// 方法装饰器
+function log(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  const originalMethod = descriptor.value;
+  
+  descriptor.value = function (...args: any[]) {
+    console.log(`调用 ${propertyKey}，参数:`, args);
+    const result = originalMethod.apply(this, args);
+    console.log(`${propertyKey} 返回:`, result);
+    return result;
+  };
+  
+  return descriptor;
+}
+
+class Calculator {
+  @log
+  add(a: number, b: number) {
+    return a + b;
+  }
+}
+
+// 属性装饰器
+function readonly(target: any, propertyKey: string) {
+  Object.defineProperty(target, propertyKey, {
+    writable: false
+  });
+}
+
+class Person {
+  @readonly
+  name: string = 'John';
+}
+
+// 参数装饰器
+function required(target: any, propertyKey: string, parameterIndex: number) {
+  const existingRequiredParameters: number[] = 
+    Reflect.getOwnMetadata('required', target, propertyKey) || [];
+  
+  existingRequiredParameters.push(parameterIndex);
+  
+  Reflect.defineMetadata(
+    'required',
+    existingRequiredParameters,
+    target,
+    propertyKey
+  );
+}
+
+class UserService {
+  createUser(@required name: string, age: number) {
+    // 实现
+  }
+}
+```
+
+## 实战技巧
+
+### 类型安全的API客户端
+
+```typescript
+// API响应类型
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+// API错误类型
+interface ApiError {
+  code: string;
+  message: string;
+  details?: any;
+}
+
+// API客户端
+class ApiClient {
+  private baseURL: string;
+  
+  constructor(baseURL: string) {
+    this.baseURL = baseURL;
+  }
+  
+  async request<T>(
+    endpoint: string,
+    options?: RequestInit
+  ): Promise<ApiResponse<T>> {
+    const response = await fetch(`${this.baseURL}${endpoint}`, options);
+    
+    if (!response.ok) {
+      const error: ApiError = await response.json();
+      throw new Error(error.message);
+    }
+    
+    return response.json();
+  }
+  
+  async get<T>(endpoint: string): Promise<T> {
+    const response = await this.request<T>(endpoint);
+    return response.data;
+  }
+  
+  async post<T, D = any>(endpoint: string, data: D): Promise<T> {
+    const response = await this.request<T>(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return response.data;
+  }
+}
+
+// 使用
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+const api = new ApiClient('https://api.example.com');
+
+// 类型安全的API调用
+const user = await api.get<User>('/users/1');
+console.log(user.name); // ✓ 类型安全
+
+const newUser = await api.post<User, Omit<User, 'id'>>('/users', {
+  name: 'John',
+  email: 'john@example.com'
+});
+```
+
+### 类型安全的状态管理
+
+```typescript
+// Redux类型定义
+interface State {
+  user: User | null;
+  posts: Post[];
+  loading: boolean;
+}
+
+// Action类型
+type Action =
+  | { type: 'SET_USER'; payload: User }
+  | { type: 'SET_POSTS'; payload: Post[] }
+  | { type: 'SET_LOADING'; payload: boolean };
+
+// Reducer
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'SET_USER':
+      return { ...state, user: action.payload };
+    case 'SET_POSTS':
+      return { ...state, posts: action.payload };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    default:
+      return state;
+  }
+}
+
+// Action创建器
+const actions = {
+  setUser: (user: User): Action => ({
+    type: 'SET_USER',
+    payload: user
+  }),
+  
+  setPosts: (posts: Post[]): Action => ({
+    type: 'SET_POSTS',
+    payload: posts
+  }),
+  
+  setLoading: (loading: boolean): Action => ({
+    type: 'SET_LOADING',
+    payload: loading
+  })
+};
+
+// 类型安全的useReducer
+import { useReducer } from 'react';
+
+function useAppState() {
+  const [state, dispatch] = useReducer(reducer, {
+    user: null,
+    posts: [],
+    loading: false
+  });
+  
+  return {
+    state,
+    actions: {
+      setUser: (user: User) => dispatch(actions.setUser(user)),
+      setPosts: (posts: Post[]) => dispatch(actions.setPosts(posts)),
+      setLoading: (loading: boolean) => dispatch(actions.setLoading(loading))
+    }
+  };
+}
+```
+
+### 类型安全的表单
+
+```typescript
+// 表单值类型
+interface FormValues {
+  username: string;
+  email: string;
+  age: number;
+  agree: boolean;
+}
+
+// 表单错误类型
+type FormErrors<T> = {
+  [K in keyof T]?: string;
+};
+
+// 表单Hook
+function useForm<T extends Record<string, any>>(
+  initialValues: T,
+  validate: (values: T) => FormErrors<T>
+) {
+  const [values, setValues] = useState<T>(initialValues);
+  const [errors, setErrors] = useState<FormErrors<T>>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
+  
+  const handleChange = (name: keyof T) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.type === 'checkbox' 
+      ? e.target.checked 
+      : e.target.value;
+    
+    setValues(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleBlur = (name: keyof T) => () => {
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const validationErrors = validate(values);
+    setErrors(validationErrors);
+  };
+  
+  const handleSubmit = (onSubmit: (values: T) => void) => (
+    e: React.FormEvent
+  ) => {
+    e.preventDefault();
+    const validationErrors = validate(values);
+    
+    if (Object.keys(validationErrors).length === 0) {
+      onSubmit(values);
+    } else {
+      setErrors(validationErrors);
+    }
+  };
+  
+  return {
+    values,
+    errors,
+    touched,
+    handleChange,
+    handleBlur,
+    handleSubmit
+  };
+}
+
+// 使用
+function LoginForm() {
+  const { values, errors, touched, handleChange, handleBlur, handleSubmit } = 
+    useForm<FormValues>(
+      {
+        username: '',
+        email: '',
+        age: 0,
+        agree: false
+      },
+      (values) => {
+        const errors: FormErrors<FormValues> = {};
+        
+        if (!values.username) {
+          errors.username = '用户名不能为空';
+        }
+        
+        if (!values.email) {
+          errors.email = '邮箱不能为空';
+        } else if (!/\S+@\S+\.\S+/.test(values.email)) {
+          errors.email = '邮箱格式不正确';
+        }
+        
+        if (values.age < 18) {
+          errors.age = '年龄必须大于18岁';
+        }
+        
+        return errors;
+      }
+    );
+  
+  return (
+    <form onSubmit={handleSubmit(console.log)}>
+      <input
+        name="username"
+        value={values.username}
+        onChange={handleChange('username')}
+        onBlur={handleBlur('username')}
+      />
+      {touched.username && errors.username && (
+        <span>{errors.username}</span>
+      )}
+      
+      {/* 其他字段 */}
+    </form>
+  );
+}
+```
+
+## 性能优化
+
+### 类型推断优化
+
+```typescript
+// ❌ 显式类型注解（不必要）
+const numbers: number[] = [1, 2, 3];
+const user: User = { id: 1, name: 'John' };
+
+// ✅ 类型推断
+const numbers = [1, 2, 3];  // number[]
+const user = { id: 1, name: 'John' };  // { id: number; name: string; }
+
+// ❌ 过度使用any
+function process(data: any) {
+  return data.value;
+}
+
+// ✅ 使用泛型
+function process<T extends { value: any }>(data: T) {
+  return data.value;
+}
+
+// ❌ 重复的类型定义
+interface UserResponse {
+  id: number;
+  name: string;
+  email: string;
+}
+
+interface UserRequest {
+  name: string;
+  email: string;
+}
+
+// ✅ 使用工具类型
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+type UserResponse = User;
+type UserRequest = Omit<User, 'id'>;
+```
+
+## 总结
+
+TypeScript高级特性的核心：
+- 🎯 **高级类型**：联合、交叉、映射、条件类型
+- 🔧 **泛型**：函数、类、接口泛型
+- 🎨 **装饰器**：类、方法、属性装饰器
+- 💡 **实战技巧**：类型安全的API、状态管理、表单
+- 🚀 **性能优化**：类型推断、避免any
+- ✅ **最佳实践**：类型复用、工具类型
+
+记住：**TypeScript的目标是让JavaScript更安全、更易维护！**
+
