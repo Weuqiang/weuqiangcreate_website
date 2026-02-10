@@ -1,0 +1,816 @@
+---
+sidebar_position: 6
+title: MongoDB实战指南
+tags: [数据库, MongoDB, NoSQL, 文档数据库]
+---
+
+# MongoDB实战指南
+
+MongoDB是流行的NoSQL文档数据库，本文将讲解MongoDB的核心概念、CRUD操作、索引优化和集群方案。
+
+## 核心概念
+
+```javascript
+const mongodbConcepts = {
+  // 数据模型
+  dataModel: {
+    database: '数据库',
+    collection: '集合（类似表）',
+    document: '文档（类似行）',
+    field: '字段（类似列）'
+  },
+  
+  // 文档结构
+  document: {
+    _id: 'ObjectId("507f1f77bcf86cd799439011")',  // 主键
+    name: 'John',
+    age: 30,
+    tags: ['tech', 'music'],  // 数组
+    address: {                 // 嵌套文档
+      city: 'Beijing',
+      country: 'China'
+    }
+  },
+  
+  // 特点
+  features: [
+    '灵活的文档模型',
+    '强大的查询语言',
+    '水平扩展',
+    '高可用',
+    '丰富的索引'
+  ]
+};
+```
+
+## CRUD操作
+
+### 插入文档
+
+```javascript
+// 插入单个文档
+db.users.insertOne({
+  name: 'John',
+  age: 30,
+  email: 'john@example.com',
+  tags: ['tech', 'music'],
+  createdAt: new Date()
+});
+
+// 插入多个文档
+db.users.insertMany([
+  { name: 'Alice', age: 25 },
+  { name: 'Bob', age: 35 },
+  { name: 'Charlie', age: 28 }
+]);
+
+// 使用Node.js驱动
+const { MongoClient } = require('mongodb');
+
+class UserRepository {
+  constructor(client) {
+    this.collection = client.db('mydb').collection('users');
+  }
+  
+  async create(user) {
+    const result = await this.collection.insertOne({
+      ...user,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    return result.insertedId;
+  }
+  
+  async createMany(users) {
+    const result = await this.collection.insertMany(
+      users.map(u => ({
+        ...u,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }))
+    );
+    
+    return result.insertedIds;
+  }
+}
+```
+
+### 查询文档
+
+```javascript
+// 查询所有
+db.users.find({});
+
+// 条件查询
+db.users.find({ age: 30 });
+db.users.find({ age: { $gt: 25 } });  // age > 25
+db.users.find({ age: { $gte: 25, $lte: 35 } });  // 25 <= age <= 35
+
+// 逻辑运算
+db.users.find({
+  $or: [
+    { age: { $lt: 25 } },
+    { age: { $gt: 35 } }
+  ]
+});
+
+db.users.find({
+  $and: [
+    { age: { $gte: 25 } },
+    { tags: 'tech' }
+  ]
+});
+
+// 数组查询
+db.users.find({ tags: 'tech' });  // 包含tech标签
+db.users.find({ tags: { $all: ['tech', 'music'] } });  // 包含所有标签
+db.users.find({ tags: { $size: 2 } });  // 数组长度为2
+
+// 嵌套文档查询
+db.users.find({ 'address.city': 'Beijing' });
+
+// 正则表达式
+db.users.find({ name: /^John/ });
+
+// 投影（选择字段）
+db.users.find({}, { name: 1, age: 1, _id: 0 });
+
+// 排序
+db.users.find({}).sort({ age: 1 });  // 升序
+db.users.find({}).sort({ age: -1 }); // 降序
+
+// 分页
+db.users.find({})
+  .skip(20)
+  .limit(10);
+
+// 统计
+db.users.countDocuments({ age: { $gt: 25 } });
+
+// Node.js实现
+class UserRepository {
+  async findById(id) {
+    return await this.collection.findOne({
+      _id: new ObjectId(id)
+    });
+  }
+  
+  async findByEmail(email) {
+    return await this.collection.findOne({ email });
+  }
+  
+  async findAll(options = {}) {
+    const {
+      filter = {},
+      page = 1,
+      pageSize = 20,
+      sort = { createdAt: -1 }
+    } = options;
+    
+    const skip = (page - 1) * pageSize;
+    
+    const [items, total] = await Promise.all([
+      this.collection
+        .find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(pageSize)
+        .toArray(),
+      this.collection.countDocuments(filter)
+    ]);
+    
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize)
+    };
+  }
+}
+```
+
+### 更新文档
+
+```javascript
+// 更新单个文档
+db.users.updateOne(
+  { name: 'John' },
+  { $set: { age: 31 } }
+);
+
+// 更新多个文档
+db.users.updateMany(
+  { age: { $lt: 25 } },
+  { $set: { status: 'young' } }
+);
+
+// 更新操作符
+db.users.updateOne(
+  { name: 'John' },
+  {
+    $set: { age: 31 },           // 设置字段
+    $inc: { views: 1 },          // 增加数值
+    $push: { tags: 'sports' },   // 添加到数组
+    $pull: { tags: 'music' },    // 从数组移除
+    $addToSet: { tags: 'tech' }, // 添加到数组（不重复）
+    $unset: { temp: '' },        // 删除字段
+    $currentDate: { updatedAt: true }  // 设置当前时间
+  }
+);
+
+// 替换文档
+db.users.replaceOne(
+  { name: 'John' },
+  {
+    name: 'John',
+    age: 31,
+    email: 'john@example.com'
+  }
+);
+
+// upsert（不存在则插入）
+db.users.updateOne(
+  { email: 'john@example.com' },
+  { $set: { name: 'John', age: 30 } },
+  { upsert: true }
+);
+
+// Node.js实现
+class UserRepository {
+  async update(id, updates) {
+    const result = await this.collection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          ...updates,
+          updatedAt: new Date()
+        }
+      }
+    );
+    
+    return result.modifiedCount > 0;
+  }
+  
+  async incrementViews(id) {
+    await this.collection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $inc: { views: 1 },
+        $set: { updatedAt: new Date() }
+      }
+    );
+  }
+  
+  async addTag(id, tag) {
+    await this.collection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $addToSet: { tags: tag },
+        $set: { updatedAt: new Date() }
+      }
+    );
+  }
+}
+```
+
+### 删除文档
+
+```javascript
+// 删除单个文档
+db.users.deleteOne({ name: 'John' });
+
+// 删除多个文档
+db.users.deleteMany({ age: { $lt: 18 } });
+
+// 删除所有文档
+db.users.deleteMany({});
+
+// Node.js实现
+class UserRepository {
+  async delete(id) {
+    const result = await this.collection.deleteOne({
+      _id: new ObjectId(id)
+    });
+    
+    return result.deletedCount > 0;
+  }
+  
+  async deleteByEmail(email) {
+    const result = await this.collection.deleteOne({ email });
+    return result.deletedCount > 0;
+  }
+}
+```
+
+## 聚合管道
+
+```javascript
+// 聚合示例
+db.orders.aggregate([
+  // 1. 匹配
+  { $match: { status: 'completed' } },
+  
+  // 2. 分组统计
+  {
+    $group: {
+      _id: '$userId',
+      totalAmount: { $sum: '$amount' },
+      orderCount: { $sum: 1 },
+      avgAmount: { $avg: '$amount' }
+    }
+  },
+  
+  // 3. 排序
+  { $sort: { totalAmount: -1 } },
+  
+  // 4. 限制
+  { $limit: 10 },
+  
+  // 5. 关联查询
+  {
+    $lookup: {
+      from: 'users',
+      localField: '_id',
+      foreignField: '_id',
+      as: 'user'
+    }
+  },
+  
+  // 6. 展开数组
+  { $unwind: '$user' },
+  
+  // 7. 投影
+  {
+    $project: {
+      userName: '$user.name',
+      totalAmount: 1,
+      orderCount: 1,
+      avgAmount: 1
+    }
+  }
+]);
+
+// 复杂聚合示例
+class OrderAnalytics {
+  async getUserOrderStats(startDate, endDate) {
+    return await db.orders.aggregate([
+      // 时间范围过滤
+      {
+        $match: {
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate
+          },
+          status: 'completed'
+        }
+      },
+      
+      // 按用户分组
+      {
+        $group: {
+          _id: '$userId',
+          totalAmount: { $sum: '$amount' },
+          orderCount: { $sum: 1 },
+          avgAmount: { $avg: '$amount' },
+          maxAmount: { $max: '$amount' },
+          minAmount: { $min: '$amount' }
+        }
+      },
+      
+      // 关联用户信息
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      
+      { $unwind: '$user' },
+      
+      // 添加计算字段
+      {
+        $addFields: {
+          userName: '$user.name',
+          userEmail: '$user.email'
+        }
+      },
+      
+      // 排序
+      { $sort: { totalAmount: -1 } },
+      
+      // 分页
+      { $skip: 0 },
+      { $limit: 20 }
+    ]).toArray();
+  }
+  
+  async getDailySales(startDate, endDate) {
+    return await db.orders.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: 'completed'
+        }
+      },
+      
+      // 按日期分组
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$createdAt'
+            }
+          },
+          totalAmount: { $sum: '$amount' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      
+      { $sort: { _id: 1 } }
+    ]).toArray();
+  }
+}
+```
+
+## 索引优化
+
+### 创建索引
+
+```javascript
+// 单字段索引
+db.users.createIndex({ email: 1 });  // 升序
+db.users.createIndex({ age: -1 });   // 降序
+
+// 复合索引
+db.users.createIndex({ name: 1, age: -1 });
+
+// 唯一索引
+db.users.createIndex({ email: 1 }, { unique: true });
+
+// 稀疏索引（只索引存在该字段的文档）
+db.users.createIndex({ phone: 1 }, { sparse: true });
+
+// TTL索引（自动删除过期文档）
+db.sessions.createIndex(
+  { createdAt: 1 },
+  { expireAfterSeconds: 3600 }  // 1小时后过期
+);
+
+// 文本索引（全文搜索）
+db.articles.createIndex({ title: 'text', content: 'text' });
+
+// 地理空间索引
+db.places.createIndex({ location: '2dsphere' });
+
+// 查看索引
+db.users.getIndexes();
+
+// 删除索引
+db.users.dropIndex('email_1');
+db.users.dropIndexes();  // 删除所有索引（除了_id）
+```
+
+### 索引策略
+
+```javascript
+class IndexStrategy {
+  // 1. 为常用查询创建索引
+  async createQueryIndexes() {
+    // 单字段查询
+    await db.users.createIndex({ email: 1 });
+    
+    // 范围查询
+    await db.orders.createIndex({ createdAt: -1 });
+    
+    // 排序查询
+    await db.products.createIndex({ price: 1 });
+  }
+  
+  // 2. 复合索引优化
+  async createCompoundIndexes() {
+    // 查询 + 排序
+    await db.orders.createIndex({
+      userId: 1,
+      createdAt: -1
+    });
+    
+    // 等值查询在前，范围查询在后
+    await db.orders.createIndex({
+      status: 1,      // 等值
+      amount: 1       // 范围
+    });
+  }
+  
+  // 3. 覆盖索引
+  async createCoveringIndexes() {
+    // 查询只需要索引中的字段
+    await db.users.createIndex({
+      email: 1,
+      name: 1,
+      age: 1
+    });
+    
+    // 查询：db.users.find({ email: 'john@example.com' }, { name: 1, age: 1, _id: 0 })
+    // 不需要读取文档，直接从索引返回
+  }
+  
+  // 4. 分析查询性能
+  async analyzeQuery() {
+    const explain = await db.users
+      .find({ email: 'john@example.com' })
+      .explain('executionStats');
+    
+    console.log({
+      executionTimeMs: explain.executionStats.executionTimeMillis,
+      totalDocsExamined: explain.executionStats.totalDocsExamined,
+      totalKeysExamined: explain.executionStats.totalKeysExamined,
+      indexUsed: explain.executionStats.executionStages.indexName
+    });
+  }
+}
+```
+
+## 数据建模
+
+### 嵌入式文档 vs 引用
+
+```javascript
+// 1. 嵌入式文档（适合一对少）
+const userWithEmbedded = {
+  _id: ObjectId('...'),
+  name: 'John',
+  email: 'john@example.com',
+  address: {
+    street: '123 Main St',
+    city: 'Beijing',
+    country: 'China'
+  },
+  phones: [
+    { type: 'home', number: '123-456-7890' },
+    { type: 'work', number: '098-765-4321' }
+  ]
+};
+
+// 优点：一次查询获取所有数据
+// 缺点：文档大小限制（16MB），更新复杂
+
+// 2. 引用（适合一对多）
+const userWithReference = {
+  _id: ObjectId('user1'),
+  name: 'John',
+  email: 'john@example.com'
+};
+
+const orders = [
+  {
+    _id: ObjectId('order1'),
+    userId: ObjectId('user1'),
+    amount: 100
+  },
+  {
+    _id: ObjectId('order2'),
+    userId: ObjectId('user1'),
+    amount: 200
+  }
+];
+
+// 优点：灵活，无大小限制
+// 缺点：需要多次查询或使用$lookup
+
+// 3. 混合模式
+const blogPost = {
+  _id: ObjectId('...'),
+  title: 'MongoDB Guide',
+  content: '...',
+  author: {
+    _id: ObjectId('user1'),
+    name: 'John'  // 冗余常用字段
+  },
+  comments: [
+    {
+      _id: ObjectId('...'),
+      userId: ObjectId('user2'),
+      userName: 'Alice',  // 冗余
+      content: 'Great post!',
+      createdAt: new Date()
+    }
+  ]
+};
+```
+
+### 设计模式
+
+```javascript
+// 1. 属性模式（处理多变的属性）
+const product = {
+  _id: ObjectId('...'),
+  name: 'Laptop',
+  specs: [
+    { key: 'CPU', value: 'Intel i7' },
+    { key: 'RAM', value: '16GB' },
+    { key: 'Storage', value: '512GB SSD' }
+  ]
+};
+
+// 创建索引
+db.products.createIndex({ 'specs.key': 1, 'specs.value': 1 });
+
+// 2. 桶模式（时序数据）
+const sensorData = {
+  _id: ObjectId('...'),
+  sensorId: 'sensor1',
+  date: '2024-01-01',
+  measurements: [
+    { time: '00:00:00', temperature: 20, humidity: 60 },
+    { time: '00:01:00', temperature: 20.5, humidity: 61 },
+    // ... 每分钟一条，一天1440条
+  ]
+};
+
+// 3. 计算模式（预计算）
+const article = {
+  _id: ObjectId('...'),
+  title: 'MongoDB Guide',
+  content: '...',
+  stats: {
+    views: 1000,
+    likes: 50,
+    comments: 10
+  }
+};
+
+// 更新统计
+db.articles.updateOne(
+  { _id: articleId },
+  { $inc: { 'stats.views': 1 } }
+);
+```
+
+## 事务
+
+```javascript
+// MongoDB 4.0+支持多文档事务
+const session = client.startSession();
+
+try {
+  await session.withTransaction(async () => {
+    // 扣款
+    await db.accounts.updateOne(
+      { _id: fromAccountId },
+      { $inc: { balance: -amount } },
+      { session }
+    );
+    
+    // 加款
+    await db.accounts.updateOne(
+      { _id: toAccountId },
+      { $inc: { balance: amount } },
+      { session }
+    );
+    
+    // 记录流水
+    await db.transactions.insertOne(
+      {
+        from: fromAccountId,
+        to: toAccountId,
+        amount,
+        createdAt: new Date()
+      },
+      { session }
+    );
+  });
+  
+  console.log('Transaction committed');
+} catch (error) {
+  console.error('Transaction aborted:', error);
+} finally {
+  await session.endSession();
+}
+```
+
+## 副本集
+
+```javascript
+// 副本集配置
+rs.initiate({
+  _id: 'myReplicaSet',
+  members: [
+    { _id: 0, host: 'mongo1:27017', priority: 2 },
+    { _id: 1, host: 'mongo2:27017', priority: 1 },
+    { _id: 2, host: 'mongo3:27017', arbiterOnly: true }
+  ]
+});
+
+// 查看副本集状态
+rs.status();
+
+// 读偏好设置
+const client = new MongoClient(uri, {
+  readPreference: 'secondaryPreferred'  // 优先从从节点读
+});
+
+// 写关注
+await collection.insertOne(
+  { name: 'John' },
+  { writeConcern: { w: 'majority', j: true } }
+);
+```
+
+## 分片集群
+
+```javascript
+// 启用分片
+sh.enableSharding('mydb');
+
+// 创建分片键
+sh.shardCollection('mydb.users', { userId: 'hashed' });
+
+// 查看分片状态
+sh.status();
+
+// 分片策略
+const shardingStrategies = {
+  // 1. 哈希分片（均匀分布）
+  hashed: {
+    key: { userId: 'hashed' },
+    pros: '数据均匀分布',
+    cons: '范围查询性能差'
+  },
+  
+  // 2. 范围分片（范围查询友好）
+  ranged: {
+    key: { createdAt: 1 },
+    pros: '范围查询快',
+    cons: '可能数据倾斜'
+  },
+  
+  // 3. 复合分片键
+  compound: {
+    key: { country: 1, userId: 1 },
+    pros: '灵活控制分布',
+    cons: '设计复杂'
+  }
+};
+```
+
+## 性能优化
+
+```javascript
+const optimizationTips = {
+  // 1. 使用投影
+  projection: async () => {
+    // ❌ 查询所有字段
+    await db.users.find({});
+    
+    // ✅ 只查询需要的字段
+    await db.users.find({}, { name: 1, email: 1 });
+  },
+  
+  // 2. 使用索引
+  indexing: async () => {
+    // 创建合适的索引
+    await db.users.createIndex({ email: 1 });
+    
+    // 分析查询
+    const explain = await db.users.find({ email: 'john@example.com' }).explain();
+  },
+  
+  // 3. 限制返回数量
+  limiting: async () => {
+    await db.users.find({}).limit(100);
+  },
+  
+  // 4. 使用批量操作
+  bulkOps: async () => {
+    const bulk = db.users.initializeUnorderedBulkOp();
+    bulk.insert({ name: 'User1' });
+    bulk.insert({ name: 'User2' });
+    bulk.insert({ name: 'User3' });
+    await bulk.execute();
+  },
+  
+  // 5. 避免大文档
+  documentSize: {
+    problem: '文档大小限制16MB',
+    solution: '拆分大文档，使用GridFS存储大文件'
+  }
+};
+```
+
+## 总结
+
+MongoDB核心知识：
+- 📄 **文档模型**：灵活的JSON文档结构
+- 🔍 **查询语言**：强大的查询和聚合能力
+- 📊 **索引优化**：合理设计索引提升性能
+- 🏗️ **数据建模**：嵌入 vs 引用，选择合适模式
+- 🔄 **副本集**：高可用和读写分离
+- 🌐 **分片集群**：水平扩展支持海量数据
+
+记住：**MongoDB适合灵活多变的数据模型和快速迭代！**
+
