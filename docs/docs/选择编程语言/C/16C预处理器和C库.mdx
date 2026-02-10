@@ -1,17 +1,17 @@
 ---
 sidebar_position: 16
-title: C预处理器和C库
+title: CC
 ---
 
-# C预处理器和C库
+# CC
 
-## C预处理器
+## C
 
-C预处理器在编译之前处理源代码，执行文本替换、文件包含、条件编译等操作。预处理指令以`#`开头。
+C`#`
 
-### #define - 宏定义
+### #define - 
 
-#### 对象式宏
+#### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -32,7 +32,7 @@ int main() {
 }
 ```
 
-#### 函数式宏
+#### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -57,17 +57,17 @@ int main() {
 }
 ```
 
-:::warning 宏的陷阱
-宏是简单的文本替换，需要注意括号的使用！
+:::warning 
+
 :::
 
 ```c showLineNumbers
 #include <stdio.h>
 
-// 错误的宏定义
+// 
 #define SQUARE_BAD(x) x * x
 
-// 正确的宏定义
+// 
 #define SQUARE_GOOD(x) ((x) * (x))
 
 int main() {
@@ -81,9 +81,9 @@ int main() {
 }
 ```
 
-#### 多行宏
+#### 
 
-使用反斜杠`\`连接多行。
+`\`
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -110,7 +110,7 @@ int main() {
 }
 ```
 
-#### 字符串化运算符 #
+####  #
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -122,8 +122,8 @@ int main() {
     int age = 25;
     int score = 95;
     
-    PRINT_VAR(age);    // 输出: age = 25
-    PRINT_VAR(score);  // 输出: score = 95
+    PRINT_VAR(age);    // : age = 25
+    PRINT_VAR(score);  // : score = 95
     
     printf("%s\n", TO_STRING(Hello World));  // "Hello World"
     
@@ -131,7 +131,7 @@ int main() {
 }
 ```
 
-#### 连接运算符 ##
+####  ##
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -156,16 +156,16 @@ int main() {
 }
 ```
 
-#### 可变参数宏
+#### 
 
 ```c showLineNumbers
 #include <stdio.h>
 
-// C99标准
+// C99
 #define DEBUG(format, ...) \
     printf("[DEBUG] " format "\n", ##__VA_ARGS__)
 
-// C23标准（更清晰）
+// C23
 #define LOG(format, args...) \
     printf("[LOG] " format "\n", ##args)
 
@@ -181,7 +181,7 @@ int main() {
 }
 ```
 
-### #undef - 取消宏定义
+### #undef - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -200,27 +200,27 @@ int main() {
 }
 ```
 
-### #include - 文件包含
+### #include - 
 
-#### 标准库头文件
+#### 
 
 ```c
-#include <stdio.h>   // 系统头文件
+#include <stdio.h>   // 
 #include <stdlib.h>
 #include <string.h>
 ```
 
-#### 自定义头文件
+#### 
 
 ```c
-#include "myheader.h"  // 当前目录或指定路径
+#include "myheader.h"  // 
 ```
 
-**区别：**
-- `<>`: 在系统标准路径中查找
-- `""`: 先在当前目录查找，再在系统路径查找
+****
+- `<>`: 
+- `""`: 
 
-### 条件编译
+### 
 
 #### #ifdef / #ifndef
 
@@ -264,7 +264,7 @@ int main() {
 }
 ```
 
-#### defined运算符
+#### defined
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -287,17 +287,17 @@ int main() {
 }
 ```
 
-### 预定义宏
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    printf("File: %s\n", __FILE__);      // 当前文件名
-    printf("Line: %d\n", __LINE__);      // 当前行号
-    printf("Date: %s\n", __DATE__);      // 编译日期
-    printf("Time: %s\n", __TIME__);      // 编译时间
-    printf("Function: %s\n", __func__);  // 当前函数名（C99）
+    printf("File: %s\n", __FILE__);      // 
+    printf("Line: %d\n", __LINE__);      // 
+    printf("Date: %s\n", __DATE__);      // 
+    printf("Time: %s\n", __TIME__);      // 
+    printf("Function: %s\n", __func__);  // C99
     
     #ifdef __STDC__
         printf("Standard C\n");
@@ -311,7 +311,7 @@ int main() {
 }
 ```
 
-### #error和#warning
+### #error#warning
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -335,16 +335,16 @@ int main() {
 ### #pragma
 
 ```c showLineNumbers
-// 禁用特定警告
+// 
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
-// 优化级别
+// 
 #pragma GCC optimize("O3")
 
-// 一次性包含保护
+// 
 #pragma once
 
-// 结构体对齐
+// 
 #pragma pack(1)
 struct Data {
     char c;
@@ -353,44 +353,44 @@ struct Data {
 #pragma pack()
 ```
 
-## 头文件保护
+## 
 
-### 传统方法
+### 
 
 ```c showLineNumbers
 // myheader.h
 #ifndef MYHEADER_H
 #define MYHEADER_H
 
-// 头文件内容
+// 
 void my_function(void);
 
 #endif // MYHEADER_H
 ```
 
-### 现代方法
+### 
 
 ```c showLineNumbers
 // myheader.h
 #pragma once
 
-// 头文件内容
+// 
 void my_function(void);
 ```
 
-## 内联函数
+## 
 
-C99引入了内联函数，作为宏的替代方案。
+C99
 
 ```c showLineNumbers
 #include <stdio.h>
 
-// 内联函数
+// 
 inline int square(int x) {
     return x * x;
 }
 
-// 宏
+// 
 #define SQUARE(x) ((x) * (x))
 
 int main() {
@@ -403,39 +403,39 @@ int main() {
 }
 ```
 
-**内联函数 vs 宏：**
+** vs **
 
-| 特性 | 内联函数 | 宏 |
+|  |  |  |
 |------|---------|-----|
-| 类型检查 | 有 | 无 |
-| 调试 | 容易 | 困难 |
-| 副作用 | 无 | 可能有 |
-| 代码膨胀 | 编译器控制 | 总是展开 |
-| 性能 | 编译器优化 | 简单替换 |
+|  |  |  |
+|  |  |  |
+|  |  |  |
+|  |  |  |
+|  |  |  |
 
-## C标准库
+## C
 
-### 常用头文件
+### 
 
-#### stdio.h - 标准输入输出
+#### stdio.h - 
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 文件操作
+    // 
     FILE *fp = fopen("test.txt", "w");
     if (fp != NULL) {
         fprintf(fp, "Hello, File!\n");
         fclose(fp);
     }
     
-    // 格式化输入输出
+    // 
     int num;
     printf("Enter a number: ");
     scanf("%d", &num);
     
-    // 字符输入输出
+    // 
     char ch = getchar();
     putchar(ch);
     
@@ -443,14 +443,14 @@ int main() {
 }
 ```
 
-#### stdlib.h - 标准工具库
+#### stdlib.h - 
 
 ```c showLineNumbers
 #include <stdio.h>
 #include <stdlib.h>
 
 int main() {
-    // 内存分配
+    // 
     int *arr = (int*)malloc(5 * sizeof(int));
     if (arr != NULL) {
         for (int i = 0; i < 5; i++) {
@@ -459,24 +459,24 @@ int main() {
         free(arr);
     }
     
-    // 字符串转换
+    // 
     char str[] = "123";
     int num = atoi(str);
     printf("num = %d\n", num);
     
-    // 随机数
+    // 
     srand(time(NULL));
     int random = rand() % 100;
     printf("Random: %d\n", random);
     
-    // 程序退出
+    // 
     // exit(0);
     
     return 0;
 }
 ```
 
-#### string.h - 字符串处理
+#### string.h - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -486,23 +486,23 @@ int main() {
     char str1[50] = "Hello";
     char str2[] = " World";
     
-    // 字符串长度
+    // 
     printf("Length: %zu\n", strlen(str1));
     
-    // 字符串复制
+    // 
     char str3[50];
     strcpy(str3, str1);
     
-    // 字符串连接
+    // 
     strcat(str1, str2);
     printf("%s\n", str1);
     
-    // 字符串比较
+    // 
     if (strcmp(str1, str3) == 0) {
         printf("Equal\n");
     }
     
-    // 字符串查找
+    // 
     char *p = strstr(str1, "World");
     if (p != NULL) {
         printf("Found: %s\n", p);
@@ -512,7 +512,7 @@ int main() {
 }
 ```
 
-#### math.h - 数学函数
+#### math.h - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -536,31 +536,31 @@ int main() {
 }
 ```
 
-#### time.h - 时间处理
+#### time.h - 
 
 ```c showLineNumbers
 #include <stdio.h>
 #include <time.h>
 
 int main() {
-    // 获取当前时间
+    // 
     time_t now = time(NULL);
     
-    // 转换为本地时间
+    // 
     struct tm *local = localtime(&now);
     
-    // 格式化输出
+    // 
     printf("Current time: %s", asctime(local));
     
-    // 自定义格式
+    // 
     char buffer[80];
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", local);
     printf("Formatted: %s\n", buffer);
     
-    // 计时
+    // 
     clock_t start = clock();
     
-    // 执行一些操作
+    // 
     for (int i = 0; i < 1000000; i++);
     
     clock_t end = clock();
@@ -571,7 +571,7 @@ int main() {
 }
 ```
 
-#### ctype.h - 字符处理
+#### ctype.h - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -592,9 +592,9 @@ int main() {
 }
 ```
 
-## 实用示例
+## 
 
-### 调试宏
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -618,7 +618,7 @@ int main() {
 }
 ```
 
-### 断言宏
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -645,12 +645,12 @@ int main() {
 }
 ```
 
-### 跨平台代码
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
 
-// 平台检测
+// 
 #ifdef _WIN32
     #define PLATFORM "Windows"
     #include <windows.h>
@@ -677,24 +677,24 @@ int main() {
 }
 ```
 
-### 配置管理
+### 
 
 ```c showLineNumbers
 // config.h
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// 功能开关
+// 
 #define FEATURE_LOGGING 1
 #define FEATURE_CACHE 1
 #define FEATURE_NETWORK 0
 
-// 配置参数
+// 
 #define MAX_USERS 100
 #define BUFFER_SIZE 1024
 #define TIMEOUT 30
 
-// 版本信息
+// 
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 0
 #define VERSION_PATCH 0
@@ -729,7 +729,7 @@ int main() {
 }
 ```
 
-### 性能测试宏
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -763,28 +763,28 @@ int main() {
 }
 ```
 
-## 最佳实践
+## 
 
-### 1. 宏命名规范
+### 1. 
 
 ```c
-// 使用大写字母和下划线
+// 
 #define MAX_SIZE 100
 #define PI 3.14159
 #define SQUARE(x) ((x) * (x))
 ```
 
-### 2. 总是使用括号
+### 2. 
 
 ```c
-// 错误
+// 
 #define MULTIPLY(a, b) a * b
 
-// 正确
+// 
 #define MULTIPLY(a, b) ((a) * (b))
 ```
 
-### 3. 使用do-while(0)包装多语句宏
+### 3. do-while(0)
 
 ```c
 #define SWAP(a, b) \
@@ -795,38 +795,38 @@ int main() {
     } while(0)
 ```
 
-### 4. 优先使用内联函数而非宏
+### 4. 
 
 ```c
-// 宏（不推荐用于复杂逻辑）
+// 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-// 内联函数（推荐）
+// 
 inline int max(int a, int b) {
     return a > b ? a : b;
 }
 ```
 
-### 5. 头文件保护
+### 5. 
 
 ```c
 #ifndef MYHEADER_H
 #define MYHEADER_H
 
-// 头文件内容
+// 
 
 #endif
 ```
 
-或使用：
+
 
 ```c
 #pragma once
 
-// 头文件内容
+// 
 ```
 
-## 相关资源
+## 
 
 - [C Preprocessor - cppreference](https://en.cppreference.com/w/c/preprocessor)
 - [C Standard Library - cppreference](https://en.cppreference.com/w/c/header)

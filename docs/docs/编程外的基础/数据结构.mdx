@@ -1,23 +1,23 @@
 ---
 sidebarDepth: 4
 ---
-# 数据结构
+# 
 
-数据结构是计算机存储、组织数据的方式，选择合适的数据结构能显著提升程序性能。
 
-## 二叉树
 
-### 二叉树类型
+## 
 
-**满二叉树**：每一层的节点数都达到最大值。
+### 
 
-**完全二叉树**：除最后一层外，其他层节点数达到最大，且最后一层节点从左到右连续排列。
+****
 
-**二叉查找树（BST）**：左子树所有节点 < 根节点 < 右子树所有节点，子树也满足此规则。
+****
 
-**平衡二叉树（AVL）**：任意节点的左右子树高度差不超过 1，通过旋转保持平衡。
+**BST** <  < 
 
-### 二叉查找树实现
+**AVL** 1
+
+### 
 
 ```javascript
 class Node {
@@ -33,7 +33,7 @@ class BST {
     this.root = null;
   }
 
-  // 插入节点
+  // 
   insert(data) {
     const node = new Node(data);
     
@@ -60,7 +60,7 @@ class BST {
     }
   }
 
-  // 查找节点
+  // 
   search(data) {
     let current = this.root;
     while (current) {
@@ -70,7 +70,7 @@ class BST {
     return null;
   }
 
-  // 查找最小值
+  // 
   findMin(node = this.root) {
     while (node && node.left) {
       node = node.left;
@@ -78,7 +78,7 @@ class BST {
     return node;
   }
 
-  // 查找最大值
+  // 
   findMax(node = this.root) {
     while (node && node.right) {
       node = node.right;
@@ -86,7 +86,7 @@ class BST {
     return node;
   }
 
-  // 删除节点
+  // 
   remove(data) {
     this.root = this.removeNode(this.root, data);
   }
@@ -101,19 +101,19 @@ class BST {
       node.right = this.removeNode(node.right, data);
       return node;
     } else {
-      // 找到要删除的节点
+      // 
       
-      // 情况1：叶子节点
+      // 1
       if (!node.left && !node.right) {
         return null;
       }
       
-      // 情况2：只有一个子节点
+      // 2
       if (!node.left) return node.right;
       if (!node.right) return node.left;
       
-      // 情况3：有两个子节点
-      // 找到右子树的最小值替换当前节点
+      // 3
+      // 
       const minRight = this.findMin(node.right);
       node.data = minRight.data;
       node.right = this.removeNode(node.right, minRight.data);
@@ -122,19 +122,19 @@ class BST {
   }
 }
 
-// 使用示例
+// 
 const tree = new BST();
 [10, 5, 15, 3, 7, 12, 20].forEach(val => tree.insert(val));
 console.log(tree.search(7));  // Node { data: 7, ... }
 console.log(tree.findMin());  // Node { data: 3, ... }
 ```
 
-### 二叉树遍历
+### 
 
-**递归遍历**：
+****
 
 ```javascript
-// 前序遍历（根-左-右）
+// --
 function preOrder(node, result = []) {
   if (node) {
     result.push(node.data);
@@ -144,7 +144,7 @@ function preOrder(node, result = []) {
   return result;
 }
 
-// 中序遍历（左-根-右）- BST 中序遍历结果是有序的
+// --- BST 
 function inOrder(node, result = []) {
   if (node) {
     inOrder(node.left, result);
@@ -154,7 +154,7 @@ function inOrder(node, result = []) {
   return result;
 }
 
-// 后序遍历（左-右-根）
+// --
 function postOrder(node, result = []) {
   if (node) {
     postOrder(node.left, result);
@@ -165,10 +165,10 @@ function postOrder(node, result = []) {
 }
 ```
 
-**非递归遍历**：
+****
 
 ```javascript
-// 前序遍历（迭代）
+// 
 function preOrderIterative(root) {
   if (!root) return [];
   
@@ -179,7 +179,7 @@ function preOrderIterative(root) {
     const node = stack.pop();
     result.push(node.data);
     
-    // 先压右子树，再压左子树（栈是后进先出）
+    // 
     if (node.right) stack.push(node.right);
     if (node.left) stack.push(node.left);
   }
@@ -187,14 +187,14 @@ function preOrderIterative(root) {
   return result;
 }
 
-// 中序遍历（迭代）
+// 
 function inOrderIterative(root) {
   const stack = [];
   const result = [];
   let current = root;
   
   while (current || stack.length) {
-    // 一直往左走到底
+    // 
     while (current) {
       stack.push(current);
       current = current.left;
@@ -208,7 +208,7 @@ function inOrderIterative(root) {
   return result;
 }
 
-// 后序遍历（迭代）
+// 
 function postOrderIterative(root) {
   if (!root) return [];
   
@@ -217,7 +217,7 @@ function postOrderIterative(root) {
   
   while (stack.length) {
     const node = stack.pop();
-    result.unshift(node.data);  // 插入到数组开头
+    result.unshift(node.data);  // 
     
     if (node.left) stack.push(node.left);
     if (node.right) stack.push(node.right);
@@ -226,7 +226,7 @@ function postOrderIterative(root) {
   return result;
 }
 
-// 层序遍历（广度优先）
+// 
 function levelOrder(root) {
   if (!root) return [];
   
@@ -245,16 +245,16 @@ function levelOrder(root) {
 }
 ```
 
-### 树的深度和高度
+### 
 
 ```javascript
-// 计算树的最大深度
+// 
 function maxDepth(node) {
   if (!node) return 0;
   return Math.max(maxDepth(node.left), maxDepth(node.right)) + 1;
 }
 
-// 计算树的最小深度
+// 
 function minDepth(node) {
   if (!node) return 0;
   if (!node.left) return minDepth(node.right) + 1;
@@ -262,7 +262,7 @@ function minDepth(node) {
   return Math.min(minDepth(node.left), minDepth(node.right)) + 1;
 }
 
-// 判断是否为平衡二叉树
+// 
 function isBalanced(node) {
   if (!node) return true;
   
@@ -275,11 +275,11 @@ function isBalanced(node) {
 }
 ```
 
-## 链表
+## 
 
-链表是一种线性数据结构，每个节点包含数据和指向下一个节点的指针。
 
-### 单向链表实现
+
+### 
 
 ```javascript
 class Node {
@@ -295,7 +295,7 @@ class LinkedList {
     this.length = 0;
   }
 
-  // 追加节点
+  // 
   append(data) {
     const node = new Node(data);
     
@@ -312,7 +312,7 @@ class LinkedList {
     this.length++;
   }
 
-  // 在指定位置插入节点
+  // 
   insert(data, position) {
     if (position < 0 || position > this.length) {
       return false;
@@ -342,7 +342,7 @@ class LinkedList {
     return true;
   }
 
-  // 删除指定位置的节点
+  // 
   removeAt(position) {
     if (position < 0 || position >= this.length) {
       return null;
@@ -369,7 +369,7 @@ class LinkedList {
     return current.data;
   }
 
-  // 查找节点位置
+  // 
   indexOf(data) {
     let current = this.head;
     let index = 0;
@@ -385,23 +385,23 @@ class LinkedList {
     return -1;
   }
 
-  // 删除指定值的节点
+  // 
   remove(data) {
     const index = this.indexOf(data);
     return this.removeAt(index);
   }
 
-  // 获取链表大小
+  // 
   size() {
     return this.length;
   }
 
-  // 判断是否为空
+  // 
   isEmpty() {
     return this.length === 0;
   }
 
-  // 转换为数组
+  // 
   toArray() {
     const arr = [];
     let current = this.head;
@@ -414,25 +414,25 @@ class LinkedList {
     return arr;
   }
 
-  // 打印链表
+  // 
   toString() {
     return this.toArray().join(' -> ');
   }
 }
 
-// 使用示例
+// 
 const list = new LinkedList();
 list.append(1);
 list.append(2);
 list.append(3);
-list.insert(0, 0);  // 在开头插入
+list.insert(0, 0);  // 
 console.log(list.toString());  // 0 -> 1 -> 2 -> 3
 ```
 
-### 链表常见操作
+### 
 
 ```javascript
-// 反转链表
+// 
 function reverseList(head) {
   let prev = null;
   let current = head;
@@ -447,7 +447,7 @@ function reverseList(head) {
   return prev;
 }
 
-// 检测链表是否有环
+// 
 function hasCycle(head) {
   let slow = head;
   let fast = head;
@@ -464,7 +464,7 @@ function hasCycle(head) {
   return false;
 }
 
-// 找到链表的中间节点
+// 
 function findMiddle(head) {
   let slow = head;
   let fast = head;
@@ -477,7 +477,7 @@ function findMiddle(head) {
   return slow;
 }
 
-// 合并两个有序链表
+// 
 function mergeTwoLists(l1, l2) {
   const dummy = new Node(0);
   let current = dummy;
@@ -497,7 +497,7 @@ function mergeTwoLists(l1, l2) {
   return dummy.next;
 }
 
-// 删除链表倒数第 n 个节点
+//  n 
 function removeNthFromEnd(head, n) {
   const dummy = new Node(0);
   dummy.next = head;
@@ -505,28 +505,28 @@ function removeNthFromEnd(head, n) {
   let fast = dummy;
   let slow = dummy;
   
-  // fast 先走 n+1 步
+  // fast  n+1 
   for (let i = 0; i <= n; i++) {
     fast = fast.next;
   }
   
-  // fast 和 slow 一起走
+  // fast  slow 
   while (fast) {
     fast = fast.next;
     slow = slow.next;
   }
   
-  // 删除节点
+  // 
   slow.next = slow.next.next;
   return dummy.next;
 }
 ```
 
-## 栈和队列
+## 
 
-### 栈（Stack）
+### Stack
 
-栈是后进先出（LIFO）的数据结构。
+LIFO
 
 ```javascript
 class Stack {
@@ -559,7 +559,7 @@ class Stack {
   }
 }
 
-// 应用：括号匹配
+// 
 function isValidParentheses(s) {
   const stack = new Stack();
   const map = { ')': '(', '}': '{', ']': '[' };
@@ -578,9 +578,9 @@ function isValidParentheses(s) {
 }
 ```
 
-### 队列（Queue）
+### Queue
 
-队列是先进先出（FIFO）的数据结构。
+FIFO
 
 ```javascript
 class Queue {
@@ -613,7 +613,7 @@ class Queue {
   }
 }
 
-// 循环队列（更高效）
+// 
 class CircularQueue {
   constructor(k) {
     this.queue = new Array(k);
@@ -665,9 +665,9 @@ class CircularQueue {
 }
 ```
 
-## 哈希表
+## 
 
-哈希表通过哈希函数将键映射到数组索引，实现 O(1) 的查找、插入、删除。
+ O(1) 
 
 ```javascript
 class HashTable {
@@ -675,7 +675,7 @@ class HashTable {
     this.keyMap = new Array(size);
   }
 
-  // 哈希函数
+  // 
   _hash(key) {
     let total = 0;
     const PRIME = 31;
@@ -689,7 +689,7 @@ class HashTable {
     return total;
   }
 
-  // 设置键值对
+  // 
   set(key, value) {
     const index = this._hash(key);
     
@@ -697,7 +697,7 @@ class HashTable {
       this.keyMap[index] = [];
     }
     
-    // 检查是否已存在该键
+    // 
     for (let i = 0; i < this.keyMap[index].length; i++) {
       if (this.keyMap[index][i][0] === key) {
         this.keyMap[index][i][1] = value;
@@ -708,7 +708,7 @@ class HashTable {
     this.keyMap[index].push([key, value]);
   }
 
-  // 获取值
+  // 
   get(key) {
     const index = this._hash(key);
     
@@ -723,7 +723,7 @@ class HashTable {
     return undefined;
   }
 
-  // 删除键值对
+  // 
   delete(key) {
     const index = this._hash(key);
     
@@ -739,7 +739,7 @@ class HashTable {
     return false;
   }
 
-  // 获取所有键
+  // 
   keys() {
     const keys = [];
     
@@ -754,7 +754,7 @@ class HashTable {
     return keys;
   }
 
-  // 获取所有值
+  // 
   values() {
     const values = [];
     
@@ -773,37 +773,37 @@ class HashTable {
 }
 ```
 
-## 图
+## 
 
-图由节点（顶点）和边组成，可以表示复杂的关系网络。
+
 
 ```javascript
-// 邻接表表示法
+// 
 class Graph {
   constructor() {
     this.adjacencyList = {};
   }
 
-  // 添加顶点
+  // 
   addVertex(vertex) {
     if (!this.adjacencyList[vertex]) {
       this.adjacencyList[vertex] = [];
     }
   }
 
-  // 添加边
+  // 
   addEdge(v1, v2) {
     this.adjacencyList[v1].push(v2);
-    this.adjacencyList[v2].push(v1);  // 无向图
+    this.adjacencyList[v2].push(v1);  // 
   }
 
-  // 删除边
+  // 
   removeEdge(v1, v2) {
     this.adjacencyList[v1] = this.adjacencyList[v1].filter(v => v !== v2);
     this.adjacencyList[v2] = this.adjacencyList[v2].filter(v => v !== v1);
   }
 
-  // 删除顶点
+  // 
   removeVertex(vertex) {
     while (this.adjacencyList[vertex].length) {
       const adjacentVertex = this.adjacencyList[vertex].pop();
@@ -812,7 +812,7 @@ class Graph {
     delete this.adjacencyList[vertex];
   }
 
-  // 深度优先遍历（递归）
+  // 
   dfsRecursive(start) {
     const result = [];
     const visited = {};
@@ -833,7 +833,7 @@ class Graph {
     return result;
   }
 
-  // 深度优先遍历（迭代）
+  // 
   dfsIterative(start) {
     const stack = [start];
     const result = [];
@@ -855,7 +855,7 @@ class Graph {
     return result;
   }
 
-  // 广度优先遍历
+  // 
   bfs(start) {
     const queue = [start];
     const result = [];
@@ -878,7 +878,7 @@ class Graph {
   }
 }
 
-// 使用示例
+// 
 const graph = new Graph();
 ['A', 'B', 'C', 'D', 'E', 'F'].forEach(v => graph.addVertex(v));
 graph.addEdge('A', 'B');
@@ -893,13 +893,13 @@ console.log(graph.dfsRecursive('A'));  // ['A', 'B', 'D', 'E', 'C', 'F']
 console.log(graph.bfs('A'));           // ['A', 'B', 'C', 'D', 'E', 'F']
 ```
 
-## 时间复杂度对比
+## 
 
-| 数据结构 | 访问 | 查找 | 插入 | 删除 | 空间复杂度 |
+|  |  |  |  |  |  |
 |---------|------|------|------|------|-----------|
-| 数组 | O(1) | O(n) | O(n) | O(n) | O(n) |
-| 链表 | O(n) | O(n) | O(1) | O(1) | O(n) |
-| 栈 | O(n) | O(n) | O(1) | O(1) | O(n) |
-| 队列 | O(n) | O(n) | O(1) | O(1) | O(n) |
-| 哈希表 | - | O(1) | O(1) | O(1) | O(n) |
-| 二叉搜索树 | O(log n) | O(log n) | O(log n) | O(log n) | O(n) |
+|  | O(1) | O(n) | O(n) | O(n) | O(n) |
+|  | O(n) | O(n) | O(1) | O(1) | O(n) |
+|  | O(n) | O(n) | O(1) | O(1) | O(n) |
+|  | O(n) | O(n) | O(1) | O(1) | O(n) |
+|  | - | O(1) | O(1) | O(1) | O(n) |
+|  | O(log n) | O(log n) | O(log n) | O(log n) | O(n) |

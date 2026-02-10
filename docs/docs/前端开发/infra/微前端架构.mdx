@@ -1,39 +1,39 @@
 ---
 sidebar_position: 2
-title: 微前端架构实战
-tags: [微前端, qiankun, Module Federation, 架构设计]
+title: 
+tags: [, qiankun, Module Federation, ]
 ---
 
-# 微前端架构实战
+# 
 
-## 概述
+## 
 
-微前端是一种将单体前端应用拆分为多个可独立开发、部署和运行的小型前端应用的架构模式。它借鉴了微服务的思想，将前端应用解耦，提高开发效率和可维护性。
 
-### 核心优势
 
-- **技术栈无关**：不同子应用可以使用不同的技术栈
-- **独立开发部署**：团队可以独立开发和部署各自的应用
-- **增量升级**：可以逐步迁移老项目，而不需要全部重写
-- **代码隔离**：各应用之间代码和样式隔离，避免冲突
+### 
 
-## 微前端实现方案
+- ****
+- ****
+- ****
+- ****
 
-### 1. iframe 方案
+## 
 
-最简单的微前端方案，但存在性能和体验问题。
+### 1. iframe 
+
+
 
 ```html
-<!-- 主应用 -->
+<!--  -->
 <!DOCTYPE html>
 <html>
 <head>
-  <title>主应用</title>
+  <title></title>
 </head>
 <body>
   <nav>
-    <button onclick="loadApp('app1')">应用1</button>
-    <button onclick="loadApp('app2')">应用2</button>
+    <button onclick="loadApp('app1')">1</button>
+    <button onclick="loadApp('app2')">2</button>
   </nav>
   
   <iframe id="micro-app" src="" frameborder="0"></iframe>
@@ -48,32 +48,32 @@ tags: [微前端, qiankun, Module Federation, 架构设计]
 </html>
 ```
 
-**优点**：
-- 实现简单
-- 天然的样式和JS隔离
+****
+- 
+- JS
 
-**缺点**：
-- 性能较差
-- 用户体验不好（刷新白屏）
-- 通信复杂
-- SEO不友好
+****
+- 
+- 
+- 
+- SEO
 
-### 2. qiankun 方案（推荐）
+### 2. qiankun 
 
-基于 single-spa 的微前端框架，由蚂蚁金服开源。
+ single-spa 
 
-#### 主应用配置
+#### 
 
 ```bash
-# 安装依赖
+# 
 npm install qiankun
 ```
 
 ```javascript
-// main.js - 主应用入口
+// main.js - 
 import { registerMicroApps, start } from 'qiankun';
 
-// 注册子应用
+// 
 registerMicroApps([
   {
     name: 'react-app',
@@ -81,7 +81,7 @@ registerMicroApps([
     container: '#subapp-container',
     activeRule: '/react',
     props: {
-      // 传递给子应用的数据
+      // 
       data: { user: 'admin' }
     }
   },
@@ -93,18 +93,18 @@ registerMicroApps([
   },
 ]);
 
-// 启动 qiankun
+//  qiankun
 start({
-  prefetch: true, // 预加载
+  prefetch: true, // 
   sandbox: {
-    strictStyleIsolation: true, // 严格样式隔离
-    experimentalStyleIsolation: true, // 实验性样式隔离
+    strictStyleIsolation: true, // 
+    experimentalStyleIsolation: true, // 
   },
 });
 ```
 
 ```jsx
-// App.jsx - 主应用组件
+// App.jsx - 
 import React from 'react';
 import { BrowserRouter, Link } from 'react-router-dom';
 
@@ -113,11 +113,11 @@ function App() {
     <BrowserRouter>
       <div className="main-app">
         <nav>
-          <Link to="/react">React 应用</Link>
-          <Link to="/vue">Vue 应用</Link>
+          <Link to="/react">React </Link>
+          <Link to="/vue">Vue </Link>
         </nav>
         
-        {/* 子应用容器 */}
+        {/*  */}
         <div id="subapp-container"></div>
       </div>
     </BrowserRouter>
@@ -127,7 +127,7 @@ function App() {
 export default App;
 ```
 
-#### React 子应用配置
+#### React 
 
 ```javascript
 // public-path.js
@@ -137,7 +137,7 @@ if (window.__POWERED_BY_QIANKUN__) {
 ```
 
 ```jsx
-// index.js - React 子应用入口
+// index.js - React 
 import './public-path';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -145,7 +145,7 @@ import App from './App';
 
 let root = null;
 
-// 渲染函数
+// 
 function render(props = {}) {
   const { container } = props;
   root = ReactDOM.createRoot(
@@ -156,29 +156,29 @@ function render(props = {}) {
   root.render(<App />);
 }
 
-// 独立运行时直接渲染
+// 
 if (!window.__POWERED_BY_QIANKUN__) {
   render();
 }
 
-// 导出生命周期函数
+// 
 export async function bootstrap() {
-  console.log('React 应用启动');
+  console.log('React ');
 }
 
 export async function mount(props) {
-  console.log('React 应用挂载', props);
+  console.log('React ', props);
   render(props);
 }
 
 export async function unmount(props) {
-  console.log('React 应用卸载');
+  console.log('React ');
   root.unmount();
 }
 ```
 
 ```javascript
-// config-overrides.js - 配置 webpack
+// config-overrides.js -  webpack
 const { name } = require('./package.json');
 
 module.exports = {
@@ -202,10 +202,10 @@ module.exports = {
 };
 ```
 
-#### Vue 子应用配置
+#### Vue 
 
 ```javascript
-// main.js - Vue 子应用入口
+// main.js - Vue 
 import './public-path';
 import { createApp } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
@@ -237,22 +237,22 @@ function render(props = {}) {
   );
 }
 
-// 独立运行
+// 
 if (!window.__POWERED_BY_QIANKUN__) {
   render();
 }
 
 export async function bootstrap() {
-  console.log('Vue 应用启动');
+  console.log('Vue ');
 }
 
 export async function mount(props) {
-  console.log('Vue 应用挂载', props);
+  console.log('Vue ', props);
   render(props);
 }
 
 export async function unmount() {
-  console.log('Vue 应用卸载');
+  console.log('Vue ');
   app.unmount();
   app = null;
   router = null;
@@ -283,12 +283,12 @@ module.exports = {
 
 ### 3. Webpack Module Federation
 
-Webpack 5 原生支持的微前端方案。
+Webpack 5 
 
-#### 主应用配置
+#### 
 
 ```javascript
-// webpack.config.js - 主应用
+// webpack.config.js - 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
 
@@ -305,7 +305,7 @@ module.exports = {
     new ModuleFederationPlugin({
       name: 'host',
       remotes: {
-        // 远程应用
+        // 
         app1: 'app1@http://localhost:3001/remoteEntry.js',
         app2: 'app2@http://localhost:3002/remoteEntry.js',
       },
@@ -322,11 +322,11 @@ module.exports = {
 ```
 
 ```jsx
-// App.jsx - 主应用
+// App.jsx - 
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
-// 动态导入远程组件
+// 
 const RemoteApp1 = lazy(() => import('app1/App'));
 const RemoteApp2 = lazy(() => import('app2/App'));
 
@@ -334,11 +334,11 @@ function App() {
   return (
     <BrowserRouter>
       <nav>
-        <Link to="/app1">应用1</Link>
-        <Link to="/app2">应用2</Link>
+        <Link to="/app1">1</Link>
+        <Link to="/app2">2</Link>
       </nav>
       
-      <Suspense fallback={<div>加载中...</div>}>
+      <Suspense fallback={<div>...</div>}>
         <Routes>
           <Route path="/app1/*" element={<RemoteApp1 />} />
           <Route path="/app2/*" element={<RemoteApp2 />} />
@@ -351,10 +351,10 @@ function App() {
 export default App;
 ```
 
-#### 子应用配置
+#### 
 
 ```javascript
-// webpack.config.js - 子应用
+// webpack.config.js - 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
 
@@ -372,7 +372,7 @@ module.exports = {
       name: 'app1',
       filename: 'remoteEntry.js',
       exposes: {
-        // 暴露组件
+        // 
         './App': './src/App',
         './Button': './src/components/Button',
       },
@@ -388,12 +388,12 @@ module.exports = {
 };
 ```
 
-## 应用间通信
+## 
 
-### 1. Props 传递
+### 1. Props 
 
 ```javascript
-// 主应用
+// 
 registerMicroApps([
   {
     name: 'app1',
@@ -403,23 +403,23 @@ registerMicroApps([
     props: {
       data: { user: 'admin' },
       onGlobalStateChange: (state) => {
-        console.log('状态变化', state);
+        console.log('', state);
       },
     },
   },
 ]);
 
-// 子应用
+// 
 export async function mount(props) {
-  console.log('接收到的 props:', props);
+  console.log(' props:', props);
   const { data, onGlobalStateChange } = props;
 }
 ```
 
-### 2. 全局状态管理
+### 2. 
 
 ```javascript
-// 主应用 - 初始化全局状态
+//  - 
 import { initGlobalState } from 'qiankun';
 
 const actions = initGlobalState({
@@ -427,17 +427,17 @@ const actions = initGlobalState({
   token: 'xxx',
 });
 
-// 监听状态变化
+// 
 actions.onGlobalStateChange((state, prev) => {
-  console.log('主应用监听到状态变化', state, prev);
+  console.log('', state, prev);
 });
 
-// 修改状态
+// 
 actions.setGlobalState({
   user: 'new-user',
 });
 
-// 传递给子应用
+// 
 registerMicroApps([
   {
     name: 'app1',
@@ -450,23 +450,23 @@ registerMicroApps([
 ```
 
 ```javascript
-// 子应用 - 使用全局状态
+//  - 
 export async function mount(props) {
   const { actions } = props;
   
-  // 监听状态变化
+  // 
   actions.onGlobalStateChange((state, prev) => {
-    console.log('子应用监听到状态变化', state, prev);
+    console.log('', state, prev);
   });
   
-  // 修改状态
+  // 
   actions.setGlobalState({
     token: 'new-token',
   });
 }
 ```
 
-### 3. 自定义事件总线
+### 3. 
 
 ```javascript
 // event-bus.js
@@ -501,19 +501,19 @@ export default new EventBus();
 ```
 
 ```javascript
-// 使用事件总线
+// 
 import eventBus from './event-bus';
 
-// 主应用
+// 
 eventBus.on('user-login', (user) => {
-  console.log('用户登录', user);
+  console.log('', user);
 });
 
-// 子应用
+// 
 eventBus.emit('user-login', { name: 'admin' });
 ```
 
-## 样式隔离方案
+## 
 
 ### 1. CSS Modules
 
@@ -528,7 +528,7 @@ eventBus.emit('user-login', { name: 'admin' });
 import styles from './Button.module.css';
 
 function Button() {
-  return <button className={styles.button}>按钮</button>;
+  return <button className={styles.button}></button>;
 }
 ```
 
@@ -550,38 +550,38 @@ const Button = styled.button`
 `;
 
 function App() {
-  return <Button>按钮</Button>;
+  return <Button></Button>;
 }
 ```
 
 ### 3. Shadow DOM
 
 ```javascript
-// qiankun 配置
+// qiankun 
 start({
   sandbox: {
-    strictStyleIsolation: true, // 使用 Shadow DOM
+    strictStyleIsolation: true, //  Shadow DOM
   },
 });
 ```
 
-### 4. 命名空间
+### 4. 
 
 ```css
-/* 主应用 */
+/*  */
 .main-app .button {
   background: blue;
 }
 
-/* 子应用 */
+/*  */
 .sub-app .button {
   background: red;
 }
 ```
 
-## JS 沙箱隔离
+## JS 
 
-### 1. 快照沙箱
+### 1. 
 
 ```javascript
 class SnapshotSandbox {
@@ -591,7 +591,7 @@ class SnapshotSandbox {
   }
   
   active() {
-    // 保存快照
+    // 
     this.windowSnapshot = {};
     for (const prop in window) {
       if (window.hasOwnProperty(prop)) {
@@ -599,14 +599,14 @@ class SnapshotSandbox {
       }
     }
     
-    // 恢复之前的修改
+    // 
     Object.keys(this.modifyPropsMap).forEach(prop => {
       window[prop] = this.modifyPropsMap[prop];
     });
   }
   
   inactive() {
-    // 记录修改
+    // 
     for (const prop in window) {
       if (window.hasOwnProperty(prop)) {
         if (window[prop] !== this.windowSnapshot[prop]) {
@@ -619,7 +619,7 @@ class SnapshotSandbox {
 }
 ```
 
-### 2. Proxy 沙箱
+### 2. Proxy 
 
 ```javascript
 class ProxySandbox {
@@ -647,9 +647,9 @@ class ProxySandbox {
 }
 ```
 
-## 性能优化
+## 
 
-### 1. 预加载
+### 1. 
 
 ```javascript
 import { registerMicroApps, start, prefetchApps } from 'qiankun';
@@ -661,18 +661,18 @@ registerMicroApps([
 
 start();
 
-// 预加载子应用
+// 
 prefetchApps([
   { name: 'app1', entry: '//localhost:3001' },
 ]);
 ```
 
-### 2. 按需加载
+### 2. 
 
 ```javascript
 import { loadMicroApp } from 'qiankun';
 
-// 手动加载子应用
+// 
 function loadApp() {
   const microApp = loadMicroApp({
     name: 'app1',
@@ -680,15 +680,15 @@ function loadApp() {
     container: '#subapp',
   });
   
-  // 卸载
+  // 
   microApp.unmount();
 }
 ```
 
-### 3. 资源共享
+### 3. 
 
 ```javascript
-// Module Federation 共享依赖
+// Module Federation 
 new ModuleFederationPlugin({
   shared: {
     react: {
@@ -703,63 +703,63 @@ new ModuleFederationPlugin({
 });
 ```
 
-## 最佳实践
+## 
 
-### 1. 应用拆分原则
+### 1. 
 
-- **按业务模块拆分**：每个子应用对应一个业务模块
-- **按团队拆分**：不同团队负责不同的子应用
-- **按技术栈拆分**：新老技术栈并存时的渐进式迁移
+- ****
+- ****
+- ****
 
-### 2. 路由管理
+### 2. 
 
 ```javascript
-// 主应用统一管理路由
+// 
 const routes = [
   { path: '/app1/*', app: 'app1' },
   { path: '/app2/*', app: 'app2' },
 ];
 
-// 子应用使用相对路由
+// 
 const subRoutes = [
   { path: '/', component: Home },
   { path: '/detail', component: Detail },
 ];
 ```
 
-### 3. 公共依赖管理
+### 3. 
 
 ```javascript
-// 主应用提供公共依赖
+// 
 window.sharedLibs = {
   React: require('react'),
   ReactDOM: require('react-dom'),
   axios: require('axios'),
 };
 
-// 子应用使用公共依赖
+// 
 const React = window.sharedLibs.React;
 ```
 
-### 4. 错误处理
+### 4. 
 
 ```javascript
 import { addErrorHandler } from 'qiankun';
 
 addErrorHandler((error) => {
-  console.error('微前端错误', error);
+  console.error('', error);
   
-  // 上报错误
+  // 
   reportError(error);
   
-  // 显示错误提示
-  showErrorMessage('应用加载失败，请刷新重试');
+  // 
+  showErrorMessage('');
 });
 ```
 
-## 完整示例
+## 
 
-### 主应用完整代码
+### 
 
 ```jsx
 // main-app/src/index.js
@@ -768,13 +768,13 @@ import ReactDOM from 'react-dom/client';
 import { registerMicroApps, start, initGlobalState } from 'qiankun';
 import App from './App';
 
-// 初始化全局状态
+// 
 const actions = initGlobalState({
   user: null,
   token: null,
 });
 
-// 注册子应用
+// 
 registerMicroApps(
   [
     {
@@ -816,7 +816,7 @@ registerMicroApps(
   }
 );
 
-// 启动 qiankun
+//  qiankun
 start({
   prefetch: true,
   sandbox: {
@@ -839,11 +839,11 @@ function App() {
     <BrowserRouter>
       <div className="main-app">
         <header>
-          <h1>微前端主应用</h1>
+          <h1></h1>
           <nav>
-            <Link to="/">首页</Link>
-            <Link to="/react">React 应用</Link>
-            <Link to="/vue">Vue 应用</Link>
+            <Link to="/"></Link>
+            <Link to="/react">React </Link>
+            <Link to="/vue">Vue </Link>
           </nav>
         </header>
         
@@ -852,7 +852,7 @@ function App() {
             <Route path="/" element={<Home />} />
           </Routes>
           
-          {/* 子应用容器 */}
+          {/*  */}
           <div id="subapp-viewport"></div>
         </main>
       </div>
@@ -861,72 +861,72 @@ function App() {
 }
 
 function Home() {
-  return <h2>欢迎使用微前端应用</h2>;
+  return <h2></h2>;
 }
 
 export default App;
 ```
 
-## 常见问题
+## 
 
-### 1. 子应用资源加载失败
+### 1. 
 
-**问题**：子应用的静态资源 404
+**** 404
 
-**解决**：配置 `publicPath`
+**** `publicPath`
 
 ```javascript
-// 子应用
+// 
 if (window.__POWERED_BY_QIANKUN__) {
   __webpack_public_path__ = window.__INJECTED_PUBLIC_PATH_BY_QIANKUN__;
 }
 ```
 
-### 2. 样式污染
+### 2. 
 
-**问题**：主应用和子应用样式互相影响
+****
 
-**解决**：
-- 使用 CSS Modules 或 CSS-in-JS
-- 开启 qiankun 的样式隔离
-- 使用命名空间
+****
+-  CSS Modules  CSS-in-JS
+-  qiankun 
+- 
 
-### 3. 路由冲突
+### 3. 
 
-**问题**：子应用路由和主应用冲突
+****
 
-**解决**：
-- 主应用使用 `activeRule` 区分子应用
-- 子应用使用相对路由
+****
+-  `activeRule` 
+- 
 
-### 4. 全局变量污染
+### 4. 
 
-**问题**：子应用修改了全局变量
+****
 
-**解决**：
-- 使用 qiankun 的 JS 沙箱
-- 避免直接修改 window 对象
+****
+-  qiankun  JS 
+-  window 
 
-## 总结
+## 
 
-微前端架构适合以下场景：
 
-1. **大型项目**：需要多个团队协作开发
-2. **技术栈迁移**：需要逐步迁移老项目
-3. **独立部署**：需要各模块独立部署和更新
-4. **代码隔离**：需要严格的代码和样式隔离
 
-选择微前端方案时需要考虑：
+1. ****
+2. ****
+3. ****
+4. ****
 
-- **团队规模**：小团队可能不需要微前端
-- **技术栈**：是否需要支持多种技术栈
-- **性能要求**：微前端会带来一定的性能开销
-- **维护成本**：微前端增加了架构复杂度
 
-## 延伸阅读
 
-- [qiankun 官方文档](https://qiankun.umijs.org/)
+- ****
+- ****
+- ****
+- ****
+
+## 
+
+- [qiankun ](https://qiankun.umijs.org/)
 - [Webpack Module Federation](https://webpack.js.org/concepts/module-federation/)
-- [single-spa 官方文档](https://single-spa.js.org/)
-- [微前端架构设计](https://micro-frontends.org/)
+- [single-spa ](https://single-spa.js.org/)
+- [](https://micro-frontends.org/)
 

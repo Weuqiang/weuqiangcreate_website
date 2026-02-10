@@ -1,30 +1,30 @@
 ---
 sidebar_position: 2
-title: React性能优化完全指南
-tags: [前端, React, 性能优化, Hooks, 虚拟DOM]
+title: React
+tags: [, React, , Hooks, DOM]
 ---
 
-# React性能优化完全指南
+# React
 
-本文将深入讲解React性能优化的方法和技巧，从原理到实战全面覆盖。
+React
 
-## 性能分析工具
+## 
 
 ### React DevTools Profiler
 
 ```javascript
-// 使用Profiler组件
+// Profiler
 import { Profiler } from 'react';
 
 function App() {
   const onRenderCallback = (
-    id,                   // 组件标识
-    phase,                // "mount" 或 "update"
-    actualDuration,       // 本次渲染耗时
-    baseDuration,         // 估计不使用memoization的渲染耗时
-    startTime,            // 开始渲染时间
-    commitTime,           // 提交渲染时间
-    interactions          // 本次更新的interactions集合
+    id,                   // 
+    phase,                // "mount"  "update"
+    actualDuration,       // 
+    baseDuration,         // memoization
+    startTime,            // 
+    commitTime,           // 
+    interactions          // interactions
   ) => {
     console.log(`${id} ${phase} phase:`);
     console.log(`Actual duration: ${actualDuration}ms`);
@@ -46,11 +46,11 @@ function App() {
 ### Chrome Performance
 
 ```javascript
-// 性能标记
+// 
 function expensiveOperation() {
   performance.mark('expensive-start');
   
-  // 执行耗时操作
+  // 
   for (let i = 0; i < 1000000; i++) {
     // ...
   }
@@ -59,39 +59,39 @@ function expensiveOperation() {
   performance.measure('expensive', 'expensive-start', 'expensive-end');
   
   const measure = performance.getEntriesByName('expensive')[0];
-  console.log(`耗时: ${measure.duration}ms`);
+  console.log(`: ${measure.duration}ms`);
 }
 ```
 
-## 组件优化
+## 
 
 ### React.memo
 
 ```javascript
-// ❌ 每次父组件更新都会重新渲染
+//  
 function Child({ name }) {
   console.log('Child render');
   return <div>{name}</div>;
 }
 
-// ✅ 使用React.memo，props不变时不重新渲染
+//  React.memoprops
 const Child = React.memo(function Child({ name }) {
   console.log('Child render');
   return <div>{name}</div>;
 });
 
-// 自定义比较函数
+// 
 const Child = React.memo(
   function Child({ user }) {
     return <div>{user.name}</div>;
   },
   (prevProps, nextProps) => {
-    // 返回true表示不需要重新渲染
+    // true
     return prevProps.user.id === nextProps.user.id;
   }
 );
 
-// 使用示例
+// 
 function Parent() {
   const [count, setCount] = useState(0);
   const [name, setName] = useState('John');
@@ -102,7 +102,7 @@ function Parent() {
         Count: {count}
       </button>
       <Child name={name} />
-      {/* count变化时，Child不会重新渲染 */}
+      {/* countChild */}
     </div>
   );
 }
@@ -111,37 +111,37 @@ function Parent() {
 ### useMemo
 
 ```javascript
-// ❌ 每次渲染都会重新计算
+//  
 function Component({ items }) {
   const expensiveValue = computeExpensiveValue(items);
   return <div>{expensiveValue}</div>;
 }
 
-// ✅ 使用useMemo，只在items变化时重新计算
+//  useMemoitems
 function Component({ items }) {
   const expensiveValue = useMemo(() => {
-    console.log('计算expensiveValue');
+    console.log('expensiveValue');
     return computeExpensiveValue(items);
   }, [items]);
   
   return <div>{expensiveValue}</div>;
 }
 
-// 实战示例：过滤和排序
+// 
 function TodoList({ todos, filter, sortBy }) {
   const filteredAndSortedTodos = useMemo(() => {
-    console.log('过滤和排序');
+    console.log('');
     
     let result = todos;
     
-    // 过滤
+    // 
     if (filter) {
       result = result.filter(todo => 
         todo.title.includes(filter)
       );
     }
     
-    // 排序
+    // 
     if (sortBy === 'date') {
       result = result.sort((a, b) => 
         new Date(b.createdAt) - new Date(a.createdAt)
@@ -168,7 +168,7 @@ function TodoList({ todos, filter, sortBy }) {
 ### useCallback
 
 ```javascript
-// ❌ 每次渲染都会创建新函数
+//  
 function Parent() {
   const [count, setCount] = useState(0);
   
@@ -182,18 +182,18 @@ function Parent() {
         Count: {count}
       </button>
       <Child onClick={handleClick} />
-      {/* handleClick每次都是新函数，Child会重新渲染 */}
+      {/* handleClickChild */}
     </div>
   );
 }
 
-// ✅ 使用useCallback，函数引用保持不变
+//  useCallback
 function Parent() {
   const [count, setCount] = useState(0);
   
   const handleClick = useCallback(() => {
     console.log('clicked');
-  }, []); // 依赖为空，函数永远不变
+  }, []); // 
   
   return (
     <div>
@@ -201,18 +201,18 @@ function Parent() {
         Count: {count}
       </button>
       <Child onClick={handleClick} />
-      {/* handleClick引用不变，Child不会重新渲染 */}
+      {/* handleClickChild */}
     </div>
   );
 }
 
-// 带依赖的useCallback
+// useCallback
 function SearchBox({ onSearch }) {
   const [query, setQuery] = useState('');
   
   const handleSearch = useCallback(() => {
     onSearch(query);
-  }, [query, onSearch]); // query或onSearch变化时，函数才更新
+  }, [query, onSearch]); // queryonSearch
   
   return (
     <div>
@@ -226,9 +226,9 @@ function SearchBox({ onSearch }) {
 }
 ```
 
-## 列表优化
+## 
 
-### 虚拟列表
+### 
 
 ```javascript
 import { useState, useRef, useEffect } from 'react';
@@ -237,18 +237,18 @@ function VirtualList({ items, itemHeight, containerHeight }) {
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef(null);
   
-  // 计算可见范围
+  // 
   const visibleCount = Math.ceil(containerHeight / itemHeight);
   const startIndex = Math.floor(scrollTop / itemHeight);
   const endIndex = Math.min(startIndex + visibleCount + 1, items.length);
   
-  // 可见项
+  // 
   const visibleItems = items.slice(startIndex, endIndex);
   
-  // 总高度
+  // 
   const totalHeight = items.length * itemHeight;
   
-  // 偏移量
+  // 
   const offsetY = startIndex * itemHeight;
   
   const handleScroll = (e) => {
@@ -280,7 +280,7 @@ function VirtualList({ items, itemHeight, containerHeight }) {
   );
 }
 
-// 使用示例
+// 
 function App() {
   const items = Array.from({ length: 10000 }, (_, i) => ({
     id: i,
@@ -297,10 +297,10 @@ function App() {
 }
 ```
 
-### key优化
+### key
 
 ```javascript
-// ❌ 使用索引作为key
+//  key
 function BadList({ items }) {
   return (
     <ul>
@@ -311,7 +311,7 @@ function BadList({ items }) {
   );
 }
 
-// ✅ 使用唯一ID作为key
+//  IDkey
 function GoodList({ items }) {
   return (
     <ul>
@@ -322,7 +322,7 @@ function GoodList({ items }) {
   );
 }
 
-// key的重要性
+// key
 const items1 = [
   { id: 1, name: 'A' },
   { id: 2, name: 'B' },
@@ -331,21 +331,21 @@ const items1 = [
 
 const items2 = [
   { id: 1, name: 'A' },
-  { id: 4, name: 'D' }, // 新插入
+  { id: 4, name: 'D' }, // 
   { id: 2, name: 'B' },
   { id: 3, name: 'C' }
 ];
 
-// 使用index作为key：React会认为所有项都变了
-// 使用id作为key：React只会插入新项
+// indexkeyReact
+// idkeyReact
 ```
 
-## 状态管理优化
+## 
 
-### 状态拆分
+### 
 
 ```javascript
-// ❌ 所有状态放在一起
+//  
 function BadComponent() {
   const [state, setState] = useState({
     user: { name: 'John', age: 30 },
@@ -354,7 +354,7 @@ function BadComponent() {
     loading: false
   });
   
-  // 更新user会导致整个组件重新渲染
+  // user
   const updateUser = (name) => {
     setState(prev => ({
       ...prev,
@@ -365,14 +365,14 @@ function BadComponent() {
   return <div>...</div>;
 }
 
-// ✅ 状态拆分
+//  
 function GoodComponent() {
   const [user, setUser] = useState({ name: 'John', age: 30 });
   const [posts, setPosts] = useState([]);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  // 只更新user，不影响其他状态
+  // user
   const updateUser = (name) => {
     setUser(prev => ({ ...prev, name }));
   };
@@ -381,10 +381,10 @@ function GoodComponent() {
 }
 ```
 
-### Context优化
+### Context
 
 ```javascript
-// ❌ 单一Context，所有消费者都会重新渲染
+//  Context
 const AppContext = createContext();
 
 function AppProvider({ children }) {
@@ -399,7 +399,7 @@ function AppProvider({ children }) {
   );
 }
 
-// ✅ 拆分Context
+//  Context
 const UserContext = createContext();
 const ThemeContext = createContext();
 const LanguageContext = createContext();
@@ -420,7 +420,7 @@ function AppProvider({ children }) {
   );
 }
 
-// 使用useMemo优化Context value
+// useMemoContext value
 function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   
@@ -434,14 +434,14 @@ function UserProvider({ children }) {
 }
 ```
 
-## 懒加载
+## 
 
 ### React.lazy
 
 ```javascript
 import { lazy, Suspense } from 'react';
 
-// 懒加载组件
+// 
 const Dashboard = lazy(() => import('./Dashboard'));
 const Profile = lazy(() => import('./Profile'));
 const Settings = lazy(() => import('./Settings'));
@@ -458,12 +458,12 @@ function App() {
   );
 }
 
-// 预加载
+// 
 const Dashboard = lazy(() => import('./Dashboard'));
 
 function App() {
   const preloadDashboard = () => {
-    // 鼠标悬停时预加载
+    // 
     import('./Dashboard');
   };
   
@@ -480,7 +480,7 @@ function App() {
 }
 ```
 
-### 图片懒加载
+### 
 
 ```javascript
 function LazyImage({ src, alt, placeholder }) {
@@ -523,14 +523,14 @@ function LazyImage({ src, alt, placeholder }) {
 }
 ```
 
-## 事件处理优化
+## 
 
-### 防抖和节流
+### 
 
 ```javascript
 import { useCallback, useRef } from 'react';
 
-// 防抖Hook
+// Hook
 function useDebounce(callback, delay) {
   const timeoutRef = useRef(null);
   
@@ -545,7 +545,7 @@ function useDebounce(callback, delay) {
   }, [callback, delay]);
 }
 
-// 节流Hook
+// Hook
 function useThrottle(callback, delay) {
   const lastRunRef = useRef(Date.now());
   
@@ -559,13 +559,13 @@ function useThrottle(callback, delay) {
   }, [callback, delay]);
 }
 
-// 使用示例
+// 
 function SearchBox() {
   const [query, setQuery] = useState('');
   
   const handleSearch = useCallback((value) => {
-    console.log('搜索:', value);
-    // 调用API
+    console.log(':', value);
+    // API
   }, []);
   
   const debouncedSearch = useDebounce(handleSearch, 500);
@@ -580,15 +580,15 @@ function SearchBox() {
     <input
       value={query}
       onChange={handleChange}
-      placeholder="搜索..."
+      placeholder="..."
     />
   );
 }
 
-// 滚动节流
+// 
 function ScrollComponent() {
   const handleScroll = useCallback(() => {
-    console.log('滚动位置:', window.scrollY);
+    console.log(':', window.scrollY);
   }, []);
   
   const throttledScroll = useThrottle(handleScroll, 200);
@@ -602,12 +602,12 @@ function ScrollComponent() {
 }
 ```
 
-## 渲染优化
+## 
 
-### 条件渲染
+### 
 
 ```javascript
-// ❌ 使用三元运算符，两个分支都会创建
+//  
 function Component({ isLoading, data }) {
   return (
     <div>
@@ -616,7 +616,7 @@ function Component({ isLoading, data }) {
   );
 }
 
-// ✅ 使用&&运算符，只创建需要的分支
+//  &&
 function Component({ isLoading, data }) {
   return (
     <div>
@@ -626,7 +626,7 @@ function Component({ isLoading, data }) {
   );
 }
 
-// ✅ 提前返回
+//  
 function Component({ isLoading, data }) {
   if (isLoading) {
     return <Loading />;
@@ -636,10 +636,10 @@ function Component({ isLoading, data }) {
 }
 ```
 
-### Fragment优化
+### Fragment
 
 ```javascript
-// ❌ 额外的div包裹
+//  div
 function Component() {
   return (
     <div>
@@ -650,7 +650,7 @@ function Component() {
   );
 }
 
-// ✅ 使用Fragment
+//  Fragment
 function Component() {
   return (
     <>
@@ -661,7 +661,7 @@ function Component() {
   );
 }
 
-// 带key的Fragment
+// keyFragment
 function List({ items }) {
   return (
     <>
@@ -676,7 +676,7 @@ function List({ items }) {
 }
 ```
 
-## 并发特性
+## 
 
 ### useTransition
 
@@ -692,7 +692,7 @@ function SearchResults() {
     const value = e.target.value;
     setQuery(value);
     
-    // 标记为低优先级更新
+    // 
     startTransition(() => {
       const filtered = largeDataset.filter(item =>
         item.name.includes(value)
@@ -704,7 +704,7 @@ function SearchResults() {
   return (
     <div>
       <input value={query} onChange={handleChange} />
-      {isPending && <div>搜索中...</div>}
+      {isPending && <div>...</div>}
       <ul>
         {results.map(item => (
           <li key={item.id}>{item.name}</li>
@@ -746,10 +746,10 @@ function SearchResults() {
 }
 ```
 
-## 性能监控
+## 
 
 ```javascript
-// 自定义性能监控Hook
+// Hook
 function usePerformance(componentName) {
   useEffect(() => {
     const startTime = performance.now();
@@ -758,9 +758,9 @@ function usePerformance(componentName) {
       const endTime = performance.now();
       const duration = endTime - startTime;
       
-      console.log(`${componentName} 渲染耗时: ${duration}ms`);
+      console.log(`${componentName} : ${duration}ms`);
       
-      // 上报到监控系统
+      // 
       reportPerformance({
         component: componentName,
         duration,
@@ -770,7 +770,7 @@ function usePerformance(componentName) {
   });
 }
 
-// 使用
+// 
 function ExpensiveComponent() {
   usePerformance('ExpensiveComponent');
   
@@ -778,15 +778,15 @@ function ExpensiveComponent() {
 }
 ```
 
-## 总结
+## 
 
-React性能优化的核心：
-- 🎯 **避免不必要的渲染**：React.memo、useMemo、useCallback
-- 📦 **优化列表渲染**：虚拟列表、正确的key
-- 🔄 **状态管理**：状态拆分、Context优化
-- 🚀 **懒加载**：代码分割、图片懒加载
-- ⚡ **事件优化**：防抖、节流
-- 🎨 **并发特性**：useTransition、useDeferredValue
+React
+-  ****React.memouseMemouseCallback
+-  ****key
+-  ****Context
+-  ****
+-  ****
+-  ****useTransitionuseDeferredValue
 
-记住：**性能优化要基于实际测量，不要过早优化！**
+****
 

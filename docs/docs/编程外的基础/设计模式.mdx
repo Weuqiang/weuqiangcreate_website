@@ -1,20 +1,20 @@
 ---
 sidebarDepth: 4
 ---
-# 设计模式
+# 
 
-设计模式是软件开发中常见问题的可复用解决方案，能提高代码的可维护性和可扩展性。
 
-## 创建型模式
 
-### 单例模式
+## 
 
-确保一个类只有一个实例，并提供全局访问点。
+### 
 
-**应用场景**：数据库连接池、全局配置对象、日志记录器
+
+
+****
 
 ```javascript
-// 方式一：闭包实现
+// 
 const Singleton = (function() {
   let instance;
   
@@ -41,7 +41,7 @@ const instance1 = Singleton.getInstance();
 const instance2 = Singleton.getInstance();
 console.log(instance1 === instance2);  // true
 
-// 方式二：ES6 类实现
+// ES6 
 class Singleton {
   constructor() {
     if (Singleton.instance) {
@@ -56,7 +56,7 @@ class Singleton {
   }
 }
 
-// 实际应用：全局状态管理
+// 
 class Store {
   constructor() {
     if (Store.instance) {
@@ -83,10 +83,10 @@ console.log(store2.getState('user'));  // 'zhangsan'
 
 
 
-### 发布-订阅模式
+### -
 
 ```javascript
-// Node中的EventEmitter 就是用的发布订阅模式
+// NodeEventEmitter 
 class EventEmitter {
       constructor() {
           this.list = {}
@@ -137,7 +137,7 @@ bus.on("click", (value) => {
 bus.emit("click", 111)
 ```
 
-### 观察者模式
+### 
 
 ```javascript
 class Publisher {
@@ -173,36 +173,36 @@ class Subscriber {
 
 ### MVC
 
-MVC (Model-View-Controller) 分为三部分
+MVC (Model-View-Controller) 
 
-- Model（数据模型）：数据
-- View（视图）：用户界面
-- Controller（控制器）：业务逻辑
+- Model
+- View
+- Controller
 
-通信过程如下，所有通信都是单向的。
 
-1. View 传送指令到 Controller
-2. Controller 完成业务逻辑后，要求 Model 改变状态
-3. Model 将新的数据发送到 View，用户得到反馈
 
-![过程](https://www.ruanyifeng.com/blogimg/asset/2015/bg2015020105.png)
+1. View  Controller
+2. Controller  Model 
+3. Model  View
+
+![](https://www.ruanyifeng.com/blogimg/asset/2015/bg2015020105.png)
 
 ### MVVM
 
-MVVM（Model-View-ViewModel）也分为三部分，数据模型，视图，视图模型。
+MVVMModel-View-ViewModel
 
-与MVC的区别之一在于View和Model之间要借助ViewModel进行通信。
+MVCViewModelViewModel
 
-![通信过程](https://www.ruanyifeng.com/blogimg/asset/2015/bg2015020110.png)
+![](https://www.ruanyifeng.com/blogimg/asset/2015/bg2015020110.png)
 
-### 工厂模式
+### 
 
-提供创建对象的接口，隐藏创建逻辑。
 
-**应用场景**：创建复杂对象、根据条件创建不同类型的对象
+
+****
 
 ```javascript
-// 简单工厂
+// 
 class CarFactory {
   static createCar(type) {
     switch (type) {
@@ -240,11 +240,11 @@ class Audi {
   }
 }
 
-// 使用
+// 
 const bmw = CarFactory.createCar('BMW');
 bmw.drive();
 
-// 实际应用：创建不同类型的用户
+// 
 class UserFactory {
   static createUser(role) {
     switch (role) {
@@ -282,16 +282,16 @@ class Guest {
 }
 ```
 
-## 结构型模式
+## 
 
-### 装饰器模式
+### 
 
-动态地给对象添加新功能，不改变其结构。
 
-**应用场景**：给函数添加日志、性能监控、权限验证
+
+****
 
 ```javascript
-// 基础咖啡
+// 
 class Coffee {
   cost() {
     return 5;
@@ -302,7 +302,7 @@ class Coffee {
   }
 }
 
-// 牛奶装饰器
+// 
 class MilkDecorator {
   constructor(coffee) {
     this.coffee = coffee;
@@ -317,7 +317,7 @@ class MilkDecorator {
   }
 }
 
-// 糖装饰器
+// 
 class SugarDecorator {
   constructor(coffee) {
     this.coffee = coffee;
@@ -332,14 +332,14 @@ class SugarDecorator {
   }
 }
 
-// 使用
+// 
 let coffee = new Coffee();
 coffee = new MilkDecorator(coffee);
 coffee = new SugarDecorator(coffee);
 console.log(coffee.description());  // Simple coffee, milk, sugar
 console.log(coffee.cost());         // 8
 
-// 实际应用：函数装饰器
+// 
 function log(target, name, descriptor) {
   const original = descriptor.value;
   descriptor.value = function(...args) {
@@ -358,7 +358,7 @@ class Calculator {
   }
 }
 
-// 不使用装饰器语法的实现
+// 
 function withLogging(fn) {
   return function(...args) {
     console.log(`Calling function with`, args);
@@ -370,15 +370,15 @@ function withLogging(fn) {
 
 const add = (a, b) => a + b;
 const addWithLogging = withLogging(add);
-addWithLogging(2, 3);  // 输出日志和结果
+addWithLogging(2, 3);  // 
 ```
 
-### 策略模式
+### 
 
-策略模式定义了一系列算法，并将每个算法封装起来，使它们可以相互替换。
+
 
 ```javascript
-// 策略类
+// 
 class DiscountStrategy {
     calculate(amount) {
         throw new Error('calculate method must be implemented');
@@ -393,17 +393,17 @@ class RegularCustomer extends DiscountStrategy {
 
 class PremiumCustomer extends DiscountStrategy {
     calculate(amount) {
-        return amount * 0.9; // 10% 折扣
+        return amount * 0.9; // 10% 
     }
 }
 
 class VIPCustomer extends DiscountStrategy {
     calculate(amount) {
-        return amount * 0.8; // 20% 折扣
+        return amount * 0.8; // 20% 
     }
 }
 
-// 上下文类
+// 
 class ShoppingCart {
     constructor(discountStrategy) {
         this.discountStrategy = discountStrategy;
@@ -423,7 +423,7 @@ class ShoppingCart {
     }
 }
 
-// 使用
+// 
 const cart = new ShoppingCart(new RegularCustomer());
 cart.addItem(100);
 cart.addItem(50);
@@ -433,14 +433,14 @@ cart.setDiscountStrategy(new VIPCustomer());
 console.log(cart.calculateTotal()); // 120
 ```
 
-### 代理模式
+### 
 
-为对象提供代理，控制对该对象的访问。
 
-**应用场景**：懒加载、缓存、权限控制、日志记录
+
+****
 
 ```javascript
-// 图片懒加载代理
+// 
 class RealImage {
   constructor(filename) {
     this.filename = filename;
@@ -470,12 +470,12 @@ class ProxyImage {
   }
 }
 
-// 使用
+// 
 const image = new ProxyImage('photo.jpg');
-image.display();  // 第一次调用时加载
-image.display();  // 第二次直接显示，不重新加载
+image.display();  // 
+image.display();  // 
 
-// 实际应用：缓存代理
+// 
 function createCacheProxy(fn) {
   const cache = new Map();
   
@@ -483,7 +483,7 @@ function createCacheProxy(fn) {
     const key = JSON.stringify(args);
     
     if (cache.has(key)) {
-      console.log('从缓存获取');
+      console.log('');
       return cache.get(key);
     }
     
@@ -494,15 +494,15 @@ function createCacheProxy(fn) {
 }
 
 function expensiveCalculation(n) {
-  console.log('执行复杂计算...');
+  console.log('...');
   return n * n;
 }
 
 const cachedCalculation = createCacheProxy(expensiveCalculation);
-console.log(cachedCalculation(5));  // 执行计算
-console.log(cachedCalculation(5));  // 从缓存获取
+console.log(cachedCalculation(5));  // 
+console.log(cachedCalculation(5));  // 
 
-// ES6 Proxy 实现
+// ES6 Proxy 
 const handler = {
   get(target, property) {
     console.log(`Getting ${property}`);
@@ -521,28 +521,28 @@ console.log(proxy.name);  // Getting name
 proxy.age = 25;           // Setting age to 25
 ```
 
-### 适配器模式
+### 
 
-将一个接口转换成客户期望的另一个接口。
 
-**应用场景**：整合第三方库、兼容旧代码
+
+****
 
 ```javascript
-// 旧接口
+// 
 class OldPrinter {
   oldPrint(text) {
     console.log(`Old printer: ${text}`);
   }
 }
 
-// 新接口
+// 
 class NewPrinter {
   print(text) {
     console.log(`New printer: ${text}`);
   }
 }
 
-// 适配器
+// 
 class PrinterAdapter {
   constructor(oldPrinter) {
     this.oldPrinter = oldPrinter;
@@ -553,19 +553,19 @@ class PrinterAdapter {
   }
 }
 
-// 使用
+// 
 const oldPrinter = new OldPrinter();
 const adapter = new PrinterAdapter(oldPrinter);
 adapter.print('Hello World');  // Old printer: Hello World
 
-// 实际应用：适配不同的数据格式
+// 
 class XMLDataAdapter {
   constructor(xmlData) {
     this.xmlData = xmlData;
   }
   
   toJSON() {
-    // 将 XML 转换为 JSON
+    //  XML  JSON
     return JSON.parse(this.xmlData);
   }
 }
@@ -581,13 +581,13 @@ class JSONDataAdapter {
 }
 ```
 
-## 行为型模式
+## 
 
-### 观察者模式
+### 
 
-定义对象间的一对多依赖关系，当一个对象状态改变时，所有依赖它的对象都会收到通知。
 
-**应用场景**：事件系统、数据绑定、消息队列
+
+****
 
 ```javascript
 class Subject {
@@ -621,16 +621,16 @@ class Observer {
   }
 }
 
-// 使用
+// 
 const subject = new Subject();
 const observer1 = new Observer('Observer 1');
 const observer2 = new Observer('Observer 2');
 
 subject.addObserver(observer1);
 subject.addObserver(observer2);
-subject.notify('Hello');  // 两个观察者都收到通知
+subject.notify('Hello');  // 
 
-// 实际应用：股票价格监控
+// 
 class Stock {
   constructor(symbol, price) {
     this.symbol = symbol;
@@ -665,19 +665,19 @@ class Investor {
 }
 
 const stock = new Stock('AAPL', 150);
-const investor1 = new Investor('张三');
-const investor2 = new Investor('李四');
+const investor1 = new Investor('');
+const investor2 = new Investor('');
 
 stock.attach(investor1);
 stock.attach(investor2);
-stock.setPrice(155);  // 通知所有投资者
+stock.setPrice(155);  // 
 ```
 
-### 发布-订阅模式
+### -
 
-发布者和订阅者通过事件中心解耦，发布者发布事件，订阅者订阅感兴趣的事件。
 
-**应用场景**：事件总线、消息队列、组件通信
+
+****
 
 ```javascript
 class EventEmitter {
@@ -715,7 +715,7 @@ class EventEmitter {
   }
 }
 
-// 使用
+// 
 const bus = new EventEmitter();
 
 bus.on('click', (value) => {
@@ -724,7 +724,7 @@ bus.on('click', (value) => {
 
 bus.emit('click', 111);  // Clicked: 111
 
-// 实际应用：组件通信
+// 
 class ComponentA {
   constructor(eventBus) {
     this.eventBus = eventBus;
@@ -752,14 +752,14 @@ const compB = new ComponentB(eventBus);
 compA.sendMessage('Hello from A');
 ```
 
-### 策略模式
+### 
 
-定义一系列算法，将每个算法封装起来，使它们可以互相替换。
 
-**应用场景**：表单验证、支付方式选择、排序算法选择
+
+****
 
 ```javascript
-// 策略类
+// 
 class DiscountStrategy {
   calculate(amount) {
     throw new Error('calculate method must be implemented');
@@ -774,17 +774,17 @@ class RegularCustomer extends DiscountStrategy {
 
 class PremiumCustomer extends DiscountStrategy {
   calculate(amount) {
-    return amount * 0.9;  // 10% 折扣
+    return amount * 0.9;  // 10% 
   }
 }
 
 class VIPCustomer extends DiscountStrategy {
   calculate(amount) {
-    return amount * 0.8;  // 20% 折扣
+    return amount * 0.8;  // 20% 
   }
 }
 
-// 上下文类
+// 
 class ShoppingCart {
   constructor(discountStrategy) {
     this.discountStrategy = discountStrategy;
@@ -804,7 +804,7 @@ class ShoppingCart {
   }
 }
 
-// 使用
+// 
 const cart = new ShoppingCart(new RegularCustomer());
 cart.addItem(100);
 cart.addItem(50);
@@ -813,7 +813,7 @@ console.log(cart.calculateTotal());  // 150
 cart.setDiscountStrategy(new VIPCustomer());
 console.log(cart.calculateTotal());  // 120
 
-// 实际应用：表单验证
+// 
 const validators = {
   required: (value) => value !== '' && value !== null && value !== undefined,
   email: (value) => /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value),
@@ -855,10 +855,10 @@ class FormValidator {
 }
 
 const validator = new FormValidator();
-validator.addRule('username', validators.required, '用户名不能为空');
-validator.addRule('username', validators.minLength(3), '用户名至少3个字符');
-validator.addRule('email', validators.required, '邮箱不能为空');
-validator.addRule('email', validators.email, '邮箱格式不正确');
+validator.addRule('username', validators.required, '');
+validator.addRule('username', validators.minLength(3), '3');
+validator.addRule('email', validators.required, '');
+validator.addRule('email', validators.email, '');
 
 const result = validator.validate({
   username: 'ab',
@@ -867,14 +867,14 @@ const result = validator.validate({
 console.log(result);
 ```
 
-### 命令模式
+### 
 
-将请求封装成对象，从而使您可以用不同的请求对客户进行参数化。
 
-**应用场景**：撤销/重做功能、宏命令、任务队列
+
+****/
 
 ```javascript
-// 接收者
+// 
 class Light {
   turnOn() {
     console.log('Light is ON');
@@ -885,7 +885,7 @@ class Light {
   }
 }
 
-// 命令接口
+// 
 class Command {
   execute() {
     throw new Error('execute method must be implemented');
@@ -896,7 +896,7 @@ class Command {
   }
 }
 
-// 具体命令
+// 
 class TurnOnCommand extends Command {
   constructor(light) {
     super();
@@ -927,7 +927,7 @@ class TurnOffCommand extends Command {
   }
 }
 
-// 调用者
+// 
 class RemoteControl {
   constructor() {
     this.command = null;
@@ -953,7 +953,7 @@ class RemoteControl {
   }
 }
 
-// 使用
+// 
 const light = new Light();
 const turnOnCommand = new TurnOnCommand(light);
 const turnOffCommand = new TurnOffCommand(light);
@@ -968,15 +968,15 @@ remote.pressButton();  // Light is OFF
 remote.pressUndo();    // Light is ON
 ```
 
-## 架构模式
+## 
 
 ### MVC
 
-MVC (Model-View-Controller) 将应用分为三部分：
+MVC (Model-View-Controller) 
 
-- **Model（数据模型）**：管理数据和业务逻辑
-- **View（视图）**：展示数据给用户
-- **Controller（控制器）**：处理用户输入，更新 Model 和 View
+- **Model**
+- **View**
+- **Controller** Model  View
 
 ```javascript
 // Model
@@ -1016,7 +1016,7 @@ class TodoView {
       <div>
         <input type="checkbox" ${todo.completed ? 'checked' : ''} data-id="${todo.id}">
         <span>${todo.text}</span>
-        <button data-id="${todo.id}">删除</button>
+        <button data-id="${todo.id}"></button>
       </div>
     `).join('');
   }
@@ -1079,21 +1079,21 @@ class TodoController {
   }
 }
 
-// 使用
+// 
 const app = new TodoController(new TodoModel(), new TodoView());
 ```
 
 ### MVVM
 
-MVVM (Model-View-ViewModel) 通过数据绑定实现 View 和 Model 的自动同步。
+MVVM (Model-View-ViewModel)  View  Model 
 
-**特点**：
-- View 和 Model 通过 ViewModel 通信
-- 双向数据绑定
-- Vue、React 等框架采用此模式
+****
+- View  Model  ViewModel 
+- 
+- VueReact 
 
 ```javascript
-// 简化的 MVVM 实现
+//  MVVM 
 class ViewModel {
   constructor(data) {
     this._data = data;
@@ -1134,7 +1134,7 @@ class ViewModel {
   }
 }
 
-// 使用
+// 
 const vm = new ViewModel({ name: 'zhangsan', age: 25 });
 
 vm.watch('name', (newValue) => {
@@ -1144,19 +1144,19 @@ vm.watch('name', (newValue) => {
 vm._data.name = 'lisi';  // Name changed to: lisi
 ```
 
-## 设计原则
+## 
 
-1. **单一职责原则（SRP）**：一个类只负责一个功能
-2. **开放封闭原则（OCP）**：对扩展开放，对修改封闭
-3. **里氏替换原则（LSP）**：子类可以替换父类
-4. **接口隔离原则（ISP）**：使用多个专门的接口，而不是单一的总接口
-5. **依赖倒置原则（DIP）**：依赖抽象而不是具体实现
+1. **SRP**
+2. **OCP**
+3. **LSP**
+4. **ISP**
+5. **DIP**
 
-## 何时使用设计模式
+## 
 
-- **单例模式**：需要全局唯一实例时
-- **工厂模式**：创建对象逻辑复杂时
-- **观察者模式**：一对多依赖关系时
-- **策略模式**：需要动态切换算法时
-- **装饰器模式**：需要动态添加功能时
-- **代理模式**：需要控制对象访问时
+- ****
+- ****
+- ****
+- ****
+- ****
+- ****

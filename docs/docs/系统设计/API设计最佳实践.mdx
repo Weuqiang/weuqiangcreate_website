@@ -1,40 +1,40 @@
 ---
 sidebar_position: 8
-title: API设计最佳实践
-tags: [系统设计, API设计, RESTful, GraphQL]
+title: API
+tags: [, API, RESTful, GraphQL]
 ---
 
-# API设计最佳实践
+# API
 
-良好的API设计是系统成功的关键，本文将详细讲解API设计的最佳实践和常见模式。
+APIAPI
 
-## RESTful API设计
+## RESTful API
 
-### 资源命名
+### 
 
 ```javascript
-// ✅ 好的命名
-GET    /api/v1/users              // 获取用户列表
-GET    /api/v1/users/:id          // 获取单个用户
-POST   /api/v1/users              // 创建用户
-PUT    /api/v1/users/:id          // 更新用户
-DELETE /api/v1/users/:id          // 删除用户
+//  
+GET    /api/v1/users              // 
+GET    /api/v1/users/:id          // 
+POST   /api/v1/users              // 
+PUT    /api/v1/users/:id          // 
+DELETE /api/v1/users/:id          // 
 
-GET    /api/v1/users/:id/posts    // 获取用户的文章
-POST   /api/v1/users/:id/posts    // 为用户创建文章
+GET    /api/v1/users/:id/posts    // 
+POST   /api/v1/users/:id/posts    // 
 
-// ❌ 不好的命名
-GET    /api/v1/getUsers            // 动词不应出现在URL中
-POST   /api/v1/user/create         // 冗余的create
-GET    /api/v1/users/list          // 冗余的list
-DELETE /api/v1/deleteUser/:id     // 动词不应出现在URL中
+//  
+GET    /api/v1/getUsers            // URL
+POST   /api/v1/user/create         // create
+GET    /api/v1/users/list          // list
+DELETE /api/v1/deleteUser/:id     // URL
 ```
 
-### HTTP方法
+### HTTP
 
 ```javascript
 const httpMethods = {
-  // GET - 获取资源
+  // GET - 
   GET: {
     idempotent: true,
     safe: true,
@@ -46,7 +46,7 @@ const httpMethods = {
     ]
   },
   
-  // POST - 创建资源
+  // POST - 
   POST: {
     idempotent: false,
     safe: false,
@@ -57,7 +57,7 @@ const httpMethods = {
     ]
   },
   
-  // PUT - 完整更新资源
+  // PUT - 
   PUT: {
     idempotent: true,
     safe: false,
@@ -67,7 +67,7 @@ const httpMethods = {
     ]
   },
   
-  // PATCH - 部分更新资源
+  // PATCH - 
   PATCH: {
     idempotent: true,
     safe: false,
@@ -77,7 +77,7 @@ const httpMethods = {
     ]
   },
   
-  // DELETE - 删除资源
+  // DELETE - 
   DELETE: {
     idempotent: true,
     safe: false,
@@ -89,37 +89,37 @@ const httpMethods = {
 };
 ```
 
-### 状态码
+### 
 
 ```javascript
 const statusCodes = {
-  // 2xx 成功
-  200: 'OK - 请求成功',
-  201: 'Created - 资源创建成功',
-  204: 'No Content - 请求成功但无返回内容',
+  // 2xx 
+  200: 'OK - ',
+  201: 'Created - ',
+  204: 'No Content - ',
   
-  // 3xx 重定向
-  301: 'Moved Permanently - 永久重定向',
-  302: 'Found - 临时重定向',
-  304: 'Not Modified - 资源未修改',
+  // 3xx 
+  301: 'Moved Permanently - ',
+  302: 'Found - ',
+  304: 'Not Modified - ',
   
-  // 4xx 客户端错误
-  400: 'Bad Request - 请求参数错误',
-  401: 'Unauthorized - 未认证',
-  403: 'Forbidden - 无权限',
-  404: 'Not Found - 资源不存在',
-  409: 'Conflict - 资源冲突',
-  422: 'Unprocessable Entity - 验证失败',
-  429: 'Too Many Requests - 请求过多',
+  // 4xx 
+  400: 'Bad Request - ',
+  401: 'Unauthorized - ',
+  403: 'Forbidden - ',
+  404: 'Not Found - ',
+  409: 'Conflict - ',
+  422: 'Unprocessable Entity - ',
+  429: 'Too Many Requests - ',
   
-  // 5xx 服务器错误
-  500: 'Internal Server Error - 服务器错误',
-  502: 'Bad Gateway - 网关错误',
-  503: 'Service Unavailable - 服务不可用',
-  504: 'Gateway Timeout - 网关超时'
+  // 5xx 
+  500: 'Internal Server Error - ',
+  502: 'Bad Gateway - ',
+  503: 'Service Unavailable - ',
+  504: 'Gateway Timeout - '
 };
 
-// 使用示例
+// 
 class UserController {
   async getUser(req, res) {
     try {
@@ -160,10 +160,10 @@ class UserController {
 }
 ```
 
-### 请求响应格式
+### 
 
 ```typescript
-// 统一响应格式
+// 
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -178,7 +178,7 @@ interface ApiResponse<T> {
   };
 }
 
-// 成功响应
+// 
 const successResponse = <T>(data: T): ApiResponse<T> => ({
   success: true,
   data,
@@ -188,7 +188,7 @@ const successResponse = <T>(data: T): ApiResponse<T> => ({
   }
 });
 
-// 错误响应
+// 
 const errorResponse = (code: string, message: string, details?: any): ApiResponse<never> => ({
   success: false,
   error: {
@@ -202,7 +202,7 @@ const errorResponse = (code: string, message: string, details?: any): ApiRespons
   }
 });
 
-// 分页响应
+// 
 interface PaginatedResponse<T> extends ApiResponse<T[]> {
   pagination: {
     page: number;
@@ -212,7 +212,7 @@ interface PaginatedResponse<T> extends ApiResponse<T[]> {
   };
 }
 
-// 使用示例
+// 
 app.get('/api/v1/users', async (req, res) => {
   const { page = 1, pageSize = 20 } = req.query;
   
@@ -239,32 +239,32 @@ app.get('/api/v1/users', async (req, res) => {
 });
 ```
 
-## 版本控制
+## 
 
-### URL版本控制
+### URL
 
 ```javascript
-// 方式1：URL路径版本
+// 1URL
 app.use('/api/v1', v1Router);
 app.use('/api/v2', v2Router);
 
-// v1版本
+// v1
 const v1Router = express.Router();
 v1Router.get('/users', (req, res) => {
-  // v1逻辑
+  // v1
 });
 
-// v2版本
+// v2
 const v2Router = express.Router();
 v2Router.get('/users', (req, res) => {
-  // v2逻辑
+  // v2
 });
 ```
 
-### Header版本控制
+### Header
 
 ```javascript
-// 方式2：请求头版本
+// 2
 app.use('/api', (req, res, next) => {
   const version = req.headers['api-version'] || '1';
   
@@ -280,7 +280,7 @@ app.use('/api', (req, res, next) => {
 });
 ```
 
-### 版本废弃策略
+### 
 
 ```javascript
 class ApiVersionManager {
@@ -334,9 +334,9 @@ class ApiVersionManager {
 }
 ```
 
-## 认证授权
+## 
 
-### JWT认证
+### JWT
 
 ```javascript
 const jwt = require('jsonwebtoken');
@@ -387,7 +387,7 @@ class AuthService {
   }
 }
 
-// 使用
+// 
 const authService = new AuthService();
 
 app.post('/api/v1/login', async (req, res) => {
@@ -416,7 +416,7 @@ app.post('/api/v1/login', async (req, res) => {
   });
 });
 
-// 受保护的路由
+// 
 app.get('/api/v1/profile', 
   authService.middleware(),
   async (req, res) => {
@@ -426,7 +426,7 @@ app.get('/api/v1/profile',
 );
 ```
 
-### 权限控制
+### 
 
 ```javascript
 class PermissionMiddleware {
@@ -473,7 +473,7 @@ class PermissionMiddleware {
   }
 }
 
-// 使用
+// 
 const permission = new PermissionMiddleware();
 
 app.delete('/api/v1/users/:id',
@@ -486,16 +486,16 @@ app.delete('/api/v1/users/:id',
 );
 ```
 
-## 限流
+## 
 
-### 令牌桶算法
+### 
 
 ```javascript
 class TokenBucket {
   constructor(capacity, refillRate) {
-    this.capacity = capacity;      // 桶容量
-    this.tokens = capacity;        // 当前令牌数
-    this.refillRate = refillRate;  // 每秒补充令牌数
+    this.capacity = capacity;      // 
+    this.tokens = capacity;        // 
+    this.refillRate = refillRate;  // 
     this.lastRefill = Date.now();
   }
   
@@ -555,7 +555,7 @@ class RateLimiter {
   }
 }
 
-// 使用
+// 
 const rateLimiter = new RateLimiter();
 
 app.use('/api', rateLimiter.middleware({
@@ -564,7 +564,7 @@ app.use('/api', rateLimiter.middleware({
 }));
 ```
 
-### Redis限流
+### Redis
 
 ```javascript
 class RedisRateLimiter {
@@ -576,19 +576,19 @@ class RedisRateLimiter {
     const now = Date.now();
     const windowStart = now - window * 1000;
     
-    // 使用Redis的Sorted Set
+    // RedisSorted Set
     const multi = this.redis.multi();
     
-    // 移除过期的请求
+    // 
     multi.zremrangebyscore(key, 0, windowStart);
     
-    // 添加当前请求
+    // 
     multi.zadd(key, now, `${now}-${Math.random()}`);
     
-    // 获取窗口内的请求数
+    // 
     multi.zcard(key);
     
-    // 设置过期时间
+    // 
     multi.expire(key, window);
     
     const results = await multi.exec();
@@ -629,7 +629,7 @@ class RedisRateLimiter {
 }
 ```
 
-## 文档生成
+## 
 
 ### OpenAPI/Swagger
 
@@ -726,7 +726,7 @@ app.get('/api/v1/users', getUsers);
 
 ## GraphQL API
 
-### Schema定义
+### Schema
 
 ```graphql
 type User {
@@ -801,7 +801,7 @@ type PageInfo {
 }
 ```
 
-### Resolver实现
+### Resolver
 
 ```javascript
 const resolvers = {
@@ -858,7 +858,7 @@ const resolvers = {
 };
 ```
 
-## 错误处理
+## 
 
 ```javascript
 class ApiError extends Error {
@@ -870,7 +870,7 @@ class ApiError extends Error {
   }
 }
 
-// 错误类型
+// 
 class ValidationError extends ApiError {
   constructor(message, details) {
     super('VALIDATION_ERROR', message, 422, details);
@@ -889,7 +889,7 @@ class UnauthorizedError extends ApiError {
   }
 }
 
-// 全局错误处理
+// 
 app.use((error, req, res, next) => {
   console.error(error);
   
@@ -904,7 +904,7 @@ app.use((error, req, res, next) => {
     });
   }
   
-  // 未知错误
+  // 
   res.status(500).json({
     success: false,
     error: {
@@ -915,15 +915,15 @@ app.use((error, req, res, next) => {
 });
 ```
 
-## 总结
+## 
 
-API设计最佳实践：
-- 🎯 **RESTful设计**：资源命名 + HTTP方法 + 状态码
-- 🔐 **认证授权**：JWT + 权限控制
-- 🚦 **限流保护**：令牌桶 + Redis限流
-- 📝 **文档生成**：OpenAPI/Swagger
-- 🔄 **版本控制**：URL版本 + 废弃策略
-- ⚠️ **错误处理**：统一错误格式
+API
+-  **RESTful** + HTTP + 
+-  ****JWT + 
+-  **** + Redis
+-  ****OpenAPI/Swagger
+-  ****URL + 
+-  ****
 
-记住：**好的API设计是易用、一致、可扩展的！**
+**API**
 

@@ -1,39 +1,39 @@
 ---
 sidebar_position: 1
-title: JavaScript基础面试题
-tags: [面试, JavaScript, 前端]
+title: JavaScript
+tags: [, JavaScript, ]
 ---
 
-# JavaScript基础面试题
+# JavaScript
 
-## 🟢 简单题
+## 🟢 
 
-### 1. JavaScript的数据类型有哪些？
+### 1. JavaScript
 
-**答案**：
+****
 
-JavaScript有8种数据类型：
+JavaScript8
 
-**基本类型（7种）**：
-- `Number`：数字
-- `String`：字符串
-- `Boolean`：布尔值
-- `Undefined`：未定义
-- `Null`：空值
-- `Symbol`：符号（ES6）
-- `BigInt`：大整数（ES2020）
+**7**
+- `Number`
+- `String`
+- `Boolean`
+- `Undefined`
+- `Null`
+- `Symbol`ES6
+- `BigInt`ES2020
 
-**引用类型（1种）**：
-- `Object`：对象（包括Array、Function、Date等）
+**1**
+- `Object`ArrayFunctionDate
 
-**类型检测**：
+****
 ```javascript
 // typeof
 typeof 123 // 'number'
 typeof 'hello' // 'string'
 typeof true // 'boolean'
 typeof undefined // 'undefined'
-typeof null // 'object' (历史遗留bug)
+typeof null // 'object' (bug)
 typeof Symbol() // 'symbol'
 typeof 123n // 'bigint'
 typeof {} // 'object'
@@ -51,89 +51,89 @@ Object.prototype.toString.call({}) // '[object Object]'
 
 ---
 
-### 2. == 和 === 的区别？
+### 2. ==  === 
 
-**答案**：
+****
 
-- `==`：相等运算符，会进行类型转换
-- `===`：严格相等运算符，不会进行类型转换
+- `==`
+- `===`
 
 ```javascript
-// == 会进行类型转换
+// == 
 1 == '1' // true
 0 == false // true
 null == undefined // true
 
-// === 不会进行类型转换
+// === 
 1 === '1' // false
 0 === false // false
 null === undefined // false
 
-// 特殊情况
+// 
 NaN == NaN // false
 NaN === NaN // false
 Object.is(NaN, NaN) // true
 ```
 
-**最佳实践**：始终使用 `===` 和 `!==`
+**** `===`  `!==`
 
 ---
 
-### 3. var、let、const的区别？
+### 3. varletconst
 
-**答案**：
+****
 
-| 特性 | var | let | const |
+|  | var | let | const |
 |------|-----|-----|-------|
-| 作用域 | 函数作用域 | 块级作用域 | 块级作用域 |
-| 变量提升 | 是 | 否（暂时性死区） | 否（暂时性死区） |
-| 重复声明 | 允许 | 不允许 | 不允许 |
-| 重新赋值 | 允许 | 允许 | 不允许 |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
 
 ```javascript
-// var - 函数作用域
+// var - 
 function test() {
   var x = 1;
   if (true) {
-    var x = 2; // 同一个变量
+    var x = 2; // 
     console.log(x); // 2
   }
   console.log(x); // 2
 }
 
-// let - 块级作用域
+// let - 
 function test() {
   let x = 1;
   if (true) {
-    let x = 2; // 不同的变量
+    let x = 2; // 
     console.log(x); // 2
   }
   console.log(x); // 1
 }
 
-// const - 不可重新赋值
+// const - 
 const obj = { a: 1 };
-obj.a = 2; // 可以修改属性
-obj = {}; // 错误：不能重新赋值
+obj.a = 2; // 
+obj = {}; // 
 ```
 
 ---
 
-## 🟡 中等题
+## 🟡 
 
-### 4. 闭包是什么？有什么应用场景？
+### 4. 
 
-**答案**：
+****
 
-闭包是指函数可以访问其外部作用域的变量，即使外部函数已经执行完毕。
 
-**原理**：
-- 函数在创建时会保存其词法环境
-- 内部函数可以访问外部函数的变量
-- 外部函数执行完后，变量不会被销毁
+
+****
+- 
+- 
+- 
 
 ```javascript
-// 基础示例
+// 
 function outer() {
   let count = 0;
   
@@ -148,9 +148,9 @@ counter(); // 1
 counter(); // 2
 counter(); // 3
 
-// 应用场景1：数据私有化
+// 1
 function createPerson(name) {
-  let age = 0; // 私有变量
+  let age = 0; // 
   
   return {
     getName() {
@@ -172,7 +172,7 @@ person.setAge(30);
 console.log(person.getAge()); // 30
 console.log(person.age); // undefined
 
-// 应用场景2：函数柯里化
+// 2
 function curry(fn) {
   return function curried(...args) {
     if (args.length >= fn.length) {
@@ -193,7 +193,7 @@ const curriedAdd = curry(add);
 console.log(curriedAdd(1)(2)(3)); // 6
 console.log(curriedAdd(1, 2)(3)); // 6
 
-// 应用场景3：防抖和节流
+// 3
 function debounce(fn, delay) {
   let timer = null;
   
@@ -218,28 +218,28 @@ function throttle(fn, delay) {
 }
 ```
 
-**注意事项**：
-- 闭包会导致内存占用增加
-- 避免在循环中创建闭包
-- 及时释放不需要的闭包
+****
+- 
+- 
+- 
 
 ---
 
-### 5. 原型和原型链是什么？
+### 5. 
 
-**答案**：
+****
 
-**原型**：
-- 每个对象都有一个 `__proto__` 属性，指向其构造函数的 `prototype`
-- 每个函数都有一个 `prototype` 属性，是一个对象
+****
+-  `__proto__`  `prototype`
+-  `prototype` 
 
-**原型链**：
-- 对象通过 `__proto__` 连接起来形成链条
-- 查找属性时会沿着原型链向上查找
-- 原型链的顶端是 `Object.prototype`
+****
+-  `__proto__` 
+- 
+-  `Object.prototype`
 
 ```javascript
-// 构造函数
+// 
 function Person(name) {
   this.name = name;
 }
@@ -250,31 +250,31 @@ Person.prototype.sayHello = function() {
 
 const person = new Person('John');
 
-// 原型关系
+// 
 console.log(person.__proto__ === Person.prototype); // true
 console.log(Person.prototype.__proto__ === Object.prototype); // true
 console.log(Object.prototype.__proto__ === null); // true
 
-// 原型链查找
-person.sayHello(); // 在 Person.prototype 上找到
-person.toString(); // 在 Object.prototype 上找到
+// 
+person.sayHello(); //  Person.prototype 
+person.toString(); //  Object.prototype 
 
-// 手动实现 new
+//  new
 function myNew(Constructor, ...args) {
-  // 1. 创建新对象，原型指向构造函数的prototype
+  // 1. prototype
   const obj = Object.create(Constructor.prototype);
   
-  // 2. 执行构造函数
+  // 2. 
   const result = Constructor.apply(obj, args);
   
-  // 3. 返回对象
+  // 3. 
   return result instanceof Object ? result : obj;
 }
 
 const person2 = myNew(Person, 'Jane');
 person2.sayHello(); // Hello, I'm Jane
 
-// 继承实现
+// 
 function Student(name, grade) {
   Person.call(this, name);
   this.grade = grade;
@@ -294,21 +294,21 @@ student.study(); // Tom is studying
 
 ---
 
-### 6. this的指向规则？
+### 6. this
 
-**答案**：
+****
 
-this的指向取决于函数的调用方式：
+this
 
-**1. 默认绑定**：
+**1. **
 ```javascript
 function foo() {
-  console.log(this); // window (非严格模式) / undefined (严格模式)
+  console.log(this); // window () / undefined ()
 }
 foo();
 ```
 
-**2. 隐式绑定**：
+**2. **
 ```javascript
 const obj = {
   name: 'John',
@@ -318,12 +318,12 @@ const obj = {
 };
 obj.sayName(); // John
 
-// 隐式绑定丢失
+// 
 const fn = obj.sayName;
 fn(); // undefined
 ```
 
-**3. 显式绑定**：
+**3. **
 ```javascript
 function greet(greeting) {
   console.log(`${greeting}, ${this.name}`);
@@ -338,7 +338,7 @@ const boundGreet = greet.bind(person, 'Hey');
 boundGreet(); // Hey, John
 ```
 
-**4. new绑定**：
+**4. new**
 ```javascript
 function Person(name) {
   this.name = name;
@@ -348,7 +348,7 @@ const person = new Person('John');
 console.log(person.name); // John
 ```
 
-**5. 箭头函数**：
+**5. **
 ```javascript
 const obj = {
   name: 'John',
@@ -356,35 +356,35 @@ const obj = {
     console.log(this.name); // John
   },
   arrowFunc: () => {
-    console.log(this.name); // undefined (继承外层作用域)
+    console.log(this.name); // undefined ()
   },
   nested() {
     const arrow = () => {
-      console.log(this.name); // John (继承nested的this)
+      console.log(this.name); // John (nestedthis)
     };
     arrow();
   }
 };
 ```
 
-**优先级**：new绑定 > 显式绑定 > 隐式绑定 > 默认绑定
+****new >  >  > 
 
 ---
 
-## 🔴 困难题
+##  
 
-### 7. 实现一个深拷贝函数
+### 7. 
 
-**答案**：
+****
 
 ```javascript
 function deepClone(obj, hash = new WeakMap()) {
-  // null 或 undefined
+  // null  undefined
   if (obj === null || obj === undefined) {
     return obj;
   }
   
-  // 基本类型
+  // 
   if (typeof obj !== 'object') {
     return obj;
   }
@@ -399,23 +399,23 @@ function deepClone(obj, hash = new WeakMap()) {
     return new RegExp(obj);
   }
   
-  // 循环引用
+  // 
   if (hash.has(obj)) {
     return hash.get(obj);
   }
   
-  // 数组或对象
+  // 
   const cloneObj = Array.isArray(obj) ? [] : {};
   hash.set(obj, cloneObj);
   
-  // 拷贝属性
+  // 
   for (let key in obj) {
     if (obj.hasOwnProperty(key)) {
       cloneObj[key] = deepClone(obj[key], hash);
     }
   }
   
-  // 拷贝Symbol属性
+  // Symbol
   const symbolKeys = Object.getOwnPropertySymbols(obj);
   for (let key of symbolKeys) {
     cloneObj[key] = deepClone(obj[key], hash);
@@ -424,7 +424,7 @@ function deepClone(obj, hash = new WeakMap()) {
   return cloneObj;
 }
 
-// 测试
+// 
 const obj = {
   a: 1,
   b: { c: 2 },
@@ -433,7 +433,7 @@ const obj = {
   f: /test/g,
   [Symbol('key')]: 'symbol value'
 };
-obj.self = obj; // 循环引用
+obj.self = obj; // 
 
 const cloned = deepClone(obj);
 console.log(cloned);
@@ -442,16 +442,16 @@ console.log(cloned.self === cloned); // true
 
 ---
 
-### 8. 实现Promise.all和Promise.race
+### 8. Promise.allPromise.race
 
-**答案**：
+****
 
 ```javascript
 // Promise.all
 Promise.myAll = function(promises) {
   return new Promise((resolve, reject) => {
     if (!Array.isArray(promises)) {
-      return reject(new TypeError('参数必须是数组'));
+      return reject(new TypeError(''));
     }
     
     const results = [];
@@ -483,7 +483,7 @@ Promise.myAll = function(promises) {
 Promise.myRace = function(promises) {
   return new Promise((resolve, reject) => {
     if (!Array.isArray(promises)) {
-      return reject(new TypeError('参数必须是数组'));
+      return reject(new TypeError(''));
     }
     
     promises.forEach(promise => {
@@ -492,7 +492,7 @@ Promise.myRace = function(promises) {
   });
 };
 
-// 测试
+// 
 const p1 = Promise.resolve(1);
 const p2 = new Promise(resolve => setTimeout(() => resolve(2), 1000));
 const p3 = Promise.resolve(3);
@@ -503,9 +503,9 @@ Promise.myRace([p1, p2, p3]).then(console.log); // 1
 
 ---
 
-### 9. 实现EventEmitter（发布订阅模式）
+### 9. EventEmitter
 
-**答案**：
+****
 
 ```javascript
 class EventEmitter {
@@ -513,18 +513,18 @@ class EventEmitter {
     this.events = {};
   }
   
-  // 订阅事件
+  // 
   on(event, listener) {
     if (!this.events[event]) {
       this.events[event] = [];
     }
     this.events[event].push(listener);
     
-    // 返回取消订阅函数
+    // 
     return () => this.off(event, listener);
   }
   
-  // 取消订阅
+  // 
   off(event, listener) {
     if (!this.events[event]) return;
     
@@ -533,7 +533,7 @@ class EventEmitter {
     );
   }
   
-  // 触发事件
+  // 
   emit(event, ...args) {
     if (!this.events[event]) return;
     
@@ -542,7 +542,7 @@ class EventEmitter {
     });
   }
   
-  // 只订阅一次
+  // 
   once(event, listener) {
     const onceWrapper = (...args) => {
       listener(...args);
@@ -552,39 +552,39 @@ class EventEmitter {
   }
 }
 
-// 测试
+// 
 const emitter = new EventEmitter();
 
 const unsubscribe = emitter.on('data', (data) => {
-  console.log('收到数据:', data);
+  console.log(':', data);
 });
 
-emitter.emit('data', { id: 1 }); // 收到数据: { id: 1 }
+emitter.emit('data', { id: 1 }); // : { id: 1 }
 unsubscribe();
-emitter.emit('data', { id: 2 }); // 无输出
+emitter.emit('data', { id: 2 }); // 
 
 emitter.once('init', () => {
-  console.log('初始化');
+  console.log('');
 });
-emitter.emit('init'); // 初始化
-emitter.emit('init'); // 无输出
+emitter.emit('init'); // 
+emitter.emit('init'); // 
 ```
 
 ---
 
-## 📝 总结
+##  
 
-JavaScript基础面试题涵盖：
-1. **数据类型**：类型判断、类型转换
-2. **作用域**：var/let/const、闭包
-3. **原型链**：继承、new操作符
-4. **this绑定**：四种绑定规则
-5. **异步编程**：Promise、async/await
-6. **设计模式**：发布订阅、单例等
+JavaScript
+1. ****
+2. ****var/let/const
+3. ****new
+4. **this**
+5. ****Promiseasync/await
+6. ****
 
-**备考建议**：
-- 理解原理，不要死记硬背
-- 多写代码，手动实现核心API
-- 结合实际项目经验回答
-- 准备好常见问题的答题模板
+****
+- 
+- API
+- 
+- 
 

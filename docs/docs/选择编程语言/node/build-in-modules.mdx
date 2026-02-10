@@ -1,40 +1,40 @@
 
-# 内置模块
-## http模块
+# 
+## http
 
 ```javascript
 const http = require('http')
 const server = http.createServer((req, res) => {
-    console.log(req.url) // 请求url
-    console.log(req.method) // 请求方法
-    console.log(req.headers) // 请求头部
+    console.log(req.url) // url
+    console.log(req.method) // 
+    console.log(req.headers) // 
 
     if (req.url === '/') {
-        // 设置响应的状态码和头部
+        // 
         res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'})
 
-        // 单独设置状态码
+        // 
         res.statusCode = 200
-        // 单独设置响应头部
+        // 
         res.setHeader('Content-Type', 'text/plain; charset=utf-8')
         // Set-Cookie
         res.setHeader('Set-Cookie', 'name=akara; secure')
 
-        // 设置响应实体
+        // 
         res.write("hello world")
         res.write("!!!")
-        // 发送响应报文
+        // 
         res.end()
     }
 
 })
 
 server.listen(3000, () => {
-    console.log("服务器跑在3000端口")
+    console.log("3000")
 })
 ```
 
-### 静态目录
+### 
 
 ```javascript
 const http = require('http')
@@ -53,7 +53,7 @@ const server = http.createServer((req, res) => {
             res.end("404 Not Found")
         }
     }
-    // 或者
+    // 
     else {
         let fileName = url.pathname
         let type
@@ -75,7 +75,7 @@ const server = http.createServer((req, res) => {
             res.end(file)
         } catch (error) {
             res.writeHead(400, {'Content-Type': 'text/plain; charset=utf-8'})
-            res.end("404错误啦！")
+            res.end("404")
         }
     }
 }).listen(3000)
@@ -83,10 +83,10 @@ const server = http.createServer((req, res) => {
 
 ```
 
-### 处理Post请求
+### Post
 
 ```javascript
-// 前端 (省略部分代码)
+//  ()
 let type = typeof data
 let header
 if (type === 'string') {
@@ -103,7 +103,7 @@ xhr.setRequestHeader('Content-type', header)
 xhr.send(data)
 
 
-// 后端
+// 
 const http = require('http')
 const fs = require('fs')
 const server = http.createServer((req, res) => {
@@ -112,20 +112,20 @@ const server = http.createServer((req, res) => {
         let segment = []
 
         req.on('data', (chunk) => {
-            // chunk为Buffer对象
-            // 字符串aaa=bbb对应的Buffer对象如下
+            // chunkBuffer
+            // aaa=bbbBuffer
             // <Buffer 61 61 61 3d 62 62 62>
             segment.push(chunk)
         })
 
         req.on('end', () => {
-            // 文件上传代码
+            // 
             segment = Buffer.concat(segment)
-            // 下方代码获取buffer转成的字符串
+            // buffer
             // segment = Buffer.concat(segment).toString()
             fs.writeFile('fileName', segment, (err) => {
                 res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'})
-                res.write("文件上传成功！")
+                res.write("")
                 res.end()
             })
         })
@@ -133,11 +133,11 @@ const server = http.createServer((req, res) => {
 })
 
 server.listen(3000, () => {
-    console.log("服务器跑在3000端口")
+    console.log("3000")
 })
 ```
 
-## fs模块
+## fs
 
 ```javascript
 const fs = require('fs')
@@ -154,9 +154,9 @@ fs.readFile('./image.png', (err, buffer) => {
 ### `writeFile`
 
 ```javascript
-// 写入文本
+// 
 fs.writeFile('index.txt', 'hello world', 'utf8')
-// 写入buffer
+// buffer
 fs.writeFile('image.png', buffer)
 ```
 
@@ -170,7 +170,7 @@ const stream = fs.createWriteStream(`./image/${Math.floor(Math.random() * 10000)
 reader.pipe(stream)
 ```
 
-## path模块
+## path
 
 ```javascript
 const path = require('path')
@@ -178,23 +178,23 @@ const path = require('path')
 
 ### `__dirname`
 
-返回当前文件所在的**绝对路径**
+****
 
 ### `path.resolve`
 
 ```js
 const url = path.resolve('./static')
-// 等价于
+// 
 const url = path.join(process.cwd(), './static')
 ```
 
-根据当前所在目录，即`process.cwd()`和传入的路径参数，解析出完整的**绝对路径**
+`process.cwd()`****
 
 
 
 ### `require.resolve`
 
-> 作为拓展阅读
+> 
 
 ``` js
 const url = require.resolve('webpack') // /path/to/project/node_modules/webpack/lib/index.js
@@ -206,7 +206,7 @@ const url = require.resolve('webpack') // /path/to/project/node_modules/webpack/
 
 ### `path.join`
 
-用来拼接传入的参数得到一个**相对路径**，它的好处是可以抹平不同平台的分割符号的差异（如Linux环境下分隔符为 `/`，而Windows环境下分隔符为 `\`）
+****Linux `/`Windows `\`
 
 ```javascript
 const path1 = path.join('a', 'b') // 'a/b'
@@ -216,13 +216,13 @@ const path3 = path.join(__dirname, '..', 'b')
 
 
 
-## process模块
+## process
 
 ### `process.cwd()`
 
-获得执行脚本时所处的绝对路径。当我们使用 `fs.readFile`等函数并传入 `./index.html`形式的相对路径时，相对路径实际上是相对于执行脚本时所在的目录路径，也就是相对于 `process.cwd()`。
+ `fs.readFile` `./index.html` `process.cwd()`
 
-因此根据执行脚本时所处路径的不同，结果也可能有很大的差异，所以很多时候我们会传入绝对路径，如
+
 
 ```js
 fs.readFile(`${__dirname}/../index.html`)
@@ -231,7 +231,7 @@ fs.readFile(path.join(__dirname, '../index.html'))
 
 ### `process.argv`
 
-获取执行脚本时命令行输入的参数
+
 
 ```js
 $node index.js abc
@@ -246,11 +246,11 @@ $node index.js abc
 
 ### `process.env`
 
-在 `Node`中可以通过 `process.env`拿到环境变量，从而根据不同的环境执行不同的代码。
+ `Node` `process.env`
 
 #### cross-env
 
-通常不同系统设置环境变量的方式不同，为此可以使用第三方库 `cross-env`来设置环境变量。
+ `cross-env`
 
 ```json
 // package.json
@@ -263,7 +263,7 @@ $node index.js abc
 
 #### dotenv
 
-除了在命令行中设置环境变量，我们也可以使用单独的文件 `.env`来保存环境变量，并搭配 `dotenv`库来读取 `.env`文件中的环境变量。
+ `.env` `dotenv` `.env`
 
 ```.env
 NODE_ENV=development
@@ -273,12 +273,12 @@ name=aka
 ```js
 // app.js
 const dotenv = require('dotenv')
-dotenv.config() // 读取.env文件中的信息
+dotenv.config() // .env
 
 console.log(process.env.NODE_ENV)
 ```
 
-或者我们可以写一个 `config.js`
+ `config.js`
 
 ```js
 // config.js
@@ -301,7 +301,7 @@ console.log(NODE_ENV, name)
 
 ### `process.stdin`
 
-标准输入流
+
 
 ```js
 process.stdin.on('data', (chunk) => {
@@ -312,7 +312,7 @@ process.stdin.on('data', (chunk) => {
 
 ### `process.stdout`
 
-标准输出流
+
 
 ```js
 process.stdout.write('Hello world')
@@ -322,9 +322,9 @@ process.stdout.write('Hello world')
 
 
 
-## util模块
+## util
 
-这个模块提供了诸多很有用的小工具。
+
 
 ### `deprecate`
 
@@ -349,11 +349,11 @@ async function A() {
 }
 ```
 
-## child_process模块
+## child_process
 
-Node的 `child_process`模块提供了创建子进程的四种方式，分别是 `folk`、`exec`、`execFile`、`spawn`。
+Node `child_process` `folk``exec``execFile``spawn`
 
-其中，只有 `fork`是用来创建Node程序的子进程，其他三种可以用来创建 `shell`子进程。
+ `fork`Node `shell`
 
 ### `fork`
 
@@ -363,7 +363,7 @@ const cp = require('child_process')
 const path = require('path')
 const child = cp.fork('./child.js')
 
-child.on('message', (msg) => { // 进程通信
+child.on('message', (msg) => { // 
   	console.log(msg);
   	child.disconnect()
 })
@@ -376,7 +376,7 @@ process.on('message', (msg) => {
 })
 ```
 
-`exec`可以直接在Node代码中写入 `shell`命令，并且在执行一些危险的脚本（如 `rm / -rf`）是不会提示的；而 `execFile`和 `spawn`的参数都是文件的名字，并且 `execFile`在执行危险操作时会爆出异常，因此更加的安全。
+`exec`Node `shell` `rm / -rf` `execFile` `spawn` `execFile`
 
 ### `exec`
 
@@ -402,7 +402,7 @@ const exec = util.promisify(cp.execFile)
 
 ### `spawn`
 
-`spawn`的特点是基于流的，因此可以使用 `pipe`显得更加灵活
+`spawn` `pipe`
 
 ```js
 const cat = cp.spawn('cat', [file])
@@ -412,16 +412,16 @@ cat.stdout.pipe(sort.stdin)
 sort.stdout.pipe(process.stdout)
 ```
 
-## cluster模块
+## cluster
 
-使用cluster来搭建集群node应用
+clusternode
 
-怎么讲呢，直接看网上的代码吧。
+
 
 ```js
 var cluster = require('cluster');
 var http = require('http');
-var numCPUs = require('os').cpus().length; // 获取CPU的个数
+var numCPUs = require('os').cpus().length; // CPU
 
 if (cluster.isMaster) {
   for (var i = 0; i < numCPUs; i++) {
@@ -440,24 +440,24 @@ if (cluster.isMaster) {
 
 ```
 
-以上代码，父进程根据CPU的数量创建子进程。只看代码的话，容易理解成每一个进程都创建了一个server来监听8000端口，但这是不切实际的。其实cluster做了很多事情，在实际的情况下，父进程会创建server监听端口，收到的请求会分发给不同的进程去处理。
+CPUserver8000clusterserver
 
-cluster让我们不用亲自去管理进程通信的事情（process.on('message')），而且也自带负载均衡的策略。
+clusterprocess.on('message')
 
-默认情况，除了windows系统下，使用cluster时的负载均衡策略为round-robin。比如刚才的服务器，收到了8个请求，第一个请求交给第一个子进程处理，第二个请求交给第二个子进程...
+windowsclusterround-robin8...
 
-在windows系统下，通过以下代码来设置负载均衡策略为round-robin
+windowsround-robin
 
 `cluster.schedulingPolicy = cluster.SCHED_RR;`
 
-另外，pm2也自带cluster，比如可以靠以下代码创建8个子进程。
+pm2cluster8
 
 `pm2 start app.js -i 8`
 
-## url模块
+## url
 
 ```javascript
-// 当请求url为 http://localhost:3000/index.html?name=akara#aa
+// url http://localhost:3000/index.html?name=akara#aa
 const url = require('url')
 let {
     search, // '?name=akara'
@@ -467,7 +467,7 @@ let {
 } = url.parse(req.url)
 ```
 
-## querystring模块
+## querystring
 
 ```javascript
 const qs = require('querystring')
@@ -477,18 +477,18 @@ querystring.parse(str)
 // { foo: 'bar', abc: [ 'xyz', '123' ] }
 ```
 
-## os模块
+## os
 
-获取操作系统相关信息。
+
 
 ```js
 const os = require('os')
-const homedir = os.homedir() // 获取用户目录
+const homedir = os.homedir() // 
 ```
 
-## event模块
+## event
 
-> 实现原理见本文的设计模式-发布订阅章节
+> -
 
 ```javascript
 var EventEmitter = require('events').EventEmitter
@@ -503,4 +503,4 @@ emitter.emit('ev')
 
 ---
 
-以上是Node自带的核心库，下面介绍一些常用的第三方库。
+Node

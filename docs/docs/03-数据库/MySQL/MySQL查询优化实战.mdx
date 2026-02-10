@@ -1,314 +1,314 @@
 ---
 sidebar_position: 4
-title: MySQL查询优化实战
-tags: [数据库, MySQL, 查询优化, 性能调优]
+title: MySQL
+tags: [, MySQL, , ]
 ---
 
-# MySQL查询优化实战
+# MySQL
 
-查询优化是数据库性能调优的核心，本文将通过实战案例讲解MySQL查询优化的方法和技巧。
+MySQL
 
-## EXPLAIN执行计划
+## EXPLAIN
 
-### 执行计划详解
+### 
 
 ```sql
--- 查看执行计划
+-- 
 EXPLAIN SELECT * FROM orders WHERE user_id = 1;
 
--- 执行计划输出
+-- 
 /*
 +----+-------------+--------+------+---------------+------+---------+------+------+-------------+
 | id | select_type | table  | type | possible_keys | key  | key_len | ref  | rows | Extra       |
 +----+-------------+--------+------+---------------+------+---------+------+------+-------------+
 */
 
--- 字段说明
+-- 
 ```
 
-#### 1. id - 查询序号
+#### 1. id - 
 
 ```sql
--- 简单查询
+-- 
 EXPLAIN SELECT * FROM users WHERE id = 1;
 -- id = 1
 
--- 子查询
+-- 
 EXPLAIN SELECT * FROM users 
 WHERE id IN (SELECT user_id FROM orders);
--- id = 1 (外层查询)
--- id = 2 (子查询)
+-- id = 1 ()
+-- id = 2 ()
 
--- 联合查询
+-- 
 EXPLAIN 
 SELECT * FROM users WHERE id = 1
 UNION
 SELECT * FROM users WHERE id = 2;
--- id = 1 (第一个查询)
--- id = 2 (第二个查询)
+-- id = 1 ()
+-- id = 2 ()
 ```
 
-#### 2. select_type - 查询类型
+#### 2. select_type - 
 
 ```sql
--- SIMPLE：简单查询
+-- SIMPLE
 EXPLAIN SELECT * FROM users WHERE id = 1;
 
--- PRIMARY：主查询
+-- PRIMARY
 EXPLAIN SELECT * FROM users 
 WHERE id IN (SELECT user_id FROM orders);
 
--- SUBQUERY：子查询
+-- SUBQUERY
 EXPLAIN SELECT * FROM users 
 WHERE id = (SELECT MAX(user_id) FROM orders);
 
--- DERIVED：派生表
+-- DERIVED
 EXPLAIN SELECT * FROM (
     SELECT * FROM users WHERE age > 18
 ) AS adults;
 
--- UNION：联合查询
+-- UNION
 EXPLAIN 
 SELECT * FROM users WHERE id = 1
 UNION
 SELECT * FROM users WHERE id = 2;
 ```
 
-#### 3. type - 访问类型（重要！）
+#### 3. type - 
 
 ```sql
--- system：表只有一行（系统表）
--- 最优
+-- system
+-- 
 
--- const：主键或唯一索引的等值查询
+-- const
 EXPLAIN SELECT * FROM users WHERE id = 1;
 -- type: const
 
--- eq_ref：唯一索引扫描
+-- eq_ref
 EXPLAIN SELECT * FROM orders o
 JOIN users u ON o.user_id = u.id;
 -- type: eq_ref
 
--- ref：非唯一索引扫描
+-- ref
 EXPLAIN SELECT * FROM users WHERE name = 'John';
 -- type: ref
 
--- range：索引范围扫描
+-- range
 EXPLAIN SELECT * FROM users WHERE age > 18;
 -- type: range
 
--- index：索引全扫描
+-- index
 EXPLAIN SELECT id FROM users;
 -- type: index
 
--- ALL：全表扫描（最差）
+-- ALL
 EXPLAIN SELECT * FROM users WHERE email LIKE '%@gmail.com';
 -- type: ALL
 
--- 性能排序：system > const > eq_ref > ref > range > index > ALL
+-- system > const > eq_ref > ref > range > index > ALL
 ```
 
-#### 4. possible_keys 和 key
+#### 4. possible_keys  key
 
 ```sql
--- possible_keys：可能使用的索引
--- key：实际使用的索引
+-- possible_keys
+-- key
 
 CREATE INDEX idx_name ON users(name);
 CREATE INDEX idx_age ON users(age);
 
 EXPLAIN SELECT * FROM users WHERE name = 'John' AND age > 18;
 -- possible_keys: idx_name, idx_age
--- key: idx_name (MySQL选择了name索引)
+-- key: idx_name (MySQLname)
 ```
 
-#### 5. rows - 扫描行数
+#### 5. rows - 
 
 ```sql
--- 预估需要扫描的行数
+-- 
 EXPLAIN SELECT * FROM users WHERE age > 18;
--- rows: 50000 (需要扫描5万行)
+-- rows: 50000 (5)
 
--- 优化后
+-- 
 CREATE INDEX idx_age ON users(age);
 EXPLAIN SELECT * FROM users WHERE age > 18;
--- rows: 10000 (只需扫描1万行)
+-- rows: 10000 (1)
 ```
 
-#### 6. Extra - 额外信息
+#### 6. Extra - 
 
 ```sql
--- Using index：覆盖索引
+-- Using index
 CREATE INDEX idx_name_age ON users(name, age);
 EXPLAIN SELECT name, age FROM users WHERE name = 'John';
 -- Extra: Using index
 
--- Using where：使用WHERE过滤
+-- Using whereWHERE
 EXPLAIN SELECT * FROM users WHERE age > 18;
 -- Extra: Using where
 
--- Using filesort：文件排序（需要优化）
+-- Using filesort
 EXPLAIN SELECT * FROM users ORDER BY age;
 -- Extra: Using filesort
 
--- 优化：添加索引
+-- 
 CREATE INDEX idx_age ON users(age);
 EXPLAIN SELECT * FROM users ORDER BY age;
 -- Extra: Using index
 
--- Using temporary：使用临时表（需要优化）
+-- Using temporary
 EXPLAIN SELECT DISTINCT name FROM users;
 -- Extra: Using temporary
 
--- Using index condition：索引条件下推
+-- Using index condition
 CREATE INDEX idx_name_age ON users(name, age);
 EXPLAIN SELECT * FROM users WHERE name LIKE 'John%' AND age > 18;
 -- Extra: Using index condition
 ```
 
-## 慢查询优化
+## 
 
-### 1. 开启慢查询日志
+### 1. 
 
 ```sql
--- 查看慢查询配置
+-- 
 SHOW VARIABLES LIKE 'slow_query%';
 SHOW VARIABLES LIKE 'long_query_time';
 
--- 开启慢查询日志
+-- 
 SET GLOBAL slow_query_log = 'ON';
 SET GLOBAL slow_query_log_file = '/var/log/mysql/slow.log';
-SET GLOBAL long_query_time = 1;  -- 1秒
+SET GLOBAL long_query_time = 1;  -- 1
 
--- 查看慢查询统计
+-- 
 SHOW GLOBAL STATUS LIKE 'Slow_queries';
 ```
 
-### 2. 分析慢查询
+### 2. 
 
 ```bash
-# 使用mysqldumpslow分析
+# mysqldumpslow
 mysqldumpslow -s t -t 10 /var/log/mysql/slow.log
 
-# 参数说明
-# -s: 排序方式（t:时间, c:次数, l:锁时间）
-# -t: 显示前N条
-# -g: 正则匹配
+# 
+# -s: t:, c:, l:
+# -t: N
+# -g: 
 
-# 使用pt-query-digest分析
+# pt-query-digest
 pt-query-digest /var/log/mysql/slow.log
 ```
 
-### 3. 优化案例
+### 3. 
 
-#### 案例1：避免SELECT *
+#### 1SELECT *
 
 ```sql
--- ❌ 查询所有列
+--  
 SELECT * FROM users WHERE id = 1;
 
--- ✅ 只查询需要的列
+--  
 SELECT id, name, email FROM users WHERE id = 1;
 
--- 性能对比
--- SELECT *: 扫描所有列，数据量大
--- SELECT 指定列: 只扫描需要的列，可能使用覆盖索引
+-- 
+-- SELECT *: 
+-- SELECT : 
 ```
 
-#### 案例2：优化JOIN查询
+#### 2JOIN
 
 ```sql
--- ❌ 笛卡尔积
+--  
 SELECT * FROM orders, users 
 WHERE orders.user_id = users.id;
 
--- ✅ 使用JOIN
+--  JOIN
 SELECT * FROM orders 
 INNER JOIN users ON orders.user_id = users.id;
 
--- ❌ 大表JOIN大表
+--  JOIN
 SELECT * FROM orders o
 JOIN order_items oi ON o.id = oi.order_id;
 
--- ✅ 先过滤再JOIN
+--  JOIN
 SELECT * FROM orders o
 JOIN order_items oi ON o.id = oi.order_id
 WHERE o.created_at > '2024-01-01';
 
--- ✅ 使用小表驱动大表
+--  
 SELECT * FROM users u
 LEFT JOIN orders o ON u.id = o.user_id
 WHERE u.id IN (1, 2, 3);
 ```
 
-#### 案例3：优化子查询
+#### 3
 
 ```sql
--- ❌ 子查询
+--  
 SELECT * FROM users 
 WHERE id IN (
     SELECT user_id FROM orders WHERE amount > 1000
 );
 
--- ✅ 使用JOIN
+--  JOIN
 SELECT DISTINCT u.* FROM users u
 INNER JOIN orders o ON u.id = o.user_id
 WHERE o.amount > 1000;
 
--- ❌ 相关子查询
+--  
 SELECT u.*, (
     SELECT COUNT(*) FROM orders WHERE user_id = u.id
 ) AS order_count
 FROM users u;
 
--- ✅ 使用JOIN + GROUP BY
+--  JOIN + GROUP BY
 SELECT u.*, COUNT(o.id) AS order_count
 FROM users u
 LEFT JOIN orders o ON u.id = o.user_id
 GROUP BY u.id;
 ```
 
-#### 案例4：优化分页查询
+#### 4
 
 ```sql
--- ❌ 深分页性能差
+--  
 SELECT * FROM users ORDER BY id LIMIT 1000000, 10;
--- 需要扫描1000010行
+-- 1000010
 
--- ✅ 使用覆盖索引 + 延迟关联
+--   + 
 SELECT * FROM users u
 INNER JOIN (
     SELECT id FROM users ORDER BY id LIMIT 1000000, 10
 ) AS t ON u.id = t.id;
 
--- ✅ 使用游标分页
+--  
 SELECT * FROM users 
 WHERE id > 1000000 
 ORDER BY id 
 LIMIT 10;
 
--- ✅ 使用时间戳分页
+--  
 SELECT * FROM users 
 WHERE created_at > '2024-01-01 00:00:00'
 ORDER BY created_at 
 LIMIT 10;
 ```
 
-#### 案例5：优化COUNT查询
+#### 5COUNT
 
 ```sql
--- ❌ COUNT(*)全表扫描
+--  COUNT(*)
 SELECT COUNT(*) FROM users;
 
--- ✅ 使用近似值
+--  
 SELECT table_rows FROM information_schema.tables
 WHERE table_name = 'users';
 
--- ✅ 使用缓存
--- Redis缓存用户总数
+--  
+-- Redis
 SET user:count 1000000 EX 3600
 
--- ✅ 使用计数表
+--  
 CREATE TABLE counters (
     name VARCHAR(50) PRIMARY KEY,
     count BIGINT
@@ -316,17 +316,17 @@ CREATE TABLE counters (
 
 INSERT INTO counters VALUES ('users', 0);
 
--- 插入用户时更新计数
+-- 
 INSERT INTO users (...) VALUES (...);
 UPDATE counters SET count = count + 1 WHERE name = 'users';
 ```
 
-## 索引优化实战
+## 
 
-### 1. 组合索引优化
+### 1. 
 
 ```sql
--- 创建测试表
+-- 
 CREATE TABLE orders (
     id BIGINT PRIMARY KEY,
     user_id BIGINT,
@@ -337,29 +337,29 @@ CREATE TABLE orders (
     INDEX idx_created (created_at)
 );
 
--- ✅ 可以使用idx_user_status
+--  idx_user_status
 SELECT * FROM orders WHERE user_id = 1;
 SELECT * FROM orders WHERE user_id = 1 AND status = 'paid';
 
--- ❌ 不能使用idx_user_status
+--  idx_user_status
 SELECT * FROM orders WHERE status = 'paid';
 
--- 优化：调整索引顺序或创建新索引
+-- 
 CREATE INDEX idx_status_user ON orders(status, user_id);
 
--- ✅ 索引覆盖
+--  
 SELECT user_id, status FROM orders WHERE user_id = 1;
 -- Extra: Using index
 
--- ✅ 索引排序
+--  
 SELECT * FROM orders WHERE user_id = 1 ORDER BY status;
 -- Extra: Using index
 ```
 
-### 2. 前缀索引优化
+### 2. 
 
 ```sql
--- 分析前缀长度
+-- 
 SELECT 
     COUNT(DISTINCT LEFT(email, 5)) / COUNT(*) AS sel_5,
     COUNT(DISTINCT LEFT(email, 10)) / COUNT(*) AS sel_10,
@@ -367,55 +367,55 @@ SELECT
     COUNT(DISTINCT email) / COUNT(*) AS sel_full
 FROM users;
 
--- 结果
+-- 
 -- sel_5: 0.85
 -- sel_10: 0.98
 -- sel_15: 0.99
 -- sel_full: 1.00
 
--- 选择前缀长度10
+-- 10
 CREATE INDEX idx_email_prefix ON users(email(10));
 ```
 
-### 3. 索引合并优化
+### 3. 
 
 ```sql
--- 创建单列索引
+-- 
 CREATE INDEX idx_name ON users(name);
 CREATE INDEX idx_age ON users(age);
 
--- 查询可能使用索引合并
+-- 
 EXPLAIN SELECT * FROM users WHERE name = 'John' AND age > 18;
 -- Extra: Using intersect(idx_name, idx_age)
 
--- 但通常组合索引更好
+-- 
 CREATE INDEX idx_name_age ON users(name, age);
 EXPLAIN SELECT * FROM users WHERE name = 'John' AND age > 18;
 -- key: idx_name_age
 ```
 
-## 查询改写技巧
+## 
 
-### 1. OR改写为UNION
+### 1. ORUNION
 
 ```sql
--- ❌ OR查询可能不走索引
+--  OR
 SELECT * FROM users WHERE name = 'John' OR email = 'john@example.com';
 
--- ✅ 改写为UNION
+--  UNION
 SELECT * FROM users WHERE name = 'John'
 UNION
 SELECT * FROM users WHERE email = 'john@example.com';
 ```
 
-### 2. IN改写为EXISTS
+### 2. INEXISTS
 
 ```sql
--- ❌ IN子查询
+--  IN
 SELECT * FROM users 
 WHERE id IN (SELECT user_id FROM orders WHERE amount > 1000);
 
--- ✅ 改写为EXISTS
+--  EXISTS
 SELECT * FROM users u
 WHERE EXISTS (
     SELECT 1 FROM orders o 
@@ -423,52 +423,52 @@ WHERE EXISTS (
 );
 ```
 
-### 3. 函数改写
+### 3. 
 
 ```sql
--- ❌ 在索引列上使用函数
+--  
 SELECT * FROM users WHERE YEAR(created_at) = 2024;
 
--- ✅ 改写查询条件
+--  
 SELECT * FROM users 
 WHERE created_at >= '2024-01-01' 
   AND created_at < '2025-01-01';
 
--- ❌ 隐式类型转换
+--  
 SELECT * FROM users WHERE phone = 12345678;
 
--- ✅ 使用正确类型
+--  
 SELECT * FROM users WHERE phone = '12345678';
 ```
 
-### 4. LIKE优化
+### 4. LIKE
 
 ```sql
--- ❌ 前缀通配符
+--  
 SELECT * FROM users WHERE name LIKE '%John';
 
--- ✅ 后缀通配符
+--  
 SELECT * FROM users WHERE name LIKE 'John%';
 
--- ✅ 使用全文索引
+--  
 CREATE FULLTEXT INDEX idx_name_fulltext ON users(name);
 SELECT * FROM users WHERE MATCH(name) AGAINST('John');
 ```
 
-## 表结构优化
+## 
 
-### 1. 字段类型优化
+### 1. 
 
 ```sql
--- ❌ 使用过大的类型
+--  
 CREATE TABLE users (
-    id BIGINT,              -- 如果不需要这么大，用INT
-    name VARCHAR(255),      -- 如果名字不会超过50，用VARCHAR(50)
-    age TINYINT UNSIGNED,   -- ✅ 0-255足够
-    balance DECIMAL(20,2)   -- 如果金额不会超过百万，用DECIMAL(10,2)
+    id BIGINT,              -- INT
+    name VARCHAR(255),      -- 50VARCHAR(50)
+    age TINYINT UNSIGNED,   --  0-255
+    balance DECIMAL(20,2)   -- DECIMAL(10,2)
 );
 
--- ✅ 使用合适的类型
+--  
 CREATE TABLE users (
     id INT UNSIGNED,
     name VARCHAR(50),
@@ -476,26 +476,26 @@ CREATE TABLE users (
     balance DECIMAL(10,2)
 );
 
--- 类型选择原则
--- 1. 越小越好
--- 2. 简单就好（INT比VARCHAR快）
--- 3. 避免NULL（使用NOT NULL + DEFAULT）
+-- 
+-- 1. 
+-- 2. INTVARCHAR
+-- 3. NULLNOT NULL + DEFAULT
 ```
 
-### 2. 垂直拆分
+### 2. 
 
 ```sql
--- ❌ 大字段和小字段混在一起
+--  
 CREATE TABLE articles (
     id BIGINT PRIMARY KEY,
     title VARCHAR(200),
     author VARCHAR(50),
-    content TEXT,           -- 大字段
+    content TEXT,           -- 
     views INT,
     created_at TIMESTAMP
 );
 
--- ✅ 拆分为两个表
+--  
 CREATE TABLE articles (
     id BIGINT PRIMARY KEY,
     title VARCHAR(200),
@@ -511,10 +511,10 @@ CREATE TABLE article_content (
 );
 ```
 
-### 3. 水平拆分
+### 3. 
 
 ```sql
--- 按时间分表
+-- 
 CREATE TABLE orders_2024_01 (
     id BIGINT PRIMARY KEY,
     user_id BIGINT,
@@ -529,7 +529,7 @@ CREATE TABLE orders_2024_02 (
     created_at TIMESTAMP
 );
 
--- 按范围分表
+-- 
 CREATE TABLE users_0 (  -- id % 10 = 0
     id BIGINT PRIMARY KEY,
     name VARCHAR(50)
@@ -541,39 +541,39 @@ CREATE TABLE users_1 (  -- id % 10 = 1
 );
 ```
 
-## 批量操作优化
+## 
 
-### 1. 批量插入
+### 1. 
 
 ```sql
--- ❌ 逐条插入
+--  
 INSERT INTO users (name) VALUES ('User1');
 INSERT INTO users (name) VALUES ('User2');
 INSERT INTO users (name) VALUES ('User3');
 
--- ✅ 批量插入
+--  
 INSERT INTO users (name) VALUES 
 ('User1'), ('User2'), ('User3');
 
--- ✅ LOAD DATA（最快）
+--  LOAD DATA
 LOAD DATA INFILE '/tmp/users.csv'
 INTO TABLE users
 FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n';
 ```
 
-### 2. 批量更新
+### 2. 
 
 ```sql
--- ❌ 逐条更新
+--  
 UPDATE users SET status = 'active' WHERE id = 1;
 UPDATE users SET status = 'active' WHERE id = 2;
 UPDATE users SET status = 'active' WHERE id = 3;
 
--- ✅ 批量更新
+--  
 UPDATE users SET status = 'active' WHERE id IN (1, 2, 3);
 
--- ✅ CASE WHEN批量更新不同值
+--  CASE WHEN
 UPDATE users SET status = CASE
     WHEN id = 1 THEN 'active'
     WHEN id = 2 THEN 'inactive'
@@ -582,19 +582,19 @@ END
 WHERE id IN (1, 2, 3);
 ```
 
-## 监控与诊断
+## 
 
 ```sql
--- 查看正在执行的查询
+-- 
 SHOW PROCESSLIST;
 
--- 查看表状态
+-- 
 SHOW TABLE STATUS LIKE 'users';
 
--- 查看索引统计
+-- 
 SHOW INDEX FROM users;
 
--- 查看表大小
+-- 
 SELECT 
     TABLE_NAME,
     ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 2) AS size_mb
@@ -602,7 +602,7 @@ FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_SCHEMA = 'your_database'
 ORDER BY size_mb DESC;
 
--- 查看碎片率
+-- 
 SELECT 
     TABLE_NAME,
     DATA_FREE / (DATA_LENGTH + INDEX_LENGTH) AS fragmentation
@@ -610,14 +610,14 @@ FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_SCHEMA = 'your_database'
     AND DATA_FREE > 0;
 
--- 优化表（整理碎片）
+-- 
 OPTIMIZE TABLE users;
 ```
 
-## 性能测试
+## 
 
 ```javascript
-// 使用Node.js进行性能测试
+// Node.js
 class QueryBenchmark {
   async benchmark(query, iterations = 1000) {
     const times = [];
@@ -645,7 +645,7 @@ class QueryBenchmark {
   }
 }
 
-// 使用示例
+// 
 const benchmark = new QueryBenchmark();
 
 const result1 = await benchmark.benchmark(
@@ -660,15 +660,15 @@ console.log('Query 1:', result1);
 console.log('Query 2:', result2);
 ```
 
-## 总结
+## 
 
-MySQL查询优化的核心：
-- 📊 **EXPLAIN分析**：理解执行计划，找出性能瓶颈
-- 🔍 **慢查询优化**：避免全表扫描，使用索引
-- 📦 **索引优化**：合理设计索引，避免索引失效
-- ✍️ **查询改写**：优化SQL语句，提高执行效率
-- 🗂️ **表结构优化**：选择合适的字段类型和表结构
-- 📈 **批量操作**：减少网络开销，提高吞吐量
+MySQL
+-  **EXPLAIN**
+-  ****
+-  ****
+-  ****SQL
+-  ****
+-  ****
 
-记住：**查询优化是一个持续的过程，需要不断监控和调整！**
+****
 

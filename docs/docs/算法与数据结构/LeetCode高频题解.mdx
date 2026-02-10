@@ -1,21 +1,21 @@
 ---
 sidebar_position: 3
-title: LeetCode高频题解
-tags: [算法, LeetCode, 面试]
+title: LeetCode
+tags: [, LeetCode, ]
 ---
 
-# LeetCode高频题解
+# LeetCode
 
-本文精选LeetCode高频面试题，提供详细解题思路和代码实现。
+LeetCode
 
-## 数组类
+## 
 
-### 1. 两数之和
+### 1. 
 
 ```javascript
 /**
- * 给定一个整数数组和目标值，找出数组中和为目标值的两个数
- * 时间复杂度：O(n)，空间复杂度：O(n)
+ * 
+ * O(n)O(n)
  */
 function twoSum(nums, target) {
   const map = new Map();
@@ -33,23 +33,23 @@ function twoSum(nums, target) {
   return [];
 }
 
-// 测试
+// 
 console.log(twoSum([2, 7, 11, 15], 9)); // [0, 1]
 ```
 
-### 15. 三数之和
+### 15. 
 
 ```javascript
 /**
- * 找出数组中所有和为0的三元组
- * 时间复杂度：O(n²)
+ * 0
+ * O(n²)
  */
 function threeSum(nums) {
   const result = [];
   nums.sort((a, b) => a - b);
   
   for (let i = 0; i < nums.length - 2; i++) {
-    // 跳过重复元素
+    // 
     if (i > 0 && nums[i] === nums[i - 1]) continue;
     
     let left = i + 1;
@@ -78,12 +78,12 @@ function threeSum(nums) {
 }
 ```
 
-### 53. 最大子数组和
+### 53. 
 
 ```javascript
 /**
- * 找到连续子数组的最大和
- * 动态规划：dp[i] = max(dp[i-1] + nums[i], nums[i])
+ * 
+ * dp[i] = max(dp[i-1] + nums[i], nums[i])
  */
 function maxSubArray(nums) {
   let maxSum = nums[0];
@@ -97,7 +97,7 @@ function maxSubArray(nums) {
   return maxSum;
 }
 
-// 分治法
+// 
 function maxSubArrayDivide(nums, left = 0, right = nums.length - 1) {
   if (left === right) return nums[left];
   
@@ -131,11 +131,11 @@ function maxCrossingSum(nums, left, mid, right) {
 }
 ```
 
-### 121. 买卖股票的最佳时机
+### 121. 
 
 ```javascript
 /**
- * 只能买卖一次，求最大利润
+ * 
  */
 function maxProfit(prices) {
   let minPrice = Infinity;
@@ -149,7 +149,7 @@ function maxProfit(prices) {
   return maxProfit;
 }
 
-// 122. 可以多次买卖
+// 122. 
 function maxProfitII(prices) {
   let profit = 0;
   
@@ -163,15 +163,15 @@ function maxProfitII(prices) {
 }
 ```
 
-## 链表类
+## 
 
-### 206. 反转链表
+### 206. 
 
 ```javascript
 /**
- * 反转单链表
+ * 
  */
-// 迭代法
+// 
 function reverseList(head) {
   let prev = null;
   let current = head;
@@ -186,7 +186,7 @@ function reverseList(head) {
   return prev;
 }
 
-// 递归法
+// 
 function reverseListRecursive(head) {
   if (!head || !head.next) return head;
   
@@ -198,12 +198,12 @@ function reverseListRecursive(head) {
 }
 ```
 
-### 141. 环形链表
+### 141. 
 
 ```javascript
 /**
- * 判断链表是否有环
- * 快慢指针
+ * 
+ * 
  */
 function hasCycle(head) {
   let slow = head;
@@ -219,18 +219,18 @@ function hasCycle(head) {
   return false;
 }
 
-// 142. 找到环的入口
+// 142. 
 function detectCycle(head) {
   let slow = head;
   let fast = head;
   
-  // 判断是否有环
+  // 
   while (fast && fast.next) {
     slow = slow.next;
     fast = fast.next.next;
     
     if (slow === fast) {
-      // 找入口
+      // 
       let ptr = head;
       while (ptr !== slow) {
         ptr = ptr.next;
@@ -244,11 +244,11 @@ function detectCycle(head) {
 }
 ```
 
-### 21. 合并两个有序链表
+### 21. 
 
 ```javascript
 /**
- * 合并两个升序链表
+ * 
  */
 function mergeTwoLists(l1, l2) {
   const dummy = new ListNode(0);
@@ -271,22 +271,22 @@ function mergeTwoLists(l1, l2) {
 }
 ```
 
-## 树类
+## 
 
-### 104. 二叉树的最大深度
+### 104. 
 
 ```javascript
 /**
- * 计算二叉树的最大深度
+ * 
  */
-// 递归
+// 
 function maxDepth(root) {
   if (!root) return 0;
   
   return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));
 }
 
-// 迭代（层序遍历）
+// 
 function maxDepthIterative(root) {
   if (!root) return 0;
   
@@ -310,11 +310,11 @@ function maxDepthIterative(root) {
 }
 ```
 
-### 226. 翻转二叉树
+### 226. 
 
 ```javascript
 /**
- * 翻转二叉树
+ * 
  */
 function invertTree(root) {
   if (!root) return null;
@@ -328,11 +328,11 @@ function invertTree(root) {
 }
 ```
 
-### 102. 二叉树的层序遍历
+### 102. 
 
 ```javascript
 /**
- * 层序遍历二叉树
+ * 
  */
 function levelOrder(root) {
   if (!root) return [];
@@ -359,11 +359,11 @@ function levelOrder(root) {
 }
 ```
 
-### 236. 二叉树的最近公共祖先
+### 236. 
 
 ```javascript
 /**
- * 找到两个节点的最近公共祖先
+ * 
  */
 function lowestCommonAncestor(root, p, q) {
   if (!root || root === p || root === q) return root;
@@ -377,13 +377,13 @@ function lowestCommonAncestor(root, p, q) {
 }
 ```
 
-## 动态规划类
+## 
 
-### 70. 爬楼梯
+### 70. 
 
 ```javascript
 /**
- * 每次可以爬1或2个台阶，求爬到n阶的方法数
+ * 12n
  */
 function climbStairs(n) {
   if (n <= 2) return n;
@@ -398,11 +398,11 @@ function climbStairs(n) {
 }
 ```
 
-### 198. 打家劫舍
+### 198. 
 
 ```javascript
 /**
- * 不能偷相邻的房子，求最大金额
+ * 
  */
 function rob(nums) {
   if (nums.length === 0) return 0;
@@ -417,7 +417,7 @@ function rob(nums) {
   return curr;
 }
 
-// 213. 打家劫舍II（环形）
+// 213. II
 function robII(nums) {
   if (nums.length === 1) return nums[0];
   
@@ -438,11 +438,11 @@ function robII(nums) {
 }
 ```
 
-### 322. 零钱兑换
+### 322. 
 
 ```javascript
 /**
- * 用最少的硬币凑出金额
+ * 
  */
 function coinChange(coins, amount) {
   const dp = Array(amount + 1).fill(Infinity);
@@ -460,13 +460,13 @@ function coinChange(coins, amount) {
 }
 ```
 
-### 300. 最长递增子序列
+### 300. 
 
 ```javascript
 /**
- * 找到最长递增子序列的长度
+ * 
  */
-// 动态规划 O(n²)
+//  O(n²)
 function lengthOfLIS(nums) {
   if (nums.length === 0) return 0;
   
@@ -483,7 +483,7 @@ function lengthOfLIS(nums) {
   return Math.max(...dp);
 }
 
-// 二分查找 O(n log n)
+//  O(n log n)
 function lengthOfLISBinary(nums) {
   const tails = [];
   
@@ -510,14 +510,14 @@ function lengthOfLISBinary(nums) {
 }
 ```
 
-## 字符串类
+## 
 
-### 3. 无重复字符的最长子串
+### 3. 
 
 ```javascript
 /**
- * 找到最长无重复字符子串
- * 滑动窗口
+ * 
+ * 
  */
 function lengthOfLongestSubstring(s) {
   const map = new Map();
@@ -539,13 +539,13 @@ function lengthOfLongestSubstring(s) {
 }
 ```
 
-### 5. 最长回文子串
+### 5. 
 
 ```javascript
 /**
- * 找到最长回文子串
+ * 
  */
-// 中心扩展法
+// 
 function longestPalindrome(s) {
   if (s.length < 2) return s;
   
@@ -574,11 +574,11 @@ function longestPalindrome(s) {
 }
 ```
 
-### 20. 有效的括号
+### 20. 
 
 ```javascript
 /**
- * 判断括号是否有效
+ * 
  */
 function isValid(s) {
   const stack = [];
@@ -597,15 +597,15 @@ function isValid(s) {
 }
 ```
 
-## 总结
+## 
 
-LeetCode刷题技巧：
-- 📊 **数组**：双指针、滑动窗口
-- 🔗 **链表**：快慢指针、虚拟头节点
-- 🌲 **树**：递归、层序遍历
-- 📈 **动态规划**：状态定义、转移方程
-- 🔤 **字符串**：哈希表、滑动窗口
-- 🔙 **回溯**：剪枝优化
+LeetCode
+-  ****
+-  ****
+-  ****
+-  ****
+-  ****
+-  ****
 
-记住：**多做题、多总结、找规律！**
+****
 

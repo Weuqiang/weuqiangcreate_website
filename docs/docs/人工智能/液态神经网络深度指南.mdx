@@ -1,49 +1,49 @@
 ---
 sidebar_position: 18
-title: 液态神经网络深度指南
+title: 
 ---
 
-# 液态神经网络深度指南
+# 
 
-:::info 学习目标
-深入理解液态神经网络的数学原理、实现细节和实际应用。
+:::info 
+
 :::
 
-## 液态神经网络完整技术文档
+## 
 
-### 理论基础
+### 
 
-#### 1. 生物学灵感
+#### 1. 
 
-液态神经网络（LNN）的灵感来自**秀丽隐杆线虫（C. elegans）**的神经系统：
-- 仅有302个神经元
-- 能够完成复杂的行为（觅食、交配、逃避）
-- 神经元之间的连接是动态的
+LNN**C. elegans**
+- 302
+- 
+- 
 
-#### 2. 核心数学原理
+#### 2. 
 
-**常微分方程（ODE）神经元**：
+**ODE**
 
 $$
 \tau \frac{dh}{dt} = -h + f(W_{in}x + W_{rec}h + b)
 $$
 
-其中：
-- $h$: 隐藏状态
-- $\tau$: 时间常数（可学习）
-- $f$: 激活函数
-- $W_{in}$: 输入权重
-- $W_{rec}$: 循环权重
-- $b$: 偏置
 
-**关键特性**：
-1. **时间常数 $\tau$ 是可学习的**：不同神经元可以有不同的时间尺度
-2. **连续时间动力学**：更符合真实神经元的行为
-3. **因果性**：理解时间因果关系
+- $h$: 
+- $\tau$: 
+- $f$: 
+- $W_{in}$: 
+- $W_{rec}$: 
+- $b$: 
 
-### 完整实现
+****
+1. ** $\tau$ **
+2. ****
+3. ****
 
-#### 1. 液态神经元
+### 
+
+#### 1. 
 
 ```python
 import torch
@@ -52,7 +52,7 @@ import numpy as np
 from typing import Optional, Tuple
 
 class LiquidNeuron(nn.Module):
-    """液态神经元的完整实现"""
+    """"""
     
     def __init__(self, 
                  input_size: int,
@@ -64,22 +64,22 @@ class LiquidNeuron(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         
-        # 时间常数（可学习，每个神经元独立）
+        # 
         self.tau = nn.Parameter(torch.rand(hidden_size) * 0.5 + 0.5)
         
-        # 输入权重
+        # 
         self.W_in = nn.Parameter(torch.randn(input_size, hidden_size) * 0.1)
         
-        # 循环权重
+        # 
         self.W_rec = nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.1)
         
-        # 偏置
+        # 
         if use_bias:
             self.bias = nn.Parameter(torch.zeros(hidden_size))
         else:
             self.register_parameter('bias', None)
         
-        # 激活函数
+        # 
         if activation == 'tanh':
             self.activation = torch.tanh
         elif activation == 'sigmoid':
@@ -94,44 +94,44 @@ class LiquidNeuron(nn.Module):
                 h: torch.Tensor,
                 dt: float = 0.1) -> torch.Tensor:
         """
-        前向传播
+        
         
         Args:
-            x: 输入 (batch_size, input_size)
-            h: 隐藏状态 (batch_size, hidden_size)
-            dt: 时间步长
+            x:  (batch_size, input_size)
+            h:  (batch_size, hidden_size)
+            dt: 
         
         Returns:
-            新的隐藏状态 (batch_size, hidden_size)
+             (batch_size, hidden_size)
         """
-        # 计算输入贡献
+        # 
         input_contrib = torch.matmul(x, self.W_in)
         
-        # 计算循环贡献
+        # 
         recurrent_contrib = torch.matmul(h, self.W_rec)
         
-        # 组合输入
+        # 
         combined = input_contrib + recurrent_contrib
         if self.bias is not None:
             combined = combined + self.bias
         
-        # 应用激活函数
+        # 
         f_h = self.activation(combined)
         
-        # 液态动力学：dh/dt = (-h + f(x)) / tau
-        # 使用欧拉方法：h_new = h + dt * dh/dt
+        # dh/dt = (-h + f(x)) / tau
+        # h_new = h + dt * dh/dt
         dh_dt = (-h + f_h) / self.tau
         h_new = h + dt * dh_dt
         
         return h_new
     
     def get_time_constants(self) -> torch.Tensor:
-        """获取时间常数"""
+        """"""
         return self.tau.data
 
 
 class LiquidCell(nn.Module):
-    """液态神经网络单元（支持多层）"""
+    """"""
     
     def __init__(self,
                  input_size: int,
@@ -145,7 +145,7 @@ class LiquidCell(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         
-        # 创建多层液态神经元
+        # 
         self.layers = nn.ModuleList()
         for i in range(num_layers):
             layer_input_size = input_size if i == 0 else hidden_size
@@ -161,20 +161,20 @@ class LiquidCell(nn.Module):
                 hidden: Optional[Tuple[torch.Tensor, ...]] = None,
                 dt: float = 0.1) -> Tuple[torch.Tensor, Tuple[torch.Tensor, ...]]:
         """
-        前向传播
+        
         
         Args:
-            x: 输入 (batch_size, input_size)
-            hidden: 隐藏状态元组
-            dt: 时间步长
+            x:  (batch_size, input_size)
+            hidden: 
+            dt: 
         
         Returns:
-            output: 输出 (batch_size, hidden_size)
-            new_hidden: 新的隐藏状态元组
+            output:  (batch_size, hidden_size)
+            new_hidden: 
         """
         batch_size = x.size(0)
         
-        # 初始化隐藏状态
+        # 
         if hidden is None:
             hidden = tuple(
                 torch.zeros(batch_size, self.hidden_size, device=x.device)
@@ -184,12 +184,12 @@ class LiquidCell(nn.Module):
         new_hidden = []
         layer_input = x
         
-        # 通过每一层
+        # 
         for i, (layer, h) in enumerate(zip(self.layers, hidden)):
             h_new = layer(layer_input, h, dt)
             new_hidden.append(h_new)
             
-            # 应用dropout（除了最后一层）
+            # dropout
             if self.dropout is not None and i < self.num_layers - 1:
                 layer_input = self.dropout(h_new)
             else:
@@ -198,11 +198,11 @@ class LiquidCell(nn.Module):
         return layer_input, tuple(new_hidden)
 ```
 
-#### 2. 完整的液态神经网络
+#### 2. 
 
 ```python
 class LiquidNeuralNetwork(nn.Module):
-    """完整的液态神经网络"""
+    """"""
     
     def __init__(self,
                  input_size: int,
@@ -219,7 +219,7 @@ class LiquidNeuralNetwork(nn.Module):
         self.output_size = output_size
         self.num_layers = num_layers
         
-        # 液态单元
+        # 
         self.liquid_cell = LiquidCell(
             input_size=input_size,
             hidden_size=hidden_size,
@@ -228,10 +228,10 @@ class LiquidNeuralNetwork(nn.Module):
             dropout=dropout
         )
         
-        # 输出层
+        # 
         self.output_layer = nn.Linear(hidden_size, output_size)
         
-        # 输出激活函数
+        # 
         if output_activation == 'sigmoid':
             self.output_activation = torch.sigmoid
         elif output_activation == 'softmax':
@@ -244,70 +244,70 @@ class LiquidNeuralNetwork(nn.Module):
                 hidden: Optional[Tuple[torch.Tensor, ...]] = None,
                 dt: float = 0.1) -> Tuple[torch.Tensor, Tuple[torch.Tensor, ...]]:
         """
-        前向传播
+        
         
         Args:
-            x: 输入 (batch_size, seq_len, input_size)
-            hidden: 初始隐藏状态
-            dt: 时间步长
+            x:  (batch_size, seq_len, input_size)
+            hidden: 
+            dt: 
         
         Returns:
-            outputs: 输出序列 (batch_size, seq_len, output_size)
-            hidden: 最终隐藏状态
+            outputs:  (batch_size, seq_len, output_size)
+            hidden: 
         """
         batch_size, seq_len, _ = x.size()
         
         outputs = []
         
-        # 处理序列
+        # 
         for t in range(seq_len):
             x_t = x[:, t, :]
             
-            # 通过液态单元
+            # 
             h_t, hidden = self.liquid_cell(x_t, hidden, dt)
             
-            # 输出层
+            # 
             out_t = self.output_layer(h_t)
             
-            # 输出激活
+            # 
             if self.output_activation is not None:
                 out_t = self.output_activation(out_t)
             
             outputs.append(out_t)
         
-        # 堆叠输出
+        # 
         outputs = torch.stack(outputs, dim=1)
         
         return outputs, hidden
     
     def get_time_constants(self) -> list:
-        """获取所有层的时间常数"""
+        """"""
         time_constants = []
         for layer in self.liquid_cell.layers:
             time_constants.append(layer.get_time_constants())
         return time_constants
 ```
 
-### 高级特性
+### 
 
-#### 1. 自适应时间步长
+#### 1. 
 
 ```python
 class AdaptiveLiquidNeuron(LiquidNeuron):
-    """自适应时间步长的液态神经元"""
+    """"""
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # 学习时间步长的权重
+        # 
         self.dt_weight = nn.Parameter(torch.ones(self.hidden_size))
     
     def forward(self, x, h, dt=0.1):
-        """使用自适应时间步长"""
-        # 计算自适应时间步长
+        """"""
+        # 
         adaptive_dt = dt * torch.sigmoid(self.dt_weight)
         
-        # 标准液态动力学
+        # 
         input_contrib = torch.matmul(x, self.W_in)
         recurrent_contrib = torch.matmul(h, self.W_rec)
         combined = input_contrib + recurrent_contrib
@@ -317,23 +317,23 @@ class AdaptiveLiquidNeuron(LiquidNeuron):
         
         f_h = self.activation(combined)
         
-        # 使用自适应时间步长
+        # 
         dh_dt = (-h + f_h) / self.tau
         h_new = h + adaptive_dt * dh_dt
         
         return h_new
 ```
 
-#### 2. 稀疏连接
+#### 2. 
 
 ```python
 class SparseLiquidNeuron(LiquidNeuron):
-    """稀疏连接的液态神经元"""
+    """"""
     
     def __init__(self, *args, sparsity: float = 0.5, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # 创建稀疏掩码
+        # 
         self.sparsity = sparsity
         self.register_buffer(
             'rec_mask',
@@ -341,15 +341,15 @@ class SparseLiquidNeuron(LiquidNeuron):
         )
     
     def _create_sparse_mask(self, size: int, sparsity: float) -> torch.Tensor:
-        """创建稀疏掩码"""
+        """"""
         mask = torch.rand(size, size) > sparsity
         return mask.float()
     
     def forward(self, x, h, dt=0.1):
-        """应用稀疏掩码"""
+        """"""
         input_contrib = torch.matmul(x, self.W_in)
         
-        # 应用稀疏掩码到循环权重
+        # 
         sparse_W_rec = self.W_rec * self.rec_mask
         recurrent_contrib = torch.matmul(h, sparse_W_rec)
         
@@ -364,7 +364,7 @@ class SparseLiquidNeuron(LiquidNeuron):
         return h_new
 ```
 
-## 实战案例1：时间序列预测
+## 1
 
 ```python
 import torch
@@ -373,7 +373,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class TimeSeriesLNN:
-    """时间序列预测液态神经网络"""
+    """"""
     
     def __init__(self,
                  input_size: int,
@@ -395,7 +395,7 @@ class TimeSeriesLNN:
               train_labels: torch.Tensor,
               epochs: int = 100,
               batch_size: int = 32):
-        """训练模型"""
+        """"""
         self.model.train()
         
         dataset = torch.utils.data.TensorDataset(train_data, train_labels)
@@ -413,13 +413,13 @@ class TimeSeriesLNN:
             for batch_x, batch_y in dataloader:
                 self.optimizer.zero_grad()
                 
-                # 前向传播
+                # 
                 outputs, _ = self.model(batch_x)
                 
-                # 计算损失
+                # 
                 loss = self.criterion(outputs, batch_y)
                 
-                # 反向传播
+                # 
                 loss.backward()
                 self.optimizer.step()
                 
@@ -434,7 +434,7 @@ class TimeSeriesLNN:
         return losses
     
     def predict(self, x: torch.Tensor) -> torch.Tensor:
-        """预测"""
+        """"""
         self.model.eval()
         
         with torch.no_grad():
@@ -445,7 +445,7 @@ class TimeSeriesLNN:
     def forecast(self,
                  initial_sequence: torch.Tensor,
                  steps: int) -> torch.Tensor:
-        """多步预测"""
+        """"""
         self.model.eval()
         
         predictions = []
@@ -454,25 +454,25 @@ class TimeSeriesLNN:
         
         with torch.no_grad():
             for _ in range(steps):
-                # 预测下一步
+                # 
                 output, hidden = self.model(current_seq, hidden)
                 next_value = output[:, -1:, :]
                 
                 predictions.append(next_value)
                 
-                # 更新序列
+                # 
                 current_seq = torch.cat([current_seq[:, 1:, :], next_value], dim=1)
         
         return torch.cat(predictions, dim=1)
 
-# 使用示例：正弦波预测
+# 
 def sine_wave_example():
-    """正弦波预测示例"""
-    # 生成数据
+    """"""
+    # 
     t = np.linspace(0, 100, 1000)
     data = np.sin(t) + 0.1 * np.random.randn(1000)
     
-    # 创建序列
+    # 
     seq_length = 50
     X, y = [], []
     
@@ -483,15 +483,15 @@ def sine_wave_example():
     X = torch.FloatTensor(X).unsqueeze(-1)
     y = torch.FloatTensor(y).unsqueeze(-1)
     
-    # 训练模型
+    # 
     model = TimeSeriesLNN(input_size=1, hidden_size=32, output_size=1)
     losses = model.train(X[:800], y[:800], epochs=50)
     
-    # 预测
+    # 
     test_x = X[800:810]
     predictions = model.predict(test_x)
     
-    # 可视化
+    # 
     plt.figure(figsize=(12, 4))
     plt.plot(losses)
     plt.title('Training Loss')
@@ -499,7 +499,7 @@ def sine_wave_example():
     plt.ylabel('Loss')
     plt.show()
     
-    # 预测结果
+    # 
     plt.figure(figsize=(12, 4))
     for i in range(5):
         plt.plot(y[800+i].numpy(), label=f'True {i}', alpha=0.5)
@@ -511,19 +511,19 @@ def sine_wave_example():
 sine_wave_example()
 ```
 
-## 实战案例2：自动驾驶控制
+## 2
 
 ```python
 class AutonomousDrivingLNN:
-    """自动驾驶液态神经网络"""
+    """"""
     
     def __init__(self):
-        # 输入：传感器数据（速度、加速度、转向角、障碍物距离等）
-        # 输出：控制信号（转向、油门、刹车）
+        # 
+        # 
         self.model = LiquidNeuralNetwork(
-            input_size=128,  # 传感器特征
+            input_size=128,  # 
             hidden_size=64,
-            output_size=3,   # 转向、油门、刹车
+            output_size=3,   # 
             num_layers=3,
             activation='tanh'
         )
@@ -531,42 +531,42 @@ class AutonomousDrivingLNN:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
     
     def process_sensors(self, camera, lidar, imu):
-        """处理传感器数据"""
-        # 提取特征
+        """"""
+        # 
         camera_features = self._extract_camera_features(camera)
         lidar_features = self._extract_lidar_features(lidar)
         imu_features = self._extract_imu_features(imu)
         
-        # 融合特征
+        # 
         features = torch.cat([camera_features, lidar_features, imu_features], dim=-1)
         
         return features
     
     def _extract_camera_features(self, camera):
-        """提取相机特征"""
-        # 使用预训练的CNN
-        # 这里简化处理
+        """"""
+        # CNN
+        # 
         return torch.randn(1, 64)
     
     def _extract_lidar_features(self, lidar):
-        """提取激光雷达特征"""
-        # 点云处理
+        """"""
+        # 
         return torch.randn(1, 32)
     
     def _extract_imu_features(self, imu):
-        """提取IMU特征"""
-        # 速度、加速度、角速度
+        """IMU"""
+        # 
         return torch.randn(1, 32)
     
     def control(self, sensor_data, hidden=None):
-        """生成控制信号"""
+        """"""
         self.model.eval()
         
         with torch.no_grad():
-            # 前向传播
+            # 
             output, hidden = self.model(sensor_data.unsqueeze(1), hidden)
             
-            # 解析控制信号
+            # 
             steering = torch.tanh(output[0, 0, 0])  # [-1, 1]
             throttle = torch.sigmoid(output[0, 0, 1])  # [0, 1]
             brake = torch.sigmoid(output[0, 0, 2])  # [0, 1]
@@ -578,19 +578,19 @@ class AutonomousDrivingLNN:
         }, hidden
     
     def train_episode(self, states, actions, rewards):
-        """训练一个episode"""
+        """episode"""
         self.model.train()
         
-        # 计算损失（模仿学习 + 强化学习）
+        #  + 
         predicted_actions, _ = self.model(states)
         
-        # 行为克隆损失
+        # 
         bc_loss = nn.MSELoss()(predicted_actions, actions)
         
-        # 奖励加权
+        # 
         weighted_loss = (bc_loss * rewards).mean()
         
-        # 反向传播
+        # 
         self.optimizer.zero_grad()
         weighted_loss.backward()
         self.optimizer.step()
@@ -598,19 +598,19 @@ class AutonomousDrivingLNN:
         return weighted_loss.item()
 ```
 
-## 实战案例3：机器人控制
+## 3
 
 ```python
 class RobotControlLNN:
-    """机器人控制液态神经网络"""
+    """"""
     
     def __init__(self, num_joints: int):
         self.num_joints = num_joints
         
-        # 输入：关节状态（位置、速度、力矩）+ 目标位置
-        # 输出：关节控制信号
+        # + 
+        # 
         self.model = LiquidNeuralNetwork(
-            input_size=num_joints * 4,  # 3个状态 + 1个目标
+            input_size=num_joints * 4,  # 3 + 1
             hidden_size=128,
             output_size=num_joints,
             num_layers=2
@@ -619,15 +619,15 @@ class RobotControlLNN:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
     
     def forward_kinematics(self, joint_angles):
-        """正向运动学"""
-        # 计算末端执行器位置
-        # 这里简化处理
+        """"""
+        # 
+        # 
         return torch.randn(3)  # x, y, z
     
     def inverse_kinematics(self, target_position):
-        """逆向运动学"""
-        # 计算目标关节角度
-        # 这里简化处理
+        """"""
+        # 
+        # 
         return torch.randn(self.num_joints)
     
     def control_step(self, 
@@ -636,8 +636,8 @@ class RobotControlLNN:
                      joint_torques,
                      target_position,
                      hidden=None):
-        """单步控制"""
-        # 准备输入
+        """"""
+        # 
         target_joints = self.inverse_kinematics(target_position)
         
         input_data = torch.cat([
@@ -647,7 +647,7 @@ class RobotControlLNN:
             target_joints
         ]).unsqueeze(0).unsqueeze(0)
         
-        # 生成控制信号
+        # 
         with torch.no_grad():
             control_signals, hidden = self.model(input_data, hidden)
         
@@ -657,19 +657,19 @@ class RobotControlLNN:
                         trajectory_states,
                         trajectory_actions,
                         epochs=100):
-        """训练轨迹跟踪"""
+        """"""
         self.model.train()
         
         for epoch in range(epochs):
             self.optimizer.zero_grad()
             
-            # 前向传播
+            # 
             predicted_actions, _ = self.model(trajectory_states)
             
-            # 计算损失
+            # 
             loss = nn.MSELoss()(predicted_actions, trajectory_actions)
             
-            # 反向传播
+            # 
             loss.backward()
             self.optimizer.step()
             
@@ -677,13 +677,13 @@ class RobotControlLNN:
                 print(f'Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.6f}')
 ```
 
-## 性能分析
+## 
 
-### 1. 参数效率对比
+### 1. 
 
 ```python
 def compare_model_sizes():
-    """对比模型大小"""
+    """"""
     input_size = 10
     hidden_size = 64
     output_size = 1
@@ -696,26 +696,26 @@ def compare_model_sizes():
     gru = nn.GRU(input_size, hidden_size, num_layers=2)
     gru_params = sum(p.numel() for p in gru.parameters())
     
-    # 液态神经网络
+    # 
     lnn = LiquidNeuralNetwork(input_size, hidden_size, output_size, num_layers=2)
     lnn_params = sum(p.numel() for p in lnn.parameters())
     
-    print(f"LSTM参数量: {lstm_params:,}")
-    print(f"GRU参数量: {gru_params:,}")
-    print(f"LNN参数量: {lnn_params:,}")
-    print(f"\nLNN相比LSTM减少: {(1 - lnn_params/lstm_params)*100:.1f}%")
-    print(f"LNN相比GRU减少: {(1 - lnn_params/gru_params)*100:.1f}%")
+    print(f"LSTM: {lstm_params:,}")
+    print(f"GRU: {gru_params:,}")
+    print(f"LNN: {lnn_params:,}")
+    print(f"\nLNNLSTM: {(1 - lnn_params/lstm_params)*100:.1f}%")
+    print(f"LNNGRU: {(1 - lnn_params/gru_params)*100:.1f}%")
 
 compare_model_sizes()
 ```
 
-### 2. 推理速度对比
+### 2. 
 
 ```python
 import time
 
 def benchmark_inference():
-    """推理速度基准测试"""
+    """"""
     batch_size = 32
     seq_len = 100
     input_size = 10
@@ -732,14 +732,14 @@ def benchmark_inference():
     for name, model in models.items():
         model.eval()
         
-        # 预热
+        # 
         with torch.no_grad():
             if name == 'LNN':
                 _ = model(x)
             else:
                 _ = model(x)
         
-        # 测试
+        # 
         start = time.time()
         with torch.no_grad():
             for _ in range(100):
@@ -754,16 +754,16 @@ def benchmark_inference():
 benchmark_inference()
 ```
 
-## 可视化工具
+## 
 
 ```python
 def visualize_liquid_dynamics(model, input_sequence):
-    """可视化液态动力学"""
+    """"""
     import matplotlib.pyplot as plt
     
     model.eval()
     
-    # 记录隐藏状态
+    # 
     hidden_states = []
     hidden = None
     
@@ -772,15 +772,15 @@ def visualize_liquid_dynamics(model, input_sequence):
             x_t = input_sequence[:, t:t+1, :]
             _, hidden = model(x_t, hidden)
             
-            # 记录第一层的隐藏状态
+            # 
             hidden_states.append(hidden[0].squeeze().numpy())
     
     hidden_states = np.array(hidden_states)
     
-    # 绘制神经元活动
+    # 
     plt.figure(figsize=(15, 8))
     
-    # 热图
+    # 
     plt.subplot(2, 1, 1)
     plt.imshow(hidden_states.T, aspect='auto', cmap='viridis')
     plt.colorbar(label='Activation')
@@ -788,7 +788,7 @@ def visualize_liquid_dynamics(model, input_sequence):
     plt.ylabel('Neuron')
     plt.title('Liquid Neural Network Dynamics')
     
-    # 时间常数
+    # 
     plt.subplot(2, 1, 2)
     time_constants = model.get_time_constants()[0].numpy()
     plt.bar(range(len(time_constants)), time_constants)
@@ -799,49 +799,49 @@ def visualize_liquid_dynamics(model, input_sequence):
     plt.tight_layout()
     plt.show()
 
-# 使用
+# 
 x = torch.randn(1, 100, 10)
 model = LiquidNeuralNetwork(10, 32, 1)
 visualize_liquid_dynamics(model, x)
 ```
 
-## 学习资源
+## 
 
-### 论文
+### 
 - "Liquid Time-constant Networks" (Hasani et al., 2020)
 - "Closed-form Continuous-time Neural Networks" (Hasani et al., 2022)
 
-### 代码库
+### 
 - GitHub: https://github.com/raminmh/liquid_time_constant_networks
-- PyTorch实现: https://github.com/mlech26l/ncps
+- PyTorch: https://github.com/mlech26l/ncps
 
-### 应用案例
-- 自动驾驶
-- 机器人控制
-- 时间序列预测
-- 信号处理
+### 
+- 
+- 
+- 
+- 
 
-## 总结
+## 
 
-**液态神经网络的核心优势**：
-1. **极致的参数效率**：比LSTM小100-1000倍
-2. **动态适应能力**：权重在推理时持续变化
-3. **高度可解释**：可以理解每个神经元的作用
-4. **因果推理**：理解时间因果关系
-5. **边缘部署**：适合资源受限的设备
+****
+1. ****LSTM100-1000
+2. ****
+3. ****
+4. ****
+5. ****
 
-**适用场景**：
-- 边缘设备（手机、IoT）
-- 实时系统（自动驾驶、机器人）
-- 时间序列任务
-- 需要可解释性的应用
+****
+- IoT
+- 
+- 
+- 
 
-**学习路径**：
-1. 理解ODE神经元的数学原理
-2. 实现基础的液态神经元
-3. 应用到时间序列任务
-4. 探索高级特性（自适应、稀疏）
-5. 部署到实际应用
+****
+1. ODE
+2. 
+3. 
+4. 
+5. 
 
 <DocCardList />
 

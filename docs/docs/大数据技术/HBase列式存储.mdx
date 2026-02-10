@@ -1,65 +1,65 @@
 ---
 sidebar_position: 6
-title: HBase - 海量数据的实时查询
+title: HBase - 
 ---
 
-# HBase - NoSQL列式数据库
+# HBase - NoSQL
 
-HBase是Hadoop生态中的NoSQL数据库。这一章教你**用HBase实现海量数据的实时查询**。
+HBaseHadoopNoSQL**HBase**
 
-## 第一部分：理解HBase
+## HBase
 
-### 为什么需要HBase？
+### HBase
 
-**问题**：有10亿条用户数据，需要根据用户ID快速查询，Hive太慢怎么办？
+****10IDHive
 
-**Hive方式**：
+**Hive**
 ```sql
--- 全表扫描，慢！
+-- 
 SELECT * FROM users WHERE user_id = 'user123';
--- 耗时：几分钟
+-- 
 ```
 
-**HBase方式**：
+**HBase**
 ```python
-# 根据RowKey直接定位，快！
+# RowKey
 table.get('user123')
-# 耗时：几毫秒
+# 
 ```
 
-### HBase vs 传统数据库
+### HBase vs 
 
-| 特性 | 传统数据库 | HBase |
+|  |  | HBase |
 |------|-----------|-------|
-| 数据量 | GB-TB | PB级 |
-| 查询方式 | SQL | Key-Value |
-| 事务 | ACID | 行级原子性 |
-| 扩展性 | 垂直扩展 | 水平扩展 |
-| 延迟 | 毫秒级 | 毫秒级 |
+|  | GB-TB | PB |
+|  | SQL | Key-Value |
+|  | ACID |  |
+|  |  |  |
+|  |  |  |
 
-### HBase数据模型
+### HBase
 
 ```
 Table: users
-┌─────────────┬──────────────────────────────────┐
-│  RowKey     │  Column Family: info             │
-├─────────────┼──────────────────────────────────┤
-│ user001     │ name:Alice  age:25  city:Beijing │
-│ user002     │ name:Bob    age:30  city:Shanghai│
-│ user003     │ name:Charlie age:35 city:Shenzhen│
-└─────────────┴──────────────────────────────────┘
+
+  RowKey       Column Family: info             
+
+ user001      name:Alice  age:25  city:Beijing 
+ user002      name:Bob    age:30  city:Shanghai
+ user003      name:Charlie age:35 city:Shenzhen
+
 ```
 
-**核心概念**：
-- **RowKey**：行键，唯一标识一行，按字典序排序
-- **Column Family**：列族，列的集合
-- **Column**：列，格式为 `family:qualifier`
-- **Timestamp**：时间戳，支持多版本
-- **Cell**：单元格，由 `{row, column, timestamp}` 唯一确定
+****
+- **RowKey**
+- **Column Family**
+- **Column** `family:qualifier`
+- **Timestamp**
+- **Cell** `{row, column, timestamp}` 
 
-## 第二部分：快速开始
+## 
 
-### 使用Docker搭建HBase
+### DockerHBase
 
 ```yaml
 # docker-compose.yml
@@ -77,67 +77,67 @@ services:
 ```
 
 ```bash
-# 启动
+# 
 docker-compose up -d
 
-# 进入HBase Shell
+# HBase Shell
 docker exec -it hbase hbase shell
 
-# 访问Web UI
+# Web UI
 # http://localhost:16010
 ```
 
-### HBase Shell基本操作
+### HBase Shell
 
 ```bash
-# 创建表
+# 
 create 'users', 'info', 'contact'
 
-# 查看表
+# 
 list
 
-# 查看表结构
+# 
 describe 'users'
 
-# 插入数据
+# 
 put 'users', 'user001', 'info:name', 'Alice'
 put 'users', 'user001', 'info:age', '25'
 put 'users', 'user001', 'contact:email', 'alice@example.com'
 
-# 查询数据
+# 
 get 'users', 'user001'
 
-# 扫描表
+# 
 scan 'users'
 
-# 删除数据
+# 
 delete 'users', 'user001', 'info:age'
 
-# 删除行
+# 
 deleteall 'users', 'user001'
 
-# 删除表
+# 
 disable 'users'
 drop 'users'
 ```
 
-## 第三部分：Python操作HBase
+## PythonHBase
 
-### 安装HappyBase
+### HappyBase
 
 ```bash
 pip install happybase
 ```
 
-### 基本操作
+### 
 
 ```python
 import happybase
 
-# 连接HBase
+# HBase
 connection = happybase.Connection('localhost', port=9090)
 
-# 创建表
+# 
 connection.create_table(
     'users',
     {
@@ -146,10 +146,10 @@ connection.create_table(
     }
 )
 
-# 获取表
+# 
 table = connection.table('users')
 
-# 插入数据
+# 
 table.put('user001', {
     b'info:name': b'Alice',
     b'info:age': b'25',
@@ -158,7 +158,7 @@ table.put('user001', {
     b'contact:phone': b'13800138000'
 })
 
-# 批量插入
+# 
 with table.batch() as batch:
     for i in range(1000):
         batch.put(f'user{i:06d}', {
@@ -166,72 +166,72 @@ with table.batch() as batch:
             b'info:age': str(20 + i % 50).encode()
         })
 
-# 查询单行
+# 
 row = table.row('user001')
 print(row)
 # {b'info:name': b'Alice', b'info:age': b'25', ...}
 
-# 查询指定列
+# 
 row = table.row('user001', columns=[b'info:name', b'info:age'])
 
-# 扫描表
+# 
 for key, data in table.scan():
     print(key, data)
 
-# 带过滤的扫描
+# 
 for key, data in table.scan(row_start='user000', row_stop='user100'):
     print(key, data)
 
-# 删除数据
+# 
 table.delete('user001', columns=[b'info:age'])
 
-# 删除行
+# 
 table.delete('user001')
 
-# 关闭连接
+# 
 connection.close()
 ```
 
-## 第四部分：RowKey设计
+## RowKey
 
-### RowKey设计原则
+### RowKey
 
-**1. 唯一性**：RowKey必须唯一标识一行
+**1. **RowKey
 
-**2. 散列性**：避免热点问题
+**2. **
 
 ```python
-# ❌ 坏的设计：时间戳开头
+#  
 rowkey = f"{timestamp}_{user_id}"
-# 问题：新数据都写入同一个Region，热点！
+# Region
 
-# ✅ 好的设计：加盐或反转
+#  
 import hashlib
 
 def generate_rowkey(user_id, timestamp):
-    # 方法1：加盐（取hash前缀）
+    # 1hash
     salt = hashlib.md5(user_id.encode()).hexdigest()[:4]
     return f"{salt}_{timestamp}_{user_id}"
     
-    # 方法2：反转时间戳
+    # 2
     reversed_ts = str(9999999999 - timestamp)
     return f"{user_id}_{reversed_ts}"
 ```
 
-**3. 查询友好**：根据查询模式设计
+**3. **
 
 ```python
-# 场景：经常按用户ID查询
+# ID
 rowkey = user_id
 
-# 场景：经常按用户ID+时间范围查询
+# ID+
 rowkey = f"{user_id}_{timestamp}"
 
-# 场景：经常按地区+时间查询
+# +
 rowkey = f"{region}_{timestamp}_{user_id}"
 ```
 
-### 实战：设计用户行为表
+### 
 
 ```python
 import happybase
@@ -239,7 +239,7 @@ import time
 import hashlib
 
 class UserBehaviorTable:
-    """用户行为表"""
+    """"""
     
     def __init__(self, host='localhost'):
         self.connection = happybase.Connection(host, port=9090)
@@ -247,25 +247,25 @@ class UserBehaviorTable:
         self._create_table()
     
     def _create_table(self):
-        """创建表"""
+        """"""
         if self.table_name.encode() not in self.connection.tables():
             self.connection.create_table(
                 self.table_name,
                 {
-                    'action': dict(),  # 行为信息
-                    'item': dict(),    # 商品信息
-                    'context': dict()  # 上下文信息
+                    'action': dict(),  # 
+                    'item': dict(),    # 
+                    'context': dict()  # 
                 }
             )
     
     def generate_rowkey(self, user_id, timestamp):
-        """生成RowKey：user_id + 反转时间戳"""
-        # 反转时间戳，使最新数据在前
+        """RowKeyuser_id + """
+        # 
         reversed_ts = 9999999999 - int(timestamp)
         return f"{user_id}_{reversed_ts:010d}"
     
     def put_behavior(self, user_id, action, item_id, **kwargs):
-        """记录用户行为"""
+        """"""
         table = self.connection.table(self.table_name)
         
         timestamp = int(time.time())
@@ -277,17 +277,17 @@ class UserBehaviorTable:
             b'item:id': item_id.encode(),
         }
         
-        # 添加额外信息
+        # 
         for key, value in kwargs.items():
             data[f'context:{key}'.encode()] = str(value).encode()
         
         table.put(rowkey, data)
     
     def get_user_behaviors(self, user_id, limit=100):
-        """获取用户最近的行为"""
+        """"""
         table = self.connection.table(self.table_name)
         
-        # 扫描该用户的所有行为
+        # 
         row_start = f"{user_id}_"
         row_stop = f"{user_id}_~"
         
@@ -303,23 +303,23 @@ class UserBehaviorTable:
         
         return behaviors
 
-# 使用
+# 
 behavior_table = UserBehaviorTable()
 
-# 记录行为
+# 
 behavior_table.put_behavior('user001', 'view', 'item123', page='home')
 behavior_table.put_behavior('user001', 'click', 'item123', page='detail')
 behavior_table.put_behavior('user001', 'cart', 'item123')
 
-# 查询行为
+# 
 behaviors = behavior_table.get_user_behaviors('user001')
 for b in behaviors:
     print(b)
 ```
 
-## 第五部分：过滤器
+## 
 
-### 常用过滤器
+### 
 
 ```python
 import happybase
@@ -327,22 +327,22 @@ import happybase
 connection = happybase.Connection('localhost', port=9090)
 table = connection.table('users')
 
-# 1. 行键过滤器
-# 前缀过滤
+# 1. 
+# 
 for key, data in table.scan(row_prefix=b'user00'):
     print(key, data)
 
-# 2. 列过滤器
-# 只返回指定列族
+# 2. 
+# 
 for key, data in table.scan(columns=[b'info']):
     print(key, data)
 
-# 3. 值过滤器（需要使用Thrift2）
-# 这里展示概念
+# 3. Thrift2
+# 
 filter_string = "SingleColumnValueFilter('info', 'age', >=, 'binary:25')"
 
-# 4. 时间范围过滤
-# 查询指定时间范围的数据
+# 4. 
+# 
 import time
 now = int(time.time() * 1000)
 one_day_ago = now - 86400000
@@ -351,9 +351,9 @@ for key, data in table.scan(timestamp=one_day_ago):
     print(key, data)
 ```
 
-## 第六部分：实战项目
+## 
 
-### 项目1：实时用户画像系统
+### 1
 
 ```python
 import happybase
@@ -361,7 +361,7 @@ import json
 from datetime import datetime
 
 class UserProfileSystem:
-    """用户画像系统"""
+    """"""
     
     def __init__(self, host='localhost'):
         self.connection = happybase.Connection(host, port=9090)
@@ -369,20 +369,20 @@ class UserProfileSystem:
         self._create_table()
     
     def _create_table(self):
-        """创建用户画像表"""
+        """"""
         if self.table_name.encode() not in self.connection.tables():
             self.connection.create_table(
                 self.table_name,
                 {
-                    'basic': dict(),      # 基本信息
-                    'behavior': dict(),   # 行为统计
-                    'preference': dict(), # 偏好标签
-                    'stats': dict()       # 统计信息
+                    'basic': dict(),      # 
+                    'behavior': dict(),   # 
+                    'preference': dict(), # 
+                    'stats': dict()       # 
                 }
             )
     
     def update_profile(self, user_id, **kwargs):
-        """更新用户画像"""
+        """"""
         table = self.connection.table(self.table_name)
         
         data = {}
@@ -393,7 +393,7 @@ class UserProfileSystem:
         table.put(user_id, data)
     
     def get_profile(self, user_id):
-        """获取用户画像"""
+        """"""
         table = self.connection.table(self.table_name)
         row = table.row(user_id)
         
@@ -405,21 +405,21 @@ class UserProfileSystem:
         return profile
     
     def update_behavior_stats(self, user_id, action, item_category):
-        """更新行为统计"""
+        """"""
         table = self.connection.table(self.table_name)
         
-        # 获取当前统计
+        # 
         row = table.row(user_id)
         
-        # 更新浏览次数
+        # 
         view_count_key = b'behavior:view_count'
         view_count = int(row.get(view_count_key, b'0'))
         
-        # 更新类别偏好
+        # 
         category_key = f'preference:{item_category}'.encode()
         category_count = int(row.get(category_key, b'0'))
         
-        # 写回
+        # 
         table.put(user_id, {
             view_count_key: str(view_count + 1).encode(),
             category_key: str(category_count + 1).encode(),
@@ -427,7 +427,7 @@ class UserProfileSystem:
         })
     
     def get_top_preferences(self, user_id, top_n=5):
-        """获取用户Top偏好"""
+        """Top"""
         table = self.connection.table(self.table_name)
         row = table.row(user_id, columns=[b'preference'])
         
@@ -437,14 +437,14 @@ class UserProfileSystem:
             count = int(value.decode())
             preferences[category] = count
         
-        # 排序
+        # 
         sorted_prefs = sorted(preferences.items(), key=lambda x: x[1], reverse=True)
         return sorted_prefs[:top_n]
 
-# 使用
+# 
 profile_system = UserProfileSystem()
 
-# 更新基本信息
+# 
 profile_system.update_profile(
     'user001',
     basic_name='Alice',
@@ -452,21 +452,21 @@ profile_system.update_profile(
     basic_city='Beijing'
 )
 
-# 更新行为统计
+# 
 profile_system.update_behavior_stats('user001', 'view', 'electronics')
 profile_system.update_behavior_stats('user001', 'view', 'electronics')
 profile_system.update_behavior_stats('user001', 'view', 'books')
 
-# 获取用户画像
+# 
 profile = profile_system.get_profile('user001')
-print("用户画像:", profile)
+print(":", profile)
 
-# 获取偏好
+# 
 preferences = profile_system.get_top_preferences('user001')
-print("Top偏好:", preferences)
+print("Top:", preferences)
 ```
 
-### 项目2：时序数据存储
+### 2
 
 ```python
 import happybase
@@ -474,7 +474,7 @@ import time
 from datetime import datetime
 
 class TimeSeriesDB:
-    """时序数据库"""
+    """"""
     
     def __init__(self, host='localhost'):
         self.connection = happybase.Connection(host, port=9090)
@@ -482,45 +482,45 @@ class TimeSeriesDB:
         self._create_table()
     
     def _create_table(self):
-        """创建时序表"""
+        """"""
         if self.table_name.encode() not in self.connection.tables():
             self.connection.create_table(
                 self.table_name,
                 {
-                    'data': dict(max_versions=100)  # 保留100个版本
+                    'data': dict(max_versions=100)  # 100
                 }
             )
     
     def generate_rowkey(self, metric_name, timestamp):
-        """生成RowKey：metric_name + 时间桶"""
-        # 按小时分桶
+        """RowKeymetric_name + """
+        # 
         hour_bucket = int(timestamp / 3600) * 3600
         return f"{metric_name}_{hour_bucket}"
     
     def put_metric(self, metric_name, value, timestamp=None):
-        """写入指标"""
+        """"""
         if timestamp is None:
             timestamp = int(time.time())
         
         table = self.connection.table(self.table_name)
         rowkey = self.generate_rowkey(metric_name, timestamp)
         
-        # 使用timestamp作为列名
+        # timestamp
         table.put(rowkey, {
             f'data:{timestamp}'.encode(): str(value).encode()
         })
     
     def get_metrics(self, metric_name, start_time, end_time):
-        """查询指标"""
+        """"""
         table = self.connection.table(self.table_name)
         
-        # 计算时间桶范围
+        # 
         start_bucket = int(start_time / 3600) * 3600
         end_bucket = int(end_time / 3600) * 3600
         
         metrics = []
         
-        # 扫描所有相关的时间桶
+        # 
         for bucket in range(start_bucket, end_bucket + 3600, 3600):
             rowkey = f"{metric_name}_{bucket}"
             
@@ -536,33 +536,33 @@ class TimeSeriesDB:
             except:
                 continue
         
-        # 按时间排序
+        # 
         metrics.sort(key=lambda x: x['timestamp'])
         return metrics
 
-# 使用
+# 
 tsdb = TimeSeriesDB()
 
-# 写入CPU使用率
+# CPU
 for i in range(100):
     tsdb.put_metric('cpu_usage', 50 + i % 30, int(time.time()) - 100 + i)
 
-# 查询最近100秒的数据
+# 100
 start = int(time.time()) - 100
 end = int(time.time())
 metrics = tsdb.get_metrics('cpu_usage', start, end)
 
-print(f"查询到 {len(metrics)} 个数据点")
+print(f" {len(metrics)} ")
 for m in metrics[:5]:
-    print(f"时间: {datetime.fromtimestamp(m['timestamp'])}, 值: {m['value']}")
+    print(f": {datetime.fromtimestamp(m['timestamp'])}, : {m['value']}")
 ```
 
-## 第七部分：性能优化
+## 
 
-### 1. 预分区
+### 1. 
 
 ```python
-# 创建表时预分区
+# 
 connection.create_table(
     'users',
     {'info': dict()},
@@ -570,22 +570,22 @@ connection.create_table(
 )
 ```
 
-### 2. 批量操作
+### 2. 
 
 ```python
-# 批量写入
+# 
 with table.batch(batch_size=1000) as batch:
     for i in range(10000):
         batch.put(f'key{i}', {b'cf:col': b'value'})
 
-# 批量读取
+# 
 rows = table.rows([b'key1', b'key2', b'key3'])
 ```
 
-### 3. 布隆过滤器
+### 3. 
 
 ```python
-# 创建表时启用布隆过滤器
+# 
 connection.create_table(
     'users',
     {
@@ -594,23 +594,23 @@ connection.create_table(
 )
 ```
 
-## 总结
+## 
 
-HBase是海量数据的实时查询利器：
+HBase
 
-1. **毫秒级查询**：根据RowKey快速定位
-2. **水平扩展**：PB级数据存储
-3. **列式存储**：灵活的schema
-4. **多版本**：支持时序数据
+1. ****RowKey
+2. ****PB
+3. ****schema
+4. ****
 
-记住：**HBase适合大量写入、按Key查询的场景**！
+**HBaseKey**
 
-## 练习题
+## 
 
-1. 设计一个物联网数据存储方案
-2. 实现分布式计数器
-3. 优化热点问题
-4. 实现二级索引
+1. 
+2. 
+3. 
+4. 
 
-下一章：数据仓库实战（即将推出）
+
 

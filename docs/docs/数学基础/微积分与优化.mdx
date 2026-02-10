@@ -1,41 +1,41 @@
 ---
 sidebar_position: 3
-title: 微积分与优化 - 训练神经网络的数学
+title:  - 
 ---
 
-# 微积分与优化 - 让AI学会学习
+#  - AI
 
-微积分听起来很吓人？其实它就是**告诉你往哪个方向调整参数**。这一章教你真正理解梯度下降和反向传播。
+****
 
-## 第一部分：导数 - 变化率
+##  - 
 
-### 什么是导数？
+### 
 
-**导数就是函数的变化率**。
+****
 
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 函数：y = x^2
+# y = x^2
 x = np.linspace(-5, 5, 100)
 y = x ** 2
 
-# 导数：dy/dx = 2x
+# dy/dx = 2x
 dy_dx = 2 * x
 
-# 可视化
+# 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 
 ax1.plot(x, y, 'b-', linewidth=2)
-ax1.set_title('函数: y = x²')
+ax1.set_title(': y = x²')
 ax1.set_xlabel('x')
 ax1.set_ylabel('y')
 ax1.grid(True)
 
 ax2.plot(x, dy_dx, 'r-', linewidth=2)
 ax2.axhline(y=0, color='k', linestyle='--')
-ax2.set_title('导数: dy/dx = 2x')
+ax2.set_title(': dy/dx = 2x')
 ax2.set_xlabel('x')
 ax2.set_ylabel('dy/dx')
 ax2.grid(True)
@@ -44,51 +44,51 @@ plt.tight_layout()
 plt.show()
 ```
 
-**导数的意义**：
-- 导数 > 0：函数在增加，往左走能减小
-- 导数 < 0：函数在减少，往右走能减小
-- 导数 = 0：可能是最小值或最大值
+****
+-  > 0
+-  < 0
+-  = 0
 
-### 常见函数的导数
+### 
 
 ```python
-# 1. 幂函数：d(x^n)/dx = n*x^(n-1)
+# 1. d(x^n)/dx = n*x^(n-1)
 def power_derivative(x, n):
     return n * x ** (n - 1)
 
-# 2. 指数函数：d(e^x)/dx = e^x
+# 2. d(e^x)/dx = e^x
 def exp_derivative(x):
     return np.exp(x)
 
-# 3. 对数函数：d(ln(x))/dx = 1/x
+# 3. d(ln(x))/dx = 1/x
 def log_derivative(x):
     return 1 / x
 
-# 4. 三角函数：d(sin(x))/dx = cos(x)
+# 4. d(sin(x))/dx = cos(x)
 def sin_derivative(x):
     return np.cos(x)
 
-# 验证
+# 
 x = 2.0
 h = 0.0001
 
-# 数值导数
+# 
 f = lambda x: x**3
 numerical = (f(x + h) - f(x)) / h
 analytical = 3 * x**2
 
-print(f"数值导数: {numerical:.6f}")
-print(f"解析导数: {analytical:.6f}")
-print(f"误差: {abs(numerical - analytical):.10f}")
+print(f": {numerical:.6f}")
+print(f": {analytical:.6f}")
+print(f": {abs(numerical - analytical):.10f}")
 ```
 
-### 梯度下降 - 找最小值
+###  - 
 
 ```python
 def gradient_descent_demo():
-    """梯度下降找最小值"""
-    # 函数：f(x) = (x - 3)^2
-    # 导数：f'(x) = 2(x - 3)
+    """"""
+    # f(x) = (x - 3)^2
+    # f'(x) = 2(x - 3)
     
     def f(x):
         return (x - 3) ** 2
@@ -96,61 +96,61 @@ def gradient_descent_demo():
     def df(x):
         return 2 * (x - 3)
     
-    # 梯度下降
-    x = 0  # 起点
+    # 
+    x = 0  # 
     learning_rate = 0.1
     history = [x]
     
     for i in range(20):
         gradient = df(x)
-        x = x - learning_rate * gradient  # 往梯度反方向走
+        x = x - learning_rate * gradient  # 
         history.append(x)
         
         if i % 5 == 0:
             print(f"Step {i}: x = {x:.4f}, f(x) = {f(x):.4f}, gradient = {gradient:.4f}")
     
-    # 可视化
+    # 
     x_plot = np.linspace(-1, 7, 100)
     y_plot = f(x_plot)
     
     plt.figure(figsize=(10, 6))
     plt.plot(x_plot, y_plot, 'b-', linewidth=2, label='f(x) = (x-3)²')
-    plt.plot(history, [f(h) for h in history], 'ro-', markersize=8, label='梯度下降路径')
+    plt.plot(history, [f(h) for h in history], 'ro-', markersize=8, label='')
     plt.xlabel('x')
     plt.ylabel('f(x)')
-    plt.title('梯度下降找最小值')
+    plt.title('')
     plt.legend()
     plt.grid(True)
     plt.show()
     
-    print(f"\n最终结果: x = {x:.4f}, 理论最小值点: x = 3")
+    print(f"\n: x = {x:.4f}, : x = 3")
 
 gradient_descent_demo()
 ```
 
-## 第二部分：链式法则 - 反向传播的核心
+##  - 
 
-### 什么是链式法则？
+### 
 
-**复合函数的导数 = 外层导数 × 内层导数**
+** =  × **
 
 ```python
-# 链式法则：如果 y = f(g(x))，那么 dy/dx = df/dg * dg/dx
+#  y = f(g(x)) dy/dx = df/dg * dg/dx
 
-# 例子：y = (2x + 1)^2
-# 设 u = 2x + 1，则 y = u^2
+# y = (2x + 1)^2
+#  u = 2x + 1 y = u^2
 # dy/dx = dy/du * du/dx = 2u * 2 = 4(2x + 1)
 
 def chain_rule_example(x):
-    """手动计算链式法则"""
-    # 前向传播
+    """"""
+    # 
     u = 2 * x + 1
     y = u ** 2
     
-    # 反向传播
-    dy_du = 2 * u  # y对u的导数
-    du_dx = 2      # u对x的导数
-    dy_dx = dy_du * du_dx  # 链式法则
+    # 
+    dy_du = 2 * u  # yu
+    du_dx = 2      # ux
+    dy_dx = dy_du * du_dx  # 
     
     return y, dy_dx
 
@@ -159,67 +159,67 @@ y, grad = chain_rule_example(x)
 print(f"x={x}, y={y}, dy/dx={grad}")
 # x=3, y=49, dy/dx=28
 
-# 验证
+# 
 h = 0.0001
 f = lambda x: (2*x + 1)**2
 numerical_grad = (f(x + h) - f(x)) / h
-print(f"数值梯度: {numerical_grad:.4f}")
+print(f": {numerical_grad:.4f}")
 ```
 
-### 神经网络中的链式法则
+### 
 
 ```python
 class SimpleNetwork:
-    """演示链式法则的简单网络"""
+    """"""
     
     def __init__(self):
         self.W1 = np.random.randn(2, 3) * 0.01
         self.W2 = np.random.randn(3, 1) * 0.01
     
     def forward(self, x):
-        """前向传播：保存中间结果"""
+        """"""
         self.x = x
         
-        # 第一层
+        # 
         self.z1 = np.dot(x, self.W1)
         self.a1 = np.maximum(0, self.z1)  # ReLU
         
-        # 第二层
+        # 
         self.z2 = np.dot(self.a1, self.W2)
         
         return self.z2
     
     def backward(self, grad_output):
-        """反向传播：链式法则"""
-        # 第二层梯度
+        """"""
+        # 
         # dL/dW2 = dL/dz2 * dz2/dW2
         grad_W2 = np.dot(self.a1.T, grad_output)
         
-        # 传到第一层
+        # 
         # dL/da1 = dL/dz2 * dz2/da1
         grad_a1 = np.dot(grad_output, self.W2.T)
         
-        # ReLU梯度
+        # ReLU
         grad_z1 = grad_a1.copy()
         grad_z1[self.z1 <= 0] = 0
         
-        # 第一层梯度
+        # 
         # dL/dW1 = dL/dz1 * dz1/dW1
         grad_W1 = np.dot(self.x.T, grad_z1)
         
         return grad_W1, grad_W2
     
     def check_gradients(self):
-        """数值梯度检验"""
+        """"""
         x = np.array([[1.0, 2.0]])
         
-        # 前向传播
+        # 
         output = self.forward(x)
         
-        # 反向传播
+        # 
         grad_W1, grad_W2 = self.backward(np.array([[1.0]]))
         
-        # 数值梯度
+        # 
         eps = 1e-5
         numerical_grad_W1 = np.zeros_like(self.W1)
         
@@ -235,22 +235,22 @@ class SimpleNetwork:
                 
                 numerical_grad_W1[i, j] = (output_plus - output_minus) / (2 * eps)
         
-        # 比较
+        # 
         diff = np.linalg.norm(grad_W1 - numerical_grad_W1)
-        print(f"梯度差异: {diff:.10f}")
-        print("解析梯度:\n", grad_W1)
-        print("数值梯度:\n", numerical_grad_W1)
+        print(f": {diff:.10f}")
+        print(":\n", grad_W1)
+        print(":\n", numerical_grad_W1)
 
-# 测试
+# 
 net = SimpleNetwork()
 net.check_gradients()
 ```
 
-## 第三部分：常见激活函数及其导数
+## 
 
 ```python
 class ActivationFunctions:
-    """常见激活函数及其导数"""
+    """"""
     
     @staticmethod
     def sigmoid(x):
@@ -259,7 +259,7 @@ class ActivationFunctions:
     
     @staticmethod
     def sigmoid_derivative(x):
-        """Sigmoid导数: σ'(x) = σ(x) * (1 - σ(x))"""
+        """Sigmoid: σ'(x) = σ(x) * (1 - σ(x))"""
         s = ActivationFunctions.sigmoid(x)
         return s * (1 - s)
     
@@ -270,7 +270,7 @@ class ActivationFunctions:
     
     @staticmethod
     def tanh_derivative(x):
-        """Tanh导数: tanh'(x) = 1 - tanh²(x)"""
+        """Tanh: tanh'(x) = 1 - tanh²(x)"""
         t = np.tanh(x)
         return 1 - t**2
     
@@ -281,7 +281,7 @@ class ActivationFunctions:
     
     @staticmethod
     def relu_derivative(x):
-        """ReLU导数: 1 if x > 0 else 0"""
+        """ReLU: 1 if x > 0 else 0"""
         return (x > 0).astype(float)
     
     @staticmethod
@@ -291,12 +291,12 @@ class ActivationFunctions:
     
     @staticmethod
     def leaky_relu_derivative(x, alpha=0.01):
-        """Leaky ReLU导数"""
+        """Leaky ReLU"""
         return np.where(x > 0, 1, alpha)
     
     @staticmethod
     def visualize():
-        """可视化激活函数"""
+        """"""
         x = np.linspace(-5, 5, 1000)
         
         fig, axes = plt.subplots(2, 4, figsize=(16, 8))
@@ -307,7 +307,7 @@ class ActivationFunctions:
         axes[0, 0].grid(True)
         
         axes[1, 0].plot(x, ActivationFunctions.sigmoid_derivative(x))
-        axes[1, 0].set_title('Sigmoid导数')
+        axes[1, 0].set_title('Sigmoid')
         axes[1, 0].grid(True)
         
         # Tanh
@@ -316,7 +316,7 @@ class ActivationFunctions:
         axes[0, 1].grid(True)
         
         axes[1, 1].plot(x, ActivationFunctions.tanh_derivative(x))
-        axes[1, 1].set_title('Tanh导数')
+        axes[1, 1].set_title('Tanh')
         axes[1, 1].grid(True)
         
         # ReLU
@@ -325,7 +325,7 @@ class ActivationFunctions:
         axes[0, 2].grid(True)
         
         axes[1, 2].plot(x, ActivationFunctions.relu_derivative(x))
-        axes[1, 2].set_title('ReLU导数')
+        axes[1, 2].set_title('ReLU')
         axes[1, 2].grid(True)
         
         # Leaky ReLU
@@ -334,21 +334,21 @@ class ActivationFunctions:
         axes[0, 3].grid(True)
         
         axes[1, 3].plot(x, ActivationFunctions.leaky_relu_derivative(x))
-        axes[1, 3].set_title('Leaky ReLU导数')
+        axes[1, 3].set_title('Leaky ReLU')
         axes[1, 3].grid(True)
         
         plt.tight_layout()
         plt.show()
 
-# 可视化
+# 
 ActivationFunctions.visualize()
 ```
 
-## 第四部分：实战 - 自动求导系统
+##  - 
 
 ```python
 class Tensor:
-    """支持自动求导的张量"""
+    """"""
     
     def __init__(self, data, requires_grad=False, _children=()):
         self.data = np.array(data, dtype=float)
@@ -361,7 +361,7 @@ class Tensor:
         return f"Tensor({self.data}, grad={self.grad})"
     
     def __add__(self, other):
-        """加法"""
+        """"""
         other = other if isinstance(other, Tensor) else Tensor(other)
         out = Tensor(self.data + other.data, requires_grad=True, _children=(self, other))
         
@@ -375,7 +375,7 @@ class Tensor:
         return out
     
     def __mul__(self, other):
-        """乘法"""
+        """"""
         other = other if isinstance(other, Tensor) else Tensor(other)
         out = Tensor(self.data * other.data, requires_grad=True, _children=(self, other))
         
@@ -391,7 +391,7 @@ class Tensor:
         return out
     
     def __pow__(self, power):
-        """幂运算"""
+        """"""
         out = Tensor(self.data ** power, requires_grad=True, _children=(self,))
         
         def _backward():
@@ -403,7 +403,7 @@ class Tensor:
         return out
     
     def relu(self):
-        """ReLU激活"""
+        """ReLU"""
         out = Tensor(np.maximum(0, self.data), requires_grad=True, _children=(self,))
         
         def _backward():
@@ -415,8 +415,8 @@ class Tensor:
         return out
     
     def backward(self):
-        """反向传播"""
-        # 拓扑排序
+        """"""
+        # 
         topo = []
         visited = set()
         
@@ -429,13 +429,13 @@ class Tensor:
         
         build_topo(self)
         
-        # 反向传播
+        # 
         self.grad = np.ones_like(self.data)
         for node in reversed(topo):
             node._backward()
 
-# 测试自动求导
-print("=== 测试1: 简单函数 ===")
+# 
+print("=== 1:  ===")
 x = Tensor([2.0], requires_grad=True)
 y = Tensor([3.0], requires_grad=True)
 
@@ -447,8 +447,8 @@ z.backward()
 print(f"x = {x.data}, dx = {x.grad}")  # dx = y + 2x = 3 + 4 = 7
 print(f"y = {y.data}, dy = {y.grad}")  # dy = x = 2
 
-print("\n=== 测试2: 神经网络 ===")
-# 简单的神经网络：y = relu(x * w1) * w2
+print("\n=== 2:  ===")
+# y = relu(x * w1) * w2
 x = Tensor([1.0], requires_grad=True)
 w1 = Tensor([2.0], requires_grad=True)
 w2 = Tensor([3.0], requires_grad=True)
@@ -463,5 +463,5 @@ print(f"w1 = {w1.data}, dw1 = {w1.grad}")
 print(f"w2 = {w2.data}, dw2 = {w2.grad}")
 ```
 
-下一章：[信息论](./信息论.mdx)
+[](./.mdx)
 

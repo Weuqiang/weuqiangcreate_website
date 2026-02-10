@@ -1,47 +1,47 @@
 ---
 sidebar_position: 4
-title: 在线教育平台实战
-tags: [全栈, React, Spring Boot, MySQL, 在线教育]
+title: 
+tags: [, React, Spring Boot, MySQL, ]
 ---
 
-# 在线教育平台实战
+# 
 
-## 项目概述
+## 
 
-构建一个功能完整的在线教育平台，包含课程管理、视频播放、在线考试、学习进度跟踪等功能。
 
-### 技术栈
 
-**前端**：
+### 
+
+****
 - React 18 + TypeScript
 - Ant Design
 - Redux Toolkit
 - React Router v6
-- Video.js (视频播放)
+- Video.js ()
 
-**后端**：
+****
 - Spring Boot 3.0
 - Spring Security + JWT
 - MySQL + MyBatis Plus
-- Redis (缓存)
-- MinIO (文件存储)
-- RabbitMQ (消息队列)
+- Redis ()
+- MinIO ()
+- RabbitMQ ()
 
-### 功能特性
+### 
 
-- ✅ 用户角色管理（学生、教师、管理员）
-- ✅ 课程管理（创建、编辑、发布）
-- ✅ 视频上传与播放
-- ✅ 章节管理
-- ✅ 在线考试
-- ✅ 学习进度跟踪
-- ✅ 评论与评分
-- ✅ 订单支付
-- ✅ 证书生成
+-  
+-  
+-  
+-  
+-  
+-  
+-  
+-  
+-  
 
-## 数据库设计
+## 
 
-### 用户表（user）
+### user
 
 ```sql
 CREATE TABLE `user` (
@@ -52,7 +52,7 @@ CREATE TABLE `user` (
   `phone` VARCHAR(20),
   `avatar` VARCHAR(255),
   `role` ENUM('STUDENT', 'TEACHER', 'ADMIN') DEFAULT 'STUDENT',
-  `status` TINYINT DEFAULT 1 COMMENT '1:正常 0:禁用',
+  `status` TINYINT DEFAULT 1 COMMENT '1: 0:',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_email (email),
@@ -60,7 +60,7 @@ CREATE TABLE `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-### 课程表（course）
+### course
 
 ```sql
 CREATE TABLE `course` (
@@ -86,7 +86,7 @@ CREATE TABLE `course` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-### 章节表（chapter）
+### chapter
 
 ```sql
 CREATE TABLE `chapter` (
@@ -100,7 +100,7 @@ CREATE TABLE `chapter` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-### 课时表（lesson）
+### lesson
 
 ```sql
 CREATE TABLE `lesson` (
@@ -108,8 +108,8 @@ CREATE TABLE `lesson` (
   `chapter_id` BIGINT NOT NULL,
   `title` VARCHAR(200) NOT NULL,
   `video_url` VARCHAR(255),
-  `duration` INT COMMENT '时长(秒)',
-  `is_free` TINYINT DEFAULT 0 COMMENT '是否免费试看',
+  `duration` INT COMMENT '()',
+  `is_free` TINYINT DEFAULT 0 COMMENT '',
   `sort_order` INT DEFAULT 0,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (chapter_id) REFERENCES chapter(id) ON DELETE CASCADE,
@@ -117,15 +117,15 @@ CREATE TABLE `lesson` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-### 学习进度表（learning_progress）
+### learning_progress
 
 ```sql
 CREATE TABLE `learning_progress` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
   `user_id` BIGINT NOT NULL,
   `lesson_id` BIGINT NOT NULL,
-  `progress` INT DEFAULT 0 COMMENT '进度百分比',
-  `last_position` INT DEFAULT 0 COMMENT '最后观看位置(秒)',
+  `progress` INT DEFAULT 0 COMMENT '',
+  `last_position` INT DEFAULT 0 COMMENT '()',
   `is_completed` TINYINT DEFAULT 0,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES user(id),
@@ -135,7 +135,7 @@ CREATE TABLE `learning_progress` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-### 订单表（order）
+### order
 
 ```sql
 CREATE TABLE `order` (
@@ -155,29 +155,29 @@ CREATE TABLE `order` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-## 后端实现
+## 
 
-### 1. 项目结构
+### 1. 
 
 ```
 edu-platform-backend/
-├── src/main/java/com/edu/
-│   ├── config/          # 配置类
-│   ├── controller/      # 控制器
-│   ├── service/         # 服务层
-│   ├── mapper/          # 数据访问层
-│   ├── entity/          # 实体类
-│   ├── dto/             # 数据传输对象
-│   ├── vo/              # 视图对象
-│   ├── security/        # 安全配置
-│   ├── exception/       # 异常处理
-│   └── util/            # 工具类
-└── src/main/resources/
-    ├── application.yml
-    └── mapper/          # MyBatis XML
+ src/main/java/com/edu/
+    config/          # 
+    controller/      # 
+    service/         # 
+    mapper/          # 
+    entity/          # 
+    dto/             # 
+    vo/              # 
+    security/        # 
+    exception/       # 
+    util/            # 
+ src/main/resources/
+     application.yml
+     mapper/          # MyBatis XML
 ```
 
-### 2. 实体类
+### 2. 
 
 ```java
 // User.java
@@ -237,7 +237,7 @@ public class Course {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
     
-    // 非数据库字段
+    // 
     @TableField(exist = false)
     private User teacher;
     
@@ -254,7 +254,7 @@ public enum CourseStatus {
 }
 ```
 
-### 3. 服务层实现
+### 3. 
 
 ```java
 // CourseService.java
@@ -272,7 +272,7 @@ public class CourseService {
     private RedisTemplate<String, Object> redisTemplate;
     
     /**
-     * 获取课程列表
+     * 
      */
     public PageResult<CourseVO> getCourseList(CourseQueryDTO query) {
         Page<Course> page = new Page<>(query.getPage(), query.getPageSize());
@@ -297,23 +297,23 @@ public class CourseService {
     }
     
     /**
-     * 获取课程详情
+     * 
      */
     public CourseDetailVO getCourseDetail(Long courseId) {
-        // 先从缓存获取
+        // 
         String cacheKey = "course:detail:" + courseId;
         CourseDetailVO cached = (CourseDetailVO) redisTemplate.opsForValue().get(cacheKey);
         if (cached != null) {
             return cached;
         }
         
-        // 查询课程
+        // 
         Course course = courseMapper.selectById(courseId);
         if (course == null) {
-            throw new BusinessException("课程不存在");
+            throw new BusinessException("");
         }
         
-        // 查询章节和课时
+        // 
         List<Chapter> chapters = chapterMapper.selectList(
             new LambdaQueryWrapper<Chapter>()
                 .eq(Chapter::getCourseId, courseId)
@@ -322,14 +322,14 @@ public class CourseService {
         
         CourseDetailVO vo = convertToDetailVO(course, chapters);
         
-        // 缓存1小时
+        // 1
         redisTemplate.opsForValue().set(cacheKey, vo, 1, TimeUnit.HOURS);
         
         return vo;
     }
     
     /**
-     * 创建课程
+     * 
      */
     @Transactional
     public Long createCourse(CreateCourseDTO dto, Long teacherId) {
@@ -344,42 +344,42 @@ public class CourseService {
     }
     
     /**
-     * 发布课程
+     * 
      */
     @Transactional
     public void publishCourse(Long courseId, Long teacherId) {
         Course course = courseMapper.selectById(courseId);
         
         if (course == null) {
-            throw new BusinessException("课程不存在");
+            throw new BusinessException("");
         }
         
         if (!course.getTeacherId().equals(teacherId)) {
-            throw new BusinessException("无权限");
+            throw new BusinessException("");
         }
         
-        // 检查课程是否完整
+        // 
         validateCourseComplete(courseId);
         
         course.setStatus(CourseStatus.PUBLISHED);
         courseMapper.updateById(course);
         
-        // 清除缓存
+        // 
         redisTemplate.delete("course:detail:" + courseId);
     }
     
     private void validateCourseComplete(Long courseId) {
-        // 检查是否有章节
+        // 
         Long chapterCount = chapterMapper.selectCount(
             new LambdaQueryWrapper<Chapter>()
                 .eq(Chapter::getCourseId, courseId)
         );
         
         if (chapterCount == 0) {
-            throw new BusinessException("请先添加课程章节");
+            throw new BusinessException("");
         }
         
-        // 检查是否有课时
+        // 
         // ...
     }
 }
@@ -397,7 +397,7 @@ public class LearningProgressService {
     private LessonMapper lessonMapper;
     
     /**
-     * 更新学习进度
+     * 
      */
     @Transactional
     public void updateProgress(Long userId, Long lessonId, 
@@ -416,11 +416,11 @@ public class LearningProgressService {
         
         progress.setLastPosition(position);
         
-        // 计算进度百分比
+        // 
         int progressPercent = (int) ((position * 100.0) / duration);
         progress.setProgress(Math.min(progressPercent, 100));
         
-        // 判断是否完成
+        // 
         if (progressPercent >= 90) {
             progress.setIsCompleted(1);
         }
@@ -433,13 +433,13 @@ public class LearningProgressService {
     }
     
     /**
-     * 获取课程学习进度
+     * 
      */
     public CourseProgressVO getCourseProgress(Long userId, Long courseId) {
-        // 查询课程所有课时
+        // 
         List<Lesson> lessons = lessonMapper.selectByCourseId(courseId);
         
-        // 查询学习进度
+        // 
         List<LearningProgress> progressList = progressMapper.selectList(
             new LambdaQueryWrapper<LearningProgress>()
                 .eq(LearningProgress::getUserId, userId)
@@ -450,7 +450,7 @@ public class LearningProgressService {
         Map<Long, LearningProgress> progressMap = progressList.stream()
             .collect(Collectors.toMap(LearningProgress::getLessonId, p -> p));
         
-        // 计算总进度
+        // 
         int totalLessons = lessons.size();
         int completedLessons = (int) progressList.stream()
             .filter(p -> p.getIsCompleted() == 1)
@@ -472,7 +472,7 @@ public class LearningProgressService {
 }
 ```
 
-### 4. 控制器
+### 4. 
 
 ```java
 // CourseController.java
@@ -485,7 +485,7 @@ public class CourseController {
     private CourseService courseService;
     
     /**
-     * 获取课程列表
+     * 
      */
     @GetMapping
     public Result<PageResult<CourseVO>> getCourseList(CourseQueryDTO query) {
@@ -494,7 +494,7 @@ public class CourseController {
     }
     
     /**
-     * 获取课程详情
+     * 
      */
     @GetMapping("/{id}")
     public Result<CourseDetailVO> getCourseDetail(@PathVariable Long id) {
@@ -503,7 +503,7 @@ public class CourseController {
     }
     
     /**
-     * 创建课程
+     * 
      */
     @PostMapping
     @PreAuthorize("hasRole('TEACHER')")
@@ -514,7 +514,7 @@ public class CourseController {
     }
     
     /**
-     * 发布课程
+     * 
      */
     @PostMapping("/{id}/publish")
     @PreAuthorize("hasRole('TEACHER')")
@@ -526,7 +526,7 @@ public class CourseController {
 }
 ```
 
-### 5. 文件上传
+### 5. 
 
 ```java
 // FileUploadService.java
@@ -540,7 +540,7 @@ public class FileUploadService {
     private String bucket;
     
     /**
-     * 上传视频
+     * 
      */
     public String uploadVideo(MultipartFile file) {
         try {
@@ -558,12 +558,12 @@ public class FileUploadService {
             
             return getFileUrl(objectName);
         } catch (Exception e) {
-            throw new BusinessException("视频上传失败");
+            throw new BusinessException("");
         }
     }
     
     /**
-     * 生成文件名
+     * 
      */
     private String generateFileName(String originalFilename) {
         String extension = originalFilename.substring(
@@ -573,7 +573,7 @@ public class FileUploadService {
     }
     
     /**
-     * 获取文件URL
+     * URL
      */
     private String getFileUrl(String objectName) {
         try {
@@ -585,15 +585,15 @@ public class FileUploadService {
                     .build()
             );
         } catch (Exception e) {
-            throw new BusinessException("获取文件URL失败");
+            throw new BusinessException("URL");
         }
     }
 }
 ```
 
-## 前端实现
+## 
 
-### 1. 课程列表页面
+### 1. 
 
 ```tsx
 // src/pages/CourseList/index.tsx
@@ -617,26 +617,26 @@ export default function CourseList() {
   
   return (
     <div className="course-list">
-      {/* 搜索和筛选 */}
+      {/*  */}
       <div className="filter-bar">
         <Search
-          placeholder="搜索课程"
+          placeholder=""
           onSearch={setKeyword}
           style={{ width: 300 }}
         />
         <Select
-          placeholder="选择分类"
+          placeholder=""
           style={{ width: 200, marginLeft: 16 }}
           onChange={setCategory}
           allowClear
         >
-          <Select.Option value={1}>前端开发</Select.Option>
-          <Select.Option value={2}>后端开发</Select.Option>
-          <Select.Option value={3}>移动开发</Select.Option>
+          <Select.Option value={1}></Select.Option>
+          <Select.Option value={2}></Select.Option>
+          <Select.Option value={3}></Select.Option>
         </Select>
       </div>
       
-      {/* 课程列表 */}
+      {/*  */}
       <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
         {data?.list.map((course) => (
           <Col key={course.id} xs={24} sm={12} md={8} lg={6}>
@@ -645,7 +645,7 @@ export default function CourseList() {
         ))}
       </Row>
       
-      {/* 分页 */}
+      {/*  */}
       <Pagination
         current={page}
         total={data?.total}
@@ -658,7 +658,7 @@ export default function CourseList() {
 }
 ```
 
-### 2. 视频播放器
+### 2. 
 
 ```tsx
 // src/components/VideoPlayer/index.tsx
@@ -685,7 +685,7 @@ export default function VideoPlayer({
   useEffect(() => {
     if (!videoRef.current) return;
     
-    // 初始化播放器
+    // 
     const player = videojs(videoRef.current, {
       controls: true,
       autoplay: false,
@@ -699,18 +699,18 @@ export default function VideoPlayer({
     
     playerRef.current = player;
     
-    // 设置初始播放位置
+    // 
     if (initialTime > 0) {
       player.currentTime(initialTime);
     }
     
-    // 监听时间更新
+    // 
     player.on('timeupdate', () => {
       const currentTime = player.currentTime();
       onTimeUpdate?.(currentTime);
     });
     
-    // 监听播放结束
+    // 
     player.on('ended', () => {
       onEnded?.();
     });
@@ -730,7 +730,7 @@ export default function VideoPlayer({
 }
 ```
 
-### 3. 课程学习页面
+### 3. 
 
 ```tsx
 // src/pages/CourseLearn/index.tsx
@@ -757,7 +757,7 @@ export default function CourseLearn() {
       updateProgress(data),
   });
   
-  // 自动播放第一个课时
+  // 
   useEffect(() => {
     if (course && !currentLesson) {
       const firstLesson = course.chapters[0]?.lessons[0];
@@ -767,7 +767,7 @@ export default function CourseLearn() {
     }
   }, [course]);
   
-  // 定时保存进度
+  // 
   useEffect(() => {
     if (!currentLesson) return;
     
@@ -780,14 +780,14 @@ export default function CourseLearn() {
           duration: Math.floor(video.duration),
         });
       }
-    }, 10000); // 每10秒保存一次
+    }, 10000); // 10
     
     return () => clearInterval(timer);
   }, [currentLesson]);
   
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* 侧边栏 - 课程目录 */}
+      {/*  -  */}
       <Sider width={300} theme="light">
         <div style={{ padding: 16 }}>
           <h3>{course?.title}</h3>
@@ -809,7 +809,7 @@ export default function CourseLearn() {
         />
       </Sider>
       
-      {/* 主内容区 - 视频播放 */}
+      {/*  -  */}
       <Content style={{ padding: 24 }}>
         {currentLesson && (
           <>
@@ -818,10 +818,10 @@ export default function CourseLearn() {
               src={currentLesson.videoUrl}
               initialTime={currentLesson.lastPosition || 0}
               onTimeUpdate={(time) => {
-                // 实时更新进度
+                // 
               }}
               onEnded={() => {
-                // 播放完成，自动播放下一个
+                // 
               }}
             />
           </>
@@ -832,9 +832,9 @@ export default function CourseLearn() {
 }
 ```
 
-## 部署
+## 
 
-### 1. 后端部署
+### 1. 
 
 ```yaml
 # application-prod.yml
@@ -874,7 +874,7 @@ EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-### 2. 前端部署
+### 2. 
 
 ```dockerfile
 # Dockerfile
@@ -898,19 +898,19 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
-## 总结
+## 
 
-通过这个项目，我们学习了：
 
-1. **复杂业务逻辑**：课程管理、学习进度跟踪
-2. **视频处理**：上传、存储、播放
-3. **权限控制**：多角色权限管理
-4. **性能优化**：Redis缓存、分页查询
-5. **微服务架构**：消息队列、文件存储
 
-## 延伸阅读
+1. ****
+2. ****
+3. ****
+4. ****Redis
+5. ****
 
-- [Spring Boot文档](https://spring.io/projects/spring-boot)
-- [MyBatis Plus文档](https://baomidou.com/)
-- [Video.js文档](https://videojs.com/)
+## 
+
+- [Spring Boot](https://spring.io/projects/spring-boot)
+- [MyBatis Plus](https://baomidou.com/)
+- [Video.js](https://videojs.com/)
 

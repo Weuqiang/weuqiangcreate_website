@@ -1,13 +1,13 @@
 ---
 sidebar_position: 1
-title: Kubernetes入门与实战
+title: Kubernetes
 ---
 
-# Kubernetes入门与实战
+# Kubernetes
 
-Kubernetes（K8s）是目前最流行的容器编排平台，用于自动化部署、扩展和管理容器化应用。
+KubernetesK8s
 
-## 核心概念
+## 
 
 ### Pod
 
@@ -101,13 +101,13 @@ metadata:
   name: app-secret
 type: Opaque
 data:
-  username: YWRtaW4=  # base64编码的admin
-  password: cGFzc3dvcmQ=  # base64编码的password
+  username: YWRtaW4=  # base64admin
+  password: cGFzc3dvcmQ=  # base64password
 ```
 
-## 实战部署
+## 
 
-### 完整的微服务部署
+### 
 
 ```yaml
 # microservice-deployment.yaml
@@ -202,9 +202,9 @@ spec:
               number: 80
 ```
 
-## 自动扩缩容
+## 
 
-### HPA（水平Pod自动扩缩容）
+### HPAPod
 
 ```yaml
 # hpa.yaml
@@ -234,59 +234,59 @@ spec:
         averageUtilization: 80
 ```
 
-## 常用命令
+## 
 
 ```bash
-# 查看资源
+# 
 kubectl get pods
 kubectl get deployments
 kubectl get services
 kubectl get nodes
 
-# 查看详情
+# 
 kubectl describe pod <pod-name>
 kubectl logs <pod-name>
-kubectl logs -f <pod-name>  # 实时日志
+kubectl logs -f <pod-name>  # 
 
-# 创建资源
+# 
 kubectl apply -f deployment.yaml
 kubectl create -f service.yaml
 
-# 删除资源
+# 
 kubectl delete pod <pod-name>
 kubectl delete -f deployment.yaml
 
-# 进入容器
+# 
 kubectl exec -it <pod-name> -- /bin/bash
 
-# 端口转发
+# 
 kubectl port-forward <pod-name> 8080:80
 
-# 扩缩容
+# 
 kubectl scale deployment <name> --replicas=5
 
-# 滚动更新
+# 
 kubectl set image deployment/<name> <container>=<image>
 kubectl rollout status deployment/<name>
 kubectl rollout undo deployment/<name>
 ```
 
-## 最佳实践
+## 
 
-1. **资源限制**: 始终设置requests和limits
-2. **健康检查**: 配置liveness和readiness探针
-3. **标签管理**: 使用有意义的标签
-4. **命名空间**: 使用namespace隔离环境
-5. **配置分离**: 使用ConfigMap和Secret
-6. **滚动更新**: 使用RollingUpdate策略
-7. **监控日志**: 集成Prometheus和ELK
+1. ****: requestslimits
+2. ****: livenessreadiness
+3. ****: 
+4. ****: namespace
+5. ****: ConfigMapSecret
+6. ****: RollingUpdate
+7. ****: PrometheusELK
 
-## 总结
+## 
 
-Kubernetes的核心是：
-- ✅ 理解Pod、Service、Deployment等核心概念
-- ✅ 掌握YAML配置文件编写
-- ✅ 熟练使用kubectl命令
-- ✅ 配置健康检查和资源限制
-- ✅ 实现自动扩缩容和滚动更新
+Kubernetes
+-  PodServiceDeployment
+-  YAML
+-  kubectl
+-  
+-  
 

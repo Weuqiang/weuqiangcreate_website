@@ -1,24 +1,24 @@
 ---
 sidebar_position: 2
-title: 后端面试题精选
-tags: [面试, 后端, Node.js, 数据库, 系统设计]
+title: 
+tags: [, , Node.js, , ]
 ---
 
-# 后端面试题精选
+# 
 
-本文精选后端高频面试题，涵盖Node.js、数据库、网络等核心知识点。
+Node.js
 
 ## Node.js
 
-### 1. 事件循环
+### 1. 
 
 ```javascript
 /**
- * Node.js事件循环的6个阶段
+ * Node.js6
  */
 
-// 执行顺序示例
-console.log('1: 同步代码');
+// 
+console.log('1: ');
 
 setTimeout(() => {
   console.log('2: setTimeout');
@@ -36,56 +36,56 @@ Promise.resolve().then(() => {
   console.log('5: Promise');
 });
 
-console.log('6: 同步代码');
+console.log('6: ');
 
-// 输出顺序：1 -> 6 -> 4 -> 5 -> 2 -> 3
-// nextTick > Promise微任务 > setTimeout > setImmediate
+// 1 -> 6 -> 4 -> 5 -> 2 -> 3
+// nextTick > Promise > setTimeout > setImmediate
 
-// 事件循环阶段
+// 
 const phases = {
-  timers: 'setTimeout/setInterval回调',
-  pending: 'I/O回调',
-  idle: '内部使用',
-  poll: '轮询I/O事件',
-  check: 'setImmediate回调',
-  close: '关闭回调'
+  timers: 'setTimeout/setInterval',
+  pending: 'I/O',
+  idle: '',
+  poll: 'I/O',
+  check: 'setImmediate',
+  close: ''
 };
 ```
 
-### 2. Stream流
+### 2. Stream
 
 ```javascript
 /**
- * Node.js流：处理大文件的高效方式
+ * Node.js
  */
 
 const fs = require('fs');
 
-// 可读流
+// 
 const readStream = fs.createReadStream('large-file.txt', {
   encoding: 'utf8',
   highWaterMark: 64 * 1024 // 64KB
 });
 
 readStream.on('data', (chunk) => {
-  console.log('读取数据:', chunk.length);
+  console.log(':', chunk.length);
 });
 
 readStream.on('end', () => {
-  console.log('读取完成');
+  console.log('');
 });
 
-// 可写流
+// 
 const writeStream = fs.createWriteStream('output.txt');
 
 writeStream.write('Hello\n');
 writeStream.write('World\n');
 writeStream.end();
 
-// 管道
+// 
 readStream.pipe(writeStream);
 
-// 自定义可读流
+// 
 const { Readable } = require('stream');
 
 class MyReadable extends Readable {
@@ -99,7 +99,7 @@ class MyReadable extends Readable {
     if (this.index < this.data.length) {
       this.push(this.data[this.index++]);
     } else {
-      this.push(null); // 结束
+      this.push(null); // 
     }
   }
 }
@@ -109,7 +109,7 @@ myStream.on('data', (chunk) => {
   console.log(chunk.toString());
 });
 
-// Transform流
+// Transform
 const { Transform } = require('stream');
 
 class UpperCaseTransform extends Transform {
@@ -123,11 +123,11 @@ const upperCase = new UpperCaseTransform();
 process.stdin.pipe(upperCase).pipe(process.stdout);
 ```
 
-### 3. 进程与集群
+### 3. 
 
 ```javascript
 /**
- * 多进程与集群
+ * 
  */
 
 const cluster = require('cluster');
@@ -139,24 +139,24 @@ if (cluster.isMaster) {
   
   console.log(`Master ${process.pid} is running`);
   
-  // 创建工作进程
+  // 
   for (let i = 0; i < numCPUs; i++) {
     cluster.fork();
   }
   
-  // 监听工作进程退出
+  // 
   cluster.on('exit', (worker, code, signal) => {
     console.log(`Worker ${worker.process.pid} died`);
-    cluster.fork(); // 重启
+    cluster.fork(); // 
   });
   
-  // 进程间通信
+  // 
   Object.values(cluster.workers).forEach(worker => {
     worker.send({ msg: 'Hello from master' });
   });
   
 } else {
-  // 工作进程
+  // 
   const server = http.createServer((req, res) => {
     res.writeHead(200);
     res.end(`Worker ${process.pid} handled request`);
@@ -164,7 +164,7 @@ if (cluster.isMaster) {
   
   server.listen(8000);
   
-  // 接收主进程消息
+  // 
   process.on('message', (msg) => {
     console.log('Worker received:', msg);
   });
@@ -175,13 +175,13 @@ if (cluster.isMaster) {
 // Child Process
 const { spawn, exec, fork } = require('child_process');
 
-// spawn：流式数据
+// spawn
 const ls = spawn('ls', ['-lh', '/usr']);
 ls.stdout.on('data', (data) => {
   console.log(`stdout: ${data}`);
 });
 
-// exec：缓冲输出
+// exec
 exec('ls -lh /usr', (error, stdout, stderr) => {
   if (error) {
     console.error(`error: ${error}`);
@@ -190,7 +190,7 @@ exec('ls -lh /usr', (error, stdout, stderr) => {
   console.log(`stdout: ${stdout}`);
 });
 
-// fork：专门用于Node.js脚本
+// forkNode.js
 const child = fork('child.js');
 child.send({ hello: 'world' });
 child.on('message', (msg) => {
@@ -198,112 +198,112 @@ child.on('message', (msg) => {
 });
 ```
 
-## 数据库
+## 
 
-### 1. MySQL索引
+### 1. MySQL
 
 ```sql
--- 索引类型
--- 1. B+树索引（默认）
+-- 
+-- 1. B+
 CREATE INDEX idx_name ON users(name);
 
--- 2. 哈希索引
+-- 2. 
 CREATE INDEX idx_email USING HASH ON users(email);
 
--- 3. 全文索引
+-- 3. 
 CREATE FULLTEXT INDEX idx_content ON articles(content);
 
--- 4. 空间索引
+-- 4. 
 CREATE SPATIAL INDEX idx_location ON places(location);
 
--- 联合索引（最左前缀原则）
+-- 
 CREATE INDEX idx_name_age ON users(name, age);
 
--- 可以使用的查询
-SELECT * FROM users WHERE name = 'John';           -- ✓
-SELECT * FROM users WHERE name = 'John' AND age = 25; -- ✓
-SELECT * FROM users WHERE age = 25;                -- ✗
+-- 
+SELECT * FROM users WHERE name = 'John';           -- 
+SELECT * FROM users WHERE name = 'John' AND age = 25; -- 
+SELECT * FROM users WHERE age = 25;                -- 
 
--- 覆盖索引
+-- 
 CREATE INDEX idx_name_age_email ON users(name, age, email);
-SELECT name, age, email FROM users WHERE name = 'John'; -- 不需要回表
+SELECT name, age, email FROM users WHERE name = 'John'; -- 
 
--- 索引优化
--- 1. 避免索引失效
-SELECT * FROM users WHERE name LIKE '%John%';  -- ✗ 前缀模糊
-SELECT * FROM users WHERE name LIKE 'John%';   -- ✓ 后缀模糊
+-- 
+-- 1. 
+SELECT * FROM users WHERE name LIKE '%John%';  --  
+SELECT * FROM users WHERE name LIKE 'John%';   --  
 
-SELECT * FROM users WHERE age + 1 = 26;        -- ✗ 函数操作
-SELECT * FROM users WHERE age = 25;            -- ✓
+SELECT * FROM users WHERE age + 1 = 26;        --  
+SELECT * FROM users WHERE age = 25;            -- 
 
--- 2. 使用EXPLAIN分析
+-- 2. EXPLAIN
 EXPLAIN SELECT * FROM users WHERE name = 'John';
 
--- 3. 索引选择性
-SELECT COUNT(DISTINCT name) / COUNT(*) FROM users; -- 越接近1越好
+-- 3. 
+SELECT COUNT(DISTINCT name) / COUNT(*) FROM users; -- 1
 ```
 
-### 2. 事务与锁
+### 2. 
 
 ```sql
--- 事务ACID特性
+-- ACID
 START TRANSACTION;
 
 UPDATE accounts SET balance = balance - 100 WHERE id = 1;
 UPDATE accounts SET balance = balance + 100 WHERE id = 2;
 
-COMMIT; -- 或 ROLLBACK
+COMMIT; --  ROLLBACK
 
--- 隔离级别
--- 1. READ UNCOMMITTED（读未提交）
+-- 
+-- 1. READ UNCOMMITTED
 SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
--- 2. READ COMMITTED（读已提交）
+-- 2. READ COMMITTED
 SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
--- 3. REPEATABLE READ（可重复读，MySQL默认）
+-- 3. REPEATABLE READMySQL
 SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
--- 4. SERIALIZABLE（串行化）
+-- 4. SERIALIZABLE
 SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
--- 锁类型
--- 1. 共享锁（S锁）
+-- 
+-- 1. S
 SELECT * FROM users WHERE id = 1 LOCK IN SHARE MODE;
 
--- 2. 排他锁（X锁）
+-- 2. X
 SELECT * FROM users WHERE id = 1 FOR UPDATE;
 
--- 3. 行锁
-UPDATE users SET name = 'John' WHERE id = 1; -- 锁定id=1的行
+-- 3. 
+UPDATE users SET name = 'John' WHERE id = 1; -- id=1
 
--- 4. 表锁
+-- 4. 
 LOCK TABLES users WRITE;
--- 操作
+-- 
 UNLOCK TABLES;
 
--- 死锁示例
--- 事务1
+-- 
+-- 1
 START TRANSACTION;
 UPDATE accounts SET balance = balance - 100 WHERE id = 1;
-UPDATE accounts SET balance = balance + 100 WHERE id = 2; -- 等待事务2
+UPDATE accounts SET balance = balance + 100 WHERE id = 2; -- 2
 
--- 事务2
+-- 2
 START TRANSACTION;
 UPDATE accounts SET balance = balance - 50 WHERE id = 2;
-UPDATE accounts SET balance = balance + 50 WHERE id = 1;  -- 等待事务1，死锁！
+UPDATE accounts SET balance = balance + 50 WHERE id = 1;  -- 1
 
--- 避免死锁
--- 1. 按相同顺序访问资源
--- 2. 缩短事务时间
--- 3. 使用较低的隔离级别
+-- 
+-- 1. 
+-- 2. 
+-- 3. 
 ```
 
 ### 3. Redis
 
 ```javascript
 /**
- * Redis数据结构与应用
+ * Redis
  */
 
 const redis = require('redis');
@@ -313,7 +313,7 @@ const client = redis.createClient();
 await client.set('key', 'value');
 await client.get('key');
 await client.incr('counter');
-await client.expire('key', 60); // 60秒过期
+await client.expire('key', 60); // 60
 
 // 2. Hash
 await client.hset('user:1', 'name', 'John');
@@ -335,8 +335,8 @@ await client.zadd('leaderboard', 100, 'player1');
 await client.zadd('leaderboard', 200, 'player2');
 await client.zrange('leaderboard', 0, -1, 'WITHSCORES');
 
-// 应用场景
-// 1. 缓存
+// 
+// 1. 
 async function getUser(id) {
   const cached = await client.get(`user:${id}`);
   if (cached) return JSON.parse(cached);
@@ -347,7 +347,7 @@ async function getUser(id) {
   return user;
 }
 
-// 2. 分布式锁
+// 2. 
 async function acquireLock(key, ttl = 10000) {
   const lockKey = `lock:${key}`;
   const lockValue = `${Date.now()}-${Math.random()}`;
@@ -356,7 +356,7 @@ async function acquireLock(key, ttl = 10000) {
   return result === 'OK' ? lockValue : null;
 }
 
-// 3. 限流
+// 3. 
 async function rateLimit(userId, limit = 100, window = 60) {
   const key = `rate:${userId}`;
   const count = await client.incr(key);
@@ -368,7 +368,7 @@ async function rateLimit(userId, limit = 100, window = 60) {
   return count <= limit;
 }
 
-// 4. 发布订阅
+// 4. 
 const publisher = redis.createClient();
 const subscriber = redis.createClient();
 
@@ -380,64 +380,64 @@ subscriber.on('message', (channel, message) => {
 publisher.publish('channel', 'Hello');
 ```
 
-## 网络协议
+## 
 
 ### 1. HTTP
 
 ```javascript
 /**
- * HTTP协议
+ * HTTP
  */
 
-// HTTP方法
+// HTTP
 const methods = {
-  GET: '获取资源',
-  POST: '创建资源',
-  PUT: '更新资源（完整）',
-  PATCH: '更新资源（部分）',
-  DELETE: '删除资源',
-  HEAD: '获取响应头',
-  OPTIONS: '获取支持的方法'
+  GET: '',
+  POST: '',
+  PUT: '',
+  PATCH: '',
+  DELETE: '',
+  HEAD: '',
+  OPTIONS: ''
 };
 
-// HTTP状态码
+// HTTP
 const statusCodes = {
-  // 1xx 信息
+  // 1xx 
   100: 'Continue',
   101: 'Switching Protocols',
   
-  // 2xx 成功
+  // 2xx 
   200: 'OK',
   201: 'Created',
   204: 'No Content',
   
-  // 3xx 重定向
+  // 3xx 
   301: 'Moved Permanently',
   302: 'Found',
   304: 'Not Modified',
   
-  // 4xx 客户端错误
+  // 4xx 
   400: 'Bad Request',
   401: 'Unauthorized',
   403: 'Forbidden',
   404: 'Not Found',
   
-  // 5xx 服务器错误
+  // 5xx 
   500: 'Internal Server Error',
   502: 'Bad Gateway',
   503: 'Service Unavailable'
 };
 
-// HTTP头
+// HTTP
 const headers = {
-  // 请求头
+  // 
   'Content-Type': 'application/json',
   'Authorization': 'Bearer token',
   'User-Agent': 'Mozilla/5.0',
   'Accept': 'application/json',
   'Cookie': 'session=abc123',
   
-  // 响应头
+  // 
   'Content-Length': '1234',
   'Cache-Control': 'max-age=3600',
   'Set-Cookie': 'session=abc123; HttpOnly',
@@ -463,12 +463,12 @@ https.createServer(options, (req, res) => {
 
 ```javascript
 /**
- * WebSocket实时通信
+ * WebSocket
  */
 
 const WebSocket = require('ws');
 
-// 服务端
+// 
 const wss = new WebSocket.Server({ port: 8080 });
 
 wss.on('connection', (ws) => {
@@ -477,7 +477,7 @@ wss.on('connection', (ws) => {
   ws.on('message', (message) => {
     console.log('Received:', message);
     
-    // 广播给所有客户端
+    // 
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);
@@ -489,14 +489,14 @@ wss.on('connection', (ws) => {
     console.log('Client disconnected');
   });
   
-  // 心跳检测
+  // 
   ws.isAlive = true;
   ws.on('pong', () => {
     ws.isAlive = true;
   });
 });
 
-// 心跳检测
+// 
 setInterval(() => {
   wss.clients.forEach((ws) => {
     if (!ws.isAlive) {
@@ -508,7 +508,7 @@ setInterval(() => {
   });
 }, 30000);
 
-// 客户端
+// 
 const ws = new WebSocket('ws://localhost:8080');
 
 ws.on('open', () => {
@@ -521,25 +521,25 @@ ws.on('message', (data) => {
 });
 ```
 
-## 系统设计
+## 
 
-### 1. 缓存策略
+### 1. 
 
 ```javascript
 /**
- * 缓存策略
+ * 
  */
 
-// 1. Cache-Aside（旁路缓存）
+// 1. Cache-Aside
 async function getData(key) {
-  // 先查缓存
+  // 
   let data = await cache.get(key);
   
   if (!data) {
-    // 缓存未命中，查数据库
+    // 
     data = await db.query(key);
     
-    // 写入缓存
+    // 
     await cache.set(key, data, 3600);
   }
   
@@ -547,14 +547,14 @@ async function getData(key) {
 }
 
 async function updateData(key, value) {
-  // 先更新数据库
+  // 
   await db.update(key, value);
   
-  // 删除缓存
+  // 
   await cache.del(key);
 }
 
-// 2. Read-Through（读穿透）
+// 2. Read-Through
 class CacheProxy {
   async get(key) {
     let data = await this.cache.get(key);
@@ -568,7 +568,7 @@ class CacheProxy {
   }
 }
 
-// 3. Write-Through（写穿透）
+// 3. Write-Through
 class CacheProxy {
   async set(key, value) {
     await this.cache.set(key, value);
@@ -576,12 +576,12 @@ class CacheProxy {
   }
 }
 
-// 4. Write-Behind（写回）
+// 4. Write-Behind
 class CacheProxy {
   async set(key, value) {
     await this.cache.set(key, value);
     
-    // 异步写入数据库
+    // 
     this.queue.push({ key, value });
   }
   
@@ -591,10 +591,10 @@ class CacheProxy {
   }
 }
 
-// 缓存问题
-// 1. 缓存穿透：查询不存在的数据
+// 
+// 1. 
 async function getDataWithBloomFilter(key) {
-  // 布隆过滤器判断
+  // 
   if (!bloomFilter.contains(key)) {
     return null;
   }
@@ -605,7 +605,7 @@ async function getDataWithBloomFilter(key) {
     if (data) {
       await cache.set(key, data);
     } else {
-      // 缓存空值
+      // 
       await cache.set(key, null, 60);
     }
   }
@@ -613,12 +613,12 @@ async function getDataWithBloomFilter(key) {
   return data;
 }
 
-// 2. 缓存击穿：热点数据过期
+// 2. 
 async function getDataWithMutex(key) {
   let data = await cache.get(key);
   
   if (!data) {
-    // 获取互斥锁
+    // 
     const lock = await acquireLock(key);
     
     if (lock) {
@@ -629,7 +629,7 @@ async function getDataWithMutex(key) {
         await releaseLock(key, lock);
       }
     } else {
-      // 等待后重试
+      // 
       await sleep(100);
       return getDataWithMutex(key);
     }
@@ -638,21 +638,21 @@ async function getDataWithMutex(key) {
   return data;
 }
 
-// 3. 缓存雪崩：大量缓存同时过期
+// 3. 
 async function setDataWithRandomTTL(key, data) {
-  const ttl = 3600 + Math.floor(Math.random() * 300); // 3600-3900秒
+  const ttl = 3600 + Math.floor(Math.random() * 300); // 3600-3900
   await cache.set(key, data, ttl);
 }
 ```
 
-### 2. 限流算法
+### 2. 
 
 ```javascript
 /**
- * 限流算法
+ * 
  */
 
-// 1. 固定窗口
+// 1. 
 class FixedWindowRateLimiter {
   constructor(limit, window) {
     this.limit = limit;
@@ -678,7 +678,7 @@ class FixedWindowRateLimiter {
   }
 }
 
-// 2. 滑动窗口
+// 2. 
 class SlidingWindowRateLimiter {
   constructor(limit, window) {
     this.limit = limit;
@@ -689,7 +689,7 @@ class SlidingWindowRateLimiter {
   async allow() {
     const now = Date.now();
     
-    // 移除过期请求
+    // 
     this.requests = this.requests.filter(time => now - time < this.window);
     
     if (this.requests.length < this.limit) {
@@ -701,7 +701,7 @@ class SlidingWindowRateLimiter {
   }
 }
 
-// 3. 令牌桶
+// 3. 
 class TokenBucketRateLimiter {
   constructor(capacity, refillRate) {
     this.capacity = capacity;
@@ -731,7 +731,7 @@ class TokenBucketRateLimiter {
   }
 }
 
-// 4. 漏桶
+// 4. 
 class LeakyBucketRateLimiter {
   constructor(capacity, leakRate) {
     this.capacity = capacity;
@@ -758,15 +758,15 @@ class LeakyBucketRateLimiter {
 }
 ```
 
-## 总结
+## 
 
-后端面试核心：
-- 🔄 **Node.js**：事件循环、Stream、集群
-- 💾 **数据库**：索引、事务、Redis
-- 🌐 **网络**：HTTP、WebSocket、TCP/IP
-- 🏗️ **系统设计**：缓存、限流、负载均衡
-- 🔒 **安全**：认证、授权、加密
-- 📊 **性能**：优化、监控、调优
 
-记住：**理解原理，注重实践！**
+-  **Node.js**Stream
+-  ****Redis
+-  ****HTTPWebSocketTCP/IP
+-  ****
+-  ****
+-  ****
+
+****
 

@@ -1,11 +1,11 @@
 ---
 sidebarDepth: 4
 ---
-# 编程题
+# 
 
-## 树
+## 
 
-### [94. 二叉树的中序遍历](https://leetcode.cn/problems/binary-tree-inorder-traversal/)
+### [94. ](https://leetcode.cn/problems/binary-tree-inorder-traversal/)
 
 ``` js
 var inorderTraversal = function(root) {
@@ -21,7 +21,7 @@ function* fn(root) {
 }
 ```
 
-### [98. 验证二叉搜索树](https://leetcode.cn/problems/validate-binary-search-tree/)
+### [98. ](https://leetcode.cn/problems/validate-binary-search-tree/)
 
 ``` js
 var isValidBST = function(root) {
@@ -62,7 +62,7 @@ function helper(root, result = []) {
 }
 ```
 
-### [101. 对称二叉树](https://leetcode.cn/problems/symmetric-tree/)
+### [101. ](https://leetcode.cn/problems/symmetric-tree/)
 
 ``` js
 var isSymmetric = function(root) {
@@ -77,7 +77,7 @@ function check(root1, root2) {
 }
 ```
 
-### [102. 二叉树的层序遍历](https://leetcode.cn/problems/binary-tree-level-order-traversal/)
+### [102. ](https://leetcode.cn/problems/binary-tree-level-order-traversal/)
 
 ``` js
 var levelOrder = function(root) {
@@ -95,7 +95,7 @@ function helper(root, level = 0, result = []) {
 }
 ```
 
-### [104. 二叉树的最大深度](https://leetcode.cn/problems/maximum-depth-of-binary-tree/)
+### [104. ](https://leetcode.cn/problems/maximum-depth-of-binary-tree/)
 
 ``` js
 var maxDepth = function(root) {
@@ -111,7 +111,7 @@ function helper(root, level = 0) {
 } 
 ```
 
-### [226. 翻转二叉树](https://leetcode.cn/problems/invert-binary-tree/)
+### [226. ](https://leetcode.cn/problems/invert-binary-tree/)
 
 ``` js
 var invertTree = function(root) {
@@ -133,14 +133,14 @@ var invertTree = function(root) {
 
 
 
-## 其他
+## 
 
-### 两数之和
+### 
 
-给定一个整数数组 nums 和一个目标值 target，请你在该数组中找出和为目标值的那 两个 整数，并返回他们的**数组下标**。（leetcode.1 easy）
+ nums  target  ****leetcode.1 easy
 
 ```javascript
-// 使用Map而不是两个循环，空间换时间
+// Map
 function twoSum(arr, target) {
     const map = new Map()
     for (let i = 0; i < arr.length; i++) {
@@ -159,28 +159,28 @@ twoSum([1, 2, 3, 4], 7)
 
 
 
-### 三数之和
+### 
 
-给你一个包含 n 个整数的数组 nums，判断 nums 中是否存在三个元素 a，b，c ，使得 a + b + c = 0 ？请你找出**所有满足条件且不重复的三元组**。(leetcode.15 medium)
+ n  nums nums  abc  a + b + c = 0 ****(leetcode.15 medium)
 
-**注意** 答案中不可以包含重复的三元组。
+**** 
 
 ``` js
 function threeSum(arr, sum = 0) {
     let res = []
     let n = arr.length
-    arr.sort((a, b) => a - b) // 先排序
+    arr.sort((a, b) => a - b) // 
     for (let i = 0; i < n - 2; i++) {
-        if (arr[i] === arr[i - 1]) continue // 去重
-        // 两个指针不断向中间靠拢
+        if (arr[i] === arr[i - 1]) continue // 
+        // 
         let l = i + 1
         let r = n - 1 
         while(l < r) {
             let m = arr[i] + arr[l] + arr[r]
             if (m === sum) {
                 res.push([arr[i], arr[l], arr[r]])
-                while(l < r && arr[l] === arr[l + 1]) l++ // 去重
-                while(l < r && arr[r] === arr[r - 1]) r-- // 去重
+                while(l < r && arr[l] === arr[l + 1]) l++ // 
+                while(l < r && arr[r] === arr[r - 1]) r-- // 
                 l++
                 r--
             }
@@ -198,30 +198,30 @@ function threeSum(arr, sum = 0) {
 
 
 
-### 四数之和
+### 
 
-给定一个包含 n 个整数的数组 nums 和一个目标值 target，判断 nums 中是否存在四个元素 a，b，c 和 d ，使得 a + b + c + d 的值与 target 相等？找出**所有满足条件且不重复的四元组**。(leetcode.18 medium)
+ n  nums  target nums  abc  d  a + b + c + d  target ****(leetcode.18 medium)
 
-类似三数之和，外面多套一层循环即可，另外要注意重复的情况。
+
 
 ``` js
 function fourSum(arr, sum) {
     let res = []
     let n = arr.length
-    arr.sort((a, b) => a - b) // 先排序
+    arr.sort((a, b) => a - b) // 
     for (let j = 0; j < n - 3; j++) {
-        if (arr[j] === arr[j - 1]) continue // 去重
+        if (arr[j] === arr[j - 1]) continue // 
         for (let i = j + 1; i < n - 2; i++) {
-            if (i > j + 1 && arr[i] === arr[i - 1]) continue // 去重，注意 i > j + 1
-            // 两个指针不断向中间靠拢
+            if (i > j + 1 && arr[i] === arr[i - 1]) continue //  i > j + 1
+            // 
             let l = i + 1
             let r = n - 1 
             while(l < r) {
                 let m = arr[j] + arr[i] + arr[l] + arr[r]
                 if (m === sum) {
                     res.push([arr[j], arr[i], arr[l], arr[r]])
-                    while(l < r && arr[l] === arr[l + 1]) l++ // 去重
-                    while(l < r && arr[r] === arr[r - 1]) r-- // 去重
+                    while(l < r && arr[l] === arr[l + 1]) l++ // 
+                    while(l < r && arr[r] === arr[r - 1]) r-- // 
                     l++
                     r--
                 }
@@ -243,9 +243,9 @@ function fourSum(arr, sum) {
 
 
 
-### n数之和
+### n
 
-给定数组，取出 n 个数，使其相加和为 sum
+ n  sum
 
 ``` js
 function getArr(arr, n, m, temp = []) {
@@ -276,19 +276,19 @@ getArr(myArr, 2, 7, [])
 
 
 
-### 两数相加
+### 
 
-给出两个 非空 的链表用来表示两个非负的整数。其中，它们各自的位数是按照 逆序 的方式存储的，并且它们的每个节点只能存储 一位 数字。(leetcode.2 medium)
+      (leetcode.2 medium)
 
-如果，我们将这两个数相加起来，则会返回一个新的链表来表示它们的和。
 
-您可以假设除了数字 0 之外，这两个数都不会以 0 开头。
 
-示例：
+ 0  0 
 
-输入：(2 -> 4 -> 3) + (5 -> 6 -> 4)
-输出：7 -> 0 -> 8
-原因：342 + 465 = 807
+
+
+(2 -> 4 -> 3) + (5 -> 6 -> 4)
+7 -> 0 -> 8
+342 + 465 = 807
 
 ``` js
 /**
@@ -344,11 +344,11 @@ addTwoNumbers(l1, l2) // 7 => 0 => 8
 
 
 
-### 无重复字符的最长子串
+### 
 
-给定一个字符串，找出其中不含有重复字符的 **最长子串** 的长度。(leetcode.3 medium)
+ **** (leetcode.3 medium)
 
-1 暴力破解（效率很低）
+1 
 
 ``` js
 function getLength(str) {
@@ -380,7 +380,7 @@ function isUnique(str, i, j) {
 getLength('aaabcdd')
 ```
 
-2 **滑动窗口**
+2 ****
 
 ``` js
 function getLength(str) {
@@ -402,11 +402,11 @@ function getLength(str) {
 
 
 
-### 判断回文数
+### 
 
-回文，即正序和逆序相等的数，如12321，1221等。(leetcode.9 easy)
+123211221(leetcode.9 easy)
 
-简单粗暴法，翻转字符串看是否相等
+
 
 ``` js
 function isHuiWen(num) {
@@ -414,12 +414,12 @@ function isHuiWen(num) {
 }
 ```
 
-高级版
+
 
 ``` js
 function isHuiWen(num) {
-    // 数小于0，如-121则不为回文数。
-    // 1000这种末尾为0的也不会是回文数
+    // 0-121
+    // 10000
     if (num < 0 || (num % 10 === 0 && num !==0 )) return false 
     let revertNum = 0
     while (num > revertNum) {
@@ -441,18 +441,18 @@ isHuiWen(12321)
 
 
 
-### 实现累加器(柯里化)
+### ()
 
-描述
+
 
 ```js
-// 实现一个add方法，使计算结果能够满足如下预期：
+// add
 add(1)(2)(3) = 6;
 add(1, 2, 3)(4) = 10;
 add(1)(2)(3)(4)(5) = 15;
 ```
 
-实现
+
 
 ``` javascript
 function sum (...args) {
@@ -460,8 +460,8 @@ function sum (...args) {
         return sum(...args, ...newArgs)
     }
 
-  	// 重点是这个toString
-  	// 当最后返回函数的时候，自动调用toString函数进行累加
+  	// toString
+  	// toString
     fn.toString = () => {
         return args.reduce((a, b) => {
             return a + b
@@ -472,9 +472,9 @@ function sum (...args) {
 }
 ```
 
-### 实现repeat
+### repeat
 
-描述
+
 
 ```javascript
 function repeat(func, times, wait) {
@@ -482,12 +482,12 @@ function repeat(func, times, wait) {
 }
 const repeatFunc = repeat(alert, 4, 3000);
 repeatFunc("hellworld");
-//会alert4次 helloworld，每次间隔3秒
+//alert4 helloworld3
 ```
 
-实现
 
-一：使用setInterval
+
+setInterval
 
 ``` javascript
 function repeat(fn, times, wait) {
@@ -510,7 +510,7 @@ function repeat(fn, times, wait) {
 }
 ```
 
-二：使用async/await + setTimeout
+async/await + setTimeout
 
 ``` javascript
 function repeat(fn, times, wait) {
@@ -526,14 +526,14 @@ function repeat(fn, times, wait) {
 }
 ```
 
-### 实现sleep函数
+### sleep
 
 ``` js
 const sleep = (wait) => new Promise((resolve, reject) => {
     setTimeout(resolve, wait)
 }) 
 
-// 使用
+// 
 async function test () {
 	await sleep(1000)
 	console.log('awake')
@@ -542,30 +542,30 @@ async function test () {
 
 
 
-### 实现LazyMan
+### LazyMan
 
-注：微信事业群笔试题
 
-描述
+
+
 
 ``` javascript
-HardMan(“jack”) 输出:
+HardMan(“jack”) :
 I am jack
 
-HardMan(“jack”).rest(10).learn(“computer”) 输出
+HardMan(“jack”).rest(10).learn(“computer”) 
 I am jack
-//等待10秒
+//10
 Start learning after 10 seconds
 Learning computer
 
-HardMan(“jack”).restFirst(5).learn(“chinese”) 输出
-//等待5秒
+HardMan(“jack”).restFirst(5).learn(“chinese”) 
+//5
 Start learning after 5 seconds
 I am jack
 Learning chinese
 ```
 
-实现
+
 
 ``` javascript
 class _HardMan {
@@ -588,7 +588,7 @@ class _HardMan {
 
     wait(sec) {
         return new Promise(resolve => {
-            console.log(`//等待${sec}秒..`)
+            console.log(`//${sec}..`)
             setTimeout(() => {
                 console.log(`Start learning after ${sec} seconds`)
                 resolve()
@@ -622,11 +622,11 @@ function HardMan(name) {
     return new _HarnMan(name)
 }
 
-// 解答分析：
-// 1. 链式调用，每一个方法都返回this
-// 2. 并不直接执行代码，而是使用SetTimeout，这样就先把想要执行的任务先放进队列再执行
-// 3. sleep/wait 的使用，使用setTimeout，如果不用Promise把setTimeout包住，就无法堵塞后面代码的执行
-// 4. 除了用Promise，也可以在每个任务中指定的调用下一个任务，如：
+// 
+// 1. this
+// 2. SetTimeout
+// 3. sleep/wait setTimeoutPromisesetTimeout
+// 4. Promise
 	next() {
         let task = this.tasks.shift()
         task && task()

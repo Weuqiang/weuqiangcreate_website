@@ -1,47 +1,47 @@
 ---
 sidebar_position: 16
-title: MCP深度指南
+title: MCP
 ---
 
-# MCP (Model Context Protocol) 深度指南
+# MCP (Model Context Protocol) 
 
-:::info 学习目标
-掌握MCP协议的完整实现，从基础概念到生产级应用开发。
+:::info 
+MCP
 :::
 
-## MCP完整技术文档
+## MCP
 
-### 协议规范
+### 
 
-**MCP协议版本**: 1.0.0  
-**发布时间**: 2024年11月  
-**维护者**: Anthropic
+**MCP**: 1.0.0  
+****: 202411  
+****: Anthropic
 
-### 核心概念详解
+### 
 
-#### 1. Resources（资源）
+#### 1. Resources
 
-资源是AI可以读取的数据源，类似于REST API中的资源。
+AIREST API
 
 ```typescript
-// 资源定义（TypeScript）
+// TypeScript
 interface Resource {
-  uri: string;              // 资源URI，如 file://documents/readme.md
-  name: string;             // 资源名称
-  description?: string;     // 资源描述
-  mimeType?: string;        // MIME类型
+  uri: string;              // URI file://documents/readme.md
+  name: string;             // 
+  description?: string;     // 
+  mimeType?: string;        // MIME
 }
 
-// 资源内容
+// 
 interface ResourceContents {
   uri: string;
   mimeType?: string;
-  text?: string;            // 文本内容
-  blob?: string;            // Base64编码的二进制内容
+  text?: string;            // 
+  blob?: string;            // Base64
 }
 ```
 
-**Python实现**：
+**Python**
 
 ```python
 from typing import Optional, Dict, Any
@@ -50,7 +50,7 @@ import json
 
 @dataclass
 class Resource:
-    """MCP资源"""
+    """MCP"""
     uri: str
     name: str
     description: Optional[str] = None
@@ -66,30 +66,30 @@ class Resource:
 
 
 class ResourceManager:
-    """资源管理器"""
+    """"""
     
     def __init__(self):
         self.resources: Dict[str, Resource] = {}
     
     def register(self, resource: Resource):
-        """注册资源"""
+        """"""
         self.resources[resource.uri] = resource
     
     def list_resources(self) -> list:
-        """列出所有资源"""
+        """"""
         return [r.to_dict() for r in self.resources.values()]
     
     def get_resource(self, uri: str) -> Optional[Resource]:
-        """获取资源"""
+        """"""
         return self.resources.get(uri)
     
     async def read_resource(self, uri: str) -> Dict[str, Any]:
-        """读取资源内容"""
+        """"""
         resource = self.get_resource(uri)
         if not resource:
             raise ValueError(f"Resource not found: {uri}")
         
-        # 根据URI类型读取内容
+        # URI
         if uri.startswith("file://"):
             return await self._read_file(uri)
         elif uri.startswith("http://") or uri.startswith("https://"):
@@ -98,7 +98,7 @@ class ResourceManager:
             raise ValueError(f"Unsupported URI scheme: {uri}")
     
     async def _read_file(self, uri: str) -> Dict[str, Any]:
-        """读取文件"""
+        """"""
         import aiofiles
         
         path = uri.replace("file://", "")
@@ -112,7 +112,7 @@ class ResourceManager:
         }
     
     async def _read_url(self, uri: str) -> Dict[str, Any]:
-        """读取URL"""
+        """URL"""
         import aiohttp
         
         async with aiohttp.ClientSession() as session:
@@ -126,9 +126,9 @@ class ResourceManager:
         }
 ```
 
-#### 2. Tools（工具）
+#### 2. Tools
 
-工具是AI可以调用的函数，类似于函数调用API。
+AIAPI
 
 ```python
 from typing import Callable, Dict, Any, List
@@ -137,7 +137,7 @@ import inspect
 
 @dataclass
 class ToolParameter:
-    """工具参数"""
+    """"""
     name: str
     type: str
     description: str
@@ -147,7 +147,7 @@ class ToolParameter:
 
 @dataclass
 class Tool:
-    """MCP工具"""
+    """MCP"""
     name: str
     description: str
     parameters: List[ToolParameter]
@@ -173,7 +173,7 @@ class Tool:
 
 
 class ToolRegistry:
-    """工具注册表"""
+    """"""
     
     def __init__(self):
         self.tools: Dict[str, Tool] = {}
@@ -182,9 +182,9 @@ class ToolRegistry:
                  name: str,
                  description: str,
                  parameters: List[ToolParameter] = None):
-        """装饰器：注册工具"""
+        """"""
         def decorator(func: Callable):
-            # 自动推断参数
+            # 
             if parameters is None:
                 sig = inspect.signature(func)
                 auto_params = []
@@ -193,7 +193,7 @@ class ToolRegistry:
                         continue
                     auto_params.append(ToolParameter(
                         name=param_name,
-                        type="string",  # 简化处理
+                        type="string",  # 
                         description=f"Parameter {param_name}",
                         required=param.default == inspect.Parameter.empty
                     ))
@@ -213,17 +213,17 @@ class ToolRegistry:
         return decorator
     
     def list_tools(self) -> List[Dict[str, Any]]:
-        """列出所有工具"""
+        """"""
         return [tool.to_dict() for tool in self.tools.values()]
     
     async def call_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """调用工具"""
+        """"""
         tool = self.tools.get(name)
         if not tool:
             raise ValueError(f"Tool not found: {name}")
         
         try:
-            # 调用处理函数
+            # 
             if inspect.iscoroutinefunction(tool.handler):
                 result = await tool.handler(**arguments)
             else:
@@ -249,23 +249,23 @@ class ToolRegistry:
             }
 ```
 
-#### 3. Prompts（提示模板）
+#### 3. Prompts
 
-提示模板是预定义的prompt，可以被AI应用重用。
+promptAI
 
 ```python
 from typing import List, Dict, Any
 
 @dataclass
 class PromptMessage:
-    """提示消息"""
+    """"""
     role: str  # "user", "assistant", "system"
     content: str
 
 
 @dataclass
 class Prompt:
-    """MCP提示"""
+    """MCP"""
     name: str
     description: str
     arguments: List[ToolParameter]
@@ -286,7 +286,7 @@ class Prompt:
 
 
 class PromptRegistry:
-    """提示注册表"""
+    """"""
     
     def __init__(self):
         self.prompts: Dict[str, Prompt] = {}
@@ -296,7 +296,7 @@ class PromptRegistry:
                  name: str,
                  description: str,
                  arguments: List[ToolParameter] = None):
-        """装饰器：注册提示"""
+        """"""
         def decorator(func: Callable):
             prompt = Prompt(
                 name=name,
@@ -310,17 +310,17 @@ class PromptRegistry:
         return decorator
     
     def list_prompts(self) -> List[Dict[str, Any]]:
-        """列出所有提示"""
+        """"""
         return [prompt.to_dict() for prompt in self.prompts.values()]
     
     async def get_prompt(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """获取提示"""
+        """"""
         if name not in self.generators:
             raise ValueError(f"Prompt not found: {name}")
         
         generator = self.generators[name]
         
-        # 生成消息
+        # 
         if inspect.iscoroutinefunction(generator):
             messages = await generator(**arguments)
         else:
@@ -340,7 +340,7 @@ class PromptRegistry:
         }
 ```
 
-### 完整MCP Server实现
+### MCP Server
 
 ```python
 import asyncio
@@ -348,22 +348,22 @@ from typing import Optional
 import json
 
 class MCPServer:
-    """完整的MCP服务器实现"""
+    """MCP"""
     
     def __init__(self, name: str, version: str = "1.0.0"):
         self.name = name
         self.version = version
         
-        # 注册表
+        # 
         self.resources = ResourceManager()
         self.tools = ToolRegistry()
         self.prompts = PromptRegistry()
         
-        # 连接管理
+        # 
         self.clients = set()
     
     async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """处理客户端请求"""
+        """"""
         method = request.get("method")
         params = request.get("params", {})
         
@@ -402,7 +402,7 @@ class MCPServer:
             }
     
     async def _handle_initialize(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """处理初始化请求"""
+        """"""
         return {
             "protocolVersion": "1.0.0",
             "serverInfo": {
@@ -417,11 +417,11 @@ class MCPServer:
         }
     
     async def run(self, host: str = "localhost", port: int = 8000):
-        """运行服务器"""
+        """"""
         from aiohttp import web
         
         async def handle_http(request):
-            """处理HTTP请求"""
+            """HTTP"""
             data = await request.json()
             response = await self.handle_request(data)
             return web.json_response(response)
@@ -436,18 +436,18 @@ class MCPServer:
         print(f"MCP Server running on http://{host}:{port}")
         await site.start()
         
-        # 保持运行
+        # 
         await asyncio.Event().wait()
 ```
 
-## 实战案例1：GitHub MCP Server
+## 1GitHub MCP Server
 
 ```python
 import aiohttp
 from typing import List, Dict, Any
 
 class GitHubMCPServer(MCPServer):
-    """GitHub MCP服务器"""
+    """GitHub MCP"""
     
     def __init__(self, token: str):
         super().__init__("github-mcp-server")
@@ -458,8 +458,8 @@ class GitHubMCPServer(MCPServer):
         self._register_tools()
     
     def _register_resources(self):
-        """注册GitHub资源"""
-        # 注册仓库列表资源
+        """GitHub"""
+        # 
         self.resources.register(Resource(
             uri="github://repos",
             name="repositories",
@@ -468,7 +468,7 @@ class GitHubMCPServer(MCPServer):
         ))
     
     def _register_tools(self):
-        """注册GitHub工具"""
+        """GitHub"""
         
         @self.tools.register(
             name="search_repositories",
@@ -480,7 +480,7 @@ class GitHubMCPServer(MCPServer):
             ]
         )
         async def search_repos(query: str, sort: str = "stars"):
-            """搜索仓库"""
+            """"""
             async with aiohttp.ClientSession() as session:
                 headers = {"Authorization": f"token {self.token}"}
                 params = {"q": query, "sort": sort}
@@ -494,7 +494,7 @@ class GitHubMCPServer(MCPServer):
                     
                     repos = data.get("items", [])
                     result = "\n".join([
-                        f"- {repo['full_name']} ⭐{repo['stargazers_count']}"
+                        f"- {repo['full_name']} {repo['stargazers_count']}"
                         for repo in repos[:10]
                     ])
                     
@@ -510,7 +510,7 @@ class GitHubMCPServer(MCPServer):
             ]
         )
         async def create_issue(repo: str, title: str, body: str = ""):
-            """创建Issue"""
+            """Issue"""
             async with aiohttp.ClientSession() as session:
                 headers = {
                     "Authorization": f"token {self.token}",
@@ -536,7 +536,7 @@ class GitHubMCPServer(MCPServer):
             ]
         )
         async def get_file(repo: str, path: str, branch: str = "main"):
-            """获取文件内容"""
+            """"""
             async with aiohttp.ClientSession() as session:
                 headers = {"Authorization": f"token {self.token}"}
                 
@@ -551,7 +551,7 @@ class GitHubMCPServer(MCPServer):
                     content = base64.b64decode(data["content"]).decode()
                     return content
 
-# 使用示例
+# 
 async def main():
     server = GitHubMCPServer(token="your_github_token")
     await server.run()
@@ -560,14 +560,14 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## 实战案例2：数据库MCP Server
+## 2MCP Server
 
 ```python
 import asyncpg
 from typing import List, Dict, Any
 
 class DatabaseMCPServer(MCPServer):
-    """数据库MCP服务器"""
+    """MCP"""
     
     def __init__(self, db_url: str):
         super().__init__("database-mcp-server")
@@ -578,11 +578,11 @@ class DatabaseMCPServer(MCPServer):
         self._register_prompts()
     
     async def initialize(self):
-        """初始化数据库连接池"""
+        """"""
         self.pool = await asyncpg.create_pool(self.db_url)
     
     def _register_tools(self):
-        """注册数据库工具"""
+        """"""
         
         @self.tools.register(
             name="query",
@@ -593,14 +593,14 @@ class DatabaseMCPServer(MCPServer):
             ]
         )
         async def execute_query(sql: str, params: List = None):
-            """执行查询"""
+            """"""
             async with self.pool.acquire() as conn:
                 if params:
                     rows = await conn.fetch(sql, *params)
                 else:
                     rows = await conn.fetch(sql)
                 
-                # 转换为字典列表
+                # 
                 result = [dict(row) for row in rows]
                 return json.dumps(result, indent=2, default=str)
         
@@ -609,7 +609,7 @@ class DatabaseMCPServer(MCPServer):
             description="List all tables in database"
         )
         async def list_tables():
-            """列出所有表"""
+            """"""
             sql = """
                 SELECT table_name 
                 FROM information_schema.tables 
@@ -628,7 +628,7 @@ class DatabaseMCPServer(MCPServer):
             ]
         )
         async def describe_table(table: str):
-            """描述表结构"""
+            """"""
             sql = """
                 SELECT column_name, data_type, is_nullable
                 FROM information_schema.columns
@@ -647,7 +647,7 @@ class DatabaseMCPServer(MCPServer):
                 return result
     
     def _register_prompts(self):
-        """注册SQL提示模板"""
+        """SQL"""
         
         @self.prompts.register(
             name="generate_sql",
@@ -658,8 +658,8 @@ class DatabaseMCPServer(MCPServer):
             ]
         )
         async def generate_sql(description: str, table: str):
-            """生成SQL查询"""
-            # 获取表结构
+            """SQL"""
+            # 
             schema = await self.tools.call_tool("describe_table", {"table": table})
             
             return [
@@ -679,13 +679,13 @@ Return only the SQL query, no explanations."""
             ]
 ```
 
-## 实战案例3：完整的AI应用
+## 3AI
 
 ```python
 from openai import AsyncOpenAI
 
 class AIAssistant:
-    """基于MCP的AI助手"""
+    """MCPAI"""
     
     def __init__(self, mcp_servers: List[MCPServer]):
         self.client = AsyncOpenAI()
@@ -693,7 +693,7 @@ class AIAssistant:
         self.conversation_history = []
     
     async def initialize(self):
-        """初始化所有MCP服务器"""
+        """MCP"""
         self.available_tools = []
         
         for server in self.mcp_servers:
@@ -701,14 +701,14 @@ class AIAssistant:
             self.available_tools.extend(tools)
     
     async def chat(self, user_message: str) -> str:
-        """对话"""
-        # 添加用户消息
+        """"""
+        # 
         self.conversation_history.append({
             "role": "user",
             "content": user_message
         })
         
-        # 调用LLM
+        # LLM
         response = await self.client.chat.completions.create(
             model="gpt-4",
             messages=self.conversation_history,
@@ -718,30 +718,30 @@ class AIAssistant:
         
         message = response.choices[0].message
         
-        # 处理工具调用
+        # 
         if message.tool_calls:
             for tool_call in message.tool_calls:
                 tool_name = tool_call.function.name
                 arguments = json.loads(tool_call.function.arguments)
                 
-                # 找到对应的MCP服务器并调用工具
+                # MCP
                 result = await self._call_mcp_tool(tool_name, arguments)
                 
-                # 添加工具调用结果
+                # 
                 self.conversation_history.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
                     "content": result
                 })
             
-            # 再次调用LLM获取最终响应
+            # LLM
             response = await self.client.chat.completions.create(
                 model="gpt-4",
                 messages=self.conversation_history
             )
             message = response.choices[0].message
         
-        # 添加助手响应
+        # 
         self.conversation_history.append({
             "role": "assistant",
             "content": message.content
@@ -750,7 +750,7 @@ class AIAssistant:
         return message.content
     
     async def _call_mcp_tool(self, tool_name: str, arguments: Dict) -> str:
-        """调用MCP工具"""
+        """MCP"""
         for server in self.mcp_servers:
             if tool_name in server.tools.tools:
                 result = await server.tools.call_tool(tool_name, arguments)
@@ -758,18 +758,18 @@ class AIAssistant:
         
         return f"Tool {tool_name} not found"
 
-# 使用示例
+# 
 async def main():
-    # 创建MCP服务器
+    # MCP
     github_server = GitHubMCPServer(token="your_token")
     db_server = DatabaseMCPServer(db_url="postgresql://...")
     await db_server.initialize()
     
-    # 创建AI助手
+    # AI
     assistant = AIAssistant([github_server, db_server])
     await assistant.initialize()
     
-    # 对话
+    # 
     response = await assistant.chat(
         "Search for popular Python repositories and save the top 5 to database"
     )
@@ -779,34 +779,34 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## 学习资源
+## 
 
-### 官方文档
-- MCP规范: https://spec.modelcontextprotocol.io/
-- GitHub仓库: https://github.com/modelcontextprotocol
+### 
+- MCP: https://spec.modelcontextprotocol.io/
+- GitHub: https://github.com/modelcontextprotocol
 
-### 示例项目
+### 
 - MCP Servers: https://github.com/modelcontextprotocol/servers
 - MCP Python SDK: https://github.com/modelcontextprotocol/python-sdk
 
-### 社区资源
-- Discord社区
-- 示例代码库
-- 最佳实践指南
+### 
+- Discord
+- 
+- 
 
-## 总结
+## 
 
-**MCP的核心价值**：
-1. 标准化AI应用开发
-2. 可重用的工具和资源
-3. 安全的权限控制
-4. 易于扩展和集成
+**MCP**
+1. AI
+2. 
+3. 
+4. 
 
-**学习路径**：
-1. 理解Resources、Tools、Prompts三大概念
-2. 实现简单的MCP Server
-3. 集成到AI应用中
-4. 构建生产级MCP服务
+****
+1. ResourcesToolsPrompts
+2. MCP Server
+3. AI
+4. MCP
 
 <DocCardList />
 

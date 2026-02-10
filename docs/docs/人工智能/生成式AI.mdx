@@ -1,37 +1,37 @@
 ---
 sidebar_position: 13
-title: 生成式AI (AIGC)
+title: AI (AIGC)
 ---
 
-# 生成式AI（AIGC）
+# AIAIGC
 
-:::info 章节概述
-本章节介绍生成式AI的原理和应用，涵盖文本生成、图像生成、视频生成、音乐生成等前沿技术。
+:::info 
+AI
 :::
 
-## 什么是生成式AI
+## AI
 
-**生成式AI（Generative AI, AIGC）** 是能够创造新内容的人工智能系统，包括文本、图像、音频、视频等。
+**AIGenerative AI, AIGC** 
 
-### AIGC vs 判别式AI
+### AIGC vs AI
 
-| 特性 | 判别式AI | 生成式AI |
+|  | AI | AI |
 |------|----------|----------|
-| 目标 | 分类/预测 | 生成新内容 |
-| 输出 | 标签/数值 | 文本/图像/音频 |
-| 应用 | 识别、检测 | 创作、设计 |
-| 示例 | 图像分类 | 图像生成 |
+|  | / |  |
+|  | / | // |
+|  |  |  |
+|  |  |  |
 
-## 核心技术
+## 
 
-### 1. 生成对抗网络（GAN）
+### 1. GAN
 
 ```python
 import torch
 import torch.nn as nn
 
 class Generator(nn.Module):
-    """生成器"""
+    """"""
     def __init__(self, latent_dim=100, img_shape=(1, 28, 28)):
         super().__init__()
         self.img_shape = img_shape
@@ -56,7 +56,7 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    """判别器"""
+    """"""
     def __init__(self, img_shape=(1, 28, 28)):
         super().__init__()
         
@@ -75,7 +75,7 @@ class Discriminator(nn.Module):
         return validity
 
 
-# 训练GAN
+# GAN
 def train_gan(generator, discriminator, dataloader, epochs=100):
     optimizer_G = torch.optim.Adam(generator.parameters(), lr=0.0002)
     optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=0.0002)
@@ -85,17 +85,17 @@ def train_gan(generator, discriminator, dataloader, epochs=100):
         for i, (imgs, _) in enumerate(dataloader):
             batch_size = imgs.size(0)
             
-            # 真实和假标签
+            # 
             real = torch.ones(batch_size, 1)
             fake = torch.zeros(batch_size, 1)
             
-            # 训练判别器
+            # 
             optimizer_D.zero_grad()
             
-            # 真实图像
+            # 
             real_loss = adversarial_loss(discriminator(imgs), real)
             
-            # 生成假图像
+            # 
             z = torch.randn(batch_size, 100)
             gen_imgs = generator(z)
             fake_loss = adversarial_loss(discriminator(gen_imgs.detach()), fake)
@@ -104,7 +104,7 @@ def train_gan(generator, discriminator, dataloader, epochs=100):
             d_loss.backward()
             optimizer_D.step()
             
-            # 训练生成器
+            # 
             optimizer_G.zero_grad()
             
             g_loss = adversarial_loss(discriminator(gen_imgs), real)
@@ -114,20 +114,20 @@ def train_gan(generator, discriminator, dataloader, epochs=100):
         print(f"Epoch {epoch}: D_loss={d_loss.item():.4f}, G_loss={g_loss.item():.4f}")
 ```
 
-### 2. 变分自编码器（VAE）
+### 2. VAE
 
 ```python
 class VAE(nn.Module):
-    """变分自编码器"""
+    """"""
     def __init__(self, input_dim=784, hidden_dim=400, latent_dim=20):
         super().__init__()
         
-        # 编码器
+        # 
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc_mu = nn.Linear(hidden_dim, latent_dim)
         self.fc_logvar = nn.Linear(hidden_dim, latent_dim)
         
-        # 解码器
+        # 
         self.fc3 = nn.Linear(latent_dim, hidden_dim)
         self.fc4 = nn.Linear(hidden_dim, input_dim)
     
@@ -151,32 +151,32 @@ class VAE(nn.Module):
 
 
 def vae_loss(recon_x, x, mu, logvar):
-    """VAE损失函数"""
-    # 重建损失
+    """VAE"""
+    # 
     BCE = nn.functional.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
     
-    # KL散度
+    # KL
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     
     return BCE + KLD
 ```
 
-### 3. Diffusion模型
+### 3. Diffusion
 
 ```python
 class DiffusionModel(nn.Module):
-    """扩散模型"""
+    """"""
     def __init__(self, timesteps=1000):
         super().__init__()
         self.timesteps = timesteps
         
-        # 定义噪声调度
+        # 
         self.betas = torch.linspace(0.0001, 0.02, timesteps)
         self.alphas = 1 - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
     
     def forward_diffusion(self, x0, t):
-        """前向扩散过程（加噪声）"""
+        """"""
         noise = torch.randn_like(x0)
         sqrt_alphas_cumprod_t = self.alphas_cumprod[t].sqrt()
         sqrt_one_minus_alphas_cumprod_t = (1 - self.alphas_cumprod[t]).sqrt()
@@ -185,47 +185,47 @@ class DiffusionModel(nn.Module):
         return sqrt_alphas_cumprod_t * x0 + sqrt_one_minus_alphas_cumprod_t * noise, noise
     
     def reverse_diffusion(self, model, x_t, t):
-        """反向扩散过程（去噪声）"""
-        # 预测噪声
+        """"""
+        # 
         predicted_noise = model(x_t, t)
         
-        # 计算x_{t-1}
+        # x_{t-1}
         alpha_t = self.alphas[t]
         alpha_cumprod_t = self.alphas_cumprod[t]
         beta_t = self.betas[t]
         
-        # 去噪声
+        # 
         x_t_minus_1 = (x_t - beta_t / (1 - alpha_cumprod_t).sqrt() * predicted_noise) / alpha_t.sqrt()
         
         return x_t_minus_1
     
     def sample(self, model, shape):
-        """从噪声生成图像"""
-        # 从纯噪声开始
+        """"""
+        # 
         x = torch.randn(shape)
         
-        # 逐步去噪
+        # 
         for t in reversed(range(self.timesteps)):
             x = self.reverse_diffusion(model, x, t)
         
         return x
 ```
 
-## 文本生成
+## 
 
-### 1. GPT系列
+### 1. GPT
 
 ```python
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 class TextGenerator:
-    """文本生成器"""
+    """"""
     def __init__(self, model_name="gpt2"):
         self.tokenizer = GPT2Tokenizer.from_pretrained(model_name)
         self.model = GPT2LMHeadModel.from_pretrained(model_name)
     
     def generate(self, prompt, max_length=100, temperature=0.7, top_p=0.9):
-        """生成文本"""
+        """"""
         inputs = self.tokenizer.encode(prompt, return_tensors="pt")
         
         outputs = self.model.generate(
@@ -240,23 +240,23 @@ class TextGenerator:
         text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         return text
 
-# 使用
+# 
 generator = TextGenerator()
 text = generator.generate("Once upon a time", max_length=200)
 print(text)
 ```
 
-### 2. 创意写作
+### 2. 
 
 ```python
 class CreativeWriter:
-    """创意写作助手"""
+    """"""
     def __init__(self):
         from openai import OpenAI
         self.client = OpenAI()
     
     def write_story(self, theme, style="fantasy", length="short"):
-        """写故事"""
+        """"""
         prompt = f"""Write a {length} {style} story about: {theme}
 
 Story:"""
@@ -270,7 +270,7 @@ Story:"""
         return response.choices[0].message.content
     
     def write_poem(self, topic, style="modern"):
-        """写诗"""
+        """"""
         prompt = f"Write a {style} poem about: {topic}"
         
         response = self.client.chat.completions.create(
@@ -282,7 +282,7 @@ Story:"""
         return response.choices[0].message.content
 ```
 
-## 图像生成
+## 
 
 ### 1. Stable Diffusion
 
@@ -291,7 +291,7 @@ from diffusers import StableDiffusionPipeline
 import torch
 
 class ImageGenerator:
-    """图像生成器"""
+    """"""
     def __init__(self, model_id="stabilityai/stable-diffusion-2-1"):
         self.pipe = StableDiffusionPipeline.from_pretrained(
             model_id,
@@ -301,7 +301,7 @@ class ImageGenerator:
     
     def generate(self, prompt, negative_prompt="", num_images=1, 
                  guidance_scale=7.5, num_inference_steps=50):
-        """生成图像"""
+        """"""
         images = self.pipe(
             prompt=prompt,
             negative_prompt=negative_prompt,
@@ -313,7 +313,7 @@ class ImageGenerator:
         return images
     
     def img2img(self, prompt, init_image, strength=0.75):
-        """图像到图像"""
+        """"""
         from diffusers import StableDiffusionImg2ImgPipeline
         
         pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
@@ -329,7 +329,7 @@ class ImageGenerator:
         
         return images
 
-# 使用
+# 
 generator = ImageGenerator()
 images = generator.generate(
     prompt="a beautiful landscape with mountains and lake, sunset, highly detailed",
@@ -347,12 +347,12 @@ for i, img in enumerate(images):
 from openai import OpenAI
 
 class DALLEGenerator:
-    """DALL-E图像生成"""
+    """DALL-E"""
     def __init__(self):
         self.client = OpenAI()
     
     def generate(self, prompt, size="1024x1024", quality="standard", n=1):
-        """生成图像"""
+        """"""
         response = self.client.images.generate(
             model="dall-e-3",
             prompt=prompt,
@@ -364,7 +364,7 @@ class DALLEGenerator:
         return [img.url for img in response.data]
     
     def edit(self, image, mask, prompt):
-        """编辑图像"""
+        """"""
         response = self.client.images.edit(
             image=open(image, "rb"),
             mask=open(mask, "rb"),
@@ -373,43 +373,43 @@ class DALLEGenerator:
         
         return response.data[0].url
 
-# 使用
+# 
 dalle = DALLEGenerator()
 urls = dalle.generate("A futuristic city with flying cars")
 print(urls)
 ```
 
-## 视频生成
+## 
 
-### 1. 文本到视频
+### 1. 
 
 ```python
 class VideoGenerator:
-    """视频生成器（概念示例）"""
+    """"""
     def __init__(self):
-        # 实际需要使用如Runway、Pika等API
+        # RunwayPikaAPI
         pass
     
     def text_to_video(self, prompt, duration=5, fps=24):
-        """文本生成视频"""
-        # 1. 生成关键帧
+        """"""
+        # 1. 
         keyframes = self._generate_keyframes(prompt, duration, fps)
         
-        # 2. 插值生成中间帧
+        # 2. 
         frames = self._interpolate_frames(keyframes, fps)
         
-        # 3. 合成视频
+        # 3. 
         video = self._compose_video(frames, fps)
         
         return video
     
     def image_to_video(self, image, motion_prompt):
-        """图像生成视频"""
-        # 使用Runway Gen-2等API
+        """"""
+        # Runway Gen-2API
         pass
 ```
 
-## 音乐生成
+## 
 
 ### 1. MusicGen
 
@@ -418,12 +418,12 @@ from audiocraft.models import MusicGen
 import torchaudio
 
 class MusicGenerator:
-    """音乐生成器"""
+    """"""
     def __init__(self):
         self.model = MusicGen.get_pretrained('facebook/musicgen-medium')
     
     def generate(self, descriptions, duration=10):
-        """生成音乐"""
+        """"""
         self.model.set_generation_params(duration=duration)
         
         wav = self.model.generate(descriptions)
@@ -431,35 +431,35 @@ class MusicGenerator:
         return wav
     
     def save(self, wav, filename, sample_rate=32000):
-        """保存音频"""
+        """"""
         torchaudio.save(filename, wav[0].cpu(), sample_rate)
 
-# 使用
+# 
 generator = MusicGenerator()
 wav = generator.generate(["upbeat electronic dance music"])
 generator.save(wav, "generated_music.wav")
 ```
 
-## 应用场景
+## 
 
-### 1. 内容创作
+### 1. 
 
 ```python
 class ContentCreator:
-    """内容创作助手"""
+    """"""
     def __init__(self):
         self.text_gen = TextGenerator()
         self.image_gen = ImageGenerator()
     
     def create_blog_post(self, topic):
-        """创建博客文章"""
-        # 生成标题
+        """"""
+        # 
         title = self.text_gen.generate(f"Blog title about {topic}:", max_length=20)
         
-        # 生成内容
+        # 
         content = self.text_gen.generate(f"Write a blog post about {topic}:", max_length=500)
         
-        # 生成配图
+        # 
         image_prompt = f"illustration for blog post about {topic}"
         images = self.image_gen.generate(image_prompt, num_images=1)
         
@@ -470,31 +470,31 @@ class ContentCreator:
         }
 ```
 
-### 2. 设计辅助
+### 2. 
 
 ```python
 class DesignAssistant:
-    """设计助手"""
+    """"""
     def __init__(self):
         self.image_gen = ImageGenerator()
     
     def generate_logo(self, company_name, style):
-        """生成Logo"""
+        """Logo"""
         prompt = f"professional logo for {company_name}, {style} style, simple, clean"
         return self.image_gen.generate(prompt, num_images=5)
     
     def generate_ui_mockup(self, description):
-        """生成UI设计"""
+        """UI"""
         prompt = f"modern UI design mockup, {description}, clean interface, professional"
         return self.image_gen.generate(prompt)
 ```
 
-## 最佳实践
+## 
 
-### 1. Prompt工程
+### 1. Prompt
 
 ```python
-# 好的图像生成Prompt
+# Prompt
 GOOD_PROMPT = """
 a beautiful landscape painting,
 mountains in the background,
@@ -505,29 +505,29 @@ highly detailed,
 trending on artstation
 """
 
-# 负面Prompt
+# Prompt
 NEGATIVE_PROMPT = """
 blurry, low quality, distorted,
 ugly, bad anatomy, watermark
 """
 ```
 
-### 2. 质量控制
+### 2. 
 
 ```python
 class QualityControl:
-    """生成内容质量控制"""
+    """"""
     def __init__(self):
         self.nsfw_detector = NSFWDetector()
         self.quality_scorer = QualityScorer()
     
     def filter_generated_content(self, content):
-        """过滤生成内容"""
-        # 检测不适当内容
+        """"""
+        # 
         if self.nsfw_detector.is_nsfw(content):
             return None
         
-        # 评估质量
+        # 
         score = self.quality_scorer.score(content)
         if score < 0.7:
             return None
@@ -535,41 +535,41 @@ class QualityControl:
         return content
 ```
 
-## 未来趋势
+## 
 
-**更高质量**
-- 更真实的图像和视频
-- 更自然的文本和语音
+****
+- 
+- 
 
-**更强控制**
-- 精确的风格控制
-- 细粒度的编辑能力
+****
+- 
+- 
 
-**多模态融合**
-- 文本+图像+音频+视频统一生成
-- 跨模态编辑
+****
+- +++
+- 
 
-**实时生成**
-- 低延迟
-- 交互式创作
+****
+- 
+- 
 
-**个性化**
-- 适应用户风格
-- 定制化生成
+****
+- 
+- 
 
-## 总结
+## 
 
-**关键要点**:
-1. 生成式AI创造新内容
-2. GAN、VAE、Diffusion是核心技术
-3. 应用广泛：文本、图像、视频、音乐
-4. Prompt工程很重要
+****:
+1. AI
+2. GANVAEDiffusion
+3. 
+4. Prompt
 
-**学习建议**:
-- 理解生成模型原理
-- 实践不同的生成任务
-- 学习Prompt工程
-- 关注最新模型和工具
+****:
+- 
+- 
+- Prompt
+- 
 
 <DocCardList />
 

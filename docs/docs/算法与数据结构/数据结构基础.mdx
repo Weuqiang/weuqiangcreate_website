@@ -1,30 +1,30 @@
 ---
 sidebar_position: 1
-title: 数据结构基础
-tags: [算法, 数据结构, 面试]
+title: 
+tags: [, , ]
 ---
 
-# 数据结构基础
+# 
 
-数据结构是计算机存储、组织数据的方式，本文讲解常用数据结构的实现和应用。
 
-## 数组与链表
 
-### 数组
+## 
+
+### 
 
 ```javascript
-// 数组基础操作
+// 
 class ArrayList {
   constructor() {
     this.data = [];
   }
   
-  // 添加元素 O(1)
+  //  O(1)
   push(value) {
     this.data[this.data.length] = value;
   }
   
-  // 删除末尾元素 O(1)
+  //  O(1)
   pop() {
     if (this.data.length === 0) return undefined;
     const value = this.data[this.data.length - 1];
@@ -32,7 +32,7 @@ class ArrayList {
     return value;
   }
   
-  // 插入元素 O(n)
+  //  O(n)
   insert(index, value) {
     for (let i = this.data.length; i > index; i--) {
       this.data[i] = this.data[i - 1];
@@ -40,7 +40,7 @@ class ArrayList {
     this.data[index] = value;
   }
   
-  // 删除元素 O(n)
+  //  O(n)
   remove(index) {
     const value = this.data[index];
     for (let i = index; i < this.data.length - 1; i++) {
@@ -50,7 +50,7 @@ class ArrayList {
     return value;
   }
   
-  // 查找元素 O(n)
+  //  O(n)
   indexOf(value) {
     for (let i = 0; i < this.data.length; i++) {
       if (this.data[i] === value) return i;
@@ -59,7 +59,7 @@ class ArrayList {
   }
 }
 
-// 动态数组
+// 
 class DynamicArray {
   constructor(capacity = 10) {
     this.data = new Array(capacity);
@@ -85,10 +85,10 @@ class DynamicArray {
 }
 ```
 
-### 链表
+### 
 
 ```javascript
-// 单链表节点
+// 
 class ListNode {
   constructor(value) {
     this.value = value;
@@ -96,14 +96,14 @@ class ListNode {
   }
 }
 
-// 单链表
+// 
 class LinkedList {
   constructor() {
     this.head = null;
     this.size = 0;
   }
   
-  // 添加到头部 O(1)
+  //  O(1)
   addFirst(value) {
     const node = new ListNode(value);
     node.next = this.head;
@@ -111,7 +111,7 @@ class LinkedList {
     this.size++;
   }
   
-  // 添加到尾部 O(n)
+  //  O(n)
   addLast(value) {
     const node = new ListNode(value);
     
@@ -127,7 +127,7 @@ class LinkedList {
     this.size++;
   }
   
-  // 删除头节点 O(1)
+  //  O(1)
   removeFirst() {
     if (!this.head) return null;
     
@@ -137,7 +137,7 @@ class LinkedList {
     return value;
   }
   
-  // 反转链表 O(n)
+  //  O(n)
   reverse() {
     let prev = null;
     let current = this.head;
@@ -152,7 +152,7 @@ class LinkedList {
     this.head = prev;
   }
   
-  // 检测环
+  // 
   hasCycle() {
     let slow = this.head;
     let fast = this.head;
@@ -168,7 +168,7 @@ class LinkedList {
   }
 }
 
-// 双向链表
+// 
 class DoublyListNode {
   constructor(value) {
     this.value = value;
@@ -212,12 +212,12 @@ class DoublyLinkedList {
 }
 ```
 
-## 栈与队列
+## 
 
-### 栈
+### 
 
 ```javascript
-// 数组实现栈
+// 
 class Stack {
   constructor() {
     this.items = [];
@@ -244,7 +244,7 @@ class Stack {
   }
 }
 
-// 链表实现栈
+// 
 class LinkedStack {
   constructor() {
     this.top = null;
@@ -268,7 +268,7 @@ class LinkedStack {
   }
 }
 
-// 应用：括号匹配
+// 
 function isValidParentheses(s) {
   const stack = new Stack();
   const pairs = { '(': ')', '[': ']', '{': '}' };
@@ -286,10 +286,10 @@ function isValidParentheses(s) {
 }
 ```
 
-### 队列
+### 
 
 ```javascript
-// 数组实现队列
+// 
 class Queue {
   constructor() {
     this.items = [];
@@ -312,7 +312,7 @@ class Queue {
   }
 }
 
-// 循环队列
+// 
 class CircularQueue {
   constructor(capacity) {
     this.items = new Array(capacity);
@@ -349,7 +349,7 @@ class CircularQueue {
   }
 }
 
-// 双端队列
+// 
 class Deque {
   constructor() {
     this.items = [];
@@ -373,9 +373,9 @@ class Deque {
 }
 ```
 
-## 树
+## 
 
-### 二叉树
+### 
 
 ```javascript
 class TreeNode {
@@ -391,7 +391,7 @@ class BinaryTree {
     this.root = null;
   }
   
-  // 前序遍历：根-左-右
+  // --
   preorder(node = this.root, result = []) {
     if (!node) return result;
     
@@ -401,7 +401,7 @@ class BinaryTree {
     return result;
   }
   
-  // 中序遍历：左-根-右
+  // --
   inorder(node = this.root, result = []) {
     if (!node) return result;
     
@@ -411,7 +411,7 @@ class BinaryTree {
     return result;
   }
   
-  // 后序遍历：左-右-根
+  // --
   postorder(node = this.root, result = []) {
     if (!node) return result;
     
@@ -421,7 +421,7 @@ class BinaryTree {
     return result;
   }
   
-  // 层序遍历
+  // 
   levelOrder() {
     if (!this.root) return [];
     
@@ -446,7 +446,7 @@ class BinaryTree {
     return result;
   }
   
-  // 树的高度
+  // 
   height(node = this.root) {
     if (!node) return 0;
     
@@ -456,7 +456,7 @@ class BinaryTree {
     );
   }
   
-  // 树的节点数
+  // 
   size(node = this.root) {
     if (!node) return 0;
     
@@ -465,7 +465,7 @@ class BinaryTree {
 }
 ```
 
-### 二叉搜索树
+### 
 
 ```javascript
 class BST {
@@ -473,7 +473,7 @@ class BST {
     this.root = null;
   }
   
-  // 插入节点
+  // 
   insert(value) {
     this.root = this._insert(this.root, value);
   }
@@ -490,7 +490,7 @@ class BST {
     return node;
   }
   
-  // 查找节点
+  // 
   search(value) {
     return this._search(this.root, value);
   }
@@ -503,7 +503,7 @@ class BST {
     return this._search(node.right, value);
   }
   
-  // 删除节点
+  // 
   delete(value) {
     this.root = this._delete(this.root, value);
   }
@@ -516,11 +516,11 @@ class BST {
     } else if (value > node.value) {
       node.right = this._delete(node.right, value);
     } else {
-      // 找到要删除的节点
+      // 
       if (!node.left) return node.right;
       if (!node.right) return node.left;
       
-      // 有两个子节点：找右子树最小值替换
+      // 
       const minNode = this._findMin(node.right);
       node.value = minNode.value;
       node.right = this._delete(node.right, minNode.value);
@@ -538,7 +538,7 @@ class BST {
 }
 ```
 
-## 哈希表
+## 
 
 ```javascript
 class HashTable {
@@ -546,7 +546,7 @@ class HashTable {
     this.keyMap = new Array(size);
   }
   
-  // 哈希函数
+  // 
   _hash(key) {
     let total = 0;
     const PRIME = 31;
@@ -560,7 +560,7 @@ class HashTable {
     return total;
   }
   
-  // 设置键值对
+  // 
   set(key, value) {
     const index = this._hash(key);
     
@@ -568,7 +568,7 @@ class HashTable {
       this.keyMap[index] = [];
     }
     
-    // 检查是否已存在
+    // 
     for (let i = 0; i < this.keyMap[index].length; i++) {
       if (this.keyMap[index][i][0] === key) {
         this.keyMap[index][i][1] = value;
@@ -579,7 +579,7 @@ class HashTable {
     this.keyMap[index].push([key, value]);
   }
   
-  // 获取值
+  // 
   get(key) {
     const index = this._hash(key);
     
@@ -594,7 +594,7 @@ class HashTable {
     return undefined;
   }
   
-  // 删除键值对
+  // 
   delete(key) {
     const index = this._hash(key);
     
@@ -610,7 +610,7 @@ class HashTable {
     return false;
   }
   
-  // 获取所有键
+  // 
   keys() {
     const keys = [];
     
@@ -625,7 +625,7 @@ class HashTable {
     return keys;
   }
   
-  // 获取所有值
+  // 
   values() {
     const values = [];
     
@@ -644,42 +644,42 @@ class HashTable {
 }
 ```
 
-## 堆
+## 
 
 ```javascript
-// 最小堆
+// 
 class MinHeap {
   constructor() {
     this.heap = [];
   }
   
-  // 获取父节点索引
+  // 
   parent(i) {
     return Math.floor((i - 1) / 2);
   }
   
-  // 获取左子节点索引
+  // 
   leftChild(i) {
     return 2 * i + 1;
   }
   
-  // 获取右子节点索引
+  // 
   rightChild(i) {
     return 2 * i + 2;
   }
   
-  // 交换元素
+  // 
   swap(i, j) {
     [this.heap[i], this.heap[j]] = [this.heap[j], this.heap[i]];
   }
   
-  // 插入元素
+  // 
   insert(value) {
     this.heap.push(value);
     this.bubbleUp(this.heap.length - 1);
   }
   
-  // 上浮
+  // 
   bubbleUp(index) {
     while (index > 0) {
       const parentIndex = this.parent(index);
@@ -691,7 +691,7 @@ class MinHeap {
     }
   }
   
-  // 删除最小元素
+  // 
   extractMin() {
     if (this.heap.length === 0) return null;
     if (this.heap.length === 1) return this.heap.pop();
@@ -703,7 +703,7 @@ class MinHeap {
     return min;
   }
   
-  // 下沉
+  // 
   bubbleDown(index) {
     while (true) {
       const left = this.leftChild(index);
@@ -725,7 +725,7 @@ class MinHeap {
     }
   }
   
-  // 获取最小元素
+  // 
   peek() {
     return this.heap[0];
   }
@@ -736,29 +736,29 @@ class MinHeap {
 }
 ```
 
-## 图
+## 
 
 ```javascript
-// 邻接表表示图
+// 
 class Graph {
   constructor() {
     this.adjacencyList = new Map();
   }
   
-  // 添加顶点
+  // 
   addVertex(vertex) {
     if (!this.adjacencyList.has(vertex)) {
       this.adjacencyList.set(vertex, []);
     }
   }
   
-  // 添加边
+  // 
   addEdge(v1, v2) {
     this.adjacencyList.get(v1).push(v2);
-    this.adjacencyList.get(v2).push(v1); // 无向图
+    this.adjacencyList.get(v2).push(v1); // 
   }
   
-  // 深度优先遍历
+  // 
   dfs(start) {
     const result = [];
     const visited = new Set();
@@ -780,7 +780,7 @@ class Graph {
     return result;
   }
   
-  // 广度优先遍历
+  // 
   bfs(start) {
     const result = [];
     const visited = new Set();
@@ -805,15 +805,15 @@ class Graph {
 }
 ```
 
-## 总结
+## 
 
-数据结构的核心：
-- 📊 **数组与链表**：随机访问 vs 插入删除
-- 📚 **栈与队列**：LIFO vs FIFO
-- 🌲 **树**：二叉树、BST、AVL树
-- #️⃣ **哈希表**：O(1)查找
-- ⛰️ **堆**：优先队列
-- 🕸️ **图**：DFS、BFS
 
-记住：**选择合适的数据结构是优化算法的关键！**
+-  **** vs 
+-  ****LIFO vs FIFO
+-  ****BSTAVL
+- #⃣ ****O(1)
+-  ****
+-  ****DFSBFS
+
+****
 

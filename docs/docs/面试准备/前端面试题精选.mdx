@@ -1,19 +1,19 @@
 ---
 sidebar_position: 1
-title: 前端面试题精选
-tags: [面试, 前端, JavaScript, Vue, React]
+title: 
+tags: [, , JavaScript, Vue, React]
 ---
 
-# 前端面试题精选
+# 
 
-本文精选前端高频面试题，涵盖JavaScript、Vue、React等核心知识点。
+JavaScriptVueReact
 
-## JavaScript基础
+## JavaScript
 
-### 1. 数据类型
+### 1. 
 
 ```javascript
-// 基本数据类型（7种）
+// 7
 const types = {
   number: 42,
   string: 'hello',
@@ -24,7 +24,7 @@ const types = {
   bigint: 9007199254740991n
 };
 
-// 引用数据类型
+// 
 const reference = {
   object: {},
   array: [],
@@ -33,16 +33,16 @@ const reference = {
   regexp: /pattern/
 };
 
-// 类型检测
+// 
 console.log(typeof 42);              // 'number'
 console.log(typeof 'hello');         // 'string'
 console.log(typeof true);            // 'boolean'
 console.log(typeof undefined);       // 'undefined'
-console.log(typeof null);            // 'object' (历史遗留bug)
+console.log(typeof null);            // 'object' (bug)
 console.log(typeof Symbol('id'));    // 'symbol'
 console.log(typeof 42n);             // 'bigint'
 
-// 精确类型检测
+// 
 function getType(value) {
   return Object.prototype.toString.call(value).slice(8, -1);
 }
@@ -52,14 +52,14 @@ console.log(getType([]));            // 'Array'
 console.log(getType(new Date()));    // 'Date'
 ```
 
-### 2. 闭包
+### 2. 
 
 ```javascript
 /**
- * 闭包：函数能够访问其外部作用域的变量
+ * 
  */
 
-// 基础闭包
+// 
 function createCounter() {
   let count = 0;
   
@@ -81,24 +81,24 @@ console.log(counter.increment()); // 1
 console.log(counter.increment()); // 2
 console.log(counter.getCount());  // 2
 
-// 闭包陷阱
+// 
 for (var i = 0; i < 5; i++) {
-  setTimeout(() => console.log(i), 1000); // 输出5个5
+  setTimeout(() => console.log(i), 1000); // 55
 }
 
-// 解决方案1：使用let
+// 1let
 for (let i = 0; i < 5; i++) {
-  setTimeout(() => console.log(i), 1000); // 输出0,1,2,3,4
+  setTimeout(() => console.log(i), 1000); // 0,1,2,3,4
 }
 
-// 解决方案2：使用闭包
+// 2
 for (var i = 0; i < 5; i++) {
   (function(j) {
     setTimeout(() => console.log(j), 1000);
   })(i);
 }
 
-// 闭包应用：模块化
+// 
 const Module = (function() {
   let privateVar = 'private';
   
@@ -114,14 +114,14 @@ const Module = (function() {
 })();
 ```
 
-### 3. 原型与原型链
+### 3. 
 
 ```javascript
 /**
- * 原型链：对象通过__proto__连接到原型对象
+ * __proto__
  */
 
-// 构造函数
+// 
 function Person(name) {
   this.name = name;
 }
@@ -132,12 +132,12 @@ Person.prototype.sayHello = function() {
 
 const person = new Person('John');
 
-// 原型链
+// 
 console.log(person.__proto__ === Person.prototype);           // true
 console.log(Person.prototype.__proto__ === Object.prototype); // true
 console.log(Object.prototype.__proto__);                      // null
 
-// instanceof原理
+// instanceof
 function myInstanceof(obj, constructor) {
   let proto = obj.__proto__;
   
@@ -151,8 +151,8 @@ function myInstanceof(obj, constructor) {
   return false;
 }
 
-// 继承
-// 1. 原型链继承
+// 
+// 1. 
 function Parent() {
   this.name = 'parent';
 }
@@ -160,19 +160,19 @@ function Parent() {
 function Child() {}
 Child.prototype = new Parent();
 
-// 2. 构造函数继承
+// 2. 
 function Child() {
   Parent.call(this);
 }
 
-// 3. 组合继承
+// 3. 
 function Child(name) {
   Parent.call(this, name);
 }
 Child.prototype = new Parent();
 Child.prototype.constructor = Child;
 
-// 4. 寄生组合继承（最优）
+// 4. 
 function Child(name) {
   Parent.call(this, name);
 }
@@ -198,20 +198,20 @@ class Child extends Parent {
 }
 ```
 
-### 4. this指向
+### 4. this
 
 ```javascript
 /**
- * this的指向取决于函数的调用方式
+ * this
  */
 
-// 1. 默认绑定：指向全局对象（严格模式下为undefined）
+// 1. undefined
 function foo() {
   console.log(this);
 }
-foo(); // window (浏览器) 或 global (Node.js)
+foo(); // window ()  global (Node.js)
 
-// 2. 隐式绑定：指向调用对象
+// 2. 
 const obj = {
   name: 'obj',
   foo() {
@@ -220,11 +220,11 @@ const obj = {
 };
 obj.foo(); // 'obj'
 
-// 隐式绑定丢失
+// 
 const bar = obj.foo;
 bar(); // undefined
 
-// 3. 显式绑定：call、apply、bind
+// 3. callapplybind
 function greet(greeting) {
   console.log(`${greeting}, ${this.name}`);
 }
@@ -235,14 +235,14 @@ greet.apply(person, ['Hi']);    // 'Hi, John'
 const boundGreet = greet.bind(person);
 boundGreet('Hey');              // 'Hey, John'
 
-// 4. new绑定：指向新创建的对象
+// 4. new
 function Person(name) {
   this.name = name;
 }
 const p = new Person('John');
 console.log(p.name); // 'John'
 
-// 5. 箭头函数：继承外层作用域的this
+// 5. this
 const obj2 = {
   name: 'obj2',
   foo: () => {
@@ -255,10 +255,10 @@ const obj2 = {
     arrow();
   }
 };
-obj2.foo(); // undefined (继承全局this)
-obj2.bar(); // 'obj2' (继承bar的this)
+obj2.foo(); // undefined (this)
+obj2.bar(); // 'obj2' (barthis)
 
-// 手写bind
+// bind
 Function.prototype.myBind = function(context, ...args) {
   const fn = this;
   
@@ -268,14 +268,14 @@ Function.prototype.myBind = function(context, ...args) {
 };
 ```
 
-### 5. 异步编程
+### 5. 
 
 ```javascript
 /**
- * Promise、async/await
+ * Promiseasync/await
  */
 
-// Promise基础
+// Promise
 const promise = new Promise((resolve, reject) => {
   setTimeout(() => {
     resolve('success');
@@ -286,7 +286,7 @@ promise
   .then(result => console.log(result))
   .catch(error => console.error(error));
 
-// Promise链式调用
+// Promise
 fetch('/api/user')
   .then(response => response.json())
   .then(user => fetch(`/api/posts/${user.id}`))
@@ -309,7 +309,7 @@ async function fetchUserPosts() {
   }
 }
 
-// 并发执行
+// 
 async function fetchAll() {
   const [users, posts, comments] = await Promise.all([
     fetch('/api/users').then(r => r.json()),
@@ -320,7 +320,7 @@ async function fetchAll() {
   return { users, posts, comments };
 }
 
-// 手写Promise
+// Promise
 class MyPromise {
   constructor(executor) {
     this.state = 'pending';
@@ -383,17 +383,17 @@ class MyPromise {
 }
 ```
 
-## Vue面试题
+## Vue
 
-### 1. 响应式原理
+### 1. 
 
 ```javascript
 /**
- * Vue2：Object.defineProperty
- * Vue3：Proxy
+ * Vue2Object.defineProperty
+ * Vue3Proxy
  */
 
-// Vue2响应式实现
+// Vue2
 function defineReactive(obj, key, val) {
   const dep = new Dep();
   
@@ -429,7 +429,7 @@ class Dep {
   }
 }
 
-// Vue3响应式实现
+// Vue3
 function reactive(obj) {
   return new Proxy(obj, {
     get(target, key) {
@@ -473,14 +473,14 @@ function trigger(target, key) {
 }
 ```
 
-### 2. 虚拟DOM与Diff算法
+### 2. DOMDiff
 
 ```javascript
 /**
- * 虚拟DOM：用JavaScript对象描述DOM结构
+ * DOMJavaScriptDOM
  */
 
-// 创建虚拟节点
+// 
 function h(tag, props, children) {
   return {
     tag,
@@ -489,7 +489,7 @@ function h(tag, props, children) {
   };
 }
 
-// 渲染虚拟节点
+// 
 function render(vnode) {
   if (typeof vnode === 'string') {
     return document.createTextNode(vnode);
@@ -497,14 +497,14 @@ function render(vnode) {
   
   const el = document.createElement(vnode.tag);
   
-  // 设置属性
+  // 
   if (vnode.props) {
     for (const [key, value] of Object.entries(vnode.props)) {
       el.setAttribute(key, value);
     }
   }
   
-  // 渲染子节点
+  // 
   if (vnode.children) {
     vnode.children.forEach(child => {
       el.appendChild(render(child));
@@ -514,14 +514,14 @@ function render(vnode) {
   return el;
 }
 
-// Diff算法（简化版）
+// Diff
 function diff(oldVNode, newVNode) {
-  // 节点类型不同，直接替换
+  // 
   if (oldVNode.tag !== newVNode.tag) {
     return { type: 'REPLACE', newVNode };
   }
   
-  // 文本节点
+  // 
   if (typeof newVNode === 'string') {
     if (oldVNode !== newVNode) {
       return { type: 'TEXT', text: newVNode };
@@ -529,10 +529,10 @@ function diff(oldVNode, newVNode) {
     return null;
   }
   
-  // 对比属性
+  // 
   const propsPatches = diffProps(oldVNode.props, newVNode.props);
   
-  // 对比子节点
+  // 
   const childrenPatches = diffChildren(oldVNode.children, newVNode.children);
   
   return {
@@ -543,11 +543,11 @@ function diff(oldVNode, newVNode) {
 }
 ```
 
-### 3. 组件通信
+### 3. 
 
 ```javascript
 /**
- * Vue组件通信方式
+ * Vue
  */
 
 // 1. Props / Emit
@@ -579,10 +579,10 @@ export default {
 // 2. EventBus
 const EventBus = new Vue();
 
-// 发送事件
+// 
 EventBus.$emit('event-name', data);
 
-// 监听事件
+// 
 EventBus.$on('event-name', (data) => {
   console.log(data);
 });
@@ -622,54 +622,54 @@ export default {
 };
 ```
 
-## React面试题
+## React
 
-### 1. 生命周期
+### 1. 
 
 ```javascript
 /**
- * React生命周期
+ * React
  */
 
 class Component extends React.Component {
-  // 挂载阶段
+  // 
   constructor(props) {
     super(props);
     this.state = { count: 0 };
   }
   
   static getDerivedStateFromProps(props, state) {
-    // 从props派生state
+    // propsstate
     return null;
   }
   
   componentDidMount() {
-    // 组件挂载后
-    // 适合发送网络请求、订阅事件
+    // 
+    // 
   }
   
-  // 更新阶段
+  // 
   shouldComponentUpdate(nextProps, nextState) {
-    // 是否需要更新
+    // 
     return true;
   }
   
   getSnapshotBeforeUpdate(prevProps, prevState) {
-    // 更新前获取快照
+    // 
     return null;
   }
   
   componentDidUpdate(prevProps, prevState, snapshot) {
-    // 组件更新后
+    // 
   }
   
-  // 卸载阶段
+  // 
   componentWillUnmount() {
-    // 组件卸载前
-    // 适合清理定时器、取消订阅
+    // 
+    // 
   }
   
-  // 错误处理
+  // 
   static getDerivedStateFromError(error) {
     return { hasError: true };
   }
@@ -712,11 +712,11 @@ function DataFetcher() {
       .then(r => r.json())
       .then(setData);
     
-    // 清理函数
+    // 
     return () => {
-      // 取消请求、清理订阅
+      // 
     };
-  }, []); // 依赖数组
+  }, []); // 
   
   return <div>{data}</div>;
 }
@@ -753,7 +753,7 @@ function Counter() {
   );
 }
 
-// 自定义Hook
+// Hook
 function useLocalStorage(key, initialValue) {
   const [value, setValue] = useState(() => {
     const item = localStorage.getItem(key);
@@ -768,15 +768,15 @@ function useLocalStorage(key, initialValue) {
 }
 ```
 
-## 总结
+## 
 
-前端面试核心：
-- 🔧 **JavaScript**：闭包、原型、this、异步
-- 🎨 **Vue**：响应式、虚拟DOM、组件通信
-- ⚛️ **React**：生命周期、Hooks、状态管理
-- 🌐 **浏览器**：事件循环、渲染机制
-- 🚀 **性能优化**：懒加载、防抖节流
-- 📦 **工程化**：Webpack、Vite、CI/CD
 
-记住：**理解原理比记住API更重要！**
+-  **JavaScript**this
+-  **Vue**DOM
+-  **React**Hooks
+-  ****
+-  ****
+-  ****WebpackViteCI/CD
+
+**API**
 

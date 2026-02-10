@@ -1,55 +1,55 @@
 ---
 sidebar_position: 1
-title: Node.js深入实践
-tags: [后端, Node.js, Express, Koa, 异步编程]
+title: Node.js
+tags: [, Node.js, Express, Koa, ]
 ---
 
-# Node.js深入实践
+# Node.js
 
-Node.js是基于Chrome V8引擎的JavaScript运行时，本文将深入讲解Node.js的核心原理和实战技巧。
+Node.jsChrome V8JavaScriptNode.js
 
-## Node.js核心概念
+## Node.js
 
-### 事件循环
+### 
 
 ```javascript
 const eventLoopPhases = {
-  // 事件循环的6个阶段
+  // 6
   phases: {
     timers: {
-      description: '执行setTimeout和setInterval的回调',
+      description: 'setTimeoutsetInterval',
       example: 'setTimeout(() => console.log("timer"), 0)'
     },
     
     pendingCallbacks: {
-      description: '执行延迟到下一个循环迭代的I/O回调',
-      example: 'TCP错误回调'
+      description: 'I/O',
+      example: 'TCP'
     },
     
     idle: {
-      description: '仅系统内部使用',
-      example: 'prepare阶段'
+      description: '',
+      example: 'prepare'
     },
     
     poll: {
-      description: '检索新的I/O事件，执行I/O回调',
-      example: '文件读取、网络请求'
+      description: 'I/OI/O',
+      example: ''
     },
     
     check: {
-      description: '执行setImmediate回调',
+      description: 'setImmediate',
       example: 'setImmediate(() => console.log("immediate"))'
     },
     
     closeCallbacks: {
-      description: '执行关闭回调',
+      description: '',
       example: 'socket.on("close", callback)'
     }
   }
 };
 
-// 事件循环示例
-console.log('1: 同步代码');
+// 
+console.log('1: ');
 
 setTimeout(() => {
   console.log('2: setTimeout');
@@ -67,16 +67,16 @@ Promise.resolve().then(() => {
   console.log('5: Promise');
 });
 
-console.log('6: 同步代码');
+console.log('6: ');
 
-// 输出顺序：1 -> 6 -> 4 -> 5 -> 2 -> 3
+// 1 -> 6 -> 4 -> 5 -> 2 -> 3
 // nextTick > Promise > setTimeout > setImmediate
 ```
 
-### 异步编程
+### 
 
 ```javascript
-// 1. 回调函数（Callback）
+// 1. Callback
 const fs = require('fs');
 
 fs.readFile('file.txt', 'utf8', (err, data) => {
@@ -87,7 +87,7 @@ fs.readFile('file.txt', 'utf8', (err, data) => {
   console.log(data);
 });
 
-// 回调地狱
+// 
 fs.readFile('file1.txt', (err, data1) => {
   if (err) return console.error(err);
   
@@ -141,7 +141,7 @@ async function readFiles() {
   }
 }
 
-// 并行执行
+// 
 async function readFilesParallel() {
   try {
     const [data1, data2, data3] = await Promise.all([
@@ -157,25 +157,25 @@ async function readFilesParallel() {
 }
 ```
 
-## Express框架
+## Express
 
-### 基础应用
+### 
 
 ```javascript
 const express = require('express');
 const app = express();
 
-// 中间件
+// 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 日志中间件
+// 
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
 
-// 路由
+// 
 app.get('/', (req, res) => {
   res.json({ message: 'Hello World' });
 });
@@ -190,7 +190,7 @@ app.post('/users', (req, res) => {
   res.status(201).json({ id: 1, name, email });
 });
 
-// 错误处理
+// 
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Internal Server Error' });
@@ -207,7 +207,7 @@ app.listen(3000, () => {
 const express = require('express');
 const router = express.Router();
 
-// 用户路由
+// 
 class UserController {
   // GET /api/users
   async getUsers(req, res, next) {
@@ -255,18 +255,18 @@ class UserController {
     try {
       const { name, email, password } = req.body;
       
-      // 验证
+      // 
       if (!name || !email || !password) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
       
-      // 检查邮箱是否已存在
+      // 
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res.status(409).json({ error: 'Email already exists' });
       }
       
-      // 创建用户
+      // 
       const user = await User.create({
         name,
         email,
@@ -329,10 +329,10 @@ router.delete('/users/:id', userController.deleteUser);
 module.exports = router;
 ```
 
-### 中间件
+### 
 
 ```javascript
-// 认证中间件
+// 
 const jwt = require('jsonwebtoken');
 
 function authMiddleware(req, res, next) {
@@ -351,7 +351,7 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// 权限中间件
+// 
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) {
@@ -366,16 +366,16 @@ function requireRole(...roles) {
   };
 }
 
-// 限流中间件
+// 
 const rateLimit = require('express-rate-limit');
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
-  max: 100, // 最多100个请求
+  windowMs: 15 * 60 * 1000, // 15
+  max: 100, // 100
   message: 'Too many requests'
 });
 
-// 验证中间件
+// 
 const { body, validationResult } = require('express-validator');
 
 const validateUser = [
@@ -392,7 +392,7 @@ const validateUser = [
   }
 ];
 
-// 使用中间件
+// 
 app.post('/api/users',
   limiter,
   validateUser,
@@ -402,9 +402,9 @@ app.post('/api/users',
 );
 ```
 
-## Koa框架
+## Koa
 
-### 基础应用
+### 
 
 ```javascript
 const Koa = require('koa');
@@ -414,10 +414,10 @@ const bodyParser = require('koa-bodyparser');
 const app = new Koa();
 const router = new Router();
 
-// 中间件
+// 
 app.use(bodyParser());
 
-// 日志中间件
+// 
 app.use(async (ctx, next) => {
   const start = Date.now();
   await next();
@@ -425,7 +425,7 @@ app.use(async (ctx, next) => {
   console.log(`${ctx.method} ${ctx.url} - ${ms}ms`);
 });
 
-// 错误处理
+// 
 app.use(async (ctx, next) => {
   try {
     await next();
@@ -438,7 +438,7 @@ app.use(async (ctx, next) => {
   }
 });
 
-// 路由
+// 
 router.get('/', async (ctx) => {
   ctx.body = { message: 'Hello World' };
 });
@@ -462,31 +462,31 @@ app.listen(3000, () => {
 });
 ```
 
-### 洋葱模型
+### 
 
 ```javascript
-// Koa的洋葱模型
+// Koa
 app.use(async (ctx, next) => {
-  console.log('1: 进入中间件1');
+  console.log('1: 1');
   await next();
-  console.log('6: 离开中间件1');
+  console.log('6: 1');
 });
 
 app.use(async (ctx, next) => {
-  console.log('2: 进入中间件2');
+  console.log('2: 2');
   await next();
-  console.log('5: 离开中间件2');
+  console.log('5: 2');
 });
 
 app.use(async (ctx, next) => {
-  console.log('3: 进入中间件3');
+  console.log('3: 3');
   ctx.body = 'Hello';
-  console.log('4: 离开中间件3');
+  console.log('4: 3');
 });
 
-// 输出顺序：1 -> 2 -> 3 -> 4 -> 5 -> 6
+// 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
-// 自定义中间件
+// 
 function logger() {
   return async (ctx, next) => {
     const start = Date.now();
@@ -511,20 +511,20 @@ app.use(errorHandler());
 app.use(logger());
 ```
 
-## 数据库操作
+## 
 
 ### MongoDB + Mongoose
 
 ```javascript
 const mongoose = require('mongoose');
 
-// 连接数据库
+// 
 mongoose.connect('mongodb://localhost/myapp', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
 
-// 定义Schema
+// Schema
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -553,7 +553,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// 中间件
+// 
 userSchema.pre('save', async function(next) {
   if (this.isModified('password')) {
     this.password = await bcrypt.hash(this.password, 10);
@@ -561,19 +561,19 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-// 实例方法
+// 
 userSchema.methods.comparePassword = async function(password) {
   return await bcrypt.compare(password, this.password);
 };
 
-// 静态方法
+// 
 userSchema.statics.findByEmail = function(email) {
   return this.findOne({ email });
 };
 
 const User = mongoose.model('User', userSchema);
 
-// 使用
+// 
 async function createUser() {
   const user = new User({
     name: 'John',
@@ -599,7 +599,7 @@ async function findUsers() {
 ```javascript
 const { Sequelize, DataTypes } = require('sequelize');
 
-// 连接数据库
+// 
 const sequelize = new Sequelize('database', 'username', 'password', {
   host: 'localhost',
   dialect: 'mysql',
@@ -611,7 +611,7 @@ const sequelize = new Sequelize('database', 'username', 'password', {
   }
 });
 
-// 定义模型
+// 
 const User = sequelize.define('User', {
   id: {
     type: DataTypes.INTEGER,
@@ -643,7 +643,7 @@ const User = sequelize.define('User', {
   }
 });
 
-// 关联
+// 
 const Post = sequelize.define('Post', {
   title: DataTypes.STRING,
   content: DataTypes.TEXT
@@ -652,10 +652,10 @@ const Post = sequelize.define('Post', {
 User.hasMany(Post);
 Post.belongsTo(User);
 
-// 同步数据库
+// 
 await sequelize.sync({ force: false });
 
-// 使用
+// 
 async function createUser() {
   const user = await User.create({
     name: 'John',
@@ -684,13 +684,13 @@ async function findUsers() {
 }
 ```
 
-## 文件上传
+## 
 
 ```javascript
 const multer = require('multer');
 const path = require('path');
 
-// 配置存储
+// 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -701,7 +701,7 @@ const storage = multer.diskStorage({
   }
 });
 
-// 文件过滤
+// 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -722,7 +722,7 @@ const upload = multer({
   }
 });
 
-// 单文件上传
+// 
 app.post('/upload', upload.single('file'), (req, res) => {
   res.json({
     filename: req.file.filename,
@@ -731,7 +731,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
   });
 });
 
-// 多文件上传
+// 
 app.post('/upload-multiple', upload.array('files', 10), (req, res) => {
   res.json({
     files: req.files.map(file => ({
@@ -754,15 +754,15 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-// WebSocket连接
+// WebSocket
 wss.on('connection', (ws, req) => {
   console.log('Client connected');
   
-  // 接收消息
+  // 
   ws.on('message', (message) => {
     console.log('Received:', message);
     
-    // 广播给所有客户端
+    // 
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);
@@ -770,21 +770,21 @@ wss.on('connection', (ws, req) => {
     });
   });
   
-  // 断开连接
+  // 
   ws.on('close', () => {
     console.log('Client disconnected');
   });
   
-  // 错误处理
+  // 
   ws.on('error', (error) => {
     console.error('WebSocket error:', error);
   });
   
-  // 发送欢迎消息
+  // 
   ws.send(JSON.stringify({ type: 'welcome', message: 'Connected to server' }));
 });
 
-// 心跳检测
+// 
 setInterval(() => {
   wss.clients.forEach((ws) => {
     if (ws.isAlive === false) {
@@ -801,10 +801,10 @@ server.listen(3000, () => {
 });
 ```
 
-## 性能优化
+## 
 
 ```javascript
-// 1. 使用集群
+// 1. 
 const cluster = require('cluster');
 const os = require('os');
 
@@ -820,39 +820,39 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  // Worker进程
+  // Worker
   const app = express();
-  // ... 应用代码
+  // ... 
   app.listen(3000);
 }
 
-// 2. 使用缓存
+// 2. 
 const NodeCache = require('node-cache');
 const cache = new NodeCache({ stdTTL: 600 });
 
 app.get('/api/users/:id', async (req, res) => {
   const { id } = req.params;
   
-  // 检查缓存
+  // 
   const cached = cache.get(`user:${id}`);
   if (cached) {
     return res.json(cached);
   }
   
-  // 查询数据库
+  // 
   const user = await User.findById(id);
   
-  // 写入缓存
+  // 
   cache.set(`user:${id}`, user);
   
   res.json(user);
 });
 
-// 3. 压缩响应
+// 3. 
 const compression = require('compression');
 app.use(compression());
 
-// 4. 使用流
+// 4. 
 const fs = require('fs');
 
 app.get('/download', (req, res) => {
@@ -861,16 +861,16 @@ app.get('/download', (req, res) => {
 });
 ```
 
-## 总结
+## 
 
-Node.js开发的核心：
-- ⚡ **事件循环**：理解异步机制
-- 🚀 **异步编程**：Callback、Promise、Async/Await
-- 🛠️ **框架选择**：Express、Koa
-- 💾 **数据库**：MongoDB、MySQL
-- 📁 **文件处理**：上传、下载、流
-- 🔌 **实时通信**：WebSocket
-- 🎯 **性能优化**：集群、缓存、压缩
+Node.js
+-  ****
+-  ****CallbackPromiseAsync/Await
+-  ****ExpressKoa
+-  ****MongoDBMySQL
+-  ****
+-  ****WebSocket
+-  ****
 
-记住：**Node.js适合I/O密集型应用，不适合CPU密集型！**
+**Node.jsI/OCPU**
 

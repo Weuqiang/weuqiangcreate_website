@@ -1,41 +1,41 @@
 ---
 sidebar_position: 1
-title: MySQL索引深度解析
-tags: [数据库, MySQL, 索引, B+树]
+title: MySQL
+tags: [, MySQL, , B+]
 ---
 
-# MySQL索引深度解析
+# MySQL
 
-索引是数据库性能优化的核心，本文将深入讲解MySQL索引的原理、类型和优化技巧。
+MySQL
 
-## 索引数据结构
+## 
 
-### B+树原理
+### B+
 
 ```javascript
-// B+树节点结构
+// B+
 class BPlusTreeNode {
   constructor(isLeaf = false) {
     this.isLeaf = isLeaf;
-    this.keys = [];           // 键值
-    this.children = [];       // 子节点指针
-    this.next = null;         // 叶子节点链表指针
-    this.parent = null;       // 父节点指针
+    this.keys = [];           // 
+    this.children = [];       // 
+    this.next = null;         // 
+    this.parent = null;       // 
   }
 }
 
 class BPlusTree {
   constructor(order = 4) {
     this.root = new BPlusTreeNode(true);
-    this.order = order;       // 阶数
+    this.order = order;       // 
     this.minKeys = Math.ceil(order / 2) - 1;
   }
   
-  // 查找
+  // 
   search(key) {
     let node = this.root;
     
-    // 从根节点向下查找
+    // 
     while (!node.isLeaf) {
       let i = 0;
       while (i < node.keys.length && key >= node.keys[i]) {
@@ -44,19 +44,19 @@ class BPlusTree {
       node = node.children[i];
     }
     
-    // 在叶子节点中查找
+    // 
     const index = node.keys.indexOf(key);
     return index !== -1 ? node.children[index] : null;
   }
   
-  // 插入
+  // 
   insert(key, value) {
     const leaf = this.findLeaf(key);
     
-    // 插入到叶子节点
+    // 
     this.insertIntoLeaf(leaf, key, value);
     
-    // 如果节点溢出，分裂
+    // 
     if (leaf.keys.length >= this.order) {
       this.splitLeaf(leaf);
     }
@@ -89,23 +89,23 @@ class BPlusTree {
   splitLeaf(leaf) {
     const mid = Math.floor(this.order / 2);
     
-    // 创建新节点
+    // 
     const newLeaf = new BPlusTreeNode(true);
     newLeaf.keys = leaf.keys.splice(mid);
     newLeaf.children = leaf.children.splice(mid);
     
-    // 维护链表
+    // 
     newLeaf.next = leaf.next;
     leaf.next = newLeaf;
     
-    // 向父节点插入
+    // 
     const promoteKey = newLeaf.keys[0];
     this.insertIntoParent(leaf, promoteKey, newLeaf);
   }
   
   insertIntoParent(left, key, right) {
     if (left === this.root) {
-      // 创建新根节点
+      // 
       const newRoot = new BPlusTreeNode(false);
       newRoot.keys = [key];
       newRoot.children = [left, right];
@@ -125,88 +125,88 @@ class BPlusTree {
     parent.children.splice(i + 1, 0, right);
     right.parent = parent;
     
-    // 如果父节点溢出，继续分裂
+    // 
     if (parent.keys.length >= this.order) {
       this.splitInternal(parent);
     }
   }
 }
 
-// B+树特点
+// B+
 const bPlusTreeFeatures = {
   advantages: [
-    '所有数据都在叶子节点',
-    '叶子节点形成有序链表',
-    '非叶子节点只存储索引',
-    '查询性能稳定（O(logN)）',
-    '范围查询效率高'
+    '',
+    '',
+    '',
+    'O(logN)',
+    ''
   ],
   
   vsHashIndex: {
-    bPlusTree: '支持范围查询、排序',
-    hash: '只支持等值查询'
+    bPlusTree: '',
+    hash: ''
   },
   
   vsBTree: {
-    bPlusTree: '叶子节点链表，范围查询快',
-    bTree: '所有节点存数据，单点查询快'
+    bPlusTree: '',
+    bTree: ''
   }
 };
 ```
 
-### 聚簇索引与非聚簇索引
+### 
 
 ```sql
--- 聚簇索引（主键索引）
--- InnoDB中，数据按主键顺序存储
+-- 
+-- InnoDB
 CREATE TABLE users (
-    id INT PRIMARY KEY,        -- 聚簇索引
+    id INT PRIMARY KEY,        -- 
     name VARCHAR(100),
     email VARCHAR(100),
     age INT
 );
 
--- 聚簇索引的B+树叶子节点存储完整行数据
+-- B+
 /*
-聚簇索引结构：
+
          [10, 20, 30]
         /      |      \
    [1-9]   [10-19]   [20-29]
      |        |         |
-  完整行   完整行     完整行
+          
 */
 
--- 非聚簇索引（二级索引）
+-- 
 CREATE INDEX idx_email ON users(email);
 
--- 非聚簇索引的B+树叶子节点存储主键值
+-- B+
 /*
-非聚簇索引结构：
+
          [email_b, email_m, email_z]
         /           |              \
    [email_a]    [email_l]      [email_y]
       |            |               |
-    主键id       主键id          主键id
+    id       id          id
 */
 
--- 回表查询
--- 1. 先在非聚簇索引中找到主键
--- 2. 再用主键在聚簇索引中查找完整数据
+-- 
+-- 1. 
+-- 2. 
 SELECT * FROM users WHERE email = 'john@example.com';
 
--- 覆盖索引（避免回表）
+-- 
 CREATE INDEX idx_email_name ON users(email, name);
 
--- 查询只需要索引中的列，不需要回表
+-- 
 SELECT name FROM users WHERE email = 'john@example.com';
 ```
 
-## 索引类型详解
+## 
 
-### 1. 主键索引
+### 1. 
 
 ```sql
--- 自增主键
+-- 
 CREATE TABLE orders (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT,
@@ -214,24 +214,24 @@ CREATE TABLE orders (
     created_at TIMESTAMP
 );
 
--- 优点：
--- 1. 顺序插入，页分裂少
--- 2. 空间利用率高
--- 3. 查询效率高
+-- 
+-- 1. 
+-- 2. 
+-- 3. 
 
--- UUID主键（不推荐）
+-- UUID
 CREATE TABLE orders_uuid (
     id CHAR(36) PRIMARY KEY,  -- UUID
     user_id BIGINT,
     amount DECIMAL(10,2)
 );
 
--- 缺点：
--- 1. 随机插入，页分裂多
--- 2. 索引占用空间大
--- 3. 查询效率低
+-- 
+-- 1. 
+-- 2. 
+-- 3. 
 
--- 复合主键
+-- 
 CREATE TABLE order_items (
     order_id BIGINT,
     product_id BIGINT,
@@ -240,79 +240,79 @@ CREATE TABLE order_items (
 );
 ```
 
-### 2. 唯一索引
+### 2. 
 
 ```sql
--- 唯一索引
+-- 
 CREATE TABLE users (
     id BIGINT PRIMARY KEY,
     email VARCHAR(100) UNIQUE,
     phone VARCHAR(20)
 );
 
--- 或者
+-- 
 CREATE UNIQUE INDEX idx_email ON users(email);
 
--- 唯一索引 vs 主键索引
+--  vs 
 /*
-相同点：
-- 都保证唯一性
-- 都会创建索引
 
-不同点：
-- 主键不能为NULL，唯一索引可以
-- 一个表只能有一个主键，可以有多个唯一索引
-- 主键是聚簇索引，唯一索引是非聚簇索引
+- 
+- 
+
+
+- NULL
+- 
+- 
 */
 
--- 处理NULL值
-INSERT INTO users (id, email) VALUES (1, NULL);  -- 允许
-INSERT INTO users (id, email) VALUES (2, NULL);  -- 允许（多个NULL）
+-- NULL
+INSERT INTO users (id, email) VALUES (1, NULL);  -- 
+INSERT INTO users (id, email) VALUES (2, NULL);  -- NULL
 ```
 
-### 3. 组合索引
+### 3. 
 
 ```sql
--- 创建组合索引
+-- 
 CREATE INDEX idx_user_time ON orders(user_id, created_at);
 
--- 最左前缀原则
--- ✅ 可以使用索引
+-- 
+--  
 SELECT * FROM orders WHERE user_id = 1;
 SELECT * FROM orders WHERE user_id = 1 AND created_at > '2024-01-01';
 
--- ❌ 不能使用索引
+--  
 SELECT * FROM orders WHERE created_at > '2024-01-01';
 
--- 索引列顺序的选择
--- 1. 区分度高的列放前面
--- 2. 经常作为查询条件的列放前面
--- 3. 经常需要排序的列放后面
+-- 
+-- 1. 
+-- 2. 
+-- 3. 
 
--- 示例：查询某个用户的订单，按时间排序
+-- 
 CREATE INDEX idx_user_time ON orders(user_id, created_at);
 
 SELECT * FROM orders 
 WHERE user_id = 1 
-ORDER BY created_at DESC;  -- 可以使用索引排序
+ORDER BY created_at DESC;  -- 
 
--- 索引下推（Index Condition Pushdown）
+-- Index Condition Pushdown
 CREATE INDEX idx_name_age ON users(name, age);
 
 SELECT * FROM users 
 WHERE name LIKE 'John%' AND age > 20;
 
--- MySQL 5.6+会将age > 20的条件下推到存储引擎层过滤
--- 减少回表次数
+-- MySQL 5.6+age > 20
+-- 
 ```
 
-### 4. 前缀索引
+### 4. 
 
 ```sql
--- 对长字符串建立前缀索引
+-- 
 CREATE INDEX idx_email_prefix ON users(email(10));
 
--- 选择合适的前缀长度
+-- 
 SELECT 
     COUNT(DISTINCT LEFT(email, 5)) / COUNT(*) AS sel_5,
     COUNT(DISTINCT LEFT(email, 10)) / COUNT(*) AS sel_10,
@@ -320,18 +320,18 @@ SELECT
     COUNT(DISTINCT email) / COUNT(*) AS sel_full
 FROM users;
 
--- 选择区分度接近完整列的最短前缀
+-- 
 
--- 前缀索引的限制
--- 1. 不能用于ORDER BY
--- 2. 不能用于GROUP BY
--- 3. 不能作为覆盖索引
+-- 
+-- 1. ORDER BY
+-- 2. GROUP BY
+-- 3. 
 ```
 
-### 5. 全文索引
+### 5. 
 
 ```sql
--- 创建全文索引
+-- 
 CREATE TABLE articles (
     id BIGINT PRIMARY KEY,
     title VARCHAR(200),
@@ -339,144 +339,144 @@ CREATE TABLE articles (
     FULLTEXT INDEX idx_fulltext (title, content)
 ) ENGINE=InnoDB;
 
--- 全文搜索
--- 自然语言模式
+-- 
+-- 
 SELECT * FROM articles
-WHERE MATCH(title, content) AGAINST('MySQL索引' IN NATURAL LANGUAGE MODE);
+WHERE MATCH(title, content) AGAINST('MySQL' IN NATURAL LANGUAGE MODE);
 
--- 布尔模式
+-- 
 SELECT * FROM articles
 WHERE MATCH(title, content) AGAINST('+MySQL -Oracle' IN BOOLEAN MODE);
 
--- 查询扩展模式
+-- 
 SELECT * FROM articles
-WHERE MATCH(title, content) AGAINST('数据库' WITH QUERY EXPANSION);
+WHERE MATCH(title, content) AGAINST('' WITH QUERY EXPANSION);
 
--- 全文索引配置
--- 最小词长度
+-- 
+-- 
 SET GLOBAL innodb_ft_min_token_size = 2;
 
--- 停用词
+-- 
 CREATE TABLE my_stopwords (value VARCHAR(30));
-INSERT INTO my_stopwords VALUES ('的'), ('是'), ('在');
+INSERT INTO my_stopwords VALUES (''), (''), ('');
 SET GLOBAL innodb_ft_server_stopword_table = 'mydb/my_stopwords';
 ```
 
-## 索引优化技巧
+## 
 
-### 1. 索引选择性
+### 1. 
 
 ```sql
--- 计算索引选择性
+-- 
 SELECT 
     COUNT(DISTINCT column_name) / COUNT(*) AS selectivity
 FROM table_name;
 
--- 选择性越高，索引效果越好
--- 选择性 = 1：完全唯一（如主键）
--- 选择性 < 0.1：不适合建索引（如性别）
+-- 
+--  = 1
+--  < 0.1
 
--- 示例
+-- 
 SELECT 
     COUNT(DISTINCT gender) / COUNT(*) AS gender_sel,  -- 0.5
     COUNT(DISTINCT email) / COUNT(*) AS email_sel,    -- 1.0
     COUNT(DISTINCT age) / COUNT(*) AS age_sel         -- 0.05
 FROM users;
 
--- 结论：email适合建索引，gender和age不适合
+-- emailgenderage
 ```
 
-### 2. 避免索引失效
+### 2. 
 
 ```sql
--- ❌ 在索引列上使用函数
+--  
 SELECT * FROM users WHERE YEAR(created_at) = 2024;
 
--- ✅ 改写查询
+--  
 SELECT * FROM users 
 WHERE created_at >= '2024-01-01' 
   AND created_at < '2025-01-01';
 
--- ❌ 隐式类型转换
-SELECT * FROM users WHERE phone = 12345678;  -- phone是VARCHAR
+--  
+SELECT * FROM users WHERE phone = 12345678;  -- phoneVARCHAR
 
--- ✅ 使用正确类型
+--  
 SELECT * FROM users WHERE phone = '12345678';
 
--- ❌ 使用NOT、!=、<>
+--  NOT!=<>
 SELECT * FROM users WHERE status != 'deleted';
 
--- ✅ 使用IN
+--  IN
 SELECT * FROM users WHERE status IN ('active', 'pending');
 
--- ❌ 使用OR连接不同列
+--  OR
 SELECT * FROM users WHERE name = 'John' OR email = 'john@example.com';
 
--- ✅ 使用UNION
+--  UNION
 SELECT * FROM users WHERE name = 'John'
 UNION
 SELECT * FROM users WHERE email = 'john@example.com';
 
--- ❌ LIKE以通配符开头
+--  LIKE
 SELECT * FROM users WHERE name LIKE '%John';
 
--- ✅ LIKE以常量开头
+--  LIKE
 SELECT * FROM users WHERE name LIKE 'John%';
 
--- ❌ 在索引列上进行计算
+--  
 SELECT * FROM orders WHERE amount * 0.9 > 100;
 
--- ✅ 移动计算到右边
+--  
 SELECT * FROM orders WHERE amount > 100 / 0.9;
 ```
 
-### 3. 覆盖索引优化
+### 3. 
 
 ```sql
--- 创建覆盖索引
+-- 
 CREATE INDEX idx_covering ON users(name, email, age);
 
--- ✅ 查询只需要索引中的列
+--  
 SELECT name, email, age FROM users WHERE name = 'John';
 -- Extra: Using index
 
--- ❌ 查询需要其他列，需要回表
+--  
 SELECT name, email, age, address FROM users WHERE name = 'John';
 -- Extra: Using index condition
 
--- 优化分页查询
--- ❌ 深分页性能差
+-- 
+--  
 SELECT * FROM users ORDER BY id LIMIT 1000000, 10;
 
--- ✅ 使用覆盖索引 + 延迟关联
+--   + 
 SELECT * FROM users
 INNER JOIN (
     SELECT id FROM users ORDER BY id LIMIT 1000000, 10
 ) AS t USING(id);
 ```
 
-### 4. 索引合并
+### 4. 
 
 ```sql
--- 创建单列索引
+-- 
 CREATE INDEX idx_name ON users(name);
 CREATE INDEX idx_age ON users(age);
 
--- MySQL可能使用索引合并
+-- MySQL
 SELECT * FROM users WHERE name = 'John' AND age > 20;
 
--- 查看执行计划
+-- 
 EXPLAIN SELECT * FROM users WHERE name = 'John' AND age > 20;
 -- Extra: Using intersect(idx_name, idx_age)
 
--- 但通常组合索引更好
+-- 
 CREATE INDEX idx_name_age ON users(name, age);
 ```
 
-## 索引监控
+## 
 
 ```sql
--- 查看索引使用情况
+-- 
 SELECT 
     TABLE_NAME,
     INDEX_NAME,
@@ -488,7 +488,7 @@ FROM INFORMATION_SCHEMA.STATISTICS
 WHERE TABLE_SCHEMA = 'your_database'
 ORDER BY TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX;
 
--- 查看未使用的索引
+-- 
 SELECT 
     s.TABLE_NAME,
     s.INDEX_NAME,
@@ -502,7 +502,7 @@ WHERE s.TABLE_SCHEMA = 'your_database'
     AND s.INDEX_NAME != 'PRIMARY'
     AND i.INDEX_NAME IS NULL;
 
--- 查看索引大小
+-- 
 SELECT 
     TABLE_NAME,
     INDEX_NAME,
@@ -511,22 +511,22 @@ FROM mysql.innodb_index_stats
 WHERE DATABASE_NAME = 'your_database'
     AND STAT_NAME = 'size';
 
--- 分析表
+-- 
 ANALYZE TABLE users;
 
--- 优化表
+-- 
 OPTIMIZE TABLE users;
 ```
 
-## 总结
+## 
 
-MySQL索引优化的核心：
-- 🌳 **B+树结构**：理解原理才能用好索引
-- 🔑 **索引类型**：主键、唯一、组合、前缀、全文
-- 📊 **选择性**：高选择性的列适合建索引
-- 🚫 **避免失效**：不在索引列上使用函数、类型转换
-- 📦 **覆盖索引**：减少回表，提升性能
-- 📈 **监控维护**：定期检查索引使用情况
+MySQL
+-  **B+**
+-  ****
+-  ****
+-  ****
+-  ****
+-  ****
 
-记住：**索引不是越多越好，要根据查询模式合理设计！**
+****
 

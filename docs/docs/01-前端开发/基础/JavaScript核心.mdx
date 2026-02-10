@@ -1,112 +1,112 @@
 ---
 sidebar_position: 2
-title: JavaScript现代特性(ES6+)
-tags: [JavaScript, ES6, ES2015+, 前端]
+title: JavaScript(ES6+)
+tags: [JavaScript, ES6, ES2015+, ]
 ---
 
-# JavaScript现代特性(ES6+)
+# JavaScript(ES6+)
 
-ES6（ECMAScript 2015）及后续版本为JavaScript带来了革命性的改进，本文将系统介绍这些现代特性。
+ES6ECMAScript 2015JavaScript
 
-## let和const
+## letconst
 
-### 块级作用域
+### 
 
 ```javascript
-// var：函数作用域
+// var
 function varTest() {
   var x = 1;
   if (true) {
-    var x = 2;  // 同一个变量
+    var x = 2;  // 
     console.log(x);  // 2
   }
   console.log(x);  // 2
 }
 
-// let：块级作用域
+// let
 function letTest() {
   let x = 1;
   if (true) {
-    let x = 2;  // 不同的变量
+    let x = 2;  // 
     console.log(x);  // 2
   }
   console.log(x);  // 1
 }
 ```
 
-### 暂时性死区
+### 
 
 ```javascript
-// ❌ 错误：在声明前使用
+//  
 console.log(x);  // ReferenceError
 let x = 5;
 
-// ✅ 正确：先声明后使用
+//  
 let y = 5;
 console.log(y);  // 5
 ```
 
-### const常量
+### const
 
 ```javascript
-// const声明的基本类型不可修改
+// const
 const PI = 3.14159;
 PI = 3.14;  // TypeError
 
-// const声明的对象可以修改属性
+// const
 const obj = { name: 'John' };
-obj.name = 'Jane';  // ✅ 可以
-obj = {};  // ❌ 不可以
+obj.name = 'Jane';  //  
+obj = {};  //  
 
-// 冻结对象
+// 
 const frozen = Object.freeze({ name: 'John' });
-frozen.name = 'Jane';  // 静默失败（严格模式下报错）
+frozen.name = 'Jane';  // 
 ```
 
-## 解构赋值
+## 
 
-### 数组解构
+### 
 
 ```javascript
-// 基础解构
+// 
 const [a, b, c] = [1, 2, 3];
 console.log(a, b, c);  // 1 2 3
 
-// 跳过元素
+// 
 const [first, , third] = [1, 2, 3];
 console.log(first, third);  // 1 3
 
-// 剩余元素
+// 
 const [head, ...tail] = [1, 2, 3, 4];
 console.log(head);  // 1
 console.log(tail);  // [2, 3, 4]
 
-// 默认值
+// 
 const [x = 1, y = 2] = [10];
 console.log(x, y);  // 10 2
 
-// 交换变量
+// 
 let a = 1, b = 2;
 [a, b] = [b, a];
 console.log(a, b);  // 2 1
 ```
 
-### 对象解构
+### 
 
 ```javascript
-// 基础解构
+// 
 const { name, age } = { name: 'John', age: 30 };
 console.log(name, age);  // John 30
 
-// 重命名
+// 
 const { name: userName, age: userAge } = { name: 'John', age: 30 };
 console.log(userName, userAge);  // John 30
 
-// 默认值
+// 
 const { x = 10, y = 20 } = { x: 5 };
 console.log(x, y);  // 5 20
 
-// 嵌套解构
+// 
 const user = {
   name: 'John',
   address: {
@@ -117,118 +117,118 @@ const user = {
 const { name, address: { city } } = user;
 console.log(name, city);  // John New York
 
-// 剩余属性
+// 
 const { a, b, ...rest } = { a: 1, b: 2, c: 3, d: 4 };
 console.log(rest);  // { c: 3, d: 4 }
 ```
 
-### 函数参数解构
+### 
 
 ```javascript
-// 对象参数解构
+// 
 function greet({ name, age = 18 }) {
   console.log(`Hello ${name}, you are ${age} years old`);
 }
 greet({ name: 'John', age: 30 });  // Hello John, you are 30 years old
 greet({ name: 'Jane' });  // Hello Jane, you are 18 years old
 
-// 数组参数解构
+// 
 function sum([a, b]) {
   return a + b;
 }
 console.log(sum([1, 2]));  // 3
 ```
 
-## 箭头函数
+## 
 
-### 基础语法
+### 
 
 ```javascript
-// 传统函数
+// 
 const add1 = function(a, b) {
   return a + b;
 };
 
-// 箭头函数
+// 
 const add2 = (a, b) => a + b;
 
-// 单个参数可以省略括号
+// 
 const double = x => x * 2;
 
-// 无参数需要空括号
+// 
 const greet = () => 'Hello';
 
-// 返回对象需要用括号包裹
+// 
 const makeObj = (name, age) => ({ name, age });
 ```
 
-### this绑定
+### this
 
 ```javascript
-// 传统函数：this取决于调用方式
+// this
 function Timer1() {
   this.seconds = 0;
   setInterval(function() {
-    this.seconds++;  // this指向window
+    this.seconds++;  // thiswindow
   }, 1000);
 }
 
-// 箭头函数：this继承自外层作用域
+// this
 function Timer2() {
   this.seconds = 0;
   setInterval(() => {
-    this.seconds++;  // this指向Timer2实例
+    this.seconds++;  // thisTimer2
   }, 1000);
 }
 
-// 实际应用
+// 
 class Button {
   constructor() {
     this.count = 0;
   }
   
-  // ❌ 传统方法需要bind
+  //  bind
   handleClick1() {
     this.count++;
   }
   
-  // ✅ 箭头函数自动绑定
+  //  
   handleClick2 = () => {
     this.count++;
   }
 }
 ```
 
-## 模板字符串
+## 
 
-### 基础用法
+### 
 
 ```javascript
-// 多行字符串
+// 
 const multiline = `
   This is a
   multiline
   string
 `;
 
-// 变量插值
+// 
 const name = 'John';
 const age = 30;
 const message = `Hello, my name is ${name} and I'm ${age} years old`;
 
-// 表达式插值
+// 
 const a = 10, b = 20;
 console.log(`${a} + ${b} = ${a + b}`);  // 10 + 20 = 30
 
-// 函数调用
+// 
 const upper = str => str.toUpperCase();
 console.log(`Hello ${upper('world')}`);  // Hello WORLD
 ```
 
-### 标签模板
+### 
 
 ```javascript
-// 自定义标签函数
+// 
 function highlight(strings, ...values) {
   return strings.reduce((result, str, i) => {
     return result + str + (values[i] ? `<mark>${values[i]}</mark>` : '');
@@ -240,7 +240,7 @@ const age = 30;
 const html = highlight`My name is ${name} and I'm ${age} years old`;
 // My name is <mark>John</mark> and I'm <mark>30</mark> years old
 
-// 实用标签函数：SQL查询
+// SQL
 function sql(strings, ...values) {
   return {
     text: strings.join('?'),
@@ -253,50 +253,50 @@ const query = sql`SELECT * FROM users WHERE id = ${userId}`;
 // { text: 'SELECT * FROM users WHERE id = ?', values: [123] }
 ```
 
-## 扩展运算符
+## 
 
-### 数组扩展
+### 
 
 ```javascript
-// 数组合并
+// 
 const arr1 = [1, 2, 3];
 const arr2 = [4, 5, 6];
 const merged = [...arr1, ...arr2];  // [1, 2, 3, 4, 5, 6]
 
-// 数组复制（浅拷贝）
+// 
 const original = [1, 2, 3];
 const copy = [...original];
 
-// 数组转换
+// 
 const str = 'hello';
 const chars = [...str];  // ['h', 'e', 'l', 'l', 'o']
 
-// 函数参数
+// 
 const numbers = [1, 2, 3, 4, 5];
 console.log(Math.max(...numbers));  // 5
 
-// 数组去重
+// 
 const arr = [1, 2, 2, 3, 3, 4];
 const unique = [...new Set(arr)];  // [1, 2, 3, 4]
 ```
 
-### 对象扩展
+### 
 
 ```javascript
-// 对象合并
+// 
 const obj1 = { a: 1, b: 2 };
 const obj2 = { c: 3, d: 4 };
 const merged = { ...obj1, ...obj2 };  // { a: 1, b: 2, c: 3, d: 4 }
 
-// 对象复制（浅拷贝）
+// 
 const original = { name: 'John', age: 30 };
 const copy = { ...original };
 
-// 覆盖属性
+// 
 const user = { name: 'John', age: 30 };
 const updated = { ...user, age: 31 };  // { name: 'John', age: 31 }
 
-// 条件属性
+// 
 const includeAge = true;
 const user = {
   name: 'John',
@@ -304,12 +304,12 @@ const user = {
 };
 ```
 
-## Promise和异步编程
+## Promise
 
-### Promise基础
+### Promise
 
 ```javascript
-// 创建Promise
+// Promise
 const promise = new Promise((resolve, reject) => {
   setTimeout(() => {
     const success = true;
@@ -321,13 +321,13 @@ const promise = new Promise((resolve, reject) => {
   }, 1000);
 });
 
-// 使用Promise
+// Promise
 promise
   .then(result => console.log(result))
   .catch(error => console.error(error))
   .finally(() => console.log('Done'));
 
-// Promise链式调用
+// Promise
 fetch('/api/user')
   .then(response => response.json())
   .then(user => fetch(`/api/posts/${user.id}`))
@@ -336,10 +336,10 @@ fetch('/api/user')
   .catch(error => console.error(error));
 ```
 
-### Promise静态方法
+### Promise
 
 ```javascript
-// Promise.all：所有Promise都成功
+// Promise.allPromise
 const p1 = Promise.resolve(1);
 const p2 = Promise.resolve(2);
 const p3 = Promise.resolve(3);
@@ -347,11 +347,11 @@ const p3 = Promise.resolve(3);
 Promise.all([p1, p2, p3])
   .then(results => console.log(results));  // [1, 2, 3]
 
-// Promise.race：第一个完成的Promise
+// Promise.racePromise
 Promise.race([p1, p2, p3])
   .then(result => console.log(result));  // 1
 
-// Promise.allSettled：等待所有Promise完成
+// Promise.allSettledPromise
 Promise.allSettled([p1, p2, Promise.reject('error')])
   .then(results => console.log(results));
 // [
@@ -360,7 +360,7 @@ Promise.allSettled([p1, p2, Promise.reject('error')])
 //   { status: 'rejected', reason: 'error' }
 // ]
 
-// Promise.any：第一个成功的Promise
+// Promise.anyPromise
 Promise.any([Promise.reject('error'), p2, p3])
   .then(result => console.log(result));  // 2
 ```
@@ -368,7 +368,7 @@ Promise.any([Promise.reject('error'), p2, p3])
 ### async/await
 
 ```javascript
-// 基础用法
+// 
 async function fetchUser() {
   try {
     const response = await fetch('/api/user');
@@ -380,66 +380,66 @@ async function fetchUser() {
   }
 }
 
-// 并行执行
+// 
 async function fetchMultiple() {
-  // ❌ 串行执行（慢）
+  //  
   const user = await fetchUser();
   const posts = await fetchPosts();
   
-  // ✅ 并行执行（快）
+  //  
   const [user, posts] = await Promise.all([
     fetchUser(),
     fetchPosts()
   ]);
 }
 
-// 错误处理
+// 
 async function handleErrors() {
   try {
     const result = await riskyOperation();
     return result;
   } catch (error) {
     if (error instanceof NetworkError) {
-      // 处理网络错误
+      // 
     } else if (error instanceof ValidationError) {
-      // 处理验证错误
+      // 
     } else {
-      throw error;  // 重新抛出未知错误
+      throw error;  // 
     }
   }
 }
 
-// 循环中使用await
+// await
 async function processItems(items) {
-  // 串行处理
+  // 
   for (const item of items) {
     await processItem(item);
   }
   
-  // 并行处理
+  // 
   await Promise.all(items.map(item => processItem(item)));
 }
 ```
 
-## 类和继承
+## 
 
-### 类定义
+### 
 
 ```javascript
-// 类声明
+// 
 class Person {
-  // 构造函数
+  // 
   constructor(name, age) {
     this.name = name;
     this.age = age;
   }
   
-  // 实例方法
+  // 
   greet() {
     console.log(`Hello, I'm ${this.name}`);
   }
   
-  // 静态方法
+  // 
   static create(name, age) {
     return new Person(name, age);
   }
@@ -457,16 +457,16 @@ class Person {
   }
 }
 
-// 使用类
+// 
 const person = new Person('John', 30);
 person.greet();  // Hello, I'm John
 console.log(person.info);  // John (30)
 ```
 
-### 继承
+### 
 
 ```javascript
-// 基类
+// 
 class Animal {
   constructor(name) {
     this.name = name;
@@ -477,19 +477,19 @@ class Animal {
   }
 }
 
-// 派生类
+// 
 class Dog extends Animal {
   constructor(name, breed) {
-    super(name);  // 调用父类构造函数
+    super(name);  // 
     this.breed = breed;
   }
   
-  // 重写方法
+  // 
   speak() {
     console.log(`${this.name} barks`);
   }
   
-  // 调用父类方法
+  // 
   parentSpeak() {
     super.speak();
   }
@@ -500,18 +500,18 @@ dog.speak();  // Max barks
 dog.parentSpeak();  // Max makes a sound
 ```
 
-### 私有字段
+### 
 
 ```javascript
 class BankAccount {
-  // 私有字段
+  // 
   #balance = 0;
   
   constructor(initialBalance) {
     this.#balance = initialBalance;
   }
   
-  // 公共方法访问私有字段
+  // 
   deposit(amount) {
     if (amount > 0) {
       this.#balance += amount;
@@ -522,7 +522,7 @@ class BankAccount {
     return this.#balance;
   }
   
-  // 私有方法
+  // 
   #validateAmount(amount) {
     return amount > 0 && amount <= this.#balance;
   }
@@ -539,15 +539,15 @@ class BankAccount {
 const account = new BankAccount(1000);
 account.deposit(500);
 console.log(account.getBalance());  // 1500
-// console.log(account.#balance);  // ❌ SyntaxError
+// console.log(account.#balance);  //  SyntaxError
 ```
 
-## 模块化
+## 
 
-### ES6模块
+### ES6
 
 ```javascript
-// math.js - 导出
+// math.js - 
 export const PI = 3.14159;
 
 export function add(a, b) {
@@ -560,66 +560,66 @@ export class Calculator {
   }
 }
 
-// 默认导出
+// 
 export default function subtract(a, b) {
   return a - b;
 }
 
-// main.js - 导入
+// main.js - 
 import subtract, { PI, add, Calculator } from './math.js';
 
-// 重命名导入
+// 
 import { add as sum } from './math.js';
 
-// 导入所有
+// 
 import * as math from './math.js';
 console.log(math.PI);
 console.log(math.add(1, 2));
 
-// 动态导入
+// 
 async function loadModule() {
   const module = await import('./math.js');
   console.log(module.PI);
 }
 ```
 
-## 新增数据结构
+## 
 
 ### Map
 
 ```javascript
-// 创建Map
+// Map
 const map = new Map();
 
-// 设置值
+// 
 map.set('name', 'John');
 map.set('age', 30);
 map.set(123, 'number key');
 map.set({ id: 1 }, 'object key');
 
-// 获取值
+// 
 console.log(map.get('name'));  // John
 
-// 检查键
+// 
 console.log(map.has('name'));  // true
 
-// 删除键
+// 
 map.delete('age');
 
-// 大小
+// 
 console.log(map.size);  // 3
 
-// 遍历
+// 
 map.forEach((value, key) => {
   console.log(`${key}: ${value}`);
 });
 
-// 转换为数组
+// 
 const entries = [...map];  // [['name', 'John'], ...]
 const keys = [...map.keys()];
 const values = [...map.values()];
 
-// 从数组创建
+// 
 const map2 = new Map([
   ['a', 1],
   ['b', 2]
@@ -629,74 +629,74 @@ const map2 = new Map([
 ### Set
 
 ```javascript
-// 创建Set
+// Set
 const set = new Set([1, 2, 3, 3, 4]);  // Set {1, 2, 3, 4}
 
-// 添加值
+// 
 set.add(5);
-set.add(5);  // 重复值会被忽略
+set.add(5);  // 
 
-// 检查值
+// 
 console.log(set.has(3));  // true
 
-// 删除值
+// 
 set.delete(2);
 
-// 大小
+// 
 console.log(set.size);  // 4
 
-// 遍历
+// 
 set.forEach(value => console.log(value));
 
-// 转换为数组
+// 
 const arr = [...set];
 
-// 数组去重
+// 
 const numbers = [1, 2, 2, 3, 3, 4];
 const unique = [...new Set(numbers)];  // [1, 2, 3, 4]
 
-// 集合运算
+// 
 const setA = new Set([1, 2, 3]);
 const setB = new Set([2, 3, 4]);
 
-// 并集
+// 
 const union = new Set([...setA, ...setB]);  // {1, 2, 3, 4}
 
-// 交集
+// 
 const intersection = new Set([...setA].filter(x => setB.has(x)));  // {2, 3}
 
-// 差集
+// 
 const difference = new Set([...setA].filter(x => !setB.has(x)));  // {1}
 ```
 
-### WeakMap和WeakSet
+### WeakMapWeakSet
 
 ```javascript
-// WeakMap：键必须是对象，弱引用
+// WeakMap
 const weakMap = new WeakMap();
 let obj = { id: 1 };
 
 weakMap.set(obj, 'some value');
 console.log(weakMap.get(obj));  // some value
 
-obj = null;  // 对象可以被垃圾回收
+obj = null;  // 
 
-// WeakSet：值必须是对象，弱引用
+// WeakSet
 const weakSet = new WeakSet();
 let obj2 = { id: 2 };
 
 weakSet.add(obj2);
 console.log(weakSet.has(obj2));  // true
 
-obj2 = null;  // 对象可以被垃圾回收
+obj2 = null;  // 
 ```
 
-## 迭代器和生成器
+## 
 
-### 迭代器
+### 
 
 ```javascript
-// 自定义迭代器
+// 
 const range = {
   from: 1,
   to: 5,
@@ -722,10 +722,10 @@ for (let num of range) {
 }
 ```
 
-### 生成器
+### 
 
 ```javascript
-// 生成器函数
+// 
 function* numberGenerator() {
   yield 1;
   yield 2;
@@ -738,7 +738,7 @@ console.log(gen.next());  // { value: 2, done: false }
 console.log(gen.next());  // { value: 3, done: false }
 console.log(gen.next());  // { value: undefined, done: true }
 
-// 无限序列
+// 
 function* fibonacci() {
   let [a, b] = [0, 1];
   while (true) {
@@ -753,20 +753,20 @@ console.log(fib.next().value);  // 1
 console.log(fib.next().value);  // 1
 console.log(fib.next().value);  // 2
 
-// 生成器委托
+// 
 function* gen1() {
   yield 1;
   yield 2;
 }
 
 function* gen2() {
-  yield* gen1();  // 委托给gen1
+  yield* gen1();  // gen1
   yield 3;
 }
 
 console.log([...gen2()]);  // [1, 2, 3]
 
-// 异步生成器
+// 
 async function* asyncGenerator() {
   for (let i = 0; i < 3; i++) {
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -776,17 +776,17 @@ async function* asyncGenerator() {
 
 (async () => {
   for await (const num of asyncGenerator()) {
-    console.log(num);  // 0, 1, 2 (每秒一个)
+    console.log(num);  // 0, 1, 2 ()
   }
 })();
 ```
 
-## 代理和反射
+## 
 
 ### Proxy
 
 ```javascript
-// 基础代理
+// 
 const target = { name: 'John', age: 30 };
 
 const handler = {
@@ -806,7 +806,7 @@ const proxy = new Proxy(target, handler);
 console.log(proxy.name);  // Getting name, John
 proxy.age = 31;  // Setting age to 31
 
-// 验证
+// 
 const validator = {
   set(target, prop, value) {
     if (prop === 'age') {
@@ -820,10 +820,10 @@ const validator = {
 };
 
 const person = new Proxy({}, validator);
-person.age = 30;  // ✅
-// person.age = -1;  // ❌ TypeError
+person.age = 30;  // 
+// person.age = -1;  //  TypeError
 
-// 默认值
+// 
 const withDefaults = new Proxy({}, {
   get(target, prop) {
     return prop in target ? target[prop] : 'default';
@@ -838,39 +838,39 @@ console.log(withDefaults.name);  // John
 ### Reflect
 
 ```javascript
-// Reflect提供了与Proxy handler相同的方法
+// ReflectProxy handler
 const obj = { name: 'John' };
 
-// 获取属性
+// 
 Reflect.get(obj, 'name');  // John
 
-// 设置属性
+// 
 Reflect.set(obj, 'age', 30);
 
-// 检查属性
+// 
 Reflect.has(obj, 'name');  // true
 
-// 删除属性
+// 
 Reflect.deleteProperty(obj, 'age');
 
-// 获取原型
+// 
 Reflect.getPrototypeOf(obj);
 
-// 设置原型
+// 
 Reflect.setPrototypeOf(obj, Array.prototype);
 ```
 
 ## Symbol
 
 ```javascript
-// 创建Symbol
+// Symbol
 const sym1 = Symbol();
 const sym2 = Symbol('description');
 const sym3 = Symbol('description');
 
-console.log(sym2 === sym3);  // false，每个Symbol都是唯一的
+console.log(sym2 === sym3);  // falseSymbol
 
-// 作为对象属性
+// 
 const id = Symbol('id');
 const user = {
   name: 'John',
@@ -878,17 +878,17 @@ const user = {
 };
 
 console.log(user[id]);  // 123
-console.log(Object.keys(user));  // ['name']，Symbol属性不可枚举
+console.log(Object.keys(user));  // ['name']Symbol
 
-// 全局Symbol注册表
+// Symbol
 const globalSym1 = Symbol.for('app.id');
 const globalSym2 = Symbol.for('app.id');
 console.log(globalSym1 === globalSym2);  // true
 
-// 内置Symbol
+// Symbol
 class MyArray {
   [Symbol.iterator]() {
-    // 自定义迭代器
+    // 
   }
   
   [Symbol.toStringTag] = 'MyArray';
@@ -897,61 +897,61 @@ class MyArray {
 console.log(new MyArray().toString());  // [object MyArray]
 ```
 
-## 最佳实践
+## 
 
-### 1. 优先使用const和let
+### 1. constlet
 
 ```javascript
-// ✅ 好
+//  
 const MAX_SIZE = 100;
 let count = 0;
 
-// ❌ 差
+//  
 var MAX_SIZE = 100;
 var count = 0;
 ```
 
-### 2. 使用箭头函数
+### 2. 
 
 ```javascript
-// ✅ 好
+//  
 const numbers = [1, 2, 3];
 const doubled = numbers.map(n => n * 2);
 
-// ❌ 差
+//  
 const doubled = numbers.map(function(n) {
   return n * 2;
 });
 ```
 
-### 3. 使用模板字符串
+### 3. 
 
 ```javascript
-// ✅ 好
+//  
 const message = `Hello ${name}, you are ${age} years old`;
 
-// ❌ 差
+//  
 const message = 'Hello ' + name + ', you are ' + age + ' years old';
 ```
 
-### 4. 使用解构赋值
+### 4. 
 
 ```javascript
-// ✅ 好
+//  
 const { name, age } = user;
 const [first, second] = array;
 
-// ❌ 差
+//  
 const name = user.name;
 const age = user.age;
 const first = array[0];
 const second = array[1];
 ```
 
-### 5. 使用async/await
+### 5. async/await
 
 ```javascript
-// ✅ 好
+//  
 async function fetchData() {
   try {
     const response = await fetch(url);
@@ -962,7 +962,7 @@ async function fetchData() {
   }
 }
 
-// ❌ 差
+//  
 function fetchData() {
   return fetch(url)
     .then(response => response.json())
@@ -971,14 +971,14 @@ function fetchData() {
 }
 ```
 
-## 总结
+## 
 
-ES6+为JavaScript带来了：
-- ✅ 更清晰的语法（let/const、箭头函数、模板字符串）
-- ✅ 更强大的功能（Promise、async/await、类）
-- ✅ 更好的模块化（ES6模块）
-- ✅ 更丰富的数据结构（Map、Set、Symbol）
-- ✅ 更灵活的编程方式（解构、扩展运算符、生成器）
+ES6+JavaScript
+-  let/const
+-  Promiseasync/await
+-  ES6
+-  MapSetSymbol
+-  
 
-掌握这些现代特性是成为优秀JavaScript开发者的必经之路！
+JavaScript
 

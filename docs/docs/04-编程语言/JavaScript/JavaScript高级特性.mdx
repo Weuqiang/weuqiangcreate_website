@@ -1,23 +1,23 @@
 ---
 sidebar_position: 13
-title: JavaScript高级特性深度解析
-tags: [JavaScript, 高级特性, 闭包, 原型链, Event Loop]
+title: JavaScript
+tags: [JavaScript, , , , Event Loop]
 ---
 
-# JavaScript高级特性深度解析
+# JavaScript
 
-## 概述
+## 
 
-深入理解JavaScript的核心机制，掌握高级特性，是成为JavaScript专家的必经之路。
+JavaScriptJavaScript
 
-## 闭包（Closure）
+## Closure
 
-### 1. 闭包原理
+### 1. 
 
-闭包是指函数可以访问其外部作用域的变量，即使外部函数已经执行完毕。
+
 
 ```javascript
-// 基础闭包
+// 
 function createCounter() {
   let count = 0;
   
@@ -38,38 +38,38 @@ const counter = createCounter();
 console.log(counter.increment()); // 1
 console.log(counter.increment()); // 2
 console.log(counter.getCount());  // 2
-// count 变量无法从外部直接访问
+// count 
 
-// 闭包陷阱
+// 
 for (var i = 0; i < 5; i++) {
   setTimeout(function() {
-    console.log(i); // 输出 5 5 5 5 5
+    console.log(i); //  5 5 5 5 5
   }, 100);
 }
 
-// 解决方案1：使用 let
+// 1 let
 for (let i = 0; i < 5; i++) {
   setTimeout(function() {
-    console.log(i); // 输出 0 1 2 3 4
+    console.log(i); //  0 1 2 3 4
   }, 100);
 }
 
-// 解决方案2：使用闭包
+// 2
 for (var i = 0; i < 5; i++) {
   (function(j) {
     setTimeout(function() {
-      console.log(j); // 输出 0 1 2 3 4
+      console.log(j); //  0 1 2 3 4
     }, 100);
   })(i);
 }
 ```
 
-### 2. 闭包应用
+### 2. 
 
 ```javascript
-// 私有变量
+// 
 function createPerson(name) {
-  let _age = 0; // 私有变量
+  let _age = 0; // 
   
   return {
     getName() {
@@ -91,7 +91,7 @@ person.setAge(30);
 console.log(person.getAge()); // 30
 // console.log(person._age); // undefined
 
-// 函数柯里化
+// 
 function curry(fn) {
   return function curried(...args) {
     if (args.length >= fn.length) {
@@ -113,7 +113,7 @@ console.log(curriedAdd(1)(2)(3)); // 6
 console.log(curriedAdd(1, 2)(3)); // 6
 console.log(curriedAdd(1)(2, 3)); // 6
 
-// 偏函数
+// 
 function partial(fn, ...presetArgs) {
   return function(...laterArgs) {
     return fn(...presetArgs, ...laterArgs);
@@ -127,7 +127,7 @@ function multiply(a, b, c) {
 const double = partial(multiply, 2);
 console.log(double(3, 4)); // 24
 
-// 记忆化（Memoization）
+// Memoization
 function memoize(fn) {
   const cache = new Map();
   
@@ -135,7 +135,7 @@ function memoize(fn) {
     const key = JSON.stringify(args);
     
     if (cache.has(key)) {
-      console.log('从缓存获取');
+      console.log('');
       return cache.get(key);
     }
     
@@ -151,10 +151,10 @@ function fibonacci(n) {
 }
 
 const memoizedFib = memoize(fibonacci);
-console.log(memoizedFib(40)); // 计算
-console.log(memoizedFib(40)); // 从缓存获取
+console.log(memoizedFib(40)); // 
+console.log(memoizedFib(40)); // 
 
-// 防抖（Debounce）
+// Debounce
 function debounce(fn, delay) {
   let timeoutId;
   
@@ -166,12 +166,12 @@ function debounce(fn, delay) {
   };
 }
 
-// 使用
+// 
 const handleSearch = debounce((query) => {
-  console.log('搜索:', query);
+  console.log(':', query);
 }, 300);
 
-// 节流（Throttle）
+// Throttle
 function throttle(fn, delay) {
   let lastTime = 0;
   
@@ -185,18 +185,18 @@ function throttle(fn, delay) {
   };
 }
 
-// 使用
+// 
 const handleScroll = throttle(() => {
-  console.log('滚动位置:', window.scrollY);
+  console.log(':', window.scrollY);
 }, 200);
 ```
 
-## 原型与原型链
+## 
 
-### 1. 原型机制
+### 1. 
 
 ```javascript
-// 构造函数和原型
+// 
 function Person(name) {
   this.name = name;
 }
@@ -211,23 +211,23 @@ const person2 = new Person('Bob');
 person1.sayHello(); // Hello, I'm Alice
 person2.sayHello(); // Hello, I'm Bob
 
-// 原型链
+// 
 console.log(person1.__proto__ === Person.prototype); // true
 console.log(Person.prototype.__proto__ === Object.prototype); // true
 console.log(Object.prototype.__proto__ === null); // true
 
-// 检查原型
+// 
 console.log(person1 instanceof Person); // true
 console.log(Person.prototype.isPrototypeOf(person1)); // true
 console.log(Object.getPrototypeOf(person1) === Person.prototype); // true
 
-// 原型继承
+// 
 function Student(name, grade) {
   Person.call(this, name);
   this.grade = grade;
 }
 
-// 继承原型
+// 
 Student.prototype = Object.create(Person.prototype);
 Student.prototype.constructor = Student;
 
@@ -240,10 +240,10 @@ student.sayHello(); // Hello, I'm Charlie
 student.study();    // Charlie is studying in grade 10
 ```
 
-### 2. 类与继承
+### 2. 
 
 ```javascript
-// ES6 类
+// ES6 
 class Animal {
   constructor(name) {
     this.name = name;
@@ -253,7 +253,7 @@ class Animal {
     console.log(`${this.name} makes a sound`);
   }
   
-  // 静态方法
+  // 
   static create(name) {
     return new Animal(name);
   }
@@ -269,7 +269,7 @@ class Animal {
   }
 }
 
-// 继承
+// 
 class Dog extends Animal {
   constructor(name, breed) {
     super(name);
@@ -289,9 +289,9 @@ const dog = new Dog('Max', 'Golden Retriever');
 dog.speak(); // Max barks
 dog.fetch(); // Max fetches the ball
 
-// 私有字段（ES2022）
+// ES2022
 class BankAccount {
-  #balance = 0; // 私有字段
+  #balance = 0; // 
   
   constructor(initialBalance) {
     this.#balance = initialBalance;
@@ -321,7 +321,7 @@ account.deposit(500);
 console.log(account.getBalance()); // 1500
 // console.log(account.#balance); // SyntaxError
 
-// Mixin 模式
+// Mixin 
 const canEat = {
   eat(food) {
     console.log(`${this.name} is eating ${food}`);
@@ -346,7 +346,7 @@ class Duck {
   }
 }
 
-// 混入多个功能
+// 
 Object.assign(Duck.prototype, canEat, canWalk, canSwim);
 
 const duck = new Duck('Donald');
@@ -355,18 +355,18 @@ duck.walk();
 duck.swim();
 ```
 
-## this 绑定
+## this 
 
-### 1. this 的四种绑定规则
+### 1. this 
 
 ```javascript
-// 1. 默认绑定
+// 1. 
 function foo() {
-  console.log(this); // 严格模式: undefined, 非严格模式: window
+  console.log(this); // : undefined, : window
 }
 foo();
 
-// 2. 隐式绑定
+// 2. 
 const obj = {
   name: 'Object',
   sayName() {
@@ -375,11 +375,11 @@ const obj = {
 };
 obj.sayName(); // Object
 
-// 隐式绑定丢失
+// 
 const sayName = obj.sayName;
-sayName(); // undefined (严格模式)
+sayName(); // undefined ()
 
-// 3. 显式绑定
+// 3. 
 function greet(greeting) {
   console.log(`${greeting}, ${this.name}`);
 }
@@ -391,7 +391,7 @@ greet.apply(person, ['Hi']);    // Hi, John
 const boundGreet = greet.bind(person, 'Hey');
 boundGreet(); // Hey, John
 
-// 4. new 绑定
+// 4. new 
 function Person(name) {
   this.name = name;
 }
@@ -399,18 +399,18 @@ function Person(name) {
 const p = new Person('Alice');
 console.log(p.name); // Alice
 
-// 箭头函数的 this
+//  this
 const obj2 = {
   name: 'Object2',
   regularFunc() {
     console.log(this.name); // Object2
   },
   arrowFunc: () => {
-    console.log(this.name); // undefined (继承外层作用域)
+    console.log(this.name); // undefined ()
   },
   nested() {
     const arrow = () => {
-      console.log(this.name); // Object2 (继承 nested 的 this)
+      console.log(this.name); // Object2 ( nested  this)
     };
     arrow();
   }
@@ -421,10 +421,10 @@ obj2.arrowFunc();
 obj2.nested();
 ```
 
-### 2. 手写 call、apply、bind
+### 2.  callapplybind
 
 ```javascript
-// 手写 call
+//  call
 Function.prototype.myCall = function(context, ...args) {
   context = context || window;
   const fnSymbol = Symbol();
@@ -434,7 +434,7 @@ Function.prototype.myCall = function(context, ...args) {
   return result;
 };
 
-// 手写 apply
+//  apply
 Function.prototype.myApply = function(context, args) {
   context = context || window;
   const fnSymbol = Symbol();
@@ -444,7 +444,7 @@ Function.prototype.myApply = function(context, args) {
   return result;
 };
 
-// 手写 bind
+//  bind
 Function.prototype.myBind = function(context, ...args) {
   const fn = this;
   return function(...newArgs) {
@@ -452,7 +452,7 @@ Function.prototype.myBind = function(context, ...args) {
   };
 };
 
-// 测试
+// 
 function greet(greeting, punctuation) {
   console.log(`${greeting}, ${this.name}${punctuation}`);
 }
@@ -467,25 +467,25 @@ boundGreet('!!!');
 
 ## Event Loop
 
-### 1. 事件循环机制
+### 1. 
 
 ```javascript
-// 宏任务和微任务
-console.log('1'); // 同步任务
+// 
+console.log('1'); // 
 
 setTimeout(() => {
-  console.log('2'); // 宏任务
+  console.log('2'); // 
 }, 0);
 
 Promise.resolve().then(() => {
-  console.log('3'); // 微任务
+  console.log('3'); // 
 });
 
-console.log('4'); // 同步任务
+console.log('4'); // 
 
-// 输出顺序: 1 4 3 2
+// : 1 4 3 2
 
-// 复杂示例
+// 
 console.log('start');
 
 setTimeout(() => {
@@ -504,7 +504,7 @@ Promise.resolve().then(() => {
 
 console.log('end');
 
-// 输出顺序:
+// :
 // start
 // end
 // promise 2
@@ -513,7 +513,7 @@ console.log('end');
 // setTimeout 2
 ```
 
-### 2. 异步编程
+### 2. 
 
 ```javascript
 // Promise
@@ -543,7 +543,7 @@ async function getData() {
   }
 }
 
-// 并行执行
+// 
 async function fetchMultiple() {
   const [users, posts, comments] = await Promise.all([
     fetchData('/api/users'),
@@ -554,7 +554,7 @@ async function fetchMultiple() {
   return { users, posts, comments };
 }
 
-// 串行执行
+// 
 async function fetchSequential() {
   const users = await fetchData('/api/users');
   const posts = await fetchData('/api/posts');
@@ -563,14 +563,14 @@ async function fetchSequential() {
   return { users, posts, comments };
 }
 
-// Promise 工具函数
+// Promise 
 class PromiseUtils {
-  // 延迟执行
+  // 
   static delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  // 超时控制
+  // 
   static timeout(promise, ms) {
     return Promise.race([
       promise,
@@ -580,7 +580,7 @@ class PromiseUtils {
     ]);
   }
   
-  // 重试
+  // 
   static async retry(fn, maxRetries = 3, delay = 1000) {
     for (let i = 0; i < maxRetries; i++) {
       try {
@@ -592,7 +592,7 @@ class PromiseUtils {
     }
   }
   
-  // 限制并发
+  // 
   static async limit(tasks, concurrency) {
     const results = [];
     const executing = [];
@@ -615,7 +615,7 @@ class PromiseUtils {
   }
 }
 
-// 使用
+// 
 await PromiseUtils.delay(1000);
 
 const result = await PromiseUtils.timeout(
@@ -630,9 +630,9 @@ const data = await PromiseUtils.retry(
 );
 ```
 
-## 模块化
+## 
 
-### 1. ES6 模块
+### 1. ES6 
 
 ```javascript
 // math.js
@@ -662,14 +662,14 @@ console.log(math.PI);
 const calc = new Calculator();
 console.log(calc.add(3, 4));
 
-// 动态导入
+// 
 async function loadModule() {
   const module = await import('./math.js');
   console.log(module.add(5, 6));
 }
 ```
 
-### 2. CommonJS 模块
+### 2. CommonJS 
 
 ```javascript
 // math.js
@@ -693,25 +693,25 @@ console.log(math.add(1, 2));
 console.log(math.PI);
 ```
 
-## 性能优化
+## 
 
-### 1. 代码优化
+### 1. 
 
 ```javascript
-// 避免全局查找
+// 
 function optimized() {
-  const doc = document; // 缓存全局对象
+  const doc = document; // 
   const element = doc.getElementById('myElement');
 }
 
-// 使用事件委托
+// 
 document.getElementById('parent').addEventListener('click', (e) => {
   if (e.target.matches('.child')) {
     console.log('Child clicked');
   }
 });
 
-// 使用 DocumentFragment
+//  DocumentFragment
 function addMultipleElements(items) {
   const fragment = document.createDocumentFragment();
   
@@ -724,13 +724,13 @@ function addMultipleElements(items) {
   document.getElementById('list').appendChild(fragment);
 }
 
-// 使用 requestAnimationFrame
+//  requestAnimationFrame
 function animate() {
-  // 动画逻辑
+  // 
   requestAnimationFrame(animate);
 }
 
-// 使用 Web Workers
+//  Web Workers
 const worker = new Worker('worker.js');
 worker.postMessage({ data: 'heavy computation' });
 worker.onmessage = (e) => {
@@ -738,10 +738,10 @@ worker.onmessage = (e) => {
 };
 ```
 
-### 2. 内存优化
+### 2. 
 
 ```javascript
-// 避免内存泄漏
+// 
 class Component {
   constructor() {
     this.listeners = [];
@@ -753,7 +753,7 @@ class Component {
   }
   
   destroy() {
-    // 清理事件监听器
+    // 
     this.listeners.forEach(({ element, event, handler }) => {
       element.removeEventListener(event, handler);
     });
@@ -761,7 +761,7 @@ class Component {
   }
 }
 
-// 使用 WeakMap 避免内存泄漏
+//  WeakMap 
 const cache = new WeakMap();
 
 function process(obj) {
@@ -775,18 +775,18 @@ function process(obj) {
 }
 ```
 
-## 总结
+## 
 
-掌握JavaScript高级特性需要：
+JavaScript
 
-1. **深入理解核心机制**：闭包、原型链、this、Event Loop
-2. **熟练运用异步编程**：Promise、async/await
-3. **掌握模块化开发**：ES6 模块、CommonJS
-4. **注重性能优化**：代码优化、内存管理
+1. ****thisEvent Loop
+2. ****Promiseasync/await
+3. ****ES6 CommonJS
+4. ****
 
-## 延伸阅读
+## 
 
 - [You Don't Know JS](https://github.com/getify/You-Dont-Know-JS)
-- [JavaScript高级程序设计](https://www.ituring.com.cn/book/2472)
-- [深入理解ES6](https://www.ituring.com.cn/book/1986)
+- [JavaScript](https://www.ituring.com.cn/book/2472)
+- [ES6](https://www.ituring.com.cn/book/1986)
 

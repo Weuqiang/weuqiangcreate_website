@@ -1,44 +1,44 @@
 ---
 sidebar_position: 3
-title: 前端工程化实战
-tags: [前端, 工程化, Webpack, Vite, 构建优化]
+title: 
+tags: [, , Webpack, Vite, ]
 ---
 
-# 前端工程化实战
+# 
 
-前端工程化是现代前端开发的基础，本文将讲解构建工具、代码规范、自动化部署等工程化实践。
 
-## 构建工具对比
+
+## 
 
 ### Webpack vs Vite
 
 ```javascript
 const buildToolComparison = {
   webpack: {
-    principle: '打包所有模块',
-    devServer: '需要打包后才能启动',
-    hmr: '较慢',
-    production: '成熟稳定',
-    ecosystem: '生态丰富',
-    config: '配置复杂',
-    useCase: '大型项目、需要精细控制'
+    principle: '',
+    devServer: '',
+    hmr: '',
+    production: '',
+    ecosystem: '',
+    config: '',
+    useCase: ''
   },
   
   vite: {
-    principle: 'ESM + esbuild预构建',
-    devServer: '即时启动',
-    hmr: '极快',
-    production: 'Rollup打包',
-    ecosystem: '快速发展',
-    config: '配置简单',
-    useCase: '现代浏览器、快速开发'
+    principle: 'ESM + esbuild',
+    devServer: '',
+    hmr: '',
+    production: 'Rollup',
+    ecosystem: '',
+    config: '',
+    useCase: ''
   }
 };
 ```
 
-## Webpack深度配置
+## Webpack
 
-### 基础配置
+### 
 
 ```javascript
 // webpack.config.js
@@ -116,7 +116,7 @@ module.exports = {
         ]
       },
       
-      // 图片
+      // 
       {
         test: /\.(png|jpg|jpeg|gif|svg)$/,
         type: 'asset',
@@ -130,7 +130,7 @@ module.exports = {
         }
       },
       
-      // 字体
+      // 
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/,
         type: 'asset/resource',
@@ -180,7 +180,7 @@ module.exports = {
 };
 ```
 
-### 性能优化配置
+### 
 
 ```javascript
 // webpack.prod.js
@@ -195,7 +195,7 @@ module.exports = {
   optimization: {
     minimize: true,
     minimizer: [
-      // JS压缩
+      // JS
       new TerserPlugin({
         parallel: true,
         terserOptions: {
@@ -206,11 +206,11 @@ module.exports = {
         }
       }),
       
-      // CSS压缩
+      // CSS
       new CssMinimizerPlugin()
     ],
     
-    // 代码分割
+    // 
     splitChunks: {
       chunks: 'all',
       minSize: 20000,
@@ -219,28 +219,28 @@ module.exports = {
       maxAsyncRequests: 30,
       maxInitialRequests: 30,
       cacheGroups: {
-        // React相关
+        // React
         react: {
           test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom)[\\/]/,
           name: 'react-vendor',
           priority: 20
         },
         
-        // UI库
+        // UI
         antd: {
           test: /[\\/]node_modules[\\/]antd[\\/]/,
           name: 'antd-vendor',
           priority: 15
         },
         
-        // 其他第三方库
+        // 
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name: 'vendor',
           priority: 10
         },
         
-        // 公共代码
+        // 
         common: {
           minChunks: 2,
           priority: 5,
@@ -251,7 +251,7 @@ module.exports = {
   },
   
   plugins: [
-    // Gzip压缩
+    // Gzip
     new CompressionPlugin({
       algorithm: 'gzip',
       test: /\.(js|css|html|svg)$/,
@@ -259,7 +259,7 @@ module.exports = {
       minRatio: 0.8
     }),
     
-    // 打包分析
+    // 
     new BundleAnalyzerPlugin({
       analyzerMode: 'static',
       openAnalyzer: false,
@@ -275,9 +275,9 @@ module.exports = {
 };
 ```
 
-## Vite配置
+## Vite
 
-### 基础配置
+### 
 
 ```javascript
 // vite.config.js
@@ -339,7 +339,7 @@ export default defineConfig({
 });
 ```
 
-### 性能优化
+### 
 
 ```javascript
 // vite.config.js
@@ -352,13 +352,13 @@ export default defineConfig({
   plugins: [
     react(),
     
-    // Gzip压缩
+    // Gzip
     viteCompression({
       algorithm: 'gzip',
       ext: '.gz'
     }),
     
-    // 打包分析
+    // 
     visualizer({
       open: true,
       gzipSize: true,
@@ -369,23 +369,23 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // 代码分割
+        // 
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // 按包名分割
+            // 
             return id.toString().split('node_modules/')[1].split('/')[0].toString();
           }
         }
       }
     },
     
-    // 启用CSS代码分割
+    // CSS
     cssCodeSplit: true,
     
-    // 构建目标
+    // 
     target: 'es2015',
     
-    // 压缩选项
+    // 
     minify: 'terser',
     terserOptions: {
       compress: {
@@ -395,7 +395,7 @@ export default defineConfig({
     }
   },
   
-  // 依赖预构建
+  // 
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
     exclude: ['@vite/client', '@vite/env']
@@ -403,9 +403,9 @@ export default defineConfig({
 });
 ```
 
-## 代码规范
+## 
 
-### ESLint配置
+### ESLint
 
 ```javascript
 // .eslintrc.js
@@ -460,7 +460,7 @@ module.exports = {
 };
 ```
 
-### Prettier配置
+### Prettier
 
 ```javascript
 // .prettierrc.js
@@ -512,7 +512,7 @@ module.exports = {
 npx lint-staged
 ```
 
-## 自动化部署
+## 
 
 ### GitHub Actions
 
@@ -556,7 +556,7 @@ jobs:
           publish_dir: ./dist
 ```
 
-### Docker部署
+### Docker
 
 ```dockerfile
 # Dockerfile
@@ -599,21 +599,21 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
     }
     
-    # 静态资源缓存
+    # 
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
     
-    # Gzip压缩
+    # Gzip
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 }
 ```
 
-## 性能监控
+## 
 
-### 性能指标收集
+### 
 
 ```javascript
 // performance.js
@@ -622,7 +622,7 @@ class PerformanceMonitor {
     this.metrics = {};
   }
   
-  // 收集性能指标
+  // 
   collectMetrics() {
     if (!window.performance) return;
     
@@ -630,42 +630,42 @@ class PerformanceMonitor {
     const paint = performance.getEntriesByType('paint');
     
     this.metrics = {
-      // DNS查询时间
+      // DNS
       dns: navigation.domainLookupEnd - navigation.domainLookupStart,
       
-      // TCP连接时间
+      // TCP
       tcp: navigation.connectEnd - navigation.connectStart,
       
-      // 请求时间
+      // 
       request: navigation.responseStart - navigation.requestStart,
       
-      // 响应时间
+      // 
       response: navigation.responseEnd - navigation.responseStart,
       
-      // DOM解析时间
+      // DOM
       domParse: navigation.domInteractive - navigation.responseEnd,
       
-      // 资源加载时间
+      // 
       resourceLoad: navigation.loadEventStart - navigation.domContentLoadedEventEnd,
       
-      // 首次绘制
+      // 
       fp: paint.find(p => p.name === 'first-paint')?.startTime,
       
-      // 首次内容绘制
+      // 
       fcp: paint.find(p => p.name === 'first-contentful-paint')?.startTime,
       
-      // 页面完全加载时间
+      // 
       loadTime: navigation.loadEventEnd - navigation.fetchStart
     };
     
     return this.metrics;
   }
   
-  // 上报性能数据
+  // 
   report() {
     const metrics = this.collectMetrics();
     
-    // 发送到监控服务
+    // 
     fetch('/api/performance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -679,7 +679,7 @@ class PerformanceMonitor {
   }
 }
 
-// 使用
+// 
 const monitor = new PerformanceMonitor();
 window.addEventListener('load', () => {
   setTimeout(() => monitor.report(), 0);
@@ -699,7 +699,7 @@ function sendToAnalytics(metric) {
     url: window.location.href
   });
   
-  // 使用sendBeacon确保数据发送
+  // sendBeacon
   if (navigator.sendBeacon) {
     navigator.sendBeacon('/api/analytics', body);
   } else {
@@ -711,22 +711,22 @@ function sendToAnalytics(metric) {
   }
 }
 
-// 收集核心Web指标
-getCLS(sendToAnalytics);  // 累积布局偏移
-getFID(sendToAnalytics);  // 首次输入延迟
-getFCP(sendToAnalytics);  // 首次内容绘制
-getLCP(sendToAnalytics);  // 最大内容绘制
-getTTFB(sendToAnalytics); // 首字节时间
+// Web
+getCLS(sendToAnalytics);  // 
+getFID(sendToAnalytics);  // 
+getFCP(sendToAnalytics);  // 
+getLCP(sendToAnalytics);  // 
+getTTFB(sendToAnalytics); // 
 ```
 
-## 总结
+## 
 
-前端工程化的核心：
-- 🛠️ **构建工具**：Webpack深度配置、Vite快速开发
-- 📏 **代码规范**：ESLint、Prettier、Husky
-- 🚀 **自动化部署**：CI/CD、Docker容器化
-- 📊 **性能监控**：性能指标、Web Vitals
-- 🔧 **优化策略**：代码分割、压缩、缓存
 
-记住：**工程化是提升开发效率和代码质量的关键！**
+-  ****WebpackVite
+-  ****ESLintPrettierHusky
+-  ****CI/CDDocker
+-  ****Web Vitals
+-  ****
+
+****
 

@@ -1,81 +1,81 @@
 ---
 sidebar_position: 2
-title: MongoDB - 灵活的文档数据库
+title: MongoDB - 
 ---
 
-# MongoDB - NoSQL文档数据库
+# MongoDB - NoSQL
 
-MongoDB是最流行的NoSQL文档数据库。这一章教你**用MongoDB构建灵活的应用**。
+MongoDBNoSQL**MongoDB**
 
-## 第一部分：MongoDB基础
+## MongoDB
 
-### 为什么选择MongoDB？
+### MongoDB
 
-**关系型数据库的痛点**：
+****
 ```sql
--- 需求变更：用户表要加个爱好字段
+-- 
 ALTER TABLE users ADD COLUMN hobbies TEXT;
--- 问题：所有旧数据都要更新，表结构固定
+-- 
 ```
 
-**MongoDB的优势**：
+**MongoDB**
 ```javascript
-// 灵活的schema，每个文档可以不同
+// schema
 db.users.insertOne({
     name: "Alice",
     age: 25,
-    hobbies: ["reading", "coding"]  // 数组字段
+    hobbies: ["reading", "coding"]  // 
 });
 
 db.users.insertOne({
     name: "Bob",
     age: 30
-    // 没有hobbies字段也可以
+    // hobbies
 });
 ```
 
-### 安装和连接
+### 
 
-**Docker方式**：
+**Docker**
 ```bash
-# 启动MongoDB
+# MongoDB
 docker run -d --name mongodb \
   -p 27017:27017 \
   mongo:latest
 
-# 进入MongoDB Shell
+# MongoDB Shell
 docker exec -it mongodb mongosh
 ```
 
-**Python连接**：
+**Python**
 ```python
 from pymongo import MongoClient
 
-# 连接MongoDB
+# MongoDB
 client = MongoClient('mongodb://localhost:27017/')
 
-# 选择数据库
+# 
 db = client['ecommerce']
 
-# 选择集合（相当于表）
+# 
 users = db['users']
 ```
 
-### 基本概念
+### 
 
 ```
 MySQL          MongoDB
-数据库         数据库
-表             集合（Collection）
-行             文档（Document）
-列             字段（Field）
-索引           索引
-表连接         嵌入文档或引用
+         
+             Collection
+             Document
+             Field
+           
+         
 ```
 
-## 第二部分：CRUD操作
+## CRUD
 
-### 插入文档
+### 
 
 ```python
 from pymongo import MongoClient
@@ -85,7 +85,7 @@ client = MongoClient('mongodb://localhost:27017/')
 db = client['ecommerce']
 users = db['users']
 
-# 插入单个文档
+# 
 user = {
     "username": "alice",
     "email": "alice@example.com",
@@ -99,139 +99,139 @@ user = {
     "created_at": datetime.now()
 }
 result = users.insert_one(user)
-print(f"插入的ID: {result.inserted_id}")
+print(f"ID: {result.inserted_id}")
 
-# 插入多个文档
+# 
 users_list = [
     {"username": "bob", "age": 30, "gender": "M"},
     {"username": "charlie", "age": 28, "gender": "M"},
     {"username": "diana", "age": 26, "gender": "F"}
 ]
 result = users.insert_many(users_list)
-print(f"插入的IDs: {result.inserted_ids}")
+print(f"IDs: {result.inserted_ids}")
 ```
 
-### 查询文档
+### 
 
 ```python
-# 查询所有文档
+# 
 for user in users.find():
     print(user)
 
-# 条件查询
-# 等于
+# 
+# 
 for user in users.find({"age": 25}):
     print(user)
 
-# 大于
+# 
 for user in users.find({"age": {"$gt": 25}}):
     print(user)
 
-# 范围查询
+# 
 for user in users.find({"age": {"$gte": 20, "$lte": 30}}):
     print(user)
 
-# IN查询
+# IN
 for user in users.find({"username": {"$in": ["alice", "bob"]}}):
     print(user)
 
-# 正则表达式
+# 
 for user in users.find({"username": {"$regex": "^a"}}):
     print(user)
 
-# AND查询
+# AND
 for user in users.find({"age": {"$gt": 25}, "gender": "F"}):
     print(user)
 
-# OR查询
+# OR
 for user in users.find({"$or": [{"age": {"$lt": 20}}, {"age": {"$gt": 30}}]}):
     print(user)
 
-# 嵌套文档查询
+# 
 for user in users.find({"address.city": "Beijing"}):
     print(user)
 
-# 数组查询
+# 
 for user in users.find({"hobbies": "coding"}):
     print(user)
 
-# 数组包含所有元素
+# 
 for user in users.find({"hobbies": {"$all": ["reading", "coding"]}}):
     print(user)
 
-# 投影（只返回指定字段）
+# 
 for user in users.find({}, {"username": 1, "age": 1, "_id": 0}):
     print(user)
 
-# 排序
-for user in users.find().sort("age", -1):  # -1降序，1升序
+# 
+for user in users.find().sort("age", -1):  # -11
     print(user)
 
-# 限制结果
+# 
 for user in users.find().limit(10):
     print(user)
 
-# 跳过结果（分页）
+# 
 for user in users.find().skip(10).limit(10):
     print(user)
 
-# 计数
+# 
 count = users.count_documents({"age": {"$gt": 25}})
-print(f"年龄大于25的用户数: {count}")
+print(f"25: {count}")
 
-# 查询单个文档
+# 
 user = users.find_one({"username": "alice"})
 print(user)
 ```
 
-### 更新文档
+### 
 
 ```python
-# 更新单个文档
+# 
 users.update_one(
     {"username": "alice"},
     {"$set": {"age": 26}}
 )
 
-# 更新多个文档
+# 
 users.update_many(
     {"gender": "M"},
     {"$set": {"updated": True}}
 )
 
-# 增加数值
+# 
 users.update_one(
     {"username": "alice"},
-    {"$inc": {"age": 1}}  # age加1
+    {"$inc": {"age": 1}}  # age1
 )
 
-# 数组操作
-# 添加元素
+# 
+# 
 users.update_one(
     {"username": "alice"},
     {"$push": {"hobbies": "swimming"}}
 )
 
-# 添加多个元素
+# 
 users.update_one(
     {"username": "alice"},
     {"$push": {"hobbies": {"$each": ["gaming", "music"]}}}
 )
 
-# 删除元素
+# 
 users.update_one(
     {"username": "alice"},
     {"$pull": {"hobbies": "gaming"}}
 )
 
-# 更新或插入（upsert）
+# upsert
 users.update_one(
     {"username": "eve"},
     {"$set": {"age": 22, "gender": "F"}},
     upsert=True
 )
 
-# 替换整个文档
+# 
 users.replace_one(
     {"username": "alice"},
     {
@@ -242,33 +242,33 @@ users.replace_one(
 )
 ```
 
-### 删除文档
+### 
 
 ```python
-# 删除单个文档
+# 
 users.delete_one({"username": "alice"})
 
-# 删除多个文档
+# 
 users.delete_many({"age": {"$lt": 18}})
 
-# 删除所有文档
+# 
 users.delete_many({})
 
-# 删除集合
+# 
 users.drop()
 ```
 
-## 第三部分：聚合管道
+## 
 
-### 聚合基础
+### 
 
 ```python
-# 聚合管道：类似于SQL的GROUP BY
+# SQLGROUP BY
 pipeline = [
-    # $match：过滤文档（WHERE）
+    # $matchWHERE
     {"$match": {"age": {"$gte": 20}}},
     
-    # $group：分组聚合（GROUP BY）
+    # $groupGROUP BY
     {"$group": {
         "_id": "$gender",
         "count": {"$sum": 1},
@@ -277,10 +277,10 @@ pipeline = [
         "min_age": {"$min": "$age"}
     }},
     
-    # $sort：排序（ORDER BY）
+    # $sortORDER BY
     {"$sort": {"count": -1}},
     
-    # $limit：限制结果
+    # $limit
     {"$limit": 10}
 ]
 
@@ -289,13 +289,13 @@ for doc in result:
     print(doc)
 ```
 
-### 复杂聚合示例
+### 
 
 ```python
-# 创建订单集合
+# 
 orders = db['orders']
 
-# 插入测试数据
+# 
 orders.insert_many([
     {
         "user_id": "user1",
@@ -327,7 +327,7 @@ orders.insert_many([
     }
 ])
 
-# 用户订单统计
+# 
 pipeline = [
     {"$match": {"status": "completed"}},
     {"$group": {
@@ -342,10 +342,10 @@ pipeline = [
 for doc in orders.aggregate(pipeline):
     print(doc)
 
-# 商品销售统计
+# 
 pipeline = [
     {"$match": {"status": "completed"}},
-    {"$unwind": "$items"},  # 展开数组
+    {"$unwind": "$items"},  # 
     {"$group": {
         "_id": "$items.product",
         "total_quantity": {"$sum": "$items.quantity"},
@@ -357,7 +357,7 @@ pipeline = [
 for doc in orders.aggregate(pipeline):
     print(doc)
 
-# 按月统计销售额
+# 
 pipeline = [
     {"$match": {"status": "completed"}},
     {"$group": {
@@ -374,7 +374,7 @@ pipeline = [
 for doc in orders.aggregate(pipeline):
     print(doc)
 
-# $lookup：关联查询（类似JOIN）
+# $lookupJOIN
 pipeline = [
     {"$lookup": {
         "from": "users",
@@ -395,59 +395,59 @@ for doc in orders.aggregate(pipeline):
     print(doc)
 ```
 
-## 第四部分：索引优化
+## 
 
-### 创建索引
+### 
 
 ```python
-# 单字段索引
+# 
 users.create_index("username")
 
-# 复合索引
-users.create_index([("age", 1), ("gender", 1)])  # 1升序，-1降序
+# 
+users.create_index([("age", 1), ("gender", 1)])  # 1-1
 
-# 唯一索引
+# 
 users.create_index("email", unique=True)
 
-# 文本索引（全文搜索）
+# 
 users.create_index([("bio", "text")])
 
-# 地理空间索引
+# 
 locations = db['locations']
 locations.create_index([("location", "2dsphere")])
 
-# 查看索引
+# 
 for index in users.list_indexes():
     print(index)
 
-# 删除索引
+# 
 users.drop_index("username_1")
 
-# 删除所有索引
+# 
 users.drop_indexes()
 ```
 
-### 查询性能分析
+### 
 
 ```python
-# 查看执行计划
+# 
 explain = users.find({"age": {"$gt": 25}}).explain()
 print(explain)
 
-# 查看执行统计
+# 
 explain = users.find({"age": {"$gt": 25}}).explain("executionStats")
-print(f"扫描文档数: {explain['executionStats']['totalDocsExamined']}")
-print(f"返回文档数: {explain['executionStats']['nReturned']}")
-print(f"执行时间: {explain['executionStats']['executionTimeMillis']}ms")
+print(f": {explain['executionStats']['totalDocsExamined']}")
+print(f": {explain['executionStats']['nReturned']}")
+print(f": {explain['executionStats']['executionTimeMillis']}ms")
 ```
 
-## 第五部分：数据建模
+## 
 
-### 嵌入式文档 vs 引用
+###  vs 
 
-**嵌入式文档**（适合一对一、一对少）：
+****
 ```python
-# 用户和地址（一对一）
+# 
 user = {
     "username": "alice",
     "email": "alice@example.com",
@@ -459,7 +459,7 @@ user = {
 }
 users.insert_one(user)
 
-# 博客文章和评论（一对少）
+# 
 post = {
     "title": "MongoDB Tutorial",
     "content": "...",
@@ -472,9 +472,9 @@ posts = db['posts']
 posts.insert_one(post)
 ```
 
-**引用**（适合一对多、多对多）：
+****
 ```python
-# 用户和订单（一对多）
+# 
 user = {
     "_id": "user1",
     "username": "alice"
@@ -482,20 +482,20 @@ user = {
 users.insert_one(user)
 
 order = {
-    "user_id": "user1",  # 引用用户ID
+    "user_id": "user1",  # ID
     "total": 100,
     "items": [...]
 }
 orders.insert_one(order)
 
-# 查询时需要手动关联
+# 
 user = users.find_one({"_id": "user1"})
 user_orders = list(orders.find({"user_id": user["_id"]}))
 ```
 
-## 第六部分：实战项目
+## 
 
-### 项目：内容管理系统
+### 
 
 ```python
 from pymongo import MongoClient
@@ -503,7 +503,7 @@ from datetime import datetime
 from bson import ObjectId
 
 class CMS:
-    """内容管理系统"""
+    """"""
     
     def __init__(self):
         self.client = MongoClient('mongodb://localhost:27017/')
@@ -512,14 +512,14 @@ class CMS:
         self.users = self.db['users']
         self.comments = self.db['comments']
         
-        # 创建索引
+        # 
         self.articles.create_index("title")
         self.articles.create_index([("content", "text")])
         self.articles.create_index("author_id")
         self.articles.create_index("created_at")
     
     def create_article(self, title, content, author_id, tags=None):
-        """创建文章"""
+        """"""
         article = {
             "title": title,
             "content": content,
@@ -534,8 +534,8 @@ class CMS:
         return result.inserted_id
     
     def get_article(self, article_id):
-        """获取文章"""
-        # 增加浏览量
+        """"""
+        # 
         self.articles.update_one(
             {"_id": ObjectId(article_id)},
             {"$inc": {"views": 1}}
@@ -543,34 +543,34 @@ class CMS:
         
         article = self.articles.find_one({"_id": ObjectId(article_id)})
         
-        # 获取作者信息
+        # 
         if article:
             author = self.users.find_one({"_id": article["author_id"]})
             article["author"] = author
             
-            # 获取评论
+            # 
             comments = list(self.comments.find({"article_id": article_id}))
             article["comments"] = comments
         
         return article
     
     def search_articles(self, keyword):
-        """全文搜索"""
+        """"""
         return list(self.articles.find(
             {"$text": {"$search": keyword}},
             {"score": {"$meta": "textScore"}}
         ).sort([("score", {"$meta": "textScore"})]))
     
     def get_popular_articles(self, limit=10):
-        """获取热门文章"""
+        """"""
         return list(self.articles.find().sort("views", -1).limit(limit))
     
     def get_articles_by_tag(self, tag):
-        """按标签查询"""
+        """"""
         return list(self.articles.find({"tags": tag}))
     
     def add_comment(self, article_id, user_id, content):
-        """添加评论"""
+        """"""
         comment = {
             "article_id": article_id,
             "user_id": user_id,
@@ -580,18 +580,18 @@ class CMS:
         return self.comments.insert_one(comment).inserted_id
     
     def like_article(self, article_id):
-        """点赞文章"""
+        """"""
         self.articles.update_one(
             {"_id": ObjectId(article_id)},
             {"$inc": {"likes": 1}}
         )
     
     def get_user_articles(self, user_id):
-        """获取用户的所有文章"""
+        """"""
         return list(self.articles.find({"author_id": user_id}).sort("created_at", -1))
     
     def get_statistics(self):
-        """统计信息"""
+        """"""
         pipeline = [
             {"$group": {
                 "_id": None,
@@ -603,47 +603,47 @@ class CMS:
         ]
         return list(self.articles.aggregate(pipeline))[0]
 
-# 使用示例
+# 
 cms = CMS()
 
-# 创建用户
+# 
 user_id = cms.users.insert_one({
     "username": "alice",
     "email": "alice@example.com"
 }).inserted_id
 
-# 创建文章
+# 
 article_id = cms.create_article(
-    title="MongoDB入门教程",
-    content="MongoDB是一个强大的NoSQL数据库...",
+    title="MongoDB",
+    content="MongoDBNoSQL...",
     author_id=user_id,
     tags=["mongodb", "database", "nosql"]
 )
 
-# 获取文章
+# 
 article = cms.get_article(str(article_id))
-print(f"文章标题: {article['title']}")
-print(f"浏览量: {article['views']}")
+print(f": {article['title']}")
+print(f": {article['views']}")
 
-# 搜索文章
+# 
 results = cms.search_articles("MongoDB")
-print(f"搜索结果: {len(results)}篇")
+print(f": {len(results)}")
 
-# 添加评论
-cms.add_comment(str(article_id), user_id, "很好的教程！")
+# 
+cms.add_comment(str(article_id), user_id, "")
 
-# 点赞
+# 
 cms.like_article(str(article_id))
 
-# 统计信息
+# 
 stats = cms.get_statistics()
-print(f"总文章数: {stats['total_articles']}")
-print(f"总浏览量: {stats['total_views']}")
+print(f": {stats['total_articles']}")
+print(f": {stats['total_views']}")
 ```
 
-## 第七部分：高级特性
+## 
 
-### 事务（MongoDB 4.0+）
+### MongoDB 4.0+
 
 ```python
 from pymongo import MongoClient
@@ -651,58 +651,58 @@ from pymongo import MongoClient
 client = MongoClient('mongodb://localhost:27017/')
 db = client['ecommerce']
 
-# 开始事务
+# 
 with client.start_session() as session:
     with session.start_transaction():
         try:
-            # 扣减库存
+            # 
             db.products.update_one(
                 {"_id": "product1"},
                 {"$inc": {"stock": -1}},
                 session=session
             )
             
-            # 创建订单
+            # 
             db.orders.insert_one(
                 {"product_id": "product1", "quantity": 1},
                 session=session
             )
             
-            # 提交事务
+            # 
             session.commit_transaction()
         except Exception as e:
-            # 回滚事务
+            # 
             session.abort_transaction()
-            print(f"事务失败: {e}")
+            print(f": {e}")
 ```
 
-### 变更流（Change Streams）
+### Change Streams
 
 ```python
-# 监听集合变化
+# 
 with users.watch() as stream:
     for change in stream:
-        print(f"变更类型: {change['operationType']}")
-        print(f"文档: {change['fullDocument']}")
+        print(f": {change['operationType']}")
+        print(f": {change['fullDocument']}")
 ```
 
-## 总结
+## 
 
-MongoDB是灵活的NoSQL数据库：
+MongoDBNoSQL
 
-1. **灵活Schema**：文档可以有不同结构
-2. **强大查询**：聚合管道、全文搜索
-3. **水平扩展**：分片集群
-4. **高性能**：内存映射、索引优化
+1. **Schema**
+2. ****
+3. ****
+4. ****
 
-记住：**MongoDB适合快速迭代、灵活数据的场景**！
+**MongoDB**
 
-## 练习题
+## 
 
-1. 设计一个社交网络的数据模型
-2. 实现复杂的聚合查询
-3. 优化查询性能
-4. 搭建MongoDB副本集
+1. 
+2. 
+3. 
+4. MongoDB
 
-下一章：[Redis缓存数据库](./redis.mdx)
+[Redis](./redis.mdx)
 

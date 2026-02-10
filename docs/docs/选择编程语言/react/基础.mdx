@@ -1,9 +1,9 @@
 
-# 基础
+# 
 
-## 组件
+## 
 
-React组件包括class组件和函数组件。
+Reactclass
 
 ``` jsx live 
 class Welcome extends React.Component {
@@ -23,51 +23,51 @@ function Hello(props) {
 }
 ```
 
-当组件内部`state`改变或`props`地址改变的时候组件会重新渲染，并且对于非纯组件来说，父组件的渲染也会引起子组件的渲染。
+`state``props`
 
-我们可以使用`React.PureComponent`或`React.memo`实现纯组件。
+`React.PureComponent``React.memo`
 
 ``` jsx
-class Akara extends React.PureComponent { // 纯类组件
+class Akara extends React.PureComponent { // 
     // ...
 }
 
-const App = React.memo(() => <div>akara</div>) // 纯函数组件
+const App = React.memo(() => <div>akara</div>) // 
 ```
 
 
-### 状态
+### 
 
-在类组件中通过`this.setState`修改数据。
+`this.setState`
 
 ``` js
 this.setState({name: 'aka'})
 ```
 
 ``` jsx
-this.state = Object.assign(this.state, { name: 'aka' }) // 简单地理解
+this.state = Object.assign(this.state, { name: 'aka' }) // 
 ```
 
-通常状态的更新是**异步**的。
+****
 
 ``` tsx
 this.setState({
-    count: 1 // 假设原始值为0
+    count: 1 // 0
 })
-console.log(this.state.count) // 输出0而不是1
+console.log(this.state.count) // 01
 ```
 
-想要获取修改后的值，我们可以传一个回调函数给`setState`
+`setState`
 
 ``` javascript
 this.setState({
     count: 1
 }, () => {
-    console.log(this.state.count) // 输出1
+    console.log(this.state.count) // 1
 })
 ```
 
-如果`setState`依赖之前的State，`setState`的参数可以为函数
+`setState`State`setState`
 
 ``` jsx
 this.setState((state, props) => {
@@ -77,15 +77,15 @@ this.setState((state, props) => {
 })
 ```
 
-事实上，在**合成事件**和**组件的生命周期**中`setState`是异步的；而在**原生事件**和**定时器**中`setState`是同步的。
+********`setState`********`setState`
 
-这是因为，React内部维护了一个标识：`isBatchingUpdates`。在**合成事件**和**组件的生命周期**中，该值为`true`，那么`setState`会被缓存进队列，最后才批量更新；而在**原生事件**和**定时器**中，该值为`false`，调用`setState`时会直接同步更新。
+React`isBatchingUpdates`********`true``setState`********`false``setState`
 
 
 
-### 事件
+### 
 
-React中的`event`是**合成事件**，我们无需担心任何浏览器的兼容性问题。
+React`event`****
 
 ``` jsx
 <button onClick={this.handleClick}>
@@ -93,20 +93,20 @@ React中的`event`是**合成事件**，我们无需担心任何浏览器的兼�
 </button>
 ```
 
-我们有几种方式绑定事件。
+
 
 ``` tsx
-// 方法一
+// 
 constructor() {
     this.handlerClick = this.handlerClick.bind(this)
 }
 
-// 方法二
+// 
 <button onClick={(e) => this.handleClick(e)}>
     Click me
 </button>
 
-// 方法三
+// 
 class Btn extends React.component {
     handlerClick = (e) => {
         console.log(this)
@@ -122,18 +122,18 @@ class Btn extends React.component {
 }
 ```
 
-### 生命周期
+### 
 
-详细的生命周期可以参考[该链接](http://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/)
+[](http://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/)
 
 
 
 ## Form
 
-React把表单元素分为**受控组件**和**非受控组件**，默认的`input`元素被视为非受控组件，此时我们通常会给`defaultValue`属性；当我们给`input`元素加上`value`和`onChange`属性时该元素被视为受控组件，此时`input`元素的内部值完全由我们的状态控制。
+React********`input``defaultValue``input``value``onChange``input`
 
 ``` jsx
-// 受控组件
+// 
 handleChange = (e) => {
     this.setState({
         name: e.target.value.toUpperCase()
@@ -149,7 +149,7 @@ render() {
 
 ## Ref and forwardRef
 
-使用现代框架的一大特点是基于数据驱动的页面渲染，避免了复杂的DOM操作。有的时候我们就是想使用DOM，此时可以使用`ref`。
+DOMDOM`ref`
 
 ``` javascript
 class App extends React.Component {
@@ -166,14 +166,14 @@ class App extends React.Component {
         return (
             <div>
                 <input type="text" ref={this.myRef} />
-                <button onClick={this.handleClick}>点我</button>
+                <button onClick={this.handleClick}></button>
             </div>
         )
     }
 }
 ```
 
-对于一个`FancyButton`组件，我们或许希望能用`ref`拿到组件内部的元素，此时可以使用**Refs转发**。
+`FancyButton``ref`**Refs**
 
 ``` jsx
 const FancyButton = React.forwardRef((props, ref) => {
@@ -187,9 +187,9 @@ const FancyButton = React.forwardRef((props, ref) => {
 
 ## Context
 
-Context 设计目的是为了共享那些对于一个组件树而言是“全局”的数据，例如当前认证的用户、主题或首选语言。
+Context “”
 
-### 类组件
+### 
 
 ``` jsx 
 const ThemeContext = React.createContext("akara");
@@ -212,7 +212,7 @@ class Test extends React.Component {
 
 ```
 
-### 函数式组件
+### 
 
 ``` js
 const ThemeContext = React.createContext("akara");
@@ -258,10 +258,10 @@ function App() {
 
 ## Hight-Order Components
 
-高阶组件是参数为组件，返回值为新组件的函数。
+
 
 ``` js
-// 官网例子
+// 
 function App () {
     const MouseWithCat = withMouse(Cat)
     return (
@@ -294,7 +294,7 @@ function withMouse(WrappedComponent) {
 
         return (
             <div style={{height: '100vh'}} onMouseMove={move}>
-                鼠标的位置：{ point.x } , { point.y }
+                { point.x } , { point.y }
                 <WrappedComponent mouse={point} />
             </div>
         )
@@ -305,7 +305,7 @@ function withMouse(WrappedComponent) {
 ## Render Props
 
 ``` js
-// 官网例子
+// 
 function App () {
     return (
         <Mouse render={point =>
@@ -339,7 +339,7 @@ function Mouse(props) {
 
     return (
         <div style={{height: '100vh'}} onMouseMove={move}>
-            鼠标的位置：{ point.x } , { point.y }
+            { point.x } , { point.y }
             {props.render(point)}
         </div>
     )
@@ -348,9 +348,9 @@ function Mouse(props) {
 
 ## Error Boundary
 
-当某个组件抛出异常时，开发模式下能在页面看到错误信息，而生产模式下整个页面都白屏了。**在生产模式下**为了避免某个组件的错误让整个应用都塌陷，我们可以使用`Error Boundary`组件来捕捉和打印组件内部的异常信息，并提供页面的降级处理。
+****`Error Boundary`
 
-一个类组件被视为错误边界组件的前提是我们给该组件定义了`static getDerivedStateFromError() `或`componentDidCatch()`，通常我们会同时提供这两个方法。`static getDerivedStateFromError() `的作用是当出现异常时提供降级UI，`componentDidCatch()`内部通常用来打印错误日志。
+`static getDerivedStateFromError() ``componentDidCatch()``static getDerivedStateFromError() `UI`componentDidCatch()`
 
 ``` js
 class ErrorBoundary extends React.Component {
@@ -391,7 +391,7 @@ const App = () => {
     return (
         <>
             {count}
-            <div onClick={handleClick}>点击</div>
+            <div onClick={handleClick}></div>
         </>
     );
 };

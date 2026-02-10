@@ -1,13 +1,13 @@
 ---
 sidebar_position: 7
-title: 分支和跳转
+title: 
 ---
 
-# 分支和跳转
+# 
 
-## if语句
+## if
 
-### 基本if语句
+### if
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -23,7 +23,7 @@ int main() {
 }
 ```
 
-### if-else语句
+### if-else
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -41,7 +41,7 @@ int main() {
 }
 ```
 
-### if-else if-else语句
+### if-else if-else
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -65,7 +65,7 @@ int main() {
 }
 ```
 
-### 嵌套if语句
+### if
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -88,7 +88,7 @@ int main() {
 }
 ```
 
-### 条件运算符（三目运算符）
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -96,7 +96,7 @@ int main() {
 int main() {
     int a = 10, b = 20;
     
-    // 使用if-else
+    // if-else
     int max1;
     if (a > b) {
         max1 = a;
@@ -104,7 +104,7 @@ int main() {
         max1 = b;
     }
     
-    // 使用条件运算符（更简洁）
+    // 
     int max2 = (a > b) ? a : b;
     
     printf("max1 = %d\n", max1);
@@ -114,9 +114,9 @@ int main() {
 }
 ```
 
-### 常见陷阱
+### 
 
-#### 1. 赋值与比较
+#### 1. 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -124,13 +124,13 @@ int main() {
 int main() {
     int x = 5;
     
-    // 错误：使用了赋值运算符
-    if (x = 10) {  // 应该是 x == 10
-        printf("x is 10\n");  // 总是执行
+    // 
+    if (x = 10) {  //  x == 10
+        printf("x is 10\n");  // 
     }
     printf("x = %d\n", x);  // x = 10
     
-    // 正确
+    // 
     if (x == 10) {
         printf("x is 10\n");
     }
@@ -139,7 +139,7 @@ int main() {
 }
 ```
 
-#### 2. 浮点数比较
+#### 2. 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -149,14 +149,14 @@ int main() {
     double a = 0.1 + 0.2;
     double b = 0.3;
     
-    // 错误的比较方式
+    // 
     if (a == b) {
         printf("Equal\n");
     } else {
-        printf("Not equal\n");  // 会输出这个
+        printf("Not equal\n");  // 
     }
     
-    // 正确的比较方式
+    // 
     double epsilon = 1e-10;
     if (fabs(a - b) < epsilon) {
         printf("Approximately equal\n");
@@ -166,7 +166,7 @@ int main() {
 }
 ```
 
-#### 3. 悬空else
+#### 3. else
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -174,14 +174,14 @@ int main() {
 int main() {
     int x = 5, y = 10;
     
-    // 容易产生歧义
+    // 
     if (x > 0)
         if (y > 0)
             printf("Both positive\n");
-    else  // 这个else属于哪个if？
+    else  // elseif
         printf("x is not positive\n");
     
-    // 使用大括号明确范围（推荐）
+    // 
     if (x > 0) {
         if (y > 0) {
             printf("Both positive\n");
@@ -194,9 +194,9 @@ int main() {
 }
 ```
 
-## switch语句
+## switch
 
-### 基本switch语句
+### switch
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -235,7 +235,7 @@ int main() {
 }
 ```
 
-### switch的穿透特性
+### switch
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -267,7 +267,7 @@ int main() {
 }
 ```
 
-### 字符switch
+### switch
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -311,15 +311,15 @@ int main() {
 
 ### switch vs if-else
 
-**使用switch的场景：**
-- 多个离散的整数或字符值
-- 代码更清晰易读
-- 编译器可能优化为跳转表
+**switch**
+- 
+- 
+- 
 
-**使用if-else的场景：**
-- 范围判断
-- 复杂条件
-- 浮点数比较
+**if-else**
+- 
+- 
+- 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -327,7 +327,7 @@ int main() {
 int main() {
     int score = 85;
     
-    // 使用if-else（适合范围判断）
+    // if-else
     if (score >= 90) {
         printf("A\n");
     } else if (score >= 80) {
@@ -336,7 +336,7 @@ int main() {
         printf("C\n");
     }
     
-    // 使用switch（适合离散值）
+    // switch
     int choice = 2;
     switch (choice) {
         case 1:
@@ -354,68 +354,68 @@ int main() {
 }
 ```
 
-## 循环中的break和continue
+## breakcontinue
 
-### break语句
+### break
 
-`break`用于立即退出当前循环。
+`break`
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 在for循环中使用break
+    // forbreak
     for (int i = 1; i <= 10; i++) {
         if (i == 5) {
-            break;  // 当i等于5时退出循环
+            break;  // i5
         }
         printf("%d ", i);
     }
-    printf("\n");  // 输出: 1 2 3 4
+    printf("\n");  // : 1 2 3 4
     
-    // 在while循环中使用break
+    // whilebreak
     int count = 0;
-    while (1) {  // 无限循环
+    while (1) {  // 
         count++;
         if (count > 5) {
-            break;  // 退出循环
+            break;  // 
         }
         printf("%d ", count);
     }
-    printf("\n");  // 输出: 1 2 3 4 5
+    printf("\n");  // : 1 2 3 4 5
     
     return 0;
 }
 ```
 
-### continue语句
+### continue
 
-`continue`用于跳过本次循环的剩余部分，继续下一次循环。
+`continue`
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 跳过偶数
+    // 
     for (int i = 1; i <= 10; i++) {
         if (i % 2 == 0) {
-            continue;  // 跳过偶数
+            continue;  // 
         }
         printf("%d ", i);
     }
-    printf("\n");  // 输出: 1 3 5 7 9
+    printf("\n");  // : 1 3 5 7 9
     
-    // 跳过负数
+    // 
     int numbers[] = {1, -2, 3, -4, 5, -6, 7};
     int size = sizeof(numbers) / sizeof(numbers[0]);
     
     for (int i = 0; i < size; i++) {
         if (numbers[i] < 0) {
-            continue;  // 跳过负数
+            continue;  // 
         }
         printf("%d ", numbers[i]);
     }
-    printf("\n");  // 输出: 1 3 5 7
+    printf("\n");  // : 1 3 5 7
     
     return 0;
 }
@@ -430,59 +430,59 @@ int main() {
     printf("Using break:\n");
     for (int i = 1; i <= 10; i++) {
         if (i == 5) {
-            break;  // 退出整个循环
+            break;  // 
         }
         printf("%d ", i);
     }
-    printf("\n");  // 输出: 1 2 3 4
+    printf("\n");  // : 1 2 3 4
     
     printf("Using continue:\n");
     for (int i = 1; i <= 10; i++) {
         if (i == 5) {
-            continue;  // 跳过本次循环
+            continue;  // 
         }
         printf("%d ", i);
     }
-    printf("\n");  // 输出: 1 2 3 4 6 7 8 9 10
+    printf("\n");  // : 1 2 3 4 6 7 8 9 10
     
     return 0;
 }
 ```
 
-### 嵌套循环中的break和continue
+### breakcontinue
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // break只退出最内层循环
+    // break
     for (int i = 1; i <= 3; i++) {
         for (int j = 1; j <= 3; j++) {
             if (j == 2) {
-                break;  // 只退出内层循环
+                break;  // 
             }
             printf("(%d, %d) ", i, j);
         }
         printf("\n");
     }
-    // 输出:
+    // :
     // (1, 1)
     // (2, 1)
     // (3, 1)
     
     printf("\n");
     
-    // continue只影响最内层循环
+    // continue
     for (int i = 1; i <= 3; i++) {
         for (int j = 1; j <= 3; j++) {
             if (j == 2) {
-                continue;  // 跳过内层循环的本次迭代
+                continue;  // 
             }
             printf("(%d, %d) ", i, j);
         }
         printf("\n");
     }
-    // 输出:
+    // :
     // (1, 1) (1, 3)
     // (2, 1) (2, 3)
     // (3, 1) (3, 3)
@@ -491,15 +491,15 @@ int main() {
 }
 ```
 
-## goto语句
+## goto
 
-`goto`语句可以无条件跳转到程序中的某个标签位置。
+`goto`
 
-:::warning 注意
-`goto`语句容易导致代码难以理解和维护，应该尽量避免使用。现代编程中，几乎所有使用`goto`的场景都可以用结构化控制语句替代。
+:::warning 
+`goto``goto`
 :::
 
-### 基本用法
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -507,12 +507,12 @@ int main() {
 int main() {
     int i = 0;
     
-start:  // 标签
+start:  // 
     printf("%d ", i);
     i++;
     
     if (i < 5) {
-        goto start;  // 跳转到标签
+        goto start;  // 
     }
     
     printf("\n");
@@ -521,9 +521,9 @@ start:  // 标签
 }
 ```
 
-### 合理使用场景
+### 
 
-#### 1. 多层循环的退出
+#### 1. 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -531,12 +531,12 @@ start:  // 标签
 int main() {
     int found = 0;
     
-    // 使用goto（简洁）
+    // goto
     for (int i = 0; i < 10; i++) {
         for (int j = 0; j < 10; j++) {
             if (i * j == 42) {
                 printf("Found: %d * %d = 42\n", i, j);
-                goto end;  // 直接退出所有循环
+                goto end;  // 
             }
         }
     }
@@ -544,7 +544,7 @@ end:
     
     printf("\n");
     
-    // 不使用goto（需要标志变量）
+    // goto
     found = 0;
     for (int i = 0; i < 10 && !found; i++) {
         for (int j = 0; j < 10 && !found; j++) {
@@ -559,7 +559,7 @@ end:
 }
 ```
 
-#### 2. 错误处理和资源清理
+#### 2. 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -585,11 +585,11 @@ int main() {
         goto cleanup;
     }
     
-    // 正常处理...
+    // ...
     printf("Processing files...\n");
     
 cleanup:
-    // 统一的清理代码
+    // 
     if (buffer != NULL) {
         free(buffer);
     }
@@ -604,20 +604,20 @@ cleanup:
 }
 ```
 
-### goto的替代方案
+### goto
 
-大多数情况下，可以使用以下方式替代goto：
+goto
 
 ```c showLineNumbers
 #include <stdio.h>
 
-// 使用函数替代goto
+// goto
 int find_value(int target) {
     for (int i = 0; i < 10; i++) {
         for (int j = 0; j < 10; j++) {
             if (i * j == target) {
                 printf("Found: %d * %d = %d\n", i, j, target);
-                return 1;  // 直接返回
+                return 1;  // 
             }
         }
     }
@@ -630,9 +630,9 @@ int main() {
 }
 ```
 
-## 实用示例
+## 
 
-### 菜单系统
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -672,7 +672,7 @@ int main() {
 }
 ```
 
-### 查找质数
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -684,11 +684,11 @@ int is_prime(int n) {
     
     for (int i = 2; i * i <= n; i++) {
         if (n % i == 0) {
-            return 0;  // 不是质数
+            return 0;  // 
         }
     }
     
-    return 1;  // 是质数
+    return 1;  // 
 }
 
 int main() {
@@ -711,7 +711,7 @@ int main() {
 }
 ```
 
-### 猜数字游戏
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -721,9 +721,9 @@ int main() {
 int main() {
     int secret, guess, attempts = 0;
     
-    // 初始化随机数生成器
+    // 
     srand(time(NULL));
-    secret = rand() % 100 + 1;  // 1-100之间的随机数
+    secret = rand() % 100 + 1;  // 1-100
     
     printf("Guess the number (1-100):\n");
     
@@ -746,7 +746,7 @@ int main() {
 }
 ```
 
-### 输入验证
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -758,7 +758,7 @@ int get_positive_integer() {
         printf("Enter a positive integer: ");
         
         if (scanf("%d", &num) != 1) {
-            // 清空输入缓冲区
+            // 
             while (getchar() != '\n');
             printf("Invalid input! Please enter a number.\n");
             continue;
@@ -781,7 +781,7 @@ int main() {
 }
 ```
 
-### 简单计算器
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -826,34 +826,34 @@ int main() {
 }
 ```
 
-## 最佳实践
+## 
 
-### 1. 优先使用结构化控制语句
+### 1. 
 
 ```c showLineNumbers
-// 不推荐
+// 
 if (condition)
     statement;
 
-// 推荐（使用大括号）
+// 
 if (condition) {
     statement;
 }
 ```
 
-### 2. 避免深层嵌套
+### 2. 
 
 ```c showLineNumbers
-// 不推荐（嵌套太深）
+// 
 if (condition1) {
     if (condition2) {
         if (condition3) {
-            // 代码
+            // 
         }
     }
 }
 
-// 推荐（提前返回）
+// 
 if (!condition1) {
     return;
 }
@@ -863,29 +863,29 @@ if (!condition2) {
 if (!condition3) {
     return;
 }
-// 代码
+// 
 ```
 
-### 3. switch语句总是包含default
+### 3. switchdefault
 
 ```c showLineNumbers
 switch (value) {
     case 1:
-        // 处理
+        // 
         break;
     case 2:
-        // 处理
+        // 
         break;
     default:
-        // 处理未预期的值
+        // 
         break;
 }
 ```
 
-### 4. 明确break的位置
+### 4. break
 
 ```c showLineNumbers
-// 如果需要穿透，添加注释说明
+// 
 switch (grade) {
     case 10:
     case 9:  // fall through
@@ -897,7 +897,7 @@ switch (grade) {
 }
 ```
 
-## 相关资源
+## 
 
 - [C Control Flow - cppreference](https://en.cppreference.com/w/c/language/statements)
 - [C if statement - cppreference](https://en.cppreference.com/w/c/language/if)

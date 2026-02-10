@@ -1,11 +1,11 @@
 
-## json 模块
+## json 
 
-json 模块提供了 python->json 以及 json->python 两种格式，转换规则如下
+json  python->json  json->python 
 
 | JSON ->        | Python -> | JSON           |
 | -------------- | --------- | -------------- |
-| object -- 对象  | dict      | object -- 对象 |
+| object --   | dict      | object --  |
 | array          | list      | array          |
 | string         | str       | string         |
 | number (int)   | int       | number         |
@@ -15,16 +15,16 @@ json 模块提供了 python->json 以及 json->python 两种格式，转换规�
 | null           | None      | null           |
 |                | tuple     | array          |
 
-注意：JSON 中的键-值对中的键永远是 str 类型的。当一个对象被转化为
-JSON 时，字典中所有的键都会被强制转换为字符串。这所造成的结果是字典被转换为 JSON 然后转换回字典时可能和原来的不相等。换句话说，如果 x 具有非字符串的键，则有 loads(dumps(x)) != x。
+JSON - str 
+JSON  JSON  x  loads(dumps(x)) != x
 
-json 模块还有一些其他参数可以控制：编码形式、格式化输出等，不过很少用到
+json 
 
-[json 官方模块文档](https://docs.python.org/zh-cn/3/library/json.html#module-json)
+[json ](https://docs.python.org/zh-cn/3/library/json.html#module-json)
 
-### json.load 与 json.dump
+### json.load  json.dump
 
-json.load 与 json.dump 是基于文件的转换。
+json.load  json.dump 
 
 ```python showLineNumbers
 import json
@@ -50,9 +50,9 @@ with open("data_file.json", "r") as read_content:
     print(json.load(read_content))
 ```
 
-### json.loads 与 json.dumps
+### json.loads  json.dumps
 
-`json.loads` 与 `json.dumps` 是直接基于数据的转换，这里的`s`表示`string`(字符串)。
+`json.loads`  `json.dumps` `s``string`()
 
 ```python showLineNumbers
 import json

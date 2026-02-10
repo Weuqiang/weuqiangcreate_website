@@ -1,15 +1,15 @@
 ---
 sidebar_position: 1
-title: CI/CD实战
+title: CI/CD
 ---
 
-# CI/CD实战
+# CI/CD
 
-持续集成和持续部署是现代软件开发的核心实践。
+
 
 ## GitHub Actions
 
-### 基础工作流
+### 
 
 ```yaml
 # .github/workflows/ci.yml
@@ -53,7 +53,7 @@ jobs:
         files: ./coverage/lcov.info
 ```
 
-### 构建和部署
+### 
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -120,7 +120,7 @@ jobs:
           pm2 restart app
 ```
 
-### Docker构建和推送
+### Docker
 
 ```yaml
 # .github/workflows/docker.yml
@@ -169,7 +169,7 @@ jobs:
 
 ## GitLab CI
 
-### 完整流水线
+### 
 
 ```yaml
 # .gitlab-ci.yml
@@ -182,7 +182,7 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
 
-# 测试阶段
+# 
 test:
   stage: test
   image: node:18
@@ -200,7 +200,7 @@ test:
         coverage_format: cobertura
         path: coverage/cobertura-coverage.xml
 
-# 构建阶段
+# 
 build:
   stage: build
   image: docker:latest
@@ -216,7 +216,7 @@ build:
   only:
     - main
 
-# 部署到测试环境
+# 
 deploy:staging:
   stage: deploy
   image: alpine:latest
@@ -239,7 +239,7 @@ deploy:staging:
   only:
     - develop
 
-# 部署到生产环境
+# 
 deploy:production:
   stage: deploy
   image: alpine:latest
@@ -376,7 +376,7 @@ pipeline {
 }
 ```
 
-## 蓝绿部署
+## 
 
 ```yaml
 # blue-green-deployment.yml
@@ -387,13 +387,13 @@ metadata:
 spec:
   selector:
     app: myapp
-    version: blue  # 切换到green实现蓝绿部署
+    version: blue  # green
   ports:
   - port: 80
     targetPort: 8080
 
 ---
-# Blue版本
+# Blue
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -417,7 +417,7 @@ spec:
         - containerPort: 8080
 
 ---
-# Green版本
+# Green
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -441,7 +441,7 @@ spec:
         - containerPort: 8080
 ```
 
-## 金丝雀发布
+## 
 
 ```yaml
 # canary-deployment.yml
@@ -457,7 +457,7 @@ spec:
     targetPort: 8080
 
 ---
-# 稳定版本（90%流量）
+# 90%
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -479,7 +479,7 @@ spec:
         image: myapp:v1.0
 
 ---
-# 金丝雀版本（10%流量）
+# 10%
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -501,23 +501,23 @@ spec:
         image: myapp:v2.0
 ```
 
-## 最佳实践
+## 
 
-1. **自动化一切**：构建、测试、部署
-2. **快速反馈**：尽早发现问题
-3. **小步快跑**：频繁小批量发布
-4. **回滚机制**：快速回滚到上一版本
-5. **环境一致性**：开发、测试、生产环境一致
-6. **监控告警**：实时监控部署状态
-7. **文档化**：记录部署流程
+1. ****
+2. ****
+3. ****
+4. ****
+5. ****
+6. ****
+7. ****
 
-## 总结
+## 
 
-CI/CD的核心是：
-- ✅ 自动化构建和测试
-- ✅ 容器化部署
-- ✅ 多环境管理
-- ✅ 蓝绿/金丝雀部署
-- ✅ 快速回滚机制
-- ✅ 持续监控和改进
+CI/CD
+-  
+-  
+-  
+-  /
+-  
+-  
 

@@ -1,55 +1,55 @@
-# button 元素
+# button 
 
-`<button>`元素继承了`HTMLButtonElement`接口。它有以下的实例属性。
+`<button>``HTMLButtonElement`
 
-**（1）HTMLButtonElement.accessKey**
+**1HTMLButtonElement.accessKey**
 
-`HTMLButtonElement.accessKey`属性返回一个字符串，表示键盘上对应的键，通过`Alt + 这个键`可以让按钮获得焦点。该属性可读写。
+`HTMLButtonElement.accessKey``Alt + `
 
-**（2）HTMLButtonElement.autofocus**
+**2HTMLButtonElement.autofocus**
 
-`HTMLButtonElement.autofocus`属性是一个布尔值，表示页面加载过程中，按钮是否会自动获得焦点。该属性可读写。
+`HTMLButtonElement.autofocus`
 
-**（3）HTMLButtonElement.disabled**
+**3HTMLButtonElement.disabled**
 
-`HTMLButtonElement.disabled`属性是一个布尔值，表示该按钮是否禁止点击。该属性可读写。
+`HTMLButtonElement.disabled`
 
-**（4）HTMLButtonElement.form**
+**4HTMLButtonElement.form**
 
-`HTMLButtonElement.form`属性是一个表单元素，返回该按钮所在的表单。该属性只读。如果按钮不属于任何表单，该属性返回`null`。
+`HTMLButtonElement.form``null`
 
-**（5）HTMLButtonElement.formAction**
+**5HTMLButtonElement.formAction**
 
-`HTMLButtonElement.formAction`返回一个字符串，表示表单提交的 URL。该属性可读写，一旦设置了值，点击按钮就会提交到该属性指定的 URL，而不是`<form>`元素指定的 URL。
+`HTMLButtonElement.formAction` URL URL`<form>` URL
 
-**（6）HTMLButtonElement.formEnctype**
+**6HTMLButtonElement.formEnctype**
 
-`HTMLButtonElement.formEnctype`属性是一个字符串，表示数据提交到服务器的编码类型。该属性可读写，一旦设置了值，点击按钮会按照该属性指定的编码方式，而不是`<form>`元素指定的编码方式。
+`HTMLButtonElement.formEnctype``<form>`
 
-该属性可以取以下的值。
 
-- `application/x-www-form-urlencoded`（默认值）
-- `multipart/form-data`（上传文件的编码方式）
+
+- `application/x-www-form-urlencoded`
+- `multipart/form-data`
 - `text/plain`
 
-**（7）HTMLButtonElement.formMethod**
+**7HTMLButtonElement.formMethod**
 
-`HTMLButtonElement.formMethod`属性是一个字符串，表示浏览器提交表单的 HTTP 方法。该属性可读写，一旦设置了值，点击后就会采用该属性指定的 HTTP 方法，而不是`<form>`元素指定的编码方法。
+`HTMLButtonElement.formMethod` HTTP  HTTP `<form>`
 
-**（8）HTMLButtonElement.formNoValidate**
+**8HTMLButtonElement.formNoValidate**
 
-`HTMLButtonElement.formNoValidate`属性是一个布尔值，表示点击按钮提交表单时，是否要跳过表单校验的步骤。该属性可读写，一旦设置会覆盖`<form>`元素的`novalidate`属性。
+`HTMLButtonElement.formNoValidate``<form>``novalidate`
 
-**（9）HTMLButtonElement.formTarget**
+**9HTMLButtonElement.formTarget**
 
-`HTMLButtonElement.formTarget`属性是一个字符串，指定了提交了表单以后，哪个窗口展示服务器返回的内容。该属性可读写，一旦设置会覆盖`<form>`元素的`target`属性。
+`HTMLButtonElement.formTarget``<form>``target`
 
-**（10）HTMLButtonElement.labels**
+**10HTMLButtonElement.labels**
 
-`HTMLButtonElement.labels`返回`NodeList`实例，表示那些绑定按钮的`<label>`元素。该属性只读。
+`HTMLButtonElement.labels``NodeList``<label>`
 
 ```javascript
-/* HTML 代码如下
+/* HTML 
   <label id="label1" for="test">Label 1</label>
   <button id="test">Button</button>
   <label id="label2" for="test">Label 2</label>
@@ -64,36 +64,36 @@ for(var i = 0; i < button.labels.length; i++) {
 // "Label 2"
 ```
 
-上面代码中，两个`<label>`元素绑定`<button>`元素。`button.labels`返回这两个`<label>`元素。
+`<label>``<button>``button.labels``<label>`
 
-**（11）HTMLButtonElement.name**
+**11HTMLButtonElement.name**
 
-`HTMLButtonElement.name`属性是一个字符串，表示按钮元素的`name`属性。如果没有设置`name`属性，则返回空字符串。该属性可读写。
+`HTMLButtonElement.name``name``name`
 
-**（12）HTMLButtonElement.tabIndex**
+**12HTMLButtonElement.tabIndex**
 
-`HTMLButtonElement.tabIndex`是一个整数，代表按钮元素的 Tab 键顺序。该属性可读写。
+`HTMLButtonElement.tabIndex` Tab 
 
-**（13）HTMLButtonElement.type**
+**13HTMLButtonElement.type**
 
-`HTMLButtonElement.type`属性是一个字符串，表示按钮的行为。该属性可读写，可能取以下的值。
+`HTMLButtonElement.type`
 
-- `submit`：默认值，表示提交表单。
-- `reset`：重置表单。
-- `button`：没有任何默认行为。
+- `submit`
+- `reset`
+- `button`
 
-**（14）HTMLButtonElement.validationMessage**
+**14HTMLButtonElement.validationMessage**
 
-`HTMLButtonElement.validationMessage`属性是一个字符串，表示没有通过校验时显示的提示信息。该属性只读。
+`HTMLButtonElement.validationMessage`
 
-**（15）HTMLButtonElement.validity**
+**15HTMLButtonElement.validity**
 
-`HTMLButtonElement.validity`属性返回该按钮的校验状态（`ValidityState`）。该属性只读。
+`HTMLButtonElement.validity``ValidityState`
 
-**（16）HTMLButtonElement.value**
+**16HTMLButtonElement.value**
 
-`HTMLButtonElement.value`属性返回该按钮绑定的值。该属性可读写。
+`HTMLButtonElement.value`
 
-**（17）HTMLButtonElement.willValidate**
+**17HTMLButtonElement.willValidate**
 
-`HTMLButtonElement.willValidate`属性是一个布尔值，表示该按钮提交表单时是否将被校验，默认为`false`。该属性只读。
+`HTMLButtonElement.willValidate``false`

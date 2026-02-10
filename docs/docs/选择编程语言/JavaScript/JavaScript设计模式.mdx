@@ -1,23 +1,23 @@
 ---
 sidebar_position: 12
-title: JavaScript设计模式实战
-tags: [JavaScript, 设计模式, 架构, 最佳实践]
+title: JavaScript
+tags: [JavaScript, , , ]
 ---
 
-# JavaScript设计模式实战
+# JavaScript
 
-## 概述
+## 
 
-设计模式是软件开发中经过验证的解决方案。本文介绍JavaScript中常用的设计模式及其应用场景。
+JavaScript
 
-## 创建型模式
+## 
 
-### 1. 单例模式（Singleton）
+### 1. Singleton
 
-确保一个类只有一个实例，并提供全局访问点。
+
 
 ```javascript
-// 基础单例
+// 
 class Singleton {
   constructor() {
     if (Singleton.instance) {
@@ -36,12 +36,12 @@ class Singleton {
   }
 }
 
-// 使用
+// 
 const instance1 = new Singleton();
 const instance2 = new Singleton();
 console.log(instance1 === instance2); // true
 
-// 实战：全局配置管理
+// 
 class ConfigManager {
   constructor() {
     if (ConfigManager.instance) {
@@ -70,11 +70,11 @@ class ConfigManager {
   }
 }
 
-// 使用
+// 
 const config = new ConfigManager();
 config.set('apiUrl', 'https://new-api.example.com');
 
-// 实战：全局状态管理
+// 
 class Store {
   constructor() {
     if (Store.instance) {
@@ -107,18 +107,18 @@ class Store {
   }
 }
 
-// 使用
+// 
 const store = new Store();
 store.subscribe(state => console.log('State changed:', state));
 store.setState({ user: { name: 'John' } });
 ```
 
-### 2. 工厂模式（Factory）
+### 2. Factory
 
-通过工厂方法创建对象，而不是直接使用new。
+new
 
 ```javascript
-// 简单工厂
+// 
 class UserFactory {
   static createUser(type, data) {
     switch (type) {
@@ -158,11 +158,11 @@ class GuestUser {
   }
 }
 
-// 使用
+// 
 const admin = UserFactory.createUser('admin', { name: 'Alice' });
 const member = UserFactory.createUser('member', { name: 'Bob' });
 
-// 实战：HTTP请求工厂
+// HTTP
 class RequestFactory {
   static create(type, config) {
     const baseConfig = {
@@ -209,17 +209,17 @@ class RequestFactory {
   }
 }
 
-// 使用
+// 
 const jsonRequest = RequestFactory.create('json', { url: '/api/users' });
 const formRequest = RequestFactory.create('form', { url: '/api/login' });
 ```
 
-### 3. 建造者模式（Builder）
+### 3. Builder
 
-分步骤构建复杂对象。
+
 
 ```javascript
-// 查询构建器
+// 
 class QueryBuilder {
   constructor() {
     this.query = {
@@ -288,7 +288,7 @@ class QueryBuilder {
   }
 }
 
-// 使用
+// 
 const query = new QueryBuilder()
   .select('id', 'name', 'email')
   .from('users')
@@ -302,7 +302,7 @@ const query = new QueryBuilder()
 console.log(query);
 // SELECT id, name, email FROM users WHERE age > 18 AND status = "active" ORDER BY created_at DESC LIMIT 10 OFFSET 0
 
-// 实战：HTTP请求构建器
+// HTTP
 class RequestBuilder {
   constructor(baseUrl = '') {
     this.baseUrl = baseUrl;
@@ -366,7 +366,7 @@ class RequestBuilder {
   }
 }
 
-// 使用
+// 
 const request = new RequestBuilder('https://api.example.com')
   .method('POST')
   .url('/users')
@@ -375,14 +375,14 @@ const request = new RequestBuilder('https://api.example.com')
   .send();
 ```
 
-## 结构型模式
+## 
 
-### 1. 代理模式（Proxy）
+### 1. Proxy
 
-为对象提供代理，控制对该对象的访问。
+
 
 ```javascript
-// 虚拟代理：延迟加载
+// 
 class ImageProxy {
   constructor(url) {
     this.url = url;
@@ -391,7 +391,7 @@ class ImageProxy {
   
   display() {
     if (!this.image) {
-      console.log('加载图片...');
+      console.log('...');
       this.image = new Image();
       this.image.src = this.url;
     }
@@ -399,7 +399,7 @@ class ImageProxy {
   }
 }
 
-// 缓存代理
+// 
 class CacheProxy {
   constructor(target) {
     this.target = target;
@@ -408,23 +408,23 @@ class CacheProxy {
   
   get(key) {
     if (this.cache.has(key)) {
-      console.log('从缓存获取');
+      console.log('');
       return this.cache.get(key);
     }
     
-    console.log('从源获取');
+    console.log('');
     const value = this.target.get(key);
     this.cache.set(key, value);
     return value;
   }
 }
 
-// 实战：API缓存代理
+// API
 class APIProxy {
   constructor(api) {
     this.api = api;
     this.cache = new Map();
-    this.cacheTime = 60000; // 1分钟
+    this.cacheTime = 60000; // 1
   }
   
   async get(url, options = {}) {
@@ -432,11 +432,11 @@ class APIProxy {
     const cached = this.cache.get(cacheKey);
     
     if (cached && Date.now() - cached.timestamp < this.cacheTime) {
-      console.log('返回缓存数据');
+      console.log('');
       return cached.data;
     }
     
-    console.log('请求API');
+    console.log('API');
     const data = await this.api.get(url, options);
     
     this.cache.set(cacheKey, {
@@ -452,7 +452,7 @@ class APIProxy {
   }
 }
 
-// 使用ES6 Proxy
+// ES6 Proxy
 const validator = {
   set(target, property, value) {
     if (property === 'age') {
@@ -469,17 +469,17 @@ const person = new Proxy({}, validator);
 person.age = 30; // OK
 // person.age = -1; // Error: Invalid age
 
-// 实战：响应式数据
+// 
 function reactive(target) {
   const handlers = {
     get(target, property) {
-      console.log(`读取属性: ${property}`);
+      console.log(`: ${property}`);
       return target[property];
     },
     set(target, property, value) {
-      console.log(`设置属性: ${property} = ${value}`);
+      console.log(`: ${property} = ${value}`);
       target[property] = value;
-      // 触发更新
+      // 
       return true;
     }
   };
@@ -492,22 +492,22 @@ const state = reactive({
   name: 'John'
 });
 
-state.count++; // 设置属性: count = 1
-console.log(state.name); // 读取属性: name
+state.count++; // : count = 1
+console.log(state.name); // : name
 ```
 
-### 2. 装饰器模式（Decorator）
+### 2. Decorator
 
-动态地给对象添加新功能。
+
 
 ```javascript
-// 函数装饰器
+// 
 function log(target, name, descriptor) {
   const original = descriptor.value;
   descriptor.value = function(...args) {
-    console.log(`调用 ${name}，参数:`, args);
+    console.log(` ${name}:`, args);
     const result = original.apply(this, args);
-    console.log(`${name} 返回:`, result);
+    console.log(`${name} :`, result);
     return result;
   };
   return descriptor;
@@ -519,7 +519,7 @@ function measure(target, name, descriptor) {
     const start = performance.now();
     const result = original.apply(this, args);
     const end = performance.now();
-    console.log(`${name} 耗时: ${end - start}ms`);
+    console.log(`${name} : ${end - start}ms`);
     return result;
   };
   return descriptor;
@@ -533,12 +533,12 @@ class Calculator {
   }
 }
 
-// 不使用装饰器语法
+// 
 function withLogging(fn) {
   return function(...args) {
-    console.log(`调用函数，参数:`, args);
+    console.log(`:`, args);
     const result = fn.apply(this, args);
-    console.log(`返回:`, result);
+    console.log(`:`, result);
     return result;
   };
 }
@@ -548,7 +548,7 @@ function withCache(fn) {
   return function(...args) {
     const key = JSON.stringify(args);
     if (cache.has(key)) {
-      console.log('返回缓存结果');
+      console.log('');
       return cache.get(key);
     }
     const result = fn.apply(this, args);
@@ -557,17 +557,17 @@ function withCache(fn) {
   };
 }
 
-// 使用
+// 
 function fibonacci(n) {
   if (n <= 1) return n;
   return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
 const cachedFib = withCache(fibonacci);
-console.log(cachedFib(10)); // 计算
-console.log(cachedFib(10)); // 缓存
+console.log(cachedFib(10)); // 
+console.log(cachedFib(10)); // 
 
-// 实战：API装饰器
+// API
 class API {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
@@ -579,7 +579,7 @@ class API {
   }
 }
 
-// 添加重试功能
+// 
 function withRetry(api, maxRetries = 3) {
   const originalRequest = api.request.bind(api);
   
@@ -590,7 +590,7 @@ function withRetry(api, maxRetries = 3) {
         return await originalRequest(url, options);
       } catch (error) {
         lastError = error;
-        console.log(`重试 ${i + 1}/${maxRetries}`);
+        console.log(` ${i + 1}/${maxRetries}`);
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
@@ -600,19 +600,19 @@ function withRetry(api, maxRetries = 3) {
   return api;
 }
 
-// 添加日志功能
+// 
 function withLoggingAPI(api) {
   const originalRequest = api.request.bind(api);
   
   api.request = async function(url, options) {
-    console.log(`请求: ${url}`, options);
+    console.log(`: ${url}`, options);
     const start = Date.now();
     try {
       const result = await originalRequest(url, options);
-      console.log(`响应: ${url}，耗时: ${Date.now() - start}ms`);
+      console.log(`: ${url}: ${Date.now() - start}ms`);
       return result;
     } catch (error) {
-      console.error(`错误: ${url}`, error);
+      console.error(`: ${url}`, error);
       throw error;
     }
   };
@@ -620,18 +620,18 @@ function withLoggingAPI(api) {
   return api;
 }
 
-// 使用
+// 
 let api = new API('https://api.example.com');
 api = withRetry(api, 3);
 api = withLoggingAPI(api);
 ```
 
-### 3. 适配器模式（Adapter）
+### 3. Adapter
 
-将一个接口转换成客户期望的另一个接口。
+
 
 ```javascript
-// 旧接口
+// 
 class OldAPI {
   getData() {
     return {
@@ -642,7 +642,7 @@ class OldAPI {
   }
 }
 
-// 新接口适配器
+// 
 class APIAdapter {
   constructor(oldAPI) {
     this.oldAPI = oldAPI;
@@ -658,13 +658,13 @@ class APIAdapter {
   }
 }
 
-// 使用
+// 
 const oldAPI = new OldAPI();
 const adapter = new APIAdapter(oldAPI);
 const userData = adapter.getUserData();
 console.log(userData); // { name: 'John', age: 30, email: 'john@example.com' }
 
-// 实战：第三方库适配
+// 
 class LocalStorageAdapter {
   get(key) {
     const value = localStorage.getItem(key);
@@ -695,7 +695,7 @@ class SessionStorageAdapter {
   }
 }
 
-// 统一接口
+// 
 class StorageManager {
   constructor(adapter) {
     this.adapter = adapter;
@@ -714,7 +714,7 @@ class StorageManager {
   }
 }
 
-// 使用
+// 
 const localStorage = new StorageManager(new LocalStorageAdapter());
 const sessionStorage = new StorageManager(new SessionStorageAdapter());
 
@@ -722,14 +722,14 @@ localStorage.save('user', { name: 'John' });
 const user = localStorage.load('user');
 ```
 
-## 行为型模式
+## 
 
-### 1. 观察者模式（Observer）
+### 1. Observer
 
-定义对象间的一对多依赖关系，当一个对象状态改变时，所有依赖它的对象都会得到通知。
+
 
 ```javascript
-// 事件发射器
+// 
 class EventEmitter {
   constructor() {
     this.events = {};
@@ -741,7 +741,7 @@ class EventEmitter {
     }
     this.events[event].push(listener);
     
-    // 返回取消订阅函数
+    // 
     return () => this.off(event, listener);
   }
   
@@ -764,17 +764,17 @@ class EventEmitter {
   }
 }
 
-// 使用
+// 
 const emitter = new EventEmitter();
 
 const unsubscribe = emitter.on('data', (data) => {
-  console.log('收到数据:', data);
+  console.log(':', data);
 });
 
 emitter.emit('data', { id: 1, name: 'John' });
-unsubscribe(); // 取消订阅
+unsubscribe(); // 
 
-// 实战：状态管理
+// 
 class Store extends EventEmitter {
   constructor(initialState = {}) {
     super();
@@ -796,23 +796,23 @@ class Store extends EventEmitter {
   }
 }
 
-// 使用
+// 
 const store = new Store({ count: 0 });
 
 store.subscribe((newState, oldState) => {
-  console.log('状态变化:', oldState, '->', newState);
+  console.log(':', oldState, '->', newState);
 });
 
 store.setState({ count: 1 });
 store.setState({ count: 2 });
 ```
 
-### 2. 策略模式（Strategy）
+### 2. Strategy
 
-定义一系列算法，把它们封装起来，并且使它们可以互相替换。
+
 
 ```javascript
-// 表单验证策略
+// 
 class Validator {
   constructor() {
     this.strategies = {};
@@ -830,7 +830,7 @@ class Validator {
       const strategy = this.strategies[strategyName];
       
       if (strategy && !strategy(value, ...args)) {
-        errors.push(`验证失败: ${rule}`);
+        errors.push(`: ${rule}`);
       }
     }
     
@@ -838,7 +838,7 @@ class Validator {
   }
 }
 
-// 定义验证策略
+// 
 const validator = new Validator();
 
 validator.addStrategy('required', (value) => {
@@ -861,7 +861,7 @@ validator.addStrategy('number', (value) => {
   return !isNaN(value);
 });
 
-// 使用
+// 
 const errors = validator.validate('john@example.com', [
   'required',
   'email',
@@ -870,7 +870,7 @@ const errors = validator.validate('john@example.com', [
 
 console.log(errors); // []
 
-// 实战：支付策略
+// 
 class PaymentContext {
   constructor(strategy) {
     this.strategy = strategy;
@@ -887,29 +887,29 @@ class PaymentContext {
 
 class AlipayStrategy {
   pay(amount) {
-    console.log(`使用支付宝支付 ¥${amount}`);
-    // 调用支付宝API
+    console.log(` ¥${amount}`);
+    // API
     return { success: true, method: 'alipay' };
   }
 }
 
 class WechatStrategy {
   pay(amount) {
-    console.log(`使用微信支付 ¥${amount}`);
-    // 调用微信API
+    console.log(` ¥${amount}`);
+    // API
     return { success: true, method: 'wechat' };
   }
 }
 
 class CreditCardStrategy {
   pay(amount) {
-    console.log(`使用信用卡支付 ¥${amount}`);
-    // 调用信用卡API
+    console.log(` ¥${amount}`);
+    // API
     return { success: true, method: 'credit_card' };
   }
 }
 
-// 使用
+// 
 const payment = new PaymentContext(new AlipayStrategy());
 payment.pay(100);
 
@@ -917,12 +917,12 @@ payment.setStrategy(new WechatStrategy());
 payment.pay(200);
 ```
 
-### 3. 责任链模式（Chain of Responsibility）
+### 3. Chain of Responsibility
 
-将请求沿着处理链传递，直到有对象处理它为止。
+
 
 ```javascript
-// 中间件模式
+// 
 class MiddlewareChain {
   constructor() {
     this.middlewares = [];
@@ -946,29 +946,29 @@ class MiddlewareChain {
   }
 }
 
-// 使用
+// 
 const chain = new MiddlewareChain();
 
 chain.use(async (ctx, next) => {
-  console.log('中间件1: 开始');
+  console.log('1: ');
   await next();
-  console.log('中间件1: 结束');
+  console.log('1: ');
 });
 
 chain.use(async (ctx, next) => {
-  console.log('中间件2: 开始');
+  console.log('2: ');
   ctx.data = 'processed';
   await next();
-  console.log('中间件2: 结束');
+  console.log('2: ');
 });
 
 chain.use(async (ctx, next) => {
-  console.log('中间件3: 处理数据', ctx.data);
+  console.log('3: ', ctx.data);
 });
 
 chain.execute({ data: 'initial' });
 
-// 实战：请求处理链
+// 
 class RequestHandler {
   constructor() {
     this.handlers = [];
@@ -983,37 +983,37 @@ class RequestHandler {
     for (const handler of this.handlers) {
       const result = await handler(request);
       if (result === false) {
-        break; // 停止处理
+        break; // 
       }
     }
   }
 }
 
-// 定义处理器
+// 
 const authHandler = async (request) => {
   if (!request.headers.authorization) {
-    console.log('认证失败');
+    console.log('');
     return false;
   }
-  console.log('认证通过');
+  console.log('');
   return true;
 };
 
 const validationHandler = async (request) => {
   if (!request.body) {
-    console.log('验证失败');
+    console.log('');
     return false;
   }
-  console.log('验证通过');
+  console.log('');
   return true;
 };
 
 const businessHandler = async (request) => {
-  console.log('处理业务逻辑');
+  console.log('');
   return true;
 };
 
-// 使用
+// 
 const handler = new RequestHandler();
 handler
   .addHandler(authHandler)
@@ -1026,18 +1026,18 @@ handler.handle({
 });
 ```
 
-## 总结
+## 
 
-设计模式的核心价值：
 
-1. **提高代码复用性**：通用解决方案
-2. **增强可维护性**：清晰的结构
-3. **提升可扩展性**：易于添加新功能
-4. **改善可读性**：统一的模式语言
 
-## 延伸阅读
+1. ****
+2. ****
+3. ****
+4. ****
 
-- [JavaScript设计模式](https://www.patterns.dev/)
-- [重构：改善既有代码的设计](https://refactoring.com/)
-- [Head First设计模式](https://www.oreilly.com/library/view/head-first-design/0596007124/)
+## 
+
+- [JavaScript](https://www.patterns.dev/)
+- [](https://refactoring.com/)
+- [Head First](https://www.oreilly.com/library/view/head-first-design/0596007124/)
 

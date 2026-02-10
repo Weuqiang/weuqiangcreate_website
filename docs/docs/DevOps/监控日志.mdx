@@ -1,15 +1,15 @@
 ---
 sidebar_position: 2
-title: 监控与日志
+title: 
 ---
 
-# 监控与日志
+# 
 
-完善的监控和日志系统是保障系统稳定运行的关键。
 
-## Prometheus监控
 
-### 基础配置
+## Prometheus
+
+### 
 
 ```yaml
 # prometheus.yml
@@ -31,7 +31,7 @@ scrape_configs:
       - targets: ['localhost:3000']
 ```
 
-### Node.js应用集成
+### Node.js
 
 ```javascript
 const express = require('express');
@@ -39,13 +39,13 @@ const promClient = require('prom-client');
 
 const app = express();
 
-// 创建Registry
+// Registry
 const register = new promClient.Registry();
 
-// 默认指标
+// 
 promClient.collectDefaultMetrics({ register });
 
-// 自定义指标
+// 
 const httpRequestDuration = new promClient.Histogram({
   name: 'http_request_duration_seconds',
   help: 'Duration of HTTP requests in seconds',
@@ -68,7 +68,7 @@ register.registerMetric(httpRequestDuration);
 register.registerMetric(httpRequestTotal);
 register.registerMetric(activeConnections);
 
-// 中间件
+// 
 app.use((req, res, next) => {
   const start = Date.now();
   
@@ -87,7 +87,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// 暴露指标
+// 
 app.get('/metrics', async (req, res) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
@@ -96,31 +96,31 @@ app.get('/metrics', async (req, res) => {
 app.listen(3000);
 ```
 
-### PromQL查询
+### PromQL
 
 ```promql
-# HTTP请求速率
+# HTTP
 rate(http_requests_total[5m])
 
-# 按状态码分组
+# 
 sum by (status_code) (rate(http_requests_total[5m]))
 
-# P95延迟
+# P95
 histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
 
-# CPU使用率
+# CPU
 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
 
-# 内存使用率
+# 
 (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
 
-# 磁盘使用率
+# 
 (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100
 ```
 
-## Grafana可视化
+## Grafana
 
-### Dashboard配置
+### Dashboard
 
 ```json
 {
@@ -159,7 +159,7 @@ histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
 }
 ```
 
-## 告警规则
+## 
 
 ### Prometheus Alertmanager
 
@@ -169,7 +169,7 @@ groups:
   - name: application
     interval: 30s
     rules:
-      # 高错误率
+      # 
       - alert: HighErrorRate
         expr: rate(http_requests_total{status_code=~"5.."}[5m]) > 0.05
         for: 5m
@@ -179,7 +179,7 @@ groups:
           summary: "High error rate detected"
           description: "Error rate is {{ $value }} requests/sec"
       
-      # 高响应时间
+      # 
       - alert: HighResponseTime
         expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
         for: 5m
@@ -189,7 +189,7 @@ groups:
           summary: "High response time detected"
           description: "P95 response time is {{ $value }}s"
       
-      # CPU使用率过高
+      # CPU
       - alert: HighCPUUsage
         expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
         for: 10m
@@ -199,7 +199,7 @@ groups:
           summary: "High CPU usage on {{ $labels.instance }}"
           description: "CPU usage is {{ $value }}%"
       
-      # 内存使用率过高
+      # 
       - alert: HighMemoryUsage
         expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
         for: 5m
@@ -209,7 +209,7 @@ groups:
           summary: "High memory usage on {{ $labels.instance }}"
           description: "Memory usage is {{ $value }}%"
       
-      # 磁盘空间不足
+      # 
       - alert: DiskSpaceLow
         expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 85
         for: 5m
@@ -220,7 +220,7 @@ groups:
           description: "Disk usage is {{ $value }}%"
 ```
 
-### Alertmanager配置
+### Alertmanager
 
 ```yaml
 # alertmanager.yml
@@ -258,9 +258,9 @@ receivers:
       - service_key: 'xxx'
 ```
 
-## ELK日志系统
+## ELK
 
-### Logstash配置
+### Logstash
 
 ```conf
 # logstash.conf
@@ -304,7 +304,7 @@ output {
 }
 ```
 
-### Filebeat配置
+### Filebeat
 
 ```yaml
 # filebeat.yml
@@ -327,7 +327,7 @@ processors:
   - add_cloud_metadata: ~
 ```
 
-### 应用日志集成
+### 
 
 ```javascript
 const winston = require('winston');
@@ -340,7 +340,7 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   transports: [
-    // 控制台输出
+    // 
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
@@ -348,7 +348,7 @@ const logger = winston.createLogger({
       )
     }),
     
-    // 文件输出
+    // 
     new winston.transports.File({
       filename: 'logs/error.log',
       level: 'error'
@@ -357,7 +357,7 @@ const logger = winston.createLogger({
       filename: 'logs/combined.log'
     }),
     
-    // Elasticsearch输出
+    // Elasticsearch
     new ElasticsearchTransport({
       level: 'info',
       clientOpts: {
@@ -368,19 +368,19 @@ const logger = winston.createLogger({
   ]
 });
 
-// 使用
+// 
 logger.info('User logged in', { userId: 123, ip: '192.168.1.1' });
 logger.error('Database connection failed', { error: err.message });
 ```
 
-## 分布式追踪
+## 
 
-### Jaeger集成
+### Jaeger
 
 ```javascript
 const { initTracer } = require('jaeger-client');
 
-// 初始化Tracer
+// Tracer
 const config = {
   serviceName: 'myapp',
   sampler: {
@@ -396,7 +396,7 @@ const config = {
 
 const tracer = initTracer(config);
 
-// Express中间件
+// Express
 function tracingMiddleware(req, res, next) {
   const span = tracer.startSpan('http_request');
   span.setTag('http.method', req.method);
@@ -414,7 +414,7 @@ function tracingMiddleware(req, res, next) {
 
 app.use(tracingMiddleware);
 
-// 在业务代码中使用
+// 
 async function getUserData(userId, parentSpan) {
   const span = tracer.startSpan('get_user_data', {
     childOf: parentSpan
@@ -434,23 +434,23 @@ async function getUserData(userId, parentSpan) {
 }
 ```
 
-## 最佳实践
+## 
 
-1. **四个黄金指标**：延迟、流量、错误、饱和度
-2. **结构化日志**：使用JSON格式
-3. **日志级别**：合理使用DEBUG、INFO、WARN、ERROR
-4. **告警分级**：Critical、Warning、Info
-5. **避免告警疲劳**：减少误报
-6. **日志轮转**：定期清理旧日志
-7. **敏感信息脱敏**：不记录密码等敏感数据
+1. ****
+2. ****JSON
+3. ****DEBUGINFOWARNERROR
+4. ****CriticalWarningInfo
+5. ****
+6. ****
+7. ****
 
-## 总结
+## 
 
-监控与日志的核心是：
-- ✅ Prometheus指标收集
-- ✅ Grafana可视化
-- ✅ Alertmanager告警
-- ✅ ELK日志分析
-- ✅ 分布式追踪
-- ✅ 合理的告警策略
+
+-  Prometheus
+-  Grafana
+-  Alertmanager
+-  ELK
+-  
+-  
 

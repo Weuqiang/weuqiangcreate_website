@@ -1,85 +1,85 @@
 ---
 sidebar_position: 5
-title: Redis持久化与集群方案
-tags: [数据库, Redis, 持久化, 集群, 高可用]
+title: Redis
+tags: [, Redis, , , ]
 ---
 
-# Redis持久化与集群方案
+# Redis
 
-本文将深入讲解Redis的持久化机制、主从复制、哨兵模式和Cluster集群方案。
+RedisCluster
 
-## 持久化机制
+## 
 
-### RDB持久化
+### RDB
 
 ```bash
-# RDB配置
-save 900 1      # 900秒内至少1个key变化
-save 300 10     # 300秒内至少10个key变化
-save 60 10000   # 60秒内至少10000个key变化
+# RDB
+save 900 1      # 9001key
+save 300 10     # 30010key
+save 60 10000   # 6010000key
 
-# RDB文件配置
+# RDB
 dbfilename dump.rdb
 dir /var/lib/redis
 rdbcompression yes
 rdbchecksum yes
 
-# 手动触发
-SAVE            # 阻塞保存（生产环境不推荐）
-BGSAVE          # 后台保存（推荐）
+# 
+SAVE            # 
+BGSAVE          # 
 ```
 
-#### RDB原理
+#### RDB
 
 ```javascript
-// RDB保存流程
+// RDB
 const rdbProcess = {
-  step1: 'Redis fork子进程',
-  step2: '子进程将数据写入临时RDB文件',
-  step3: '子进程完成后，用临时文件替换旧RDB文件',
-  step4: '父进程继续处理客户端请求',
+  step1: 'Redis fork',
+  step2: 'RDB',
+  step3: 'RDB',
+  step4: '',
   
   advantages: [
-    '文件紧凑，适合备份',
-    '恢复速度快',
-    '对性能影响小（fork后父进程继续工作）'
+    '',
+    '',
+    'fork'
   ],
   
   disadvantages: [
-    '可能丢失最后一次快照后的数据',
-    'fork子进程耗时（数据量大时）',
-    '不适合实时持久化'
+    '',
+    'fork',
+    ''
   ]
 };
 ```
 
-### AOF持久化
+### AOF
 
 ```bash
-# AOF配置
+# AOF
 appendonly yes
 appendfilename "appendonly.aof"
 
-# 同步策略
-appendfsync always      # 每次写入都同步（最安全，最慢）
-appendfsync everysec    # 每秒同步（推荐，平衡性能和安全）
-appendfsync no          # 由OS决定（最快，最不安全）
+# 
+appendfsync always      # 
+appendfsync everysec    # 
+appendfsync no          # OS
 
-# AOF重写配置
-auto-aof-rewrite-percentage 100  # 文件增长100%时重写
-auto-aof-rewrite-min-size 64mb   # 最小64MB才重写
+# AOF
+auto-aof-rewrite-percentage 100  # 100%
+auto-aof-rewrite-min-size 64mb   # 64MB
 
-# 手动触发重写
+# 
 BGREWRITEAOF
 ```
 
-#### AOF重写
+#### AOF
 
 ```javascript
-// AOF重写原理
+// AOF
 const aofRewrite = {
-  problem: 'AOF文件会越来越大',
-  solution: '重写AOF文件，只保留恢复数据的最小命令集',
+  problem: 'AOF',
+  solution: 'AOF',
   
   example: {
     before: [
@@ -90,83 +90,83 @@ const aofRewrite = {
       'SET key value4'
     ],
     after: [
-      'SET key value4'  // 只保留最终状态
+      'SET key value4'  // 
     ]
   },
   
   process: [
-    '1. fork子进程',
-    '2. 子进程遍历内存数据，生成新AOF文件',
-    '3. 父进程继续处理命令，写入AOF缓冲区',
-    '4. 子进程完成后，父进程追加缓冲区命令',
-    '5. 用新AOF文件替换旧文件'
+    '1. fork',
+    '2. AOF',
+    '3. AOF',
+    '4. ',
+    '5. AOF'
   ]
 };
 ```
 
-### 混合持久化
+### 
 
 ```bash
-# Redis 4.0+支持混合持久化
+# Redis 4.0+
 aof-use-rdb-preamble yes
 
-# AOF文件格式：RDB快照 + AOF增量命令
-# 优点：结合RDB的快速恢复和AOF的数据安全
+# AOFRDB + AOF
+# RDBAOF
 ```
 
-## 主从复制
+## 
 
-### 配置主从
+### 
 
 ```bash
-# 主节点配置（master）
+# master
 bind 0.0.0.0
 port 6379
 requirepass master_password
 
-# 从节点配置（slave）
+# slave
 bind 0.0.0.0
 port 6380
 replicaof 127.0.0.1 6379
 masterauth master_password
 
-# 从节点只读
+# 
 replica-read-only yes
 ```
 
-### 复制原理
+### 
 
 ```javascript
 const replicationProcess = {
-  // 全量复制
+  // 
   fullSync: {
-    step1: '从节点发送PSYNC命令',
-    step2: '主节点执行BGSAVE生成RDB',
-    step3: '主节点发送RDB文件给从节点',
-    step4: '主节点发送复制缓冲区的命令',
-    step5: '从节点清空数据，加载RDB',
-    step6: '从节点执行缓冲区命令'
+    step1: 'PSYNC',
+    step2: 'BGSAVERDB',
+    step3: 'RDB',
+    step4: '',
+    step5: 'RDB',
+    step6: ''
   },
   
-  // 增量复制
+  // 
   partialSync: {
-    condition: '从节点短暂断开后重连',
-    step1: '从节点发送PSYNC runid offset',
-    step2: '主节点检查offset是否在复制积压缓冲区',
-    step3: '主节点发送offset之后的命令',
-    step4: '从节点执行命令'
+    condition: '',
+    step1: 'PSYNC runid offset',
+    step2: 'offset',
+    step3: 'offset',
+    step4: ''
   },
   
-  // 复制积压缓冲区
+  // 
   replBacklog: {
-    size: '1MB（默认）',
+    size: '1MB',
     config: 'repl-backlog-size 1mb',
-    purpose: '保存最近的写命令，用于增量复制'
+    purpose: ''
   }
 };
 ```
 
-### 主从架构
+### 
 
 ```javascript
 class MasterSlaveArchitecture {
@@ -178,14 +178,14 @@ class MasterSlaveArchitecture {
     ];
   }
   
-  // 读写分离
+  // 
   async write(key, value) {
-    // 写操作走主节点
+    // 
     return await this.master.set(key, value);
   }
   
   async read(key) {
-    // 读操作走从节点（轮询）
+    // 
     const slave = this.getNextSlave();
     return await slave.get(key);
   }
@@ -198,9 +198,9 @@ class MasterSlaveArchitecture {
 }
 ```
 
-## 哨兵模式
+## 
 
-### 哨兵配置
+### 
 
 ```bash
 # sentinel.conf
@@ -211,69 +211,69 @@ sentinel down-after-milliseconds mymaster 5000
 sentinel parallel-syncs mymaster 1
 sentinel failover-timeout mymaster 180000
 
-# 启动哨兵
+# 
 redis-sentinel /path/to/sentinel.conf
 ```
 
-### 哨兵功能
+### 
 
 ```javascript
 const sentinelFeatures = {
-  // 1. 监控
+  // 1. 
   monitoring: {
-    description: '检查主从节点是否正常运行',
-    mechanism: '定期发送PING命令',
-    interval: '1秒'
+    description: '',
+    mechanism: 'PING',
+    interval: '1'
   },
   
-  // 2. 通知
+  // 2. 
   notification: {
-    description: '故障通知',
-    methods: ['脚本通知', 'Pub/Sub通知']
+    description: '',
+    methods: ['', 'Pub/Sub']
   },
   
-  // 3. 自动故障转移
+  // 3. 
   failover: {
-    trigger: '主节点下线',
+    trigger: '',
     process: [
-      '1. 主观下线：单个哨兵认为主节点下线',
-      '2. 客观下线：多数哨兵认为主节点下线',
-      '3. 选举领导哨兵：Raft算法',
-      '4. 选择新主节点：优先级、复制偏移量、runid',
-      '5. 通知从节点：复制新主节点',
-      '6. 通知客户端：新主节点地址'
+      '1. ',
+      '2. ',
+      '3. Raft',
+      '4. runid',
+      '5. ',
+      '6. '
     ]
   },
   
-  // 4. 配置提供
+  // 4. 
   configProvider: {
-    description: '客户端通过哨兵获取主节点地址',
+    description: '',
     command: 'SENTINEL get-master-addr-by-name mymaster'
   }
 };
 ```
 
-### 哨兵选主规则
+### 
 
 ```javascript
 class SentinelElection {
   selectNewMaster(slaves) {
-    // 1. 过滤下线和断线的从节点
+    // 1. 
     let candidates = slaves.filter(s => s.isOnline && !s.isDisconnected);
     
-    // 2. 按优先级排序
+    // 2. 
     candidates.sort((a, b) => {
-      // 优先级高的优先
+      // 
       if (a.priority !== b.priority) {
         return b.priority - a.priority;
       }
       
-      // 复制偏移量大的优先（数据更新）
+      // 
       if (a.replOffset !== b.replOffset) {
         return b.replOffset - a.replOffset;
       }
       
-      // runid小的优先
+      // runid
       return a.runid.localeCompare(b.runid);
     });
     
@@ -282,57 +282,57 @@ class SentinelElection {
 }
 ```
 
-## Cluster集群
+## Cluster
 
-### Cluster配置
+### Cluster
 
 ```bash
-# 节点配置
+# 
 port 7000
 cluster-enabled yes
 cluster-config-file nodes-7000.conf
 cluster-node-timeout 5000
 appendonly yes
 
-# 创建集群
+# 
 redis-cli --cluster create \
   127.0.0.1:7000 127.0.0.1:7001 \
   127.0.0.1:7002 127.0.0.1:7003 \
   127.0.0.1:7004 127.0.0.1:7005 \
   --cluster-replicas 1
 
-# 查看集群信息
+# 
 redis-cli -c -p 7000
 CLUSTER INFO
 CLUSTER NODES
 ```
 
-### 槽位分配
+### 
 
 ```javascript
 class ClusterSlots {
   constructor() {
-    this.totalSlots = 16384;  // 总共16384个槽位
+    this.totalSlots = 16384;  // 16384
   }
   
-  // 计算key所属槽位
+  // key
   getSlot(key) {
     // CRC16(key) % 16384
     return this.crc16(key) % this.totalSlots;
   }
   
-  // 槽位分配示例
+  // 
   allocateSlots() {
     return {
-      'node1': '0-5460',      // 5461个槽位
-      'node2': '5461-10922',  // 5462个槽位
-      'node3': '10923-16383'  // 5461个槽位
+      'node1': '0-5460',      // 5461
+      'node2': '5461-10922',  // 5462
+      'node3': '10923-16383'  // 5461
     };
   }
   
-  // Hash Tag：强制key分配到同一槽位
+  // Hash Tagkey
   hashTag(key) {
-    // {user:1}:name 和 {user:1}:age 会分配到同一槽位
+    // {user:1}:name  {user:1}:age 
     const match = key.match(/\{([^}]+)\}/);
     return match ? match[1] : key;
   }
@@ -347,7 +347,7 @@ class ClusterSlots {
 }
 ```
 
-### 重定向机制
+### 
 
 ```javascript
 class ClusterRedirection {
@@ -359,17 +359,17 @@ class ClusterRedirection {
       return await node.get(key);
     } catch (error) {
       if (error.message.startsWith('MOVED')) {
-        // 槽位已迁移到其他节点
+        // 
         const [_, slot, host, port] = error.message.split(' ');
         const newNode = this.getNode(host, port);
         return await newNode.get(key);
       }
       
       if (error.message.startsWith('ASK')) {
-        // 槽位正在迁移
+        // 
         const [_, slot, host, port] = error.message.split(' ');
         const newNode = this.getNode(host, port);
-        await newNode.asking();  // 发送ASKING命令
+        await newNode.asking();  // ASKING
         return await newNode.get(key);
       }
       
@@ -379,92 +379,92 @@ class ClusterRedirection {
 }
 ```
 
-### 集群扩容
+### 
 
 ```bash
-# 添加新节点
+# 
 redis-cli --cluster add-node 127.0.0.1:7006 127.0.0.1:7000
 
-# 重新分配槽位
+# 
 redis-cli --cluster reshard 127.0.0.1:7000
-# 输入要迁移的槽位数量
-# 输入目标节点ID
-# 输入源节点ID（all表示所有节点）
+# 
+# ID
+# IDall
 
-# 添加从节点
+# 
 redis-cli --cluster add-node 127.0.0.1:7007 127.0.0.1:7000 \
   --cluster-slave --cluster-master-id <master-node-id>
 ```
 
-### 集群缩容
+### 
 
 ```bash
-# 迁移槽位到其他节点
+# 
 redis-cli --cluster reshard 127.0.0.1:7000 \
   --cluster-from <node-id> \
   --cluster-to <target-node-id> \
   --cluster-slots <slot-count>
 
-# 删除节点
+# 
 redis-cli --cluster del-node 127.0.0.1:7000 <node-id>
 ```
 
-## 高可用方案对比
+## 
 
 ```javascript
 const haComparison = {
-  // 主从复制
+  // 
   masterSlave: {
     pros: [
-      '配置简单',
-      '读写分离',
-      '数据备份'
+      '',
+      '',
+      ''
     ],
     cons: [
-      '无自动故障转移',
-      '需要手动切换',
-      '写操作无法扩展'
+      '',
+      '',
+      ''
     ],
-    useCase: '读多写少，可接受手动切换'
+    useCase: ''
   },
   
-  // 哨兵模式
+  // 
   sentinel: {
     pros: [
-      '自动故障转移',
-      '高可用',
-      '配置简单'
+      '',
+      '',
+      ''
     ],
     cons: [
-      '写操作无法扩展',
-      '主节点压力大',
-      '不支持数据分片'
+      '',
+      '',
+      ''
     ],
-    useCase: '中小规模，需要高可用'
+    useCase: ''
   },
   
-  // Cluster集群
+  // Cluster
   cluster: {
     pros: [
-      '数据分片',
-      '水平扩展',
-      '自动故障转移',
-      '高可用'
+      '',
+      '',
+      '',
+      ''
     ],
     cons: [
-      '配置复杂',
-      '不支持多数据库',
-      '批量操作受限'
+      '',
+      '',
+      ''
     ],
-    useCase: '大规模，需要水平扩展'
+    useCase: ''
   }
 };
 ```
 
-## 客户端实现
+## 
 
 ```javascript
-// Sentinel客户端
+// Sentinel
 class SentinelClient {
   constructor(sentinels, masterName) {
     this.sentinels = sentinels;
@@ -473,7 +473,7 @@ class SentinelClient {
   }
   
   async connect() {
-    // 从哨兵获取主节点地址
+    // 
     for (const sentinel of this.sentinels) {
       try {
         const [host, port] = await sentinel.sentinelGetMasterAddrByName(
@@ -486,14 +486,14 @@ class SentinelClient {
       }
     }
     
-    // 订阅哨兵通知
+    // 
     this.subscribeSentinel();
   }
   
   subscribeSentinel() {
     const sentinel = new Redis(this.sentinels[0]);
     sentinel.subscribe('+switch-master', (channel, message) => {
-      // 主节点切换，更新连接
+      // 
       const [masterName, oldHost, oldPort, newHost, newPort] = message.split(' ');
       if (masterName === this.masterName) {
         this.master = new Redis({ host: newHost, port: newPort });
@@ -502,7 +502,7 @@ class SentinelClient {
   }
 }
 
-// Cluster客户端
+// Cluster
 class ClusterClient {
   constructor(nodes) {
     this.nodes = nodes.map(n => new Redis(n));
@@ -538,42 +538,42 @@ class ClusterClient {
 }
 ```
 
-## 监控与运维
+## 
 
 ```bash
-# 查看复制信息
+# 
 INFO replication
 
-# 查看持久化信息
+# 
 INFO persistence
 
-# 查看集群信息
+# 
 CLUSTER INFO
 CLUSTER NODES
 
-# 查看慢查询
+# 
 SLOWLOG GET 10
 
-# 查看内存使用
+# 
 INFO memory
 MEMORY USAGE key
 
-# 查看客户端连接
+# 
 CLIENT LIST
 
-# 监控命令执行
+# 
 MONITOR
 ```
 
-## 总结
+## 
 
-Redis高可用方案：
-- 💾 **持久化**：RDB快照 + AOF日志 + 混合持久化
-- 🔄 **主从复制**：读写分离 + 数据备份
-- 🛡️ **哨兵模式**：自动故障转移 + 高可用
-- 🌐 **Cluster集群**：数据分片 + 水平扩展
-- 📊 **方案选择**：根据规模和需求选择合适方案
-- 🔧 **运维监控**：定期检查 + 性能优化
+Redis
+-  ****RDB + AOF + 
+-  **** + 
+-  **** + 
+-  **Cluster** + 
+-  ****
+-  **** + 
 
-记住：**选择合适的高可用方案是保证Redis稳定运行的关键！**
+**Redis**
 

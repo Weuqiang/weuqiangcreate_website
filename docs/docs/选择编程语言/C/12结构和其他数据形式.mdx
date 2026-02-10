@@ -1,52 +1,52 @@
 ---
 sidebar_position: 12
-title: （编写中）⭐结构和其他数据形式
+title: 
 ---
 
-## 结构体
+## 
 
-结构体是C语言中组织相关数据的核心机制，在Python-C互操作中用于：
-- 定义复杂的数据结构
-- 与Python类进行映射
-- 高效传递多个相关数据
+CPython-C
+- 
+- Python
+- 
 
-### 基本结构体定义
+### 
 ```c
-// 定义结构体
+// 
 struct Person {
     char name[50];
     int age;
     float height;
 };
 
-// 使用typedef简化
+// typedef
 typedef struct {
     char name[50];
     int age;
     float height;
 } Person;
 
-// 声明变量
+// 
 Person p1;
 Person *p2 = malloc(sizeof(Person));
 ```
 
-### 结构体初始化和访问
+### 
 ```c
-// 初始化
-Person p1 = {"张三", 25, 175.5};
-Person p2 = {.name = "李四", .age = 30, .height = 180.0};
+// 
+Person p1 = {"", 25, 175.5};
+Person p2 = {.name = "", .age = 30, .height = 180.0};
 
-// 访问成员
-printf("姓名: %s\n", p1.name);
-printf("年龄: %d\n", p1.age);
+// 
+printf(": %s\n", p1.name);
+printf(": %d\n", p1.age);
 
-// 指针访问
+// 
 Person *ptr = &p1;
-printf("身高: %.1f\n", ptr->height);
+printf(": %.1f\n", ptr->height);
 ```
 
-### 结构体嵌套
+### 
 ```c
 typedef struct {
     int year;
@@ -61,20 +61,20 @@ typedef struct {
 } Employee;
 
 Employee emp = {
-    .name = "王五",
+    .name = "",
     .birthdate = {1990, 5, 15},
     .salary = 8000.0
 };
 ```
 
-## 联合体
+## 
 
-联合体允许在同一内存位置存储不同的数据类型，在Python-C互操作中用于：
-- 节省内存空间
-- 实现变体类型
-- 处理网络协议数据
+Python-C
+- 
+- 
+- 
 
-### 基本联合体
+### 
 ```c
 union Data {
     int i;
@@ -90,7 +90,7 @@ data.f = 3.14;
 printf("data.f: %.2f\n", data.f);
 ```
 
-### 带标签的联合体
+### 
 ```c
 typedef struct {
     enum { INT, FLOAT, STRING } type;
@@ -106,13 +106,13 @@ var.type = INT;
 var.value.i = 42;
 
 if (var.type == INT) {
-    printf("整数值: %d\n", var.value.i);
+    printf(": %d\n", var.value.i);
 }
 ```
 
-## 枚举
+## 
 
-枚举提供有意义的名称来代替数字常量：
+
 
 ```c
 typedef enum {
@@ -123,15 +123,15 @@ typedef enum {
 
 Color c = GREEN;
 if (c == GREEN) {
-    printf("这是绿色\n");
+    printf("\n");
 }
 ```
 
-## Python-C互操作中的应用
+## Python-C
 
-### 结构体与Python类的映射
+### Python
 ```c
-// C结构体
+// C
 typedef struct {
     double x;
     double y;
@@ -152,7 +152,7 @@ export double point_distance(Point *p1, Point *p2) {
 ```
 
 ```python
-# Python包装类
+# Python
 from ctypes import Structure, c_double, CDLL, POINTER
 
 class Point(Structure):
@@ -164,16 +164,16 @@ lib.create_point.restype = POINTER(Point)
 lib.point_distance.argtypes = [POINTER(Point), POINTER(Point)]
 lib.point_distance.restype = c_double
 
-# 使用
+# 
 p1 = lib.create_point(1.0, 2.0)
 p2 = lib.create_point(4.0, 6.0)
 distance = lib.point_distance(p1, p2)
-print(f"距离: {distance}")
+print(f": {distance}")
 ```
 
-### 复杂数据结构的传递
+### 
 ```c
-// 图像数据结构
+// 
 typedef struct {
     int width;
     int height;
@@ -182,23 +182,23 @@ typedef struct {
 } Image;
 
 export void process_image(Image *img) {
-    // 处理图像数据
+    // 
     for (int i = 0; i < img->width * img->height * img->channels; i++) {
-        img->data[i] = 255 - img->data[i]; // 反色处理
+        img->data[i] = 255 - img->data[i]; // 
     }
 }
 ```
 
-## 内存布局和对齐
+## 
 
-### 结构体大小和对齐
+### 
 ```c
 #include <stdio.h>
 
 typedef struct {
-    char a;     // 1字节
-    int b;      // 4字节
-    short c;    // 2字节
+    char a;     // 1
+    int b;      // 4
+    short c;    // 2
 } Example;
 
 int main() {
@@ -210,9 +210,9 @@ int main() {
 }
 ```
 
-### 手动内存对齐
+### 
 ```c
-// 确保结构体按8字节对齐
+// 8
 typedef struct __attribute__((aligned(8))) {
     char a;
     int b;
@@ -220,19 +220,19 @@ typedef struct __attribute__((aligned(8))) {
 } AlignedExample;
 ```
 
-## 最佳实践
+## 
 
-1. **使用typedef**：简化结构体类型名称
-2. **初始化所有字段**：避免未初始化数据
-3. **考虑内存布局**：合理安排字段顺序减少填充
-4. **文档化结构体**：说明每个字段的用途和单位
-5. **验证输入数据**：在Python-C边界进行数据验证
+1. **typedef**
+2. ****
+3. ****
+4. ****
+5. ****Python-C
 
-## 常见陷阱
+## 
 
-1. **内存对齐问题**：不同平台对齐要求可能不同
-2. **字节序问题**：网络传输时需要注意字节序
-3. **填充字节**：结构体中的填充字节可能导致数据不一致
-4. **指针生命周期**：确保C中分配的内存在Python中正确管理
+1. ****
+2. ****
+3. ****
+4. ****CPython
 
-结构体和联合体是C语言中组织数据的强大工具，在Python-C互操作中尤为重要。正确使用它们可以创建高效、类型安全的数据接口。
+CPython-C

@@ -4,7 +4,7 @@ sidebarDepth: 4
 
 # Three.js
 
-[更多代码案例](https://github.com/Messiahhh/PointsCloud)
+[](https://github.com/Messiahhh/PointsCloud)
 
 ### scene
 
@@ -28,7 +28,7 @@ document.body.appendChild(renderer.domElement)
 
 ### geometry and material
 
-给场景添加物品
+
 
 ``` js
 const geometry = new THREE.BufferGeometry()
@@ -43,7 +43,7 @@ const points = new THREE.Points(geometry, material)
 scene.add(points)
 ```
 
-### 渲染
+### 
 
 ``` js
 const animate = function () {
@@ -56,7 +56,7 @@ animate()
 
 ### controls
 
-常用controls，比如`OrbitControl.js`，提供了良好的交互效果
+controls`OrbitControl.js`
 
 ``` js
 const controls = new THREE.OrbitControls(camera, renderer.domElement)
@@ -75,27 +75,27 @@ animate()
 
 ### dat.gui.js
 
-这个和Three.js没关系，不过有的官网例子中有用到，可以方便的修改数据。
+Three.js
 
 ``` js
 const params = {
-    name: 'akara', // 开发者
-    size: 1, // 粒子大小
-    color: '#25d25b', // 粒子颜色
-    background: 0x000000, // 背景颜色
+    name: 'akara', // 
+    size: 1, // 
+    color: '#25d25b', // 
+    background: 0x000000, // 
     flag: true,
 }
 const gui = new dat.GUI()
-gui.add(params, 'name').name('开发者')
-gui.add(params, 'size', 1, 10, 0.5).name('粒子大小').onChange(sizeChangeHandler)
-gui.addColor(params, 'color').name('粒子颜色').onChange(colorChangeHandler)
-gui.addColor(params, 'background').name('背景颜色').onChange(backgroundChangeHandler)
-gui.add(params, 'flag').name('开启')
+gui.add(params, 'name').name('')
+gui.add(params, 'size', 1, 10, 0.5).name('').onChange(sizeChangeHandler)
+gui.addColor(params, 'color').name('').onChange(colorChangeHandler)
+gui.addColor(params, 'background').name('').onChange(backgroundChangeHandler)
+gui.add(params, 'flag').name('')
 ```
 
 ### stats.js
 
-这个也和Three.js没关系，不过可以显示实时的帧数
+Three.js
 
 
 

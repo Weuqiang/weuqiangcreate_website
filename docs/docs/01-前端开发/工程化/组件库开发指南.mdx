@@ -1,74 +1,74 @@
 ---
 sidebar_position: 3
-title: 组件库开发指南
-tags: [组件库, Monorepo, Storybook, 设计系统]
+title: 
+tags: [, Monorepo, Storybook, ]
 ---
 
-# 组件库开发指南
+# 
 
-## 概述
+## 
 
-组件库是一套可复用的 UI 组件集合，用于统一产品的视觉风格和交互体验。本文将介绍如何从零开始构建一个企业级组件库。
+ UI 
 
-### 核心目标
+### 
 
-- **可复用性**：组件可在多个项目中使用
-- **一致性**：统一的设计规范和交互体验
-- **可维护性**：清晰的代码结构和文档
-- **可扩展性**：易于添加新组件和功能
+- ****
+- ****
+- ****
+- ****
 
-## 技术选型
+## 
 
-### 1. 构建工具
+### 1. 
 
 ```bash
-# Vite - 快速的构建工具
+# Vite - 
 npm create vite@latest my-ui-library -- --template react-ts
 
-# Rollup - 专业的库打包工具
+# Rollup - 
 npm install -D rollup @rollup/plugin-node-resolve @rollup/plugin-commonjs
 ```
 
-### 2. 样式方案
+### 2. 
 
 ```bash
 # CSS-in-JS
 npm install styled-components
 
 # CSS Modules
-# Vite 原生支持
+# Vite 
 
 # Less/Sass
 npm install -D less sass
 ```
 
-### 3. 文档工具
+### 3. 
 
 ```bash
-# Storybook - 组件开发和文档
+# Storybook - 
 npx storybook@latest init
 
-# VitePress - 文档站点
+# VitePress - 
 npm install -D vitepress
 ```
 
-## 项目初始化
+## 
 
-### 1. 创建 Monorepo 结构
+### 1.  Monorepo 
 
 ```bash
 my-ui-library/
-├── packages/
-│   ├── components/        # 组件源码
-│   ├── utils/            # 工具函数
-│   ├── hooks/            # React Hooks
-│   └── theme/            # 主题配置
-├── docs/                 # 文档站点
-├── examples/             # 示例项目
-├── scripts/              # 构建脚本
-├── package.json
-├── pnpm-workspace.yaml
-└── tsconfig.json
+ packages/
+    components/        # 
+    utils/            # 
+    hooks/            # React Hooks
+    theme/            # 
+ docs/                 # 
+ examples/             # 
+ scripts/              # 
+ package.json
+ pnpm-workspace.yaml
+ tsconfig.json
 ```
 
 ```yaml
@@ -79,7 +79,7 @@ packages:
   - 'examples/*'
 ```
 
-### 2. 配置 TypeScript
+### 2.  TypeScript
 
 ```json
 // tsconfig.json
@@ -105,7 +105,7 @@ packages:
 }
 ```
 
-### 3. 配置构建工具
+### 3. 
 
 ```javascript
 // rollup.config.js
@@ -157,9 +157,9 @@ export default {
 };
 ```
 
-## 组件开发
+## 
 
-### 1. Button 组件
+### 1. Button 
 
 ```tsx
 // packages/components/Button/Button.tsx
@@ -168,19 +168,19 @@ import classNames from 'classnames';
 import './Button.css';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** 按钮类型 */
+  /**  */
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
-  /** 按钮尺寸 */
+  /**  */
   size?: 'small' | 'medium' | 'large';
-  /** 是否为块级按钮 */
+  /**  */
   block?: boolean;
-  /** 是否禁用 */
+  /**  */
   disabled?: boolean;
-  /** 是否加载中 */
+  /**  */
   loading?: boolean;
-  /** 图标 */
+  /**  */
   icon?: ReactNode;
-  /** 子元素 */
+  /**  */
   children?: ReactNode;
 }
 
@@ -245,7 +245,7 @@ Button.displayName = 'Button';
   outline-offset: 2px;
 }
 
-/* 变体样式 */
+/*  */
 .my-ui-button--primary {
   background: var(--primary-color);
   color: white;
@@ -271,7 +271,7 @@ Button.displayName = 'Button';
   color: var(--text-color);
 }
 
-/* 尺寸样式 */
+/*  */
 .my-ui-button--small {
   padding: 4px 12px;
   font-size: 12px;
@@ -282,19 +282,19 @@ Button.displayName = 'Button';
   font-size: 16px;
 }
 
-/* 块级按钮 */
+/*  */
 .my-ui-button--block {
   display: flex;
   width: 100%;
 }
 
-/* 禁用状态 */
+/*  */
 .my-ui-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* 加载状态 */
+/*  */
 .my-ui-button--loading {
   pointer-events: none;
 }
@@ -313,7 +313,7 @@ Button.displayName = 'Button';
 }
 ```
 
-### 2. Input 组件
+### 2. Input 
 
 ```tsx
 // packages/components/Input/Input.tsx
@@ -322,19 +322,19 @@ import classNames from 'classnames';
 import './Input.css';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  /** 输入框尺寸 */
+  /**  */
   size?: 'small' | 'medium' | 'large';
-  /** 是否显示错误状态 */
+  /**  */
   error?: boolean;
-  /** 错误提示信息 */
+  /**  */
   errorMessage?: string;
-  /** 前缀图标 */
+  /**  */
   prefix?: ReactNode;
-  /** 后缀图标 */
+  /**  */
   suffix?: ReactNode;
-  /** 是否允许清除 */
+  /**  */
   allowClear?: boolean;
-  /** 清除回调 */
+  /**  */
   onClear?: () => void;
 }
 
@@ -405,7 +405,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = 'Input';
 ```
 
-### 3. Modal 组件
+### 3. Modal 
 
 ```tsx
 // packages/components/Modal/Modal.tsx
@@ -415,25 +415,25 @@ import classNames from 'classnames';
 import './Modal.css';
 
 export interface ModalProps {
-  /** 是否显示 */
+  /**  */
   visible: boolean;
-  /** 标题 */
+  /**  */
   title?: ReactNode;
-  /** 内容 */
+  /**  */
   children: ReactNode;
-  /** 底部内容 */
+  /**  */
   footer?: ReactNode;
-  /** 宽度 */
+  /**  */
   width?: number | string;
-  /** 是否显示关闭按钮 */
+  /**  */
   closable?: boolean;
-  /** 是否点击遮罩关闭 */
+  /**  */
   maskClosable?: boolean;
-  /** 关闭回调 */
+  /**  */
   onClose?: () => void;
-  /** 确认回调 */
+  /**  */
   onOk?: () => void;
-  /** 取消回调 */
+  /**  */
   onCancel?: () => void;
 }
 
@@ -449,7 +449,7 @@ export const Modal: React.FC<ModalProps> = ({
   onOk,
   onCancel,
 }) => {
-  // 禁止背景滚动
+  // 
   useEffect(() => {
     if (visible) {
       document.body.style.overflow = 'hidden';
@@ -461,7 +461,7 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [visible]);
 
-  // ESC 键关闭
+  // ESC 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && visible && onClose) {
@@ -508,13 +508,13 @@ export const Modal: React.FC<ModalProps> = ({
                     className="my-ui-button my-ui-button--secondary"
                     onClick={onCancel || onClose}
                   >
-                    取消
+                    
                   </button>
                   <button
                     className="my-ui-button my-ui-button--primary"
                     onClick={onOk}
                   >
-                    确定
+                    
                   </button>
                 </>
               )}
@@ -531,14 +531,14 @@ export const Modal: React.FC<ModalProps> = ({
 Modal.displayName = 'Modal';
 ```
 
-## 主题系统
+## 
 
-### 1. 设计令牌（Design Tokens）
+### 1. Design Tokens
 
 ```typescript
 // packages/theme/tokens.ts
 export const tokens = {
-  // 颜色
+  // 
   colors: {
     primary: '#1890ff',
     primaryHover: '#40a9ff',
@@ -548,7 +548,7 @@ export const tokens = {
     danger: '#ff4d4f',
     info: '#1890ff',
     
-    // 中性色
+    // 
     gray1: '#ffffff',
     gray2: '#fafafa',
     gray3: '#f5f5f5',
@@ -561,7 +561,7 @@ export const tokens = {
     gray10: '#000000',
   },
   
-  // 字体
+  // 
   fonts: {
     family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     size: {
@@ -579,7 +579,7 @@ export const tokens = {
     },
   },
   
-  // 间距
+  // 
   spacing: {
     xs: '4px',
     sm: '8px',
@@ -588,7 +588,7 @@ export const tokens = {
     xl: '32px',
   },
   
-  // 圆角
+  // 
   radius: {
     sm: '2px',
     md: '4px',
@@ -597,7 +597,7 @@ export const tokens = {
     full: '9999px',
   },
   
-  // 阴影
+  // 
   shadows: {
     sm: '0 1px 2px rgba(0, 0, 0, 0.05)',
     md: '0 4px 6px rgba(0, 0, 0, 0.1)',
@@ -605,7 +605,7 @@ export const tokens = {
     xl: '0 20px 25px rgba(0, 0, 0, 0.15)',
   },
   
-  // 动画
+  // 
   transitions: {
     fast: '0.1s',
     normal: '0.2s',
@@ -614,12 +614,12 @@ export const tokens = {
 };
 ```
 
-### 2. CSS 变量
+### 2. CSS 
 
 ```css
 /* packages/theme/variables.css */
 :root {
-  /* 颜色 */
+  /*  */
   --primary-color: #1890ff;
   --primary-color-hover: #40a9ff;
   --primary-color-active: #096dd9;
@@ -627,40 +627,40 @@ export const tokens = {
   --warning-color: #faad14;
   --danger-color: #ff4d4f;
   
-  /* 文字颜色 */
+  /*  */
   --text-color: rgba(0, 0, 0, 0.85);
   --text-color-secondary: rgba(0, 0, 0, 0.65);
   --text-color-disabled: rgba(0, 0, 0, 0.25);
   
-  /* 边框 */
+  /*  */
   --border-color: #d9d9d9;
   --border-radius: 4px;
   
-  /* 间距 */
+  /*  */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
   
-  /* 字体 */
+  /*  */
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-size-sm: 12px;
   --font-size-md: 14px;
   --font-size-lg: 16px;
   
-  /* 阴影 */
+  /*  */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   
-  /* 动画 */
+  /*  */
   --transition-fast: 0.1s;
   --transition-normal: 0.2s;
   --transition-slow: 0.3s;
 }
 
-/* 暗色主题 */
+/*  */
 [data-theme='dark'] {
   --primary-color: #177ddc;
   --text-color: rgba(255, 255, 255, 0.85);
@@ -669,7 +669,7 @@ export const tokens = {
 }
 ```
 
-### 3. 主题切换
+### 3. 
 
 ```tsx
 // packages/theme/ThemeProvider.tsx
@@ -709,9 +709,9 @@ export const useTheme = () => {
 };
 ```
 
-## 文档和示例
+## 
 
-### 1. Storybook 配置
+### 1. Storybook 
 
 ```typescript
 // .storybook/main.ts
@@ -734,7 +734,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-### 2. 编写 Story
+### 2.  Story
 
 ```tsx
 // packages/components/Button/Button.stories.tsx
@@ -777,7 +777,7 @@ export const Secondary: Story = {
 export const WithIcon: Story = {
   args: {
     variant: 'primary',
-    icon: '🚀',
+    icon: '',
     children: 'With Icon',
   },
 };
@@ -801,9 +801,9 @@ export const AllSizes: Story = {
 };
 ```
 
-## 测试
+## 
 
-### 1. 单元测试
+### 1. 
 
 ```bash
 npm install -D vitest @testing-library/react @testing-library/jest-dom
@@ -841,7 +841,7 @@ describe('Button', () => {
 });
 ```
 
-### 2. 可访问性测试
+### 2. 
 
 ```typescript
 // packages/components/Button/Button.a11y.test.tsx
@@ -861,9 +861,9 @@ describe('Button Accessibility', () => {
 });
 ```
 
-## 发布流程
+## 
 
-### 1. 版本管理
+### 1. 
 
 ```json
 // package.json
@@ -882,22 +882,22 @@ describe('Button Accessibility', () => {
 }
 ```
 
-### 2. 发布到 npm
+### 2.  npm
 
 ```bash
-# 登录 npm
+#  npm
 npm login
 
-# 发布
+# 
 npm publish --access public
 
-# 使用 changeset 管理版本
+#  changeset 
 npx changeset
 npx changeset version
 npx changeset publish
 ```
 
-### 3. CI/CD 配置
+### 3. CI/CD 
 
 ```yaml
 # .github/workflows/publish.yml
@@ -928,59 +928,59 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
-## 最佳实践
+## 
 
-### 1. 组件设计原则
+### 1. 
 
-- **单一职责**：每个组件只做一件事
-- **可组合**：组件可以组合使用
-- **可控与非可控**：支持受控和非受控模式
-- **无障碍**：遵循 WCAG 标准
+- ****
+- ****
+- ****
+- **** WCAG 
 
-### 2. API 设计
+### 2. API 
 
 ```tsx
-// ✅ 好的 API 设计
+//   API 
 <Button variant="primary" size="large" onClick={handleClick}>
   Submit
 </Button>
 
-// ❌ 避免的设计
+//  
 <Button isPrimary isLarge onClickHandler={handleClick}>
   Submit
 </Button>
 ```
 
-### 3. 性能优化
+### 3. 
 
 ```tsx
-// 使用 React.memo 避免不必要的重渲染
+//  React.memo 
 export const Button = React.memo<ButtonProps>(({ children, ...props }) => {
   return <button {...props}>{children}</button>;
 });
 
-// 使用 useMemo 缓存计算结果
+//  useMemo 
 const classes = useMemo(
   () => classNames('button', `button--${variant}`),
   [variant]
 );
 ```
 
-## 总结
+## 
 
-构建组件库需要考虑：
 
-1. **技术选型**：选择合适的构建工具和样式方案
-2. **组件设计**：遵循设计原则，提供良好的 API
-3. **主题系统**：支持主题定制和切换
-4. **文档和示例**：使用 Storybook 提供交互式文档
-5. **测试**：编写单元测试和可访问性测试
-6. **发布流程**：规范的版本管理和发布流程
 
-## 延伸阅读
+1. ****
+2. **** API
+3. ****
+4. **** Storybook 
+5. ****
+6. ****
 
-- [Ant Design 设计规范](https://ant.design/docs/spec/introduce-cn)
+## 
+
+- [Ant Design ](https://ant.design/docs/spec/introduce-cn)
 - [Material Design](https://material.io/design)
-- [Storybook 官方文档](https://storybook.js.org/)
+- [Storybook ](https://storybook.js.org/)
 - [React Aria](https://react-spectrum.adobe.com/react-aria/)
 

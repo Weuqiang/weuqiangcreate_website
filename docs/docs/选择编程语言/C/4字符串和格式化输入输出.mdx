@@ -1,60 +1,60 @@
 ---
 sidebar_position: 4
-title: 字符串和格式化输入输出
+title: 
 ---
 
-# 字符串和格式化输入输出
+# 
 
-## 字符串基础
+## 
 
-### 什么是字符串
+### 
 
-在C语言中，字符串是以空字符`\0`（ASCII码值为0）结尾的字符数组。
+C`\0`ASCII0
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 字符串字面量
+    // 
     char str1[] = "Hello";
     
-    // 等价于
+    // 
     char str2[] = {'H', 'e', 'l', 'l', 'o', '\0'};
     
     printf("str1: %s\n", str1);
     printf("str2: %s\n", str2);
     
-    // 字符串长度
-    printf("Length of str1: %zu\n", sizeof(str1));  // 6 (包括\0)
+    // 
+    printf("Length of str1: %zu\n", sizeof(str1));  // 6 (\0)
     
     return 0;
 }
 ```
 
-:::warning 重要
-字符串必须以`\0`结尾，否则会导致未定义行为！
+:::warning 
+`\0`
 :::
 
-### 字符串的声明和初始化
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 方式1：字符数组初始化
-    char str1[6] = "Hello";  // 需要6个字节（5个字符 + \0）
+    // 1
+    char str1[6] = "Hello";  // 65 + \0
     
-    // 方式2：自动计算大小
-    char str2[] = "Hello";   // 编译器自动分配6个字节
+    // 2
+    char str2[] = "Hello";   // 6
     
-    // 方式3：字符逐个初始化
+    // 3
     char str3[] = {'H', 'e', 'l', 'l', 'o', '\0'};
     
-    // 方式4：指针指向字符串字面量
-    char *str4 = "Hello";    // 指向只读内存区域
+    // 4
+    char *str4 = "Hello";    // 
     
-    // 方式5：预分配空间
-    char str5[100];          // 分配100字节，但未初始化
+    // 5
+    char str5[100];          // 100
     
     printf("%s\n", str1);
     printf("%s\n", str2);
@@ -65,22 +65,22 @@ int main() {
 }
 ```
 
-### 字符串与字符数组的区别
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 字符数组（不是字符串）
-    char arr1[5] = {'H', 'e', 'l', 'l', 'o'};  // 没有\0
+    // 
+    char arr1[5] = {'H', 'e', 'l', 'l', 'o'};  // \0
     
-    // 字符串
+    // 
     char arr2[6] = {'H', 'e', 'l', 'l', 'o', '\0'};
     
-    // printf("%s\n", arr1);  // 危险！会继续读取直到遇到\0
-    printf("%s\n", arr2);     // 安全
+    // printf("%s\n", arr1);  // \0
+    printf("%s\n", arr2);     // 
     
-    // 逐个打印字符数组
+    // 
     for (int i = 0; i < 5; i++) {
         printf("%c", arr1[i]);
     }
@@ -90,9 +90,9 @@ int main() {
 }
 ```
 
-## 字符串输入输出
+## 
 
-### printf输出字符串
+### printf
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -100,26 +100,26 @@ int main() {
 int main() {
     char name[] = "Alice";
     
-    // 基本输出
+    // 
     printf("%s\n", name);
     
-    // 指定宽度（右对齐）
+    // 
     printf("%10s\n", name);      // "     Alice"
     
-    // 左对齐
+    // 
     printf("%-10s\n", name);     // "Alice     "
     
-    // 限制输出长度
+    // 
     printf("%.3s\n", name);      // "Ali"
     
-    // 组合使用
+    // 
     printf("%10.3s\n", name);    // "       Ali"
     
     return 0;
 }
 ```
 
-### scanf读取字符串
+### scanf
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -128,7 +128,7 @@ int main() {
     char name[50];
     
     printf("Enter your name: ");
-    scanf("%s", name);  // 遇到空格、制表符、换行符就停止
+    scanf("%s", name);  // 
     
     printf("Hello, %s!\n", name);
     
@@ -136,13 +136,13 @@ int main() {
 }
 ```
 
-:::warning scanf的局限性
-- `scanf("%s", ...)` 遇到空白字符就停止读取
-- 无法读取包含空格的字符串
-- 可能导致缓冲区溢出
+:::warning scanf
+- `scanf("%s", ...)` 
+- 
+- 
 :::
 
-### gets和fgets
+### getsfgets
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -150,10 +150,10 @@ int main() {
 int main() {
     char line[100];
     
-    // gets（已废弃，不安全！）
-    // gets(line);  // 不要使用！
+    // gets
+    // gets(line);  // 
     
-    // fgets（推荐）
+    // fgets
     printf("Enter a line: ");
     fgets(line, sizeof(line), stdin);
     
@@ -163,11 +163,11 @@ int main() {
 }
 ```
 
-**fgets的特点：**
-- 可以读取包含空格的字符串
-- 会读取换行符`\n`
-- 安全，不会缓冲区溢出
-- 需要手动去除换行符
+**fgets**
+- 
+- `\n`
+- 
+- 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -179,7 +179,7 @@ int main() {
     printf("Enter a line: ");
     fgets(line, sizeof(line), stdin);
     
-    // 去除换行符
+    // 
     size_t len = strlen(line);
     if (len > 0 && line[len-1] == '\n') {
         line[len-1] = '\0';
@@ -191,7 +191,7 @@ int main() {
 }
 ```
 
-### puts和fputs
+### putsfputs
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -199,11 +199,11 @@ int main() {
 int main() {
     char str[] = "Hello, World!";
     
-    // puts（自动添加换行符）
+    // puts
     puts(str);
     puts("Another line");
     
-    // fputs（不自动添加换行符）
+    // fputs
     fputs(str, stdout);
     fputs("\n", stdout);
     
@@ -211,11 +211,11 @@ int main() {
 }
 ```
 
-## 字符串处理函数
+## 
 
-需要包含头文件`<string.h>`。
+`<string.h>`
 
-### strlen - 计算字符串长度
+### strlen - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -225,16 +225,16 @@ int main() {
     char str[] = "Hello";
     
     size_t len = strlen(str);
-    printf("Length: %zu\n", len);  // 5（不包括\0）
+    printf("Length: %zu\n", len);  // 5\0
     
-    // 注意与sizeof的区别
-    printf("sizeof: %zu\n", sizeof(str));  // 6（包括\0）
+    // sizeof
+    printf("sizeof: %zu\n", sizeof(str));  // 6\0
     
     return 0;
 }
 ```
 
-### strcpy - 复制字符串
+### strcpy - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -244,21 +244,21 @@ int main() {
     char src[] = "Hello";
     char dest[20];
     
-    // 复制字符串
+    // 
     strcpy(dest, src);
     printf("dest: %s\n", dest);
     
-    // strncpy（更安全）
+    // strncpy
     char dest2[20];
     strncpy(dest2, src, sizeof(dest2) - 1);
-    dest2[sizeof(dest2) - 1] = '\0';  // 确保以\0结尾
+    dest2[sizeof(dest2) - 1] = '\0';  // \0
     printf("dest2: %s\n", dest2);
     
     return 0;
 }
 ```
 
-### strcat - 连接字符串
+### strcat - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -268,11 +268,11 @@ int main() {
     char str1[50] = "Hello, ";
     char str2[] = "World!";
     
-    // 连接字符串
+    // 
     strcat(str1, str2);
     printf("%s\n", str1);  // "Hello, World!"
     
-    // strncat（更安全）
+    // strncat
     char str3[50] = "Hello, ";
     strncat(str3, str2, sizeof(str3) - strlen(str3) - 1);
     printf("%s\n", str3);
@@ -281,7 +281,7 @@ int main() {
 }
 ```
 
-### strcmp - 比较字符串
+### strcmp - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -292,7 +292,7 @@ int main() {
     char str2[] = "Banana";
     char str3[] = "Apple";
     
-    // strcmp返回值：
+    // strcmp
     // < 0: str1 < str2
     // = 0: str1 == str2
     // > 0: str1 > str2
@@ -303,12 +303,12 @@ int main() {
     printf("strcmp(\"Apple\", \"Banana\") = %d\n", result1);  // < 0
     printf("strcmp(\"Apple\", \"Apple\") = %d\n", result2);   // = 0
     
-    // 判断相等
+    // 
     if (strcmp(str1, str3) == 0) {
         printf("str1 and str3 are equal\n");
     }
     
-    // strncmp（比较前n个字符）
+    // strncmpn
     int result3 = strncmp("Hello", "Help", 3);
     printf("strncmp(\"Hello\", \"Help\", 3) = %d\n", result3);  // = 0
     
@@ -316,7 +316,7 @@ int main() {
 }
 ```
 
-### strchr和strstr - 查找字符和子串
+### strchrstrstr - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -325,20 +325,20 @@ int main() {
 int main() {
     char str[] = "Hello, World!";
     
-    // strchr - 查找字符
+    // strchr - 
     char *p1 = strchr(str, 'o');
     if (p1 != NULL) {
         printf("Found 'o' at position: %ld\n", p1 - str);
         printf("Substring: %s\n", p1);
     }
     
-    // strrchr - 从右边查找字符
+    // strrchr - 
     char *p2 = strrchr(str, 'o');
     if (p2 != NULL) {
         printf("Last 'o' at position: %ld\n", p2 - str);
     }
     
-    // strstr - 查找子串
+    // strstr - 
     char *p3 = strstr(str, "World");
     if (p3 != NULL) {
         printf("Found \"World\" at position: %ld\n", p3 - str);
@@ -349,7 +349,7 @@ int main() {
 }
 ```
 
-### sprintf和sscanf - 字符串格式化
+### sprintfsscanf - 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -357,13 +357,13 @@ int main() {
 int main() {
     char buffer[100];
     
-    // sprintf - 格式化输出到字符串
+    // sprintf - 
     int age = 25;
     float score = 95.5;
     sprintf(buffer, "Age: %d, Score: %.1f", age, score);
     printf("%s\n", buffer);
     
-    // sscanf - 从字符串读取格式化输入
+    // sscanf - 
     char input[] = "John 25 95.5";
     char name[50];
     int age2;
@@ -376,22 +376,22 @@ int main() {
 }
 ```
 
-## 字符串数组
+## 
 
-### 二维字符数组
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 方式1：二维字符数组
+    // 1
     char names[3][20] = {
         "Alice",
         "Bob",
         "Charlie"
     };
     
-    // 遍历
+    // 
     for (int i = 0; i < 3; i++) {
         printf("%s\n", names[i]);
     }
@@ -400,13 +400,13 @@ int main() {
 }
 ```
 
-### 指针数组
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 方式2：指针数组（更灵活）
+    // 2
     char *names[] = {
         "Alice",
         "Bob",
@@ -423,34 +423,34 @@ int main() {
 }
 ```
 
-## 格式化输入输出进阶
+## 
 
-### printf高级用法
+### printf
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 1. 动态宽度和精度
+    // 1. 
     int width = 10;
     int precision = 2;
     float num = 3.14159;
     printf("%*.*f\n", width, precision, num);  // "      3.14"
     
-    // 2. 位置参数（C99）
+    // 2. C99
     printf("%2$d %1$d\n", 10, 20);  // "20 10"
     
-    // 3. 千位分隔符
-    printf("%'d\n", 1234567);  // "1,234,567"（需要locale支持）
+    // 3. 
+    printf("%'d\n", 1234567);  // "1,234,567"locale
     
-    // 4. 打印指针
+    // 4. 
     int x = 42;
     printf("Address of x: %p\n", (void*)&x);
     
-    // 5. 打印百分号
+    // 5. 
     printf("Progress: 50%%\n");
     
-    // 6. 返回值（已输出的字符数）
+    // 6. 
     int count = printf("Hello, World!\n");
     printf("Printed %d characters\n", count);
     
@@ -458,30 +458,30 @@ int main() {
 }
 ```
 
-### scanf高级用法
+### scanf
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 1. 跳过某些输入
+    // 1. 
     int a, b;
     printf("Enter two numbers: ");
-    scanf("%d %*d %d", &a, &b);  // 跳过中间的数字
+    scanf("%d %*d %d", &a, &b);  // 
     printf("a = %d, b = %d\n", a, b);
     
-    // 2. 字符集匹配
+    // 2. 
     char str[50];
     printf("Enter a word: ");
-    scanf("%[a-zA-Z]", str);  // 只读取字母
+    scanf("%[a-zA-Z]", str);  // 
     printf("Word: %s\n", str);
     
-    // 3. 排除字符集
+    // 3. 
     printf("Enter text: ");
-    scanf("%[^\n]", str);  // 读取直到换行符
+    scanf("%[^\n]", str);  // 
     printf("Text: %s\n", str);
     
-    // 4. 检查返回值
+    // 4. 
     int num;
     printf("Enter a number: ");
     if (scanf("%d", &num) == 1) {
@@ -494,9 +494,9 @@ int main() {
 }
 ```
 
-## 实用示例
+## 
 
-### 字符串反转
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -522,7 +522,7 @@ int main() {
 }
 ```
 
-### 统计单词数量
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -554,7 +554,7 @@ int main() {
 }
 ```
 
-### 字符串分割
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -564,10 +564,10 @@ int main() {
     char str[] = "apple,banana,orange,grape";
     char *token;
     
-    // 第一次调用strtok
+    // strtok
     token = strtok(str, ",");
     
-    // 循环获取所有token
+    // token
     while (token != NULL) {
         printf("%s\n", token);
         token = strtok(NULL, ",");
@@ -577,7 +577,7 @@ int main() {
 }
 ```
 
-### 去除字符串首尾空格
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -585,19 +585,19 @@ int main() {
 #include <ctype.h>
 
 void trim(char *str) {
-    // 去除前导空格
+    // 
     char *start = str;
     while (isspace(*start)) {
         start++;
     }
     
-    // 去除尾部空格
+    // 
     char *end = str + strlen(str) - 1;
     while (end > start && isspace(*end)) {
         end--;
     }
     
-    // 移动字符串
+    // 
     size_t len = end - start + 1;
     memmove(str, start, len);
     str[len] = '\0';
@@ -614,7 +614,7 @@ int main() {
 }
 ```
 
-### 字符串转大小写
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -649,7 +649,7 @@ int main() {
 }
 ```
 
-### 检查回文字符串
+### 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -661,7 +661,7 @@ int is_palindrome(const char *str) {
     int right = strlen(str) - 1;
     
     while (left < right) {
-        // 跳过非字母数字字符
+        // 
         while (left < right && !isalnum(str[left])) {
             left++;
         }
@@ -669,7 +669,7 @@ int is_palindrome(const char *str) {
             right--;
         }
         
-        // 比较字符（忽略大小写）
+        // 
         if (tolower(str[left]) != tolower(str[right])) {
             return 0;
         }
@@ -701,9 +701,9 @@ int main() {
 }
 ```
 
-## 常见错误和注意事项
+## 
 
-### 1. 缓冲区溢出
+### 1. 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -712,10 +712,10 @@ int main() {
 int main() {
     char str[5];
     
-    // 危险！可能溢出
+    // 
     // strcpy(str, "Hello, World!");
     
-    // 安全的方式
+    // 
     strncpy(str, "Hello, World!", sizeof(str) - 1);
     str[sizeof(str) - 1] = '\0';
     
@@ -725,7 +725,7 @@ int main() {
 }
 ```
 
-### 2. 未初始化的字符串
+### 2. 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -733,37 +733,37 @@ int main() {
 int main() {
     char str[50];
     
-    // 错误！str未初始化
+    // str
     // printf("%s\n", str);
     
-    // 正确的方式
-    str[0] = '\0';  // 初始化为空字符串
+    // 
+    str[0] = '\0';  // 
     printf("%s\n", str);
     
     return 0;
 }
 ```
 
-### 3. 修改字符串字面量
+### 3. 
 
 ```c showLineNumbers
 #include <stdio.h>
 
 int main() {
-    // 字符串字面量在只读内存区域
+    // 
     char *str1 = "Hello";
-    // str1[0] = 'h';  // 错误！可能导致段错误
+    // str1[0] = 'h';  // 
     
-    // 可修改的字符串
+    // 
     char str2[] = "Hello";
-    str2[0] = 'h';  // 正确
+    str2[0] = 'h';  // 
     printf("%s\n", str2);
     
     return 0;
 }
 ```
 
-### 4. 忘记空字符
+### 4. 
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -775,7 +775,7 @@ int main() {
     str[2] = 'l';
     str[3] = 'l';
     str[4] = 'o';
-    str[5] = '\0';  // 不要忘记！
+    str[5] = '\0';  // 
     
     printf("%s\n", str);
     
@@ -783,7 +783,7 @@ int main() {
 }
 ```
 
-### 5. scanf的缓冲区问题
+### 5. scanf
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -795,7 +795,7 @@ int main() {
     printf("Enter a number: ");
     scanf("%d", &num);
     
-    // 清空缓冲区
+    // 
     while (getchar() != '\n');
     
     printf("Enter a string: ");
@@ -808,7 +808,7 @@ int main() {
 }
 ```
 
-## 相关资源
+## 
 
 - [C String Functions - cppreference](https://en.cppreference.com/w/c/string/byte)
 - [printf - cppreference](https://en.cppreference.com/w/c/io/fprintf)

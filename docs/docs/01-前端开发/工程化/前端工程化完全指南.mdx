@@ -1,30 +1,30 @@
 ---
 sidebar_position: 1
-title: 前端工程化完全指南
-tags: [工程化, Webpack, Vite, 构建工具, 代码规范]
+title: 
+tags: [, Webpack, Vite, , ]
 ---
 
-# 前端工程化完全指南
+# 
 
-## 概述
+## 
 
-前端工程化是指将软件工程的方法和工具应用到前端开发中，以提高开发效率、代码质量和项目可维护性。
 
-### 核心内容
 
-- **构建工具**：Webpack、Vite、Rollup 等
-- **代码规范**：ESLint、Prettier、Stylelint
-- **版本控制**：Git 工作流、Husky、Commitlint
-- **包管理**：npm、yarn、pnpm
-- **自动化**：CI/CD、自动化测试、自动化部署
+### 
 
-## 构建工具
+- ****WebpackViteRollup 
+- ****ESLintPrettierStylelint
+- ****Git HuskyCommitlint
+- ****npmyarnpnpm
+- ****CI/CD
 
-### 1. Webpack 配置
+## 
 
-Webpack 是最流行的模块打包工具。
+### 1. Webpack 
 
-#### 基础配置
+Webpack 
+
+#### 
 
 ```javascript
 // webpack.config.js
@@ -80,7 +80,7 @@ module.exports = {
         ],
       },
       
-      // 图片
+      // 
       {
         test: /\.(png|jpg|jpeg|gif|svg)$/,
         type: 'asset',
@@ -94,7 +94,7 @@ module.exports = {
         },
       },
       
-      // 字体
+      // 
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/,
         type: 'asset/resource',
@@ -152,7 +152,7 @@ module.exports = {
 };
 ```
 
-#### 性能优化配置
+#### 
 
 ```javascript
 // webpack.prod.js
@@ -183,19 +183,19 @@ module.exports = {
       chunks: 'all',
       maxInitialRequests: 10,
       cacheGroups: {
-        // React 相关
+        // React 
         react: {
           test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
           name: 'react',
           priority: 20,
         },
-        // UI 库
+        // UI 
         antd: {
           test: /[\\/]node_modules[\\/]antd[\\/]/,
           name: 'antd',
           priority: 15,
         },
-        // 其他第三方库
+        // 
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name: 'vendors',
@@ -210,7 +210,7 @@ module.exports = {
   },
   
   plugins: [
-    // Gzip 压缩
+    // Gzip 
     new CompressionPlugin({
       algorithm: 'gzip',
       test: /\.(js|css|html|svg)$/,
@@ -218,7 +218,7 @@ module.exports = {
       minRatio: 0.8,
     }),
     
-    // 打包分析
+    // 
     new BundleAnalyzerPlugin({
       analyzerMode: 'static',
       openAnalyzer: false,
@@ -233,9 +233,9 @@ module.exports = {
 };
 ```
 
-### 2. Vite 配置
+### 2. Vite 
 
-Vite 是新一代的前端构建工具，开发体验极佳。
+Vite 
 
 ```typescript
 // vite.config.ts
@@ -298,7 +298,7 @@ export default defineConfig({
 });
 ```
 
-### 3. Rollup 配置（库打包）
+### 3. Rollup 
 
 ```javascript
 // rollup.config.js
@@ -350,9 +350,9 @@ export default {
 };
 ```
 
-## 代码规范
+## 
 
-### 1. ESLint 配置
+### 1. ESLint 
 
 ```javascript
 // .eslintrc.js
@@ -393,7 +393,7 @@ module.exports = {
 };
 ```
 
-### 2. Prettier 配置
+### 2. Prettier 
 
 ```javascript
 // .prettierrc.js
@@ -413,7 +413,7 @@ module.exports = {
 };
 ```
 
-### 3. Stylelint 配置
+### 3. Stylelint 
 
 ```javascript
 // .stylelintrc.js
@@ -430,23 +430,23 @@ module.exports = {
 };
 ```
 
-## Git 工作流
+## Git 
 
-### 1. Husky 配置
+### 1. Husky 
 
 ```bash
-# 安装 Husky
+#  Husky
 npm install -D husky
 npx husky install
 
-# 添加 pre-commit hook
+#  pre-commit hook
 npx husky add .husky/pre-commit "npm run lint-staged"
 
-# 添加 commit-msg hook
+#  commit-msg hook
 npx husky add .husky/commit-msg "npx commitlint --edit $1"
 ```
 
-### 2. lint-staged 配置
+### 2. lint-staged 
 
 ```javascript
 // .lintstagedrc.js
@@ -465,7 +465,7 @@ module.exports = {
 };
 ```
 
-### 3. Commitlint 配置
+### 3. Commitlint 
 
 ```javascript
 // commitlint.config.js
@@ -476,15 +476,15 @@ module.exports = {
       2,
       'always',
       [
-        'feat',     // 新功能
-        'fix',      // 修复 bug
-        'docs',     // 文档更新
-        'style',    // 代码格式
-        'refactor', // 重构
-        'perf',     // 性能优化
-        'test',     // 测试
-        'chore',    // 构建/工具
-        'revert',   // 回滚
+        'feat',     // 
+        'fix',      //  bug
+        'docs',     // 
+        'style',    // 
+        'refactor', // 
+        'perf',     // 
+        'test',     // 
+        'chore',    // /
+        'revert',   // 
       ],
     ],
     'subject-case': [0],
@@ -492,7 +492,7 @@ module.exports = {
 };
 ```
 
-## 包管理
+## 
 
 ### 1. npm vs yarn vs pnpm
 
@@ -507,13 +507,13 @@ yarn
 yarn add lodash
 yarn add -D webpack
 
-# pnpm（推荐）
+# pnpm
 pnpm install
 pnpm add lodash
 pnpm add -D webpack
 ```
 
-### 2. package.json 配置
+### 2. package.json 
 
 ```json
 {
@@ -546,7 +546,7 @@ pnpm add -D webpack
 }
 ```
 
-### 3. Monorepo 管理
+### 3. Monorepo 
 
 ```yaml
 # pnpm-workspace.yaml
@@ -573,9 +573,9 @@ packages:
 }
 ```
 
-## 环境变量管理
+## 
 
-### 1. .env 文件
+### 1. .env 
 
 ```bash
 # .env.development
@@ -587,7 +587,7 @@ VITE_API_URL=https://api.example.com
 VITE_APP_TITLE=My App
 ```
 
-### 2. 使用环境变量
+### 2. 
 
 ```typescript
 // Vite
@@ -597,7 +597,7 @@ const apiUrl = import.meta.env.VITE_API_URL;
 const apiUrl = process.env.REACT_APP_API_URL;
 ```
 
-### 3. 类型定义
+### 3. 
 
 ```typescript
 // env.d.ts
@@ -611,7 +611,7 @@ interface ImportMeta {
 }
 ```
 
-## CI/CD 配置
+## CI/CD 
 
 ### 1. GitHub Actions
 
@@ -654,7 +654,7 @@ jobs:
         uses: codecov/codecov-action@v3
 ```
 
-### 2. 自动部署
+### 2. 
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -689,12 +689,12 @@ jobs:
           vercel-project-id: ${{ secrets.PROJECT_ID }}
 ```
 
-## 性能监控
+## 
 
-### 1. 构建分析
+### 1. 
 
 ```javascript
-// 使用 webpack-bundle-analyzer
+//  webpack-bundle-analyzer
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 module.exports = {
@@ -707,64 +707,64 @@ module.exports = {
 };
 ```
 
-### 2. 运行时监控
+### 2. 
 
 ```typescript
-// 性能监控
+// 
 if ('PerformanceObserver' in window) {
   const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
       console.log('Performance:', entry);
-      // 上报到监控平台
+      // 
     }
   });
   
   observer.observe({ entryTypes: ['navigation', 'resource', 'paint'] });
 }
 
-// 错误监控
+// 
 window.addEventListener('error', (event) => {
   console.error('Error:', event.error);
-  // 上报错误
+  // 
 });
 
 window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled Promise:', event.reason);
-  // 上报错误
+  // 
 });
 ```
 
-## 最佳实践
+## 
 
-### 1. 项目结构
+### 1. 
 
 ```
 my-app/
-├── public/              # 静态资源
-├── src/
-│   ├── assets/         # 资源文件
-│   ├── components/     # 组件
-│   ├── hooks/          # 自定义 Hooks
-│   ├── pages/          # 页面
-│   ├── services/       # API 服务
-│   ├── store/          # 状态管理
-│   ├── styles/         # 全局样式
-│   ├── utils/          # 工具函数
-│   ├── App.tsx
-│   └── main.tsx
-├── tests/              # 测试文件
-├── .env                # 环境变量
-├── .eslintrc.js        # ESLint 配置
-├── .prettierrc.js      # Prettier 配置
-├── tsconfig.json       # TypeScript 配置
-├── vite.config.ts      # Vite 配置
-└── package.json
+ public/              # 
+ src/
+    assets/         # 
+    components/     # 
+    hooks/          #  Hooks
+    pages/          # 
+    services/       # API 
+    store/          # 
+    styles/         # 
+    utils/          # 
+    App.tsx
+    main.tsx
+ tests/              # 
+ .env                # 
+ .eslintrc.js        # ESLint 
+ .prettierrc.js      # Prettier 
+ tsconfig.json       # TypeScript 
+ vite.config.ts      # Vite 
+ package.json
 ```
 
-### 2. 代码分割
+### 2. 
 
 ```typescript
-// 路由懒加载
+// 
 import { lazy, Suspense } from 'react';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -782,10 +782,10 @@ function App() {
 }
 ```
 
-### 3. 资源优化
+### 3. 
 
 ```typescript
-// 图片懒加载
+// 
 import { useEffect, useRef } from 'react';
 
 function LazyImage({ src, alt }) {
@@ -812,18 +812,18 @@ function LazyImage({ src, alt }) {
 }
 ```
 
-## 总结
+## 
 
-前端工程化涵盖了开发、构建、测试、部署的全流程，核心目标是：
 
-1. **提高开发效率**：使用现代化的工具和工作流
-2. **保证代码质量**：通过规范和自动化检查
-3. **优化性能**：构建优化和运行时监控
-4. **简化部署**：自动化 CI/CD 流程
 
-## 延伸阅读
+1. ****
+2. ****
+3. ****
+4. **** CI/CD 
 
-- [Webpack 官方文档](https://webpack.js.org/)
-- [Vite 官方文档](https://vitejs.dev/)
-- [ESLint 规则](https://eslint.org/docs/rules/)
+## 
+
+- [Webpack ](https://webpack.js.org/)
+- [Vite ](https://vitejs.dev/)
+- [ESLint ](https://eslint.org/docs/rules/)
 - [Conventional Commits](https://www.conventionalcommits.org/)

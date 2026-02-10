@@ -1,37 +1,37 @@
 ---
 sidebar_position: 2
-title: 接口测试
+title: 
 ---
 
-本章列举了一些直接发起请求的第三方模块，这些模块在 HTTP1.0 时期，非 Js 渲染时代是我们获取网页数据的利器。
+ HTTP1.0  Js 
 
-现在是[HTTP2.0](https://http2-explained.haxx.se/)（简称 h2）以及以 VUE 为代表的 Js 渲染页面时代。因此这些模块现在主要用于获取直接的数据，譬如：图片、视频、纯静态的 HTML 网页或 XHR(XMLHttpRequest)类型的请求。
+[HTTP2.0](https://http2-explained.haxx.se/) h2 VUE  Js  HTML  XHR(XMLHttpRequest)
 
-请求的方法与 HTTP 协议对资源的操作对应
+ HTTP 
 
-(1) GET：请求获取 URL 位置的资源
-(2) HEAD：请求获取 URL 位置资源的响应消息报告，即获得该资源的头部信息
-(3) POST：请求向 URL 位置的资源后附加新的数据
-(4) PUT：请求向 URL 位置存储一个资源，覆盖原 URL 位置的资源
-(5) PATCH：请求局部更新 URL 位置的资源，即更改该处资源的部分内容
-(6) DELETE：请求删除 URL 位置存储的资源
-(特殊)options ：向服务器获取一些服务器和客户端能够打交道的参数，但与获取资源并不直接相关
+(1) GET URL 
+(2) HEAD URL 
+(3) POST URL 
+(4) PUT URL  URL 
+(5) PATCH URL 
+(6) DELETE URL 
+()options 
 
-request 模块：仅支持 HTTP1.0 仅同步 是基于 urllib3 的再次封装，因此语法更简单
+request  HTTP1.0   urllib3 
 
-aiohttp 模块：支持 HTTP2.0 仅异步
+aiohttp  HTTP2.0 
 
-httpx 模块：支持 HTTP1.1/2.0 同步异步，双卡双待，是直接发起请求的模块中最全能的模块。
+httpx  HTTP1.1/2.0 
 
-locust 模块：大规模的并发测试，可以实时查看吞吐量、响应时间和错误和/或导出以供以后分析。
+locust /
 
 ## requests
 
-requests 是基于 urllib3 开发的一个优雅而简单的 PythonHTTP 库，为人类构建。
+requests  urllib3  PythonHTTP 
 
-[requests 模块官方文档](https://requests.readthedocs.io/en/latest/)
+[requests ](https://requests.readthedocs.io/en/latest/)
 
-### requests 发送请求
+### requests 
 
 ```python showLineNumbers
 import requests
@@ -44,31 +44,31 @@ r = requests.patch('http://httpbin.org/patch',data ={'key': 'value'})
 r = requests.options('https://httpbin.org/get')
 ```
 
-### requests 异常处理
+### requests 
 
-Requests 库通过 raise_for_status()引发支持六种常用的连接异常
+Requests  raise_for_status()
 
-(1) requests.ConnectionError：网络连接错误异常，如 DNS 查询失败、拒绝连接等
-(2) requests.HTTPError：HTTP 错误异常
-(3) requests.URLRequired：URL 缺失异常
-(4) requests.TooManyRedirects：超过最大重定向次数，产生重定向异常
-(5) requests.ConnectTimeout：连接远程服务器超时异常
-(6) requests.Timeout：请求 URL 超时，产生超时异常（发出请求到获得内容的整个过程的超时异常）
+(1) requests.ConnectionError DNS 
+(2) requests.HTTPErrorHTTP 
+(3) requests.URLRequiredURL 
+(4) requests.TooManyRedirects
+(5) requests.ConnectTimeout
+(6) requests.Timeout URL 
 
 ```python showLineNumbers
 import requests
 try:
-    r=requests.get("https://www.baidu.com/error",timeout=30) #请求一个url链接
-    r.raise_for_status() #如果状态不是200，引发HTTPError异常
+    r=requests.get("https://www.baidu.com/error",timeout=30) #url
+    r.raise_for_status() #200HTTPError
 except requests.HTTPError as e:
     print(e)# 404 Client Error: Not Found for url: https://www.baidu.com/error
 ```
 
 ## aiohttp
 
-[aiohttp 模块官方文档](https://docs.aiohttp.org/en/stable/)
+[aiohttp ](https://docs.aiohttp.org/en/stable/)
 
-### aiohttp 发起请求
+### aiohttp 
 
 ```python showLineNumbers
 import aiohttp
@@ -89,21 +89,21 @@ asyncio.run(main())
 
 ## httpx
 
-HTTPX 是 Python 3 的全功能 HTTP 客户端，它提供同步和异步 API，并支持 HTTP / 1.1 和 HTTP / 2。配置代理和请求头也很容易。httpx 还有 web 测试模式、精细化配置代理 IP、Event Hooks、SSL 证书等语法，但是因为 VUE 时代的到来，这些实现都有了新的方案，所以不再过多介绍。
+HTTPX  Python 3  HTTP  API HTTP / 1.1  HTTP / 2httpx  web  IPEvent HooksSSL  VUE 
 
-[httpx 代码文档](https://www.python-httpx.org/)
+[httpx ](https://www.python-httpx.org/)
 
-### httpxH2 检测
+### httpxH2 
 
 ```python showLineNumbers
 import httpx
 import asyncio
 
 '''
-检查 HTTP 版本
-在客户端上启用 HTTP/2 支持并不一定意味着您的 请求和响应将通过 HTTP/2 传输，因为客户端和服务器都需要支持 HTTP/2。如果连接到仅 支持 HTTP/1.1 客户端将使用标准的 HTTP/1.1 连接。
+ HTTP 
+ HTTP/2   HTTP/2  HTTP/2  HTTP/1.1  HTTP/1.1 
 
-您可以通过检查来确定使用了哪个版本的 HTTP 协议 响应上的属性。
+ HTTP  
 '''
 async def main():
         client = httpx.AsyncClient(http2=True)
@@ -112,12 +112,12 @@ async def main():
 asyncio.run(main())
 ```
 
-### httpx 发起请求
+### httpx 
 
 ```python showLineNumbers
 import httpx
 
-## HTTP / 1.1 同步请求模式A
+## HTTP / 1.1 A
 r = httpx.post('https://httpbin.org/post', data={'key': 'value'})
 r = httpx.put('https://httpbin.org/put', data={'key': 'value'})
 r = httpx.delete('https://httpbin.org/delete')
@@ -131,7 +131,7 @@ r.status_code # 200
 r.headers['content-type'] # r.headers['content-type']
 r.text #'<!doctype html>...</html>'
 
-## HTTP / 1.1 同步请求模式B
+## HTTP / 1.1 B
 client = httpx.Client()
 r = client.post('https://httpbin.org/post', data={'key': 'value'})
 r = client.put('https://httpbin.org/put', data={'key': 'value'})
@@ -143,7 +143,7 @@ r = client.get('https://www.example.org/')
 client.close()
 
 
-## 异步请求模式A
+## A
 async def maina():
     async with httpx.AsyncClient() as client:
         r = await client.post('https://httpbin.org/post', data={'key': 'value'})
@@ -156,7 +156,7 @@ async def maina():
     print(r)  #<Response [200 OK]>
 asyncio.run(maina())
 
-## 异步请求模式B
+## B
 async def mainb():
     client = httpx.AsyncClient()
     r = await client.post('https://httpbin.org/post', data={'key': 'value'})
@@ -170,11 +170,11 @@ async def mainb():
     print(r)  #<Response [200 OK]>
 asyncio.run(mainb())
 
-## H2模式下同步与异步请求
+## H2
 client = httpx.Client(http2=True)
 client = httpx.AsyncClient(http2=True)
 
-## 配置合并
+## 
 headers = {'X-Auth': 'from-client'}
 params = {'client_id': 'client1'}
 with httpx.Client(headers=headers, params=params,http2=True,proxies="http://localhost:8030") as client:
@@ -188,9 +188,9 @@ r.request.headers['X-Custom'] # 'from-request'
 
 ```
 
-### httpx 高级用法
+### httpx 
 
-如果需要监视大型响应的下载进度，可以使用响应流式处理并检查属性。response.num_bytes_downloaded
+response.num_bytes_downloaded
 
 ```python showLineNumbers
 import tempfile
@@ -216,36 +216,36 @@ with tempfile.NamedTemporaryFile() as download_file:
 
 ## locust
 
-locust 需要创建一个`locustfile.py`的文件，他只是一个普通的 Python 模块，它可以从其他文件或包中导入代码。
+locust `locustfile.py` Python 
 
 ```python showLineNumbers
 import time
 from locust import HttpUser, task, between
 
-# 要使文件成为有效的 locustfile，它必须至少包含一个继承自 User 的类。
+#  locustfile User 
 class QuickstartUser(HttpUser):
-    # 模拟用户在执行每个任务（见下文）后等待 1 到 5 秒。
+    #  1  5 
     wait_time = between(1, 5)
 
-    # 用 @task 修饰的方法是 locust 文件的核心。对于每个正在运行的 User，Locust 都会创建一个 greenlet（协程或“微线程”），它将调用这些方法。任务中的代码是按顺序执行的（它只是常规的 Python 代码），因此在收到来自 /hello 的响应之前，不会调用 /world。
+    #  @task  locust  UserLocust  greenlet“” Python  /hello  /world
     @task
     def hello_world(self):
         self.client.get("/hello")
         self.client.get("/world")
 
-    # 我们通过使用 @task 装饰两个方法来声明两个任务，其中一个方法被赋予了更高的权重 （3）。当我们的 QuickstartUser 运行时，它将选择声明的任务之一 - 在本例中为 hello_world 或 view_items - 并执行它。任务是随机选择的，但您可以为其赋予不同的权重。上述配置将使 Locust 采摘 view_items 的可能性是 hello_world 的三倍。当任务完成执行后，用户将休眠其指定的等待时间（在本例中为 1 到 5 秒）。然后它将选择一个新任务。
+    #  @task  3 QuickstartUser  -  hello_world  view_items -  Locust  view_items  hello_world  1  5 
     @task(3)
     def view_items(self):
         for item_id in range(10):
             self.client.get(f"/item?id={item_id}", name="/item")
             time.sleep(1)
-    # 只有用 @task 修饰的方法才会被选中，因此你可以用任何你喜欢的方式定义自己的内部帮助程序方法。
+    #  @task 
     def on_start(self):
         self.client.post("/login", json={"username":"foo", "password":"bar"})
 ```
 
-启动压力测试可以在通过 `locust` 命令，这将会启动一个可视化操作界面。输入测试时间、并发用户、目标网址等信息即可查看压测结果图表。
+ `locust` 
 
-如果在服务器上执行，可以使用命令行`locust --headless --users 10 --spawn-rate 1 -H http://your-server.com`
+`locust --headless --users 10 --spawn-rate 1 -H http://your-server.com`
 
-更多示例可以查看[官方文档](https://docs.locust.io/)
+[](https://docs.locust.io/)

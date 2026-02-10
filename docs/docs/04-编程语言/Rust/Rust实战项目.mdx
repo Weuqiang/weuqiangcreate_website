@@ -1,25 +1,25 @@
 ---
 sidebar_position: 7
-title: Rust实战项目：CLI工具开发
-tags: [Rust, CLI, 实战项目, 命令行工具]
+title: RustCLI
+tags: [Rust, CLI, , ]
 ---
 
-# Rust实战项目：CLI工具开发
+# RustCLI
 
-## 概述
+## 
 
-Rust非常适合开发命令行工具，本文将通过实战项目学习如何使用Rust开发一个功能完整的CLI工具。
+RustRustCLI
 
-## 项目：文件搜索工具（minigrep）
+## minigrep
 
-我们将开发一个类似`grep`的文件搜索工具，支持：
-- 在文件中搜索指定文本
-- 大小写敏感/不敏感搜索
-- 正则表达式支持
-- 多文件搜索
-- 彩色输出
+`grep`
+- 
+- /
+- 
+- 
+- 
 
-### 1. 项目初始化
+### 1. 
 
 ```bash
 cargo new minigrep
@@ -40,7 +40,7 @@ colored = "2.0"
 anyhow = "1.0"
 ```
 
-### 2. 命令行参数解析
+### 2. 
 
 ```rust
 // src/cli.rs
@@ -50,37 +50,37 @@ use clap::Parser;
 #[command(name = "minigrep")]
 #[command(about = "A simple grep-like tool", long_about = None)]
 pub struct Cli {
-    /// 搜索的模式
+    /// 
     #[arg(short, long)]
     pub pattern: String,
     
-    /// 要搜索的文件路径
+    /// 
     #[arg(short, long)]
     pub file: String,
     
-    /// 忽略大小写
+    /// 
     #[arg(short, long)]
     pub ignore_case: bool,
     
-    /// 使用正则表达式
+    /// 
     #[arg(short, long)]
     pub regex: bool,
     
-    /// 显示行号
+    /// 
     #[arg(short = 'n', long)]
     pub line_number: bool,
     
-    /// 只显示匹配的文件名
+    /// 
     #[arg(short = 'l', long)]
     pub files_with_matches: bool,
     
-    /// 显示匹配的行数
+    /// 
     #[arg(short = 'c', long)]
     pub count: bool,
 }
 ```
 
-### 3. 核心搜索逻辑
+### 3. 
 
 ```rust
 // src/search.rs
@@ -109,7 +109,7 @@ pub fn search_in_file(
     config: &SearchConfig,
 ) -> Result<Vec<SearchResult>> {
     let contents = fs::read_to_string(file_path)
-        .context(format!("无法读取文件: {}", file_path))?;
+        .context(format!(": {}", file_path))?;
     
     let results = if config.use_regex {
         search_with_regex(&contents, &config.pattern, config.ignore_case)?
@@ -166,7 +166,7 @@ fn search_with_regex(
     };
     
     let re = Regex::new(&pattern)
-        .context("无效的正则表达式")?;
+        .context("")?;
     
     let results = contents
         .lines()
@@ -207,7 +207,7 @@ pub fn highlight_match(line: &str, pattern: &str, ignore_case: bool) -> String {
 }
 ```
 
-### 4. 输出格式化
+### 4. 
 
 ```rust
 // src/output.rs
@@ -261,7 +261,7 @@ pub fn print_file_with_matches(file_path: &str) {
 }
 ```
 
-### 5. 主程序
+### 5. 
 
 ```rust
 // src/main.rs
@@ -314,7 +314,7 @@ fn main() -> Result<()> {
 }
 ```
 
-### 6. 添加测试
+### 6. 
 
 ```rust
 // src/search.rs
@@ -367,43 +367,43 @@ invalid-email";
 }
 ```
 
-### 7. 使用示例
+### 7. 
 
 ```bash
-# 基本搜索
+# 
 cargo run -- -p "rust" -f test.txt
 
-# 忽略大小写
+# 
 cargo run -- -p "rust" -f test.txt -i
 
-# 使用正则表达式
+# 
 cargo run -- -p "\w+@\w+\.\w+" -f test.txt -r
 
-# 显示行号
+# 
 cargo run -- -p "rust" -f test.txt -n
 
-# 只显示匹配数量
+# 
 cargo run -- -p "rust" -f test.txt -c
 
-# 只显示包含匹配的文件名
+# 
 cargo run -- -p "rust" -f test.txt -l
 ```
 
-## 扩展功能
+## 
 
-### 1. 多文件搜索
+### 1. 
 
 ```rust
 // src/cli.rs
 #[derive(Parser, Debug)]
 pub struct Cli {
-    // ... 其他字段
+    // ... 
     
-    /// 要搜索的文件路径（支持多个）
+    /// 
     #[arg(short, long, num_args = 1..)]
     pub files: Vec<String>,
     
-    /// 递归搜索目录
+    /// 
     #[arg(short = 'R', long)]
     pub recursive: bool,
 }
@@ -440,7 +440,7 @@ pub fn search_in_directory(
 }
 ```
 
-### 2. 性能优化
+### 2. 
 
 ```rust
 // src/search.rs
@@ -462,7 +462,7 @@ pub fn search_in_files_parallel(
 }
 ```
 
-### 3. 配置文件支持
+### 3. 
 
 ```rust
 // src/config.rs
@@ -496,7 +496,7 @@ impl Config {
 }
 ```
 
-### 4. 进度条
+### 4. 
 
 ```rust
 // src/progress.rs
@@ -514,9 +514,9 @@ pub fn create_progress_bar(total: u64) -> ProgressBar {
 }
 ```
 
-## 项目2：HTTP服务器
+## 2HTTP
 
-### 1. 基础服务器
+### 1. 
 
 ```rust
 // src/main.rs
@@ -526,9 +526,9 @@ use std::thread;
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:8080")
-        .expect("无法绑定端口");
+        .expect("");
     
-    println!("服务器运行在 http://127.0.0.1:8080");
+    println!(" http://127.0.0.1:8080");
     
     for stream in listener.incoming() {
         match stream {
@@ -538,7 +538,7 @@ fn main() {
                 });
             }
             Err(e) => {
-                eprintln!("连接错误: {}", e);
+                eprintln!(": {}", e);
             }
         }
     }
@@ -549,7 +549,7 @@ fn handle_connection(mut stream: TcpStream) {
     stream.read(&mut buffer).unwrap();
     
     let request = String::from_utf8_lossy(&buffer[..]);
-    println!("请求:\n{}", request);
+    println!(":\n{}", request);
     
     let response = "HTTP/1.1 200 OK\r\n\r\nHello, World!";
     stream.write_all(response.as_bytes()).unwrap();
@@ -557,7 +557,7 @@ fn handle_connection(mut stream: TcpStream) {
 }
 ```
 
-### 2. 路由系统
+### 2. 
 
 ```rust
 // src/router.rs
@@ -635,7 +635,7 @@ impl Response {
 }
 ```
 
-### 3. 线程池
+### 3. 
 
 ```rust
 // src/thread_pool.rs
@@ -683,7 +683,7 @@ impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Self {
         let thread = thread::spawn(move || loop {
             let job = receiver.lock().unwrap().recv().unwrap();
-            println!("Worker {} 执行任务", id);
+            println!("Worker {} ", id);
             job();
         });
         
@@ -692,9 +692,9 @@ impl Worker {
 }
 ```
 
-## 最佳实践
+## 
 
-### 1. 错误处理
+### 1. 
 
 ```rust
 use anyhow::{Context, Result};
@@ -702,28 +702,28 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AppError {
-    #[error("文件未找到: {0}")]
+    #[error(": {0}")]
     FileNotFound(String),
     
-    #[error("无效的参数: {0}")]
+    #[error(": {0}")]
     InvalidArgument(String),
     
-    #[error("IO错误")]
+    #[error("IO")]
     IoError(#[from] std::io::Error),
 }
 
 pub fn read_config(path: &str) -> Result<Config> {
     let contents = std::fs::read_to_string(path)
-        .context(format!("无法读取配置文件: {}", path))?;
+        .context(format!(": {}", path))?;
     
     let config: Config = toml::from_str(&contents)
-        .context("配置文件格式错误")?;
+        .context("")?;
     
     Ok(config)
 }
 ```
 
-### 2. 日志记录
+### 2. 
 
 ```rust
 use log::{info, warn, error};
@@ -732,34 +732,34 @@ use env_logger;
 fn main() {
     env_logger::init();
     
-    info!("应用启动");
-    warn!("这是一个警告");
-    error!("这是一个错误");
+    info!("");
+    warn!("");
+    error!("");
 }
 ```
 
-### 3. 性能分析
+### 3. 
 
 ```bash
-# 使用 cargo-flamegraph
+#  cargo-flamegraph
 cargo install flamegraph
 cargo flamegraph
 
-# 使用 criterion 进行基准测试
+#  criterion 
 cargo bench
 ```
 
-## 总结
+## 
 
-通过这些实战项目，我们学习了：
 
-1. **CLI开发**：参数解析、文件操作、输出格式化
-2. **错误处理**：使用 anyhow 和 thiserror
-3. **并发编程**：多线程、线程池
-4. **性能优化**：并行处理、内存优化
-5. **测试**：单元测试、集成测试
 
-## 延伸阅读
+1. **CLI**
+2. **** anyhow  thiserror
+3. ****
+4. ****
+5. ****
+
+## 
 
 - [The Rust Programming Language](https://doc.rust-lang.org/book/)
 - [Rust by Example](https://doc.rust-lang.org/rust-by-example/)

@@ -1,167 +1,167 @@
 ---
 sidebar_position: 3
-title: 系统设计面试指南
-tags: [面试, 系统设计, 架构]
+title: 
+tags: [, , ]
 ---
 
-# 系统设计面试指南
+# 
 
-系统设计面试考察架构设计能力，本文提供系统设计的思路和常见案例。
 
-## 设计思路
 
-### 1. 需求分析
+## 
+
+### 1. 
 
 ```javascript
 /**
- * 系统设计四步法
+ * 
  */
 
 const designProcess = {
   step1: {
-    name: '明确需求',
+    name: '',
     questions: [
-      '系统的核心功能是什么？',
-      '预期用户规模？',
-      '读写比例？',
-      '数据量级？',
-      '性能要求？',
-      '可用性要求？'
+      '',
+      '',
+      '',
+      '',
+      '',
+      ''
     ]
   },
   
   step2: {
-    name: '估算规模',
+    name: '',
     calculations: {
-      users: '日活用户 * 平均请求数',
-      qps: '总请求数 / 86400秒',
-      storage: '单条数据大小 * 数据总量',
-      bandwidth: 'QPS * 平均响应大小'
+      users: ' * ',
+      qps: ' / 86400',
+      storage: ' * ',
+      bandwidth: 'QPS * '
     }
   },
   
   step3: {
-    name: '设计架构',
+    name: '',
     components: [
-      '客户端',
-      '负载均衡',
-      '应用服务器',
-      '缓存',
-      '数据库',
-      '消息队列',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
       'CDN'
     ]
   },
   
   step4: {
-    name: '深入细节',
+    name: '',
     topics: [
-      '数据模型',
-      'API设计',
-      '缓存策略',
-      '数据库分片',
-      '容错处理',
-      '监控告警'
+      '',
+      'API',
+      '',
+      '',
+      '',
+      ''
     ]
   }
 };
 ```
 
-### 2. 容量估算
+### 2. 
 
 ```javascript
 /**
- * 容量估算示例
+ * 
  */
 
-// 短视频系统
+// 
 const shortVideoSystem = {
-  // 假设
+  // 
   assumptions: {
-    dailyActiveUsers: 100_000_000,      // 1亿DAU
-    videosPerUser: 10,                  // 每人每天10个视频
+    dailyActiveUsers: 100_000_000,      // 1DAU
+    videosPerUser: 10,                  // 10
     avgVideoSize: 5 * 1024 * 1024,      // 5MB
-    avgViewDuration: 30,                // 30秒
-    peakFactor: 3                       // 峰值是平均值的3倍
+    avgViewDuration: 30,                // 30
+    peakFactor: 3                       // 3
   },
   
-  // 计算
+  // 
   calculations: {
     // QPS
-    dailyVideos: 100_000_000 * 10,                    // 10亿
+    dailyVideos: 100_000_000 * 10,                    // 10
     avgQPS: 1_000_000_000 / 86400,                    // ~11,574
     peakQPS: 11_574 * 3,                              // ~34,722
     
-    // 存储
-    dailyStorage: 1_000_000_000 * 5 * 1024 * 1024,   // 5PB/天
-    yearlyStorage: 5 * 365,                           // 1825PB/年
+    // 
+    dailyStorage: 1_000_000_000 * 5 * 1024 * 1024,   // 5PB/
+    yearlyStorage: 5 * 365,                           // 1825PB/
     
-    // 带宽
+    // 
     avgBandwidth: 11_574 * 5 * 1024 * 1024,          // ~58TB/s
     peakBandwidth: 58 * 3                             // ~174TB/s
   },
   
-  // 架构决策
+  // 
   decisions: {
-    storage: 'CDN + 对象存储（OSS）',
-    database: '分库分表 + 读写分离',
-    cache: 'Redis集群',
-    mq: 'Kafka处理异步任务'
+    storage: 'CDN + OSS',
+    database: ' + ',
+    cache: 'Redis',
+    mq: 'Kafka'
   }
 };
 ```
 
-## 经典案例
+## 
 
-### 1. 设计短URL系统
+### 1. URL
 
 ```javascript
 /**
- * 短URL系统设计
+ * URL
  */
 
-// 需求分析
+// 
 const requirements = {
   functional: [
-    '长URL转短URL',
-    '短URL跳转到长URL',
-    '自定义短URL',
-    '统计访问次数'
+    'URLURL',
+    'URLURL',
+    'URL',
+    ''
   ],
   nonFunctional: [
-    '高可用：99.9%',
-    '低延迟：<100ms',
-    '高并发：10000 QPS'
+    '99.9%',
+    '<100ms',
+    '10000 QPS'
   ]
 };
 
-// API设计
+// API
 class URLShortenerAPI {
-  // 创建短URL
+  // URL
   async createShortURL(longURL, customAlias = null) {
     // POST /api/shorten
     // Body: { longURL, customAlias }
     
-    // 1. 验证长URL
+    // 1. URL
     if (!this.isValidURL(longURL)) {
       throw new Error('Invalid URL');
     }
     
-    // 2. 检查是否已存在
+    // 2. 
     const existing = await this.db.findByLongURL(longURL);
     if (existing) {
       return existing.shortURL;
     }
     
-    // 3. 生成短码
+    // 3. 
     const shortCode = customAlias || this.generateShortCode();
     
-    // 4. 检查冲突
+    // 4. 
     if (await this.db.exists(shortCode)) {
       throw new Error('Short code already exists');
     }
     
-    // 5. 保存映射
+    // 5. 
     await this.db.save({
       shortCode,
       longURL,
@@ -172,15 +172,15 @@ class URLShortenerAPI {
     return `https://short.url/${shortCode}`;
   }
   
-  // 重定向
+  // 
   async redirect(shortCode) {
     // GET /:shortCode
     
-    // 1. 查询缓存
+    // 1. 
     let longURL = await this.cache.get(shortCode);
     
     if (!longURL) {
-      // 2. 查询数据库
+      // 2. 
       const record = await this.db.findByShortCode(shortCode);
       
       if (!record) {
@@ -189,21 +189,21 @@ class URLShortenerAPI {
       
       longURL = record.longURL;
       
-      // 3. 写入缓存
+      // 3. 
       await this.cache.set(shortCode, longURL, 3600);
     }
     
-    // 4. 异步更新统计
+    // 4. 
     this.updateStats(shortCode);
     
     return longURL;
   }
   
-  // 生成短码
+  // 
   generateShortCode() {
-    // 方案1：Base62编码
+    // 1Base62
     const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const id = this.getNextID(); // 分布式ID生成器
+    const id = this.getNextID(); // ID
     
     let shortCode = '';
     let num = id;
@@ -213,17 +213,17 @@ class URLShortenerAPI {
       num = Math.floor(num / 62);
     }
     
-    return shortCode.padStart(7, '0'); // 7位短码
+    return shortCode.padStart(7, '0'); // 7
   }
   
-  // 方案2：哈希 + 冲突检测
+  // 2 + 
   generateShortCodeHash(longURL) {
     const hash = crypto.createHash('md5').update(longURL).digest('hex');
     return hash.substring(0, 7);
   }
 }
 
-// 数据库设计
+// 
 const schema = {
   urls: {
     id: 'BIGINT PRIMARY KEY',
@@ -236,49 +236,49 @@ const schema = {
   }
 };
 
-// 架构设计
+// 
 const architecture = {
   client: 'Web/Mobile App',
   loadBalancer: 'Nginx',
-  appServers: 'Node.js集群',
-  cache: 'Redis集群',
-  database: 'MySQL主从 + 分库分表',
-  storage: '对象存储（统计数据）',
-  mq: 'Kafka（异步统计）'
+  appServers: 'Node.js',
+  cache: 'Redis',
+  database: 'MySQL + ',
+  storage: '',
+  mq: 'Kafka'
 };
 ```
 
-### 2. 设计秒杀系统
+### 2. 
 
 ```javascript
 /**
- * 秒杀系统设计
+ * 
  */
 
 class SeckillSystem {
-  // 秒杀流程
+  // 
   async seckill(userId, productId) {
-    // 1. 前端限流：按钮置灰、倒计时
+    // 1. 
     
-    // 2. 网关限流
+    // 2. 
     if (!await this.rateLimiter.allow(userId)) {
-      throw new Error('请求过于频繁');
+      throw new Error('');
     }
     
-    // 3. 检查库存（Redis）
+    // 3. Redis
     const stock = await this.redis.get(`stock:${productId}`);
     if (stock <= 0) {
-      throw new Error('商品已售罄');
+      throw new Error('');
     }
     
-    // 4. 预减库存
+    // 4. 
     const newStock = await this.redis.decr(`stock:${productId}`);
     if (newStock < 0) {
       await this.redis.incr(`stock:${productId}`);
-      throw new Error('商品已售罄');
+      throw new Error('');
     }
     
-    // 5. 发送消息队列
+    // 5. 
     await this.mq.send({
       type: 'CREATE_ORDER',
       userId,
@@ -286,36 +286,36 @@ class SeckillSystem {
       timestamp: Date.now()
     });
     
-    return { success: true, message: '抢购成功，正在生成订单' };
+    return { success: true, message: '' };
   }
   
-  // 消费消息队列
+  // 
   async processOrder(message) {
     const { userId, productId } = message;
     
     try {
-      // 1. 创建订单
+      // 1. 
       const order = await this.db.transaction(async (trx) => {
-        // 检查是否已购买
+        // 
         const existing = await trx('orders')
           .where({ userId, productId })
           .first();
         
         if (existing) {
-          throw new Error('已购买过该商品');
+          throw new Error('');
         }
         
-        // 扣减数据库库存
+        // 
         const updated = await trx('products')
           .where('id', productId)
           .where('stock', '>', 0)
           .decrement('stock', 1);
         
         if (updated === 0) {
-          throw new Error('库存不足');
+          throw new Error('');
         }
         
-        // 创建订单
+        // 
         const [orderId] = await trx('orders').insert({
           userId,
           productId,
@@ -326,17 +326,17 @@ class SeckillSystem {
         return orderId;
       });
       
-      // 2. 发送通知
+      // 2. 
       await this.notification.send(userId, {
         type: 'ORDER_CREATED',
         orderId: order
       });
       
     } catch (error) {
-      // 回滚Redis库存
+      // Redis
       await this.redis.incr(`stock:${productId}`);
       
-      // 发送失败通知
+      // 
       await this.notification.send(userId, {
         type: 'ORDER_FAILED',
         reason: error.message
@@ -344,7 +344,7 @@ class SeckillSystem {
     }
   }
   
-  // 库存预热
+  // 
   async warmupStock(productId) {
     const product = await this.db('products')
       .where('id', productId)
@@ -354,69 +354,69 @@ class SeckillSystem {
   }
 }
 
-// 优化策略
+// 
 const optimizations = {
   frontend: [
-    '按钮防抖',
-    '验证码',
-    '排队页面'
+    '',
+    '',
+    ''
   ],
   
   backend: [
-    '限流：令牌桶',
-    '缓存：Redis预热',
-    '异步：消息队列',
-    '降级：返回排队中'
+    '',
+    'Redis',
+    '',
+    ''
   ],
   
   database: [
-    '读写分离',
-    '分库分表',
-    '乐观锁',
-    '批量操作'
+    '',
+    '',
+    '',
+    ''
   ],
   
   infrastructure: [
-    'CDN加速',
-    '负载均衡',
-    '弹性扩容',
-    '熔断降级'
+    'CDN',
+    '',
+    '',
+    ''
   ]
 };
 ```
 
-### 3. 设计分布式ID生成器
+### 3. ID
 
 ```javascript
 /**
- * 分布式ID生成器
+ * ID
  */
 
-// 方案1：Snowflake算法
+// 1Snowflake
 class SnowflakeIDGenerator {
   constructor(workerId, datacenterId) {
-    this.workerId = workerId;           // 10位
-    this.datacenterId = datacenterId;   // 10位
-    this.sequence = 0;                  // 12位
+    this.workerId = workerId;           // 10
+    this.datacenterId = datacenterId;   // 10
+    this.sequence = 0;                  // 12
     this.lastTimestamp = -1;
     
-    // 时间戳占41位，从2020-01-01开始
+    // 412020-01-01
     this.epoch = 1577836800000;
   }
   
   generate() {
     let timestamp = Date.now();
     
-    // 时钟回拨
+    // 
     if (timestamp < this.lastTimestamp) {
       throw new Error('Clock moved backwards');
     }
     
-    // 同一毫秒内
+    // 
     if (timestamp === this.lastTimestamp) {
-      this.sequence = (this.sequence + 1) & 0xfff; // 12位
+      this.sequence = (this.sequence + 1) & 0xfff; // 12
       
-      // 序列号用完，等待下一毫秒
+      // 
       if (this.sequence === 0) {
         timestamp = this.waitNextMillis(timestamp);
       }
@@ -426,12 +426,12 @@ class SnowflakeIDGenerator {
     
     this.lastTimestamp = timestamp;
     
-    // 组装ID
+    // ID
     const id = 
-      ((timestamp - this.epoch) << 22) |  // 41位时间戳
-      (this.datacenterId << 17) |         // 5位数据中心
-      (this.workerId << 12) |             // 5位机器ID
-      this.sequence;                      // 12位序列号
+      ((timestamp - this.epoch) << 22) |  // 41
+      (this.datacenterId << 17) |         // 5
+      (this.workerId << 12) |             // 5ID
+      this.sequence;                      // 12
     
     return id;
   }
@@ -444,7 +444,7 @@ class SnowflakeIDGenerator {
   }
 }
 
-// 方案2：数据库自增ID
+// 2ID
 class DatabaseIDGenerator {
   async generate() {
     const result = await this.db.query(`
@@ -456,13 +456,13 @@ class DatabaseIDGenerator {
   }
 }
 
-// 方案3：Redis自增
+// 3Redis
 class RedisIDGenerator {
   async generate(key) {
     return await this.redis.incr(key);
   }
   
-  // 批量获取
+  // 
   async generateBatch(key, count) {
     const max = await this.redis.incrby(key, count);
     const min = max - count + 1;
@@ -471,7 +471,7 @@ class RedisIDGenerator {
   }
 }
 
-// 方案4：UUID
+// 4UUID
 class UUIDGenerator {
   generate() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -482,35 +482,35 @@ class UUIDGenerator {
   }
 }
 
-// 对比
+// 
 const comparison = {
   snowflake: {
-    pros: ['趋势递增', '高性能', '无依赖'],
-    cons: ['时钟依赖', '需要机器ID']
+    pros: ['', '', ''],
+    cons: ['', 'ID']
   },
   
   database: {
-    pros: ['简单', '全局唯一'],
-    cons: ['性能瓶颈', '单点故障']
+    pros: ['', ''],
+    cons: ['', '']
   },
   
   redis: {
-    pros: ['高性能', '简单'],
-    cons: ['依赖Redis', '需要持久化']
+    pros: ['', ''],
+    cons: ['Redis', '']
   },
   
   uuid: {
-    pros: ['无依赖', '全局唯一'],
-    cons: ['无序', '存储空间大']
+    pros: ['', ''],
+    cons: ['', '']
   }
 };
 ```
 
-### 4. 设计消息队列
+### 4. 
 
 ```javascript
 /**
- * 消息队列设计
+ * 
  */
 
 class MessageQueue {
@@ -519,7 +519,7 @@ class MessageQueue {
     this.consumers = new Map();
   }
   
-  // 发送消息
+  // 
   async send(topic, message) {
     if (!this.queues.has(topic)) {
       this.queues.set(topic, []);
@@ -533,19 +533,19 @@ class MessageQueue {
       retryCount: 0
     };
     
-    // 持久化
+    // 
     await this.persist(msg);
     
-    // 推送到队列
+    // 
     this.queues.get(topic).push(msg);
     
-    // 通知消费者
+    // 
     this.notifyConsumers(topic);
     
     return msg.id;
   }
   
-  // 订阅消息
+  // 
   subscribe(topic, handler) {
     if (!this.consumers.has(topic)) {
       this.consumers.set(topic, []);
@@ -554,7 +554,7 @@ class MessageQueue {
     this.consumers.get(topic).push(handler);
   }
   
-  // 消费消息
+  // 
   async consume(topic) {
     const queue = this.queues.get(topic);
     if (!queue || queue.length === 0) return;
@@ -566,83 +566,83 @@ class MessageQueue {
       try {
         await handler(message);
         
-        // 确认消费
+        // 
         await this.ack(message.id);
       } catch (error) {
-        // 重试
+        // 
         await this.retry(message);
       }
     }
   }
   
-  // 重试机制
+  // 
   async retry(message) {
     message.retryCount++;
     
     if (message.retryCount > 3) {
-      // 进入死信队列
+      // 
       await this.sendToDeadLetter(message);
       return;
     }
     
-    // 延迟重试
+    // 
     const delay = Math.pow(2, message.retryCount) * 1000;
     setTimeout(() => {
       this.queues.get(message.topic).push(message);
     }, delay);
   }
   
-  // 持久化
+  // 
   async persist(message) {
     await this.db.insert('messages', message);
   }
   
-  // 确认消费
+  // 
   async ack(messageId) {
     await this.db.delete('messages', { id: messageId });
   }
 }
 
-// 特性
+// 
 const features = {
   reliability: [
-    '消息持久化',
-    'ACK确认机制',
-    '重试机制',
-    '死信队列'
+    '',
+    'ACK',
+    '',
+    ''
   ],
   
   performance: [
-    '批量发送',
-    '异步处理',
-    '消息压缩',
-    '零拷贝'
+    '',
+    '',
+    '',
+    ''
   ],
   
   scalability: [
-    '分区',
-    '副本',
-    '集群',
-    '负载均衡'
+    '',
+    '',
+    '',
+    ''
   ],
   
   ordering: [
-    '全局有序',
-    '分区有序',
-    '消费者有序'
+    '',
+    '',
+    ''
   ]
 };
 ```
 
-## 总结
+## 
 
-系统设计要点：
-- 📋 **需求分析**：功能、性能、规模
-- 📊 **容量估算**：QPS、存储、带宽
-- 🏗️ **架构设计**：分层、分布式、高可用
-- 💾 **数据设计**：数据模型、分库分表
-- 🔧 **技术选型**：缓存、队列、存储
-- 🎯 **优化方案**：性能、可用性、扩展性
 
-记住：**没有完美的设计，只有合适的权衡！**
+-  ****
+-  ****QPS
+-  ****
+-  ****
+-  ****
+-  ****
+
+****
 

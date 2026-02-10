@@ -1,34 +1,34 @@
 ---
 sidebar_position: 6
-title: Webpack完整指南
-tags: [Webpack, 前端工程化, 构建工具]
+title: Webpack
+tags: [Webpack, , ]
 ---
 
-# Webpack完整指南
+# Webpack
 
-Webpack是最流行的模块打包工具，本文将全面讲解Webpack的配置和优化技巧。
+WebpackWebpack
 
-## 核心概念
+## 
 
-### 五大核心
+### 
 
 ```mermaid
 graph TB
-    A[Entry 入口] --> B[Output 输出]
-    A --> C[Loader 转换器]
-    A --> D[Plugin 插件]
-    A --> E[Mode 模式]
+    A[Entry ] --> B[Output ]
+    A --> C[Loader ]
+    A --> D[Plugin ]
+    A --> E[Mode ]
     
     style A fill:#42b883
 ```
 
-1. **Entry**: 打包入口
-2. **Output**: 输出配置
-3. **Loader**: 文件转换器
-4. **Plugin**: 功能扩展
-5. **Mode**: 开发/生产模式
+1. **Entry**: 
+2. **Output**: 
+3. **Loader**: 
+4. **Plugin**: 
+5. **Mode**: /
 
-## 基础配置
+## 
 
 ### webpack.config.js
 
@@ -39,25 +39,25 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
-  // 入口
+  // 
   entry: {
     main: './src/index.js',
     vendor: './src/vendor.js'
   },
   
-  // 输出
+  // 
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].[contenthash:8].js',
     chunkFilename: '[name].[contenthash:8].chunk.js',
     publicPath: '/',
-    clean: true // Webpack 5自动清理
+    clean: true // Webpack 5
   },
   
-  // 模式
+  // 
   mode: 'production', // 'development' | 'production' | 'none'
   
-  // 模块规则
+  // 
   module: {
     rules: [
       // JavaScript/JSX
@@ -104,7 +104,7 @@ module.exports = {
         ]
       },
       
-      // 图片
+      // 
       {
         test: /\.(png|jpg|jpeg|gif|svg)$/,
         type: 'asset',
@@ -118,7 +118,7 @@ module.exports = {
         }
       },
       
-      // 字体
+      // 
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/,
         type: 'asset/resource',
@@ -129,12 +129,12 @@ module.exports = {
     ]
   },
   
-  // 插件
+  // 
   plugins: [
-    // 清理输出目录
+    // 
     new CleanWebpackPlugin(),
     
-    // HTML模板
+    // HTML
     new HtmlWebpackPlugin({
       template: './public/index.html',
       filename: 'index.html',
@@ -145,14 +145,14 @@ module.exports = {
       }
     }),
     
-    // 提取CSS
+    // CSS
     new MiniCssExtractPlugin({
       filename: 'css/[name].[contenthash:8].css',
       chunkFilename: 'css/[name].[contenthash:8].chunk.css'
     })
   ],
   
-  // 解析配置
+  // 
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
     alias: {
@@ -162,9 +162,9 @@ module.exports = {
     }
   },
   
-  // 优化配置
+  // 
   optimization: {
-    // 代码分割
+    // 
     splitChunks: {
       chunks: 'all',
       cacheGroups: {
@@ -180,11 +180,11 @@ module.exports = {
         }
       }
     },
-    // 运行时代码单独打包
+    // 
     runtimeChunk: 'single'
   },
   
-  // 开发服务器
+  // 
   devServer: {
     static: {
       directory: path.join(__dirname, 'public')
@@ -208,12 +208,12 @@ module.exports = {
 };
 ```
 
-## 环境配置
+## 
 
-### 分离配置文件
+### 
 
 ```javascript
-// webpack.common.js - 公共配置
+// webpack.common.js - 
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
@@ -239,7 +239,7 @@ module.exports = {
   ]
 };
 
-// webpack.dev.js - 开发配置
+// webpack.dev.js - 
 const { merge } = require('webpack-merge');
 const common = require('./webpack.common.js');
 
@@ -260,7 +260,7 @@ module.exports = merge(common, {
   }
 });
 
-// webpack.prod.js - 生产配置
+// webpack.prod.js - 
 const { merge } = require('webpack-merge');
 const common = require('./webpack.common.js');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -298,7 +298,7 @@ module.exports = merge(common, {
 });
 ```
 
-### package.json脚本
+### package.json
 
 ```json
 {
@@ -310,9 +310,9 @@ module.exports = merge(common, {
 }
 ```
 
-## 性能优化
+## 
 
-### 1. 代码分割
+### 1. 
 
 ```javascript
 module.exports = {
@@ -325,25 +325,25 @@ module.exports = {
       maxAsyncRequests: 30,
       maxInitialRequests: 30,
       cacheGroups: {
-        // React相关
+        // React
         react: {
           test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
           name: 'react',
           priority: 20
         },
-        // UI库
+        // UI
         antd: {
           test: /[\\/]node_modules[\\/]antd[\\/]/,
           name: 'antd',
           priority: 15
         },
-        // 其他第三方库
+        // 
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name: 'vendors',
           priority: 10
         },
-        // 公共代码
+        // 
         common: {
           minChunks: 2,
           priority: 5,
@@ -370,13 +370,13 @@ module.exports = {
 module.exports = {
   mode: 'production',
   optimization: {
-    usedExports: true, // 标记未使用的导出
-    minimize: true     // 删除未使用的代码
+    usedExports: true, // 
+    minimize: true     // 
   }
 };
 ```
 
-### 3. 缓存优化
+### 3. 
 
 ```javascript
 module.exports = {
@@ -408,7 +408,7 @@ module.exports = {
 };
 ```
 
-### 4. 并行构建
+### 4. 
 
 ```javascript
 const TerserPlugin = require('terser-webpack-plugin');
@@ -418,7 +418,7 @@ module.exports = {
   optimization: {
     minimizer: [
       new TerserPlugin({
-        parallel: true // 多进程并行
+        parallel: true // 
       }),
       new CssMinimizerPlugin({
         parallel: true
@@ -433,7 +433,7 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            cacheDirectory: true // 启用缓存
+            cacheDirectory: true // 
           }
         }
       }
@@ -442,7 +442,7 @@ module.exports = {
 };
 ```
 
-### 5. DLL优化
+### 5. DLL
 
 ```javascript
 // webpack.dll.js
@@ -483,9 +483,9 @@ module.exports = {
 };
 ```
 
-## 常用Loader
+## Loader
 
-### 样式处理
+### 
 
 ```javascript
 module.exports = {
@@ -531,13 +531,13 @@ module.exports = {
 };
 ```
 
-### 文件处理
+### 
 
 ```javascript
 module.exports = {
   module: {
     rules: [
-      // 图片优化
+      // 
       {
         test: /\.(png|jpg|jpeg|gif)$/,
         use: [
@@ -552,7 +552,7 @@ module.exports = {
         type: 'asset'
       },
       
-      // SVG处理
+      // SVG
       {
         test: /\.svg$/,
         use: ['@svgr/webpack', 'url-loader']
@@ -562,9 +562,9 @@ module.exports = {
 };
 ```
 
-## 常用Plugin
+## Plugin
 
-### 功能增强
+### 
 
 ```javascript
 const webpack = require('webpack');
@@ -574,19 +574,19 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   plugins: [
-    // 环境变量
+    // 
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify('production'),
       'process.env.API_URL': JSON.stringify('https://api.example.com')
     }),
     
-    // 打包分析
+    // 
     new BundleAnalyzerPlugin({
       analyzerMode: 'static',
       openAnalyzer: false
     }),
     
-    // Gzip压缩
+    // Gzip
     new CompressionPlugin({
       algorithm: 'gzip',
       test: /\.(js|css|html|svg)$/,
@@ -594,14 +594,14 @@ module.exports = {
       minRatio: 0.8
     }),
     
-    // 复制文件
+    // 
     new CopyPlugin({
       patterns: [
         { from: 'public', to: 'public' }
       ]
     }),
     
-    // 进度条
+    // 
     new webpack.ProgressPlugin()
   ]
 };
@@ -646,7 +646,7 @@ module.exports = {
   ]
 };
 
-// 使用远程组件
+// 
 import React from 'react';
 const RemoteButton = React.lazy(() => import('app1/Button'));
 
@@ -659,44 +659,44 @@ function App() {
 }
 ```
 
-## 调试技巧
+## 
 
-### Source Map配置
+### Source Map
 
 ```javascript
 module.exports = {
-  // 开发环境
-  devtool: 'eval-source-map', // 快速，完整映射
+  // 
+  devtool: 'eval-source-map', // 
   
-  // 生产环境
-  devtool: 'source-map', // 慢，完整映射
-  // 或
-  devtool: 'hidden-source-map', // 不暴露源码
-  // 或
-  devtool: false // 不生成source map
+  // 
+  devtool: 'source-map', // 
+  // 
+  devtool: 'hidden-source-map', // 
+  // 
+  devtool: false // source map
 };
 ```
 
-### 构建分析
+### 
 
 ```bash
-# 生成stats.json
+# stats.json
 webpack --profile --json > stats.json
 
-# 使用webpack-bundle-analyzer
+# webpack-bundle-analyzer
 npm run build -- --env analyze
 
-# 使用webpack-visualizer
+# webpack-visualizer
 webpack-visualizer stats.json
 ```
 
-## 最佳实践
+## 
 
-### 1. 配置优化
+### 1. 
 
 ```javascript
 module.exports = {
-  // 减少解析范围
+  // 
   resolve: {
     modules: [path.resolve(__dirname, 'node_modules')],
     extensions: ['.js', '.jsx'],
@@ -705,7 +705,7 @@ module.exports = {
     }
   },
   
-  // 排除不需要解析的模块
+  // 
   module: {
     noParse: /jquery|lodash/,
     rules: [
@@ -719,7 +719,7 @@ module.exports = {
 };
 ```
 
-### 2. 生产优化
+### 2. 
 
 ```javascript
 module.exports = {
@@ -758,14 +758,14 @@ module.exports = {
 };
 ```
 
-## 总结
+## 
 
-Webpack的核心能力：
-- 📦 **模块打包**：支持各种模块规范
-- 🔄 **代码转换**：通过Loader转换文件
-- 🔌 **功能扩展**：通过Plugin扩展功能
-- ⚡ **性能优化**：代码分割、Tree Shaking、缓存
-- 🎯 **灵活配置**：适应各种项目需求
+Webpack
+-  ****
+-  ****Loader
+-  ****Plugin
+-  ****Tree Shaking
+-  ****
 
-掌握Webpack是前端工程化的基础！
+Webpack
 

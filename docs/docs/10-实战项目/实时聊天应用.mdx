@@ -1,16 +1,16 @@
 ---
 sidebar_position: 2
-title: 实时聊天应用实战
-tags: [实战项目, WebSocket, 实时通信]
+title: 
+tags: [, WebSocket, ]
 ---
 
-# 实时聊天应用实战
+# 
 
-本文将带你构建一个功能完整的实时聊天应用，支持私聊、群聊、文件传输等功能。
 
-## 项目概述
 
-### 技术栈
+## 
+
+### 
 
 ```javascript
 const techStack = {
@@ -33,44 +33,44 @@ const techStack = {
 };
 ```
 
-### 核心功能
+### 
 
 ```javascript
 const features = {
   messaging: [
-    '实时消息发送/接收',
-    '消息已读/未读',
-    '消息撤回',
-    '消息转发',
-    '@提醒功能'
+    '/',
+    '/',
+    '',
+    '',
+    '@'
   ],
   
   chat: [
-    '私聊',
-    '群聊',
-    '聊天室列表',
-    '在线状态'
+    '',
+    '',
+    '',
+    ''
   ],
   
   media: [
-    '图片发送',
-    '文件传输',
-    '语音消息',
-    '视频通话'
+    '',
+    '',
+    '',
+    ''
   ],
   
   other: [
-    '消息搜索',
-    '聊天记录',
-    '表情包',
-    '消息通知'
+    '',
+    '',
+    '',
+    ''
   ]
 };
 ```
 
-## 后端实现
+## 
 
-### WebSocket服务
+### WebSocket
 
 ```javascript
 // server.js
@@ -91,7 +91,7 @@ const io = socketIO(server, {
 
 const redis = new Redis();
 
-// 用户在线状态管理
+// 
 class OnlineManager {
   constructor() {
     this.users = new Map(); // userId -> socketId
@@ -118,30 +118,30 @@ class OnlineManager {
 
 const onlineManager = new OnlineManager();
 
-// Socket.io连接处理
+// Socket.io
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
   
-  // 用户登录
+  // 
   socket.on('login', async (userId) => {
     socket.userId = userId;
     onlineManager.addUser(userId, socket.id);
     
-    // 加入用户的所有聊天室
+    // 
     const rooms = await getUserRooms(userId);
     rooms.forEach(room => {
       socket.join(room.id);
     });
     
-    // 广播用户上线
+    // 
     socket.broadcast.emit('user_online', userId);
     
-    // 发送离线消息
+    // 
     const offlineMessages = await getOfflineMessages(userId);
     socket.emit('offline_messages', offlineMessages);
   });
   
-  // 发送消息
+  // 
   socket.on('send_message', async (data) => {
     const { roomId, content, type, to } = data;
     
@@ -156,35 +156,35 @@ io.on('connection', (socket) => {
       status: 'sent'
     };
     
-    // 保存消息
+    // 
     await saveMessage(message);
     
     if (roomId) {
-      // 群聊消息
+      // 
       io.to(roomId).emit('new_message', message);
     } else {
-      // 私聊消息
+      // 
       const targetSocketId = onlineManager.getSocketId(to);
       
       if (targetSocketId) {
-        // 用户在线，直接发送
+        // 
         io.to(targetSocketId).emit('new_message', message);
         socket.emit('message_sent', { messageId: message.id, status: 'delivered' });
       } else {
-        // 用户离线，存储离线消息
+        // 
         await saveOfflineMessage(to, message);
         socket.emit('message_sent', { messageId: message.id, status: 'sent' });
       }
     }
   });
   
-  // 消息已读
+  // 
   socket.on('message_read', async (data) => {
     const { messageId, roomId } = data;
     
     await markMessageAsRead(messageId, socket.userId);
     
-    // 通知发送者
+    // 
     const message = await getMessage(messageId);
     const senderSocketId = onlineManager.getSocketId(message.from);
     
@@ -196,7 +196,7 @@ io.on('connection', (socket) => {
     }
   });
   
-  // 正在输入
+  // 
   socket.on('typing', (data) => {
     const { roomId, to } = data;
     
@@ -215,7 +215,7 @@ io.on('connection', (socket) => {
     }
   });
   
-  // 停止输入
+  // 
   socket.on('stop_typing', (data) => {
     const { roomId, to } = data;
     
@@ -234,7 +234,7 @@ io.on('connection', (socket) => {
     }
   });
   
-  // 创建群聊
+  // 
   socket.on('create_room', async (data) => {
     const { name, members } = data;
     
@@ -244,7 +244,7 @@ io.on('connection', (socket) => {
       members: [socket.userId, ...members]
     });
     
-    // 所有成员加入房间
+    // 
     room.members.forEach(memberId => {
       const socketId = onlineManager.getSocketId(memberId);
       if (socketId) {
@@ -252,11 +252,11 @@ io.on('connection', (socket) => {
       }
     });
     
-    // 通知所有成员
+    // 
     io.to(room.id).emit('room_created', room);
   });
   
-  // 加入群聊
+  // 
   socket.on('join_room', async (roomId) => {
     socket.join(roomId);
     
@@ -268,7 +268,7 @@ io.on('connection', (socket) => {
     });
   });
   
-  // 离开群聊
+  // 
   socket.on('leave_room', async (roomId) => {
     socket.leave(roomId);
     
@@ -280,11 +280,11 @@ io.on('connection', (socket) => {
     });
   });
   
-  // 文件传输
+  // 
   socket.on('send_file', async (data) => {
     const { roomId, to, file } = data;
     
-    // 上传文件到存储服务
+    // 
     const fileUrl = await uploadFile(file);
     
     const message = {
@@ -311,7 +311,7 @@ io.on('connection', (socket) => {
     }
   });
   
-  // 视频通话
+  // 
   socket.on('call_user', (data) => {
     const { to, offer } = data;
     const targetSocketId = onlineManager.getSocketId(to);
@@ -348,7 +348,7 @@ io.on('connection', (socket) => {
     }
   });
   
-  // 断开连接
+  // 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     
@@ -364,7 +364,7 @@ server.listen(3000, () => {
 });
 ```
 
-### 数据模型
+### 
 
 ```javascript
 // models/Message.js
@@ -454,9 +454,9 @@ const roomSchema = new mongoose.Schema({
 module.exports = mongoose.model('Room', roomSchema);
 ```
 
-## 前端实现
+## 
 
-### Socket连接管理
+### Socket
 
 ```javascript
 // services/socket.js
@@ -487,7 +487,7 @@ class SocketService {
       console.log('Connected to server');
       this.connected = true;
       
-      // 登录
+      // 
       this.socket.emit('login', userStore.user.id);
     });
     
@@ -496,56 +496,56 @@ class SocketService {
       this.connected = false;
     });
     
-    // 新消息
+    // 
     this.socket.on('new_message', (message) => {
       chatStore.addMessage(message);
       
-      // 显示通知
+      // 
       if (Notification.permission === 'granted') {
-        new Notification('新消息', {
+        new Notification('', {
           body: message.content,
           icon: '/logo.png'
         });
       }
       
-      // 播放提示音
+      // 
       const audio = new Audio('/notification.mp3');
       audio.play();
     });
     
-    // 离线消息
+    // 
     this.socket.on('offline_messages', (messages) => {
       messages.forEach(message => {
         chatStore.addMessage(message);
       });
     });
     
-    // 消息已读
+    // 
     this.socket.on('message_read', ({ messageId, readBy }) => {
       chatStore.markMessageAsRead(messageId, readBy);
     });
     
-    // 用户上线
+    // 
     this.socket.on('user_online', (userId) => {
       chatStore.setUserOnline(userId, true);
     });
     
-    // 用户离线
+    // 
     this.socket.on('user_offline', (userId) => {
       chatStore.setUserOnline(userId, false);
     });
     
-    // 正在输入
+    // 
     this.socket.on('user_typing', ({ userId, roomId }) => {
       chatStore.setUserTyping(userId, roomId, true);
     });
     
-    // 停止输入
+    // 
     this.socket.on('user_stop_typing', ({ userId, roomId }) => {
       chatStore.setUserTyping(userId, roomId, false);
     });
     
-    // 视频通话
+    // 
     this.socket.on('incoming_call', ({ from, offer }) => {
       chatStore.handleIncomingCall(from, offer);
     });
@@ -559,47 +559,47 @@ class SocketService {
     });
   }
   
-  // 发送消息
+  // 
   sendMessage(data) {
     this.socket.emit('send_message', data);
   }
   
-  // 标记已读
+  // 
   markAsRead(messageId, roomId) {
     this.socket.emit('message_read', { messageId, roomId });
   }
   
-  // 正在输入
+  // 
   typing(data) {
     this.socket.emit('typing', data);
   }
   
-  // 停止输入
+  // 
   stopTyping(data) {
     this.socket.emit('stop_typing', data);
   }
   
-  // 创建群聊
+  // 
   createRoom(data) {
     this.socket.emit('create_room', data);
   }
   
-  // 发送文件
+  // 
   sendFile(data) {
     this.socket.emit('send_file', data);
   }
   
-  // 发起视频通话
+  // 
   callUser(to, offer) {
     this.socket.emit('call_user', { to, offer });
   }
   
-  // 接听视频通话
+  // 
   answerCall(to, answer) {
     this.socket.emit('answer_call', { to, answer });
   }
   
-  // ICE候选
+  // ICE
   sendIceCandidate(to, candidate) {
     this.socket.emit('ice_candidate', { to, candidate });
   }
@@ -614,7 +614,7 @@ class SocketService {
 export default new SocketService();
 ```
 
-### 聊天组件
+### 
 
 ```vue
 <!-- components/ChatWindow.vue -->
@@ -626,17 +626,17 @@ export default new SocketService();
         <div>
           <h3>{{ currentChat.name }}</h3>
           <span v-if="isTyping" class="typing-indicator">
-            正在输入...
+            ...
           </span>
           <span v-else class="online-status">
-            {{ currentChat.online ? '在线' : '离线' }}
+            {{ currentChat.online ? '' : '' }}
           </span>
         </div>
       </div>
       
       <div class="chat-actions">
         <el-button @click="startVideoCall" icon="VideoCamera">
-          视频通话
+          
         </el-button>
       </div>
     </div>
@@ -667,7 +667,7 @@ export default new SocketService();
             <el-icon><Document /></el-icon>
             <span>{{ message.fileName }}</span>
             <el-button size="small" @click="downloadFile(message)">
-              下载
+              
             </el-button>
           </div>
           
@@ -691,13 +691,13 @@ export default new SocketService();
         v-model="inputMessage"
         @input="handleTyping"
         @keyup.enter="sendMessage"
-        placeholder="输入消息..."
+        placeholder="..."
         type="textarea"
         :rows="3"
       />
       
       <el-button type="primary" @click="sendMessage">
-        发送
+        
       </el-button>
     </div>
   </div>
@@ -721,7 +721,7 @@ const currentChat = computed(() => chatStore.currentChat);
 const messages = computed(() => chatStore.currentMessages);
 const isTyping = computed(() => chatStore.isUserTyping(currentChat.value?.id));
 
-// 发送消息
+// 
 const sendMessage = () => {
   if (!inputMessage.value.trim()) return;
   
@@ -736,7 +736,7 @@ const sendMessage = () => {
   stopTyping();
 };
 
-// 处理输入
+// 
 const handleTyping = () => {
   socketService.typing({
     to: currentChat.value.id,
@@ -754,7 +754,7 @@ const stopTyping = () => {
   });
 };
 
-// 选择图片
+// 
 const selectImage = () => {
   const input = document.createElement('input');
   input.type = 'file';
@@ -770,7 +770,7 @@ const selectImage = () => {
   input.click();
 };
 
-// 上传图片
+// 
 const uploadImage = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
@@ -790,7 +790,7 @@ const uploadImage = async (file) => {
   });
 };
 
-// 发起视频通话
+// 
 const startVideoCall = async () => {
   const stream = await navigator.mediaDevices.getUserMedia({
     video: true,
@@ -809,7 +809,7 @@ const startVideoCall = async () => {
   socketService.callUser(currentChat.value.id, offer);
 };
 
-// 滚动到底部
+// 
 const scrollToBottom = () => {
   nextTick(() => {
     if (messageList.value) {
@@ -857,15 +857,15 @@ watch(messages, scrollToBottom);
 </style>
 ```
 
-## 总结
+## 
 
-实时聊天应用要点：
-- 🔌 **WebSocket**：Socket.io实现实时通信
-- 💬 **消息系统**：发送、接收、已读、撤回
-- 👥 **在线状态**：Redis管理在线用户
-- 📁 **文件传输**：支持图片、文件发送
-- 📹 **视频通话**：WebRTC实现音视频
-- 🔔 **消息通知**：浏览器通知、提示音
 
-记住：**实时性、可靠性、用户体验是关键！**
+-  **WebSocket**Socket.io
+-  ****
+-  ****Redis
+-  ****
+-  ****WebRTC
+-  ****
+
+****
 

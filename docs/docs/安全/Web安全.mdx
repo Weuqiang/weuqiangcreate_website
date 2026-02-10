@@ -1,37 +1,37 @@
 ---
 sidebar_position: 1
-title: Web安全攻防
+title: Web
 ---
 
-# Web安全攻防
+# Web
 
-Web安全是每个开发者必须掌握的技能，了解常见攻击手段才能更好地防护。
+Web
 
-## XSS（跨站脚本攻击）
+## XSS
 
-### 攻击原理
+### 
 
 ```html
-<!-- 存储型XSS -->
+<!-- XSS -->
 <div>
-  用户评论：<script>alert('XSS')</script>
+  <script>alert('XSS')</script>
 </div>
 
-<!-- 反射型XSS -->
+<!-- XSS -->
 <div>
-  搜索结果：<?php echo $_GET['keyword']; ?>
+  <?php echo $_GET['keyword']; ?>
 </div>
 
-<!-- DOM型XSS -->
+<!-- DOMXSS -->
 <script>
   document.write(location.hash.substring(1));
 </script>
 ```
 
-### 防护措施
+### 
 
 ```javascript
-// 1. 输出编码
+// 1. 
 function escapeHtml(text) {
   const map = {
     '&': '&amp;',
@@ -43,30 +43,30 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-// 2. 使用安全的API
-// ❌ 危险
+// 2. API
+//  
 element.innerHTML = userInput;
-// ✅ 安全
+//  
 element.textContent = userInput;
 
-// 3. CSP（内容安全策略）
+// 3. CSP
 // HTTP Header
 Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'
 
 // 4. HttpOnly Cookie
 res.cookie('token', token, {
-  httpOnly: true,  // 防止JavaScript访问
-  secure: true,    // 仅HTTPS传输
+  httpOnly: true,  // JavaScript
+  secure: true,    // HTTPS
   sameSite: 'strict'
 });
 ```
 
-## CSRF（跨站请求伪造）
+## CSRF
 
-### 攻击原理
+### 
 
 ```html
-<!-- 攻击者网站 -->
+<!--  -->
 <img src="https://bank.com/transfer?to=attacker&amount=1000" />
 
 <form action="https://bank.com/transfer" method="POST">
@@ -76,15 +76,15 @@ res.cookie('token', token, {
 <script>document.forms[0].submit();</script>
 ```
 
-### 防护措施
+### 
 
 ```javascript
 // 1. CSRF Token
-// 服务端生成token
+// token
 const csrfToken = crypto.randomBytes(32).toString('hex');
 req.session.csrfToken = csrfToken;
 
-// 前端发送请求时携带token
+// token
 fetch('/api/transfer', {
   method: 'POST',
   headers: {
@@ -93,52 +93,52 @@ fetch('/api/transfer', {
   body: JSON.stringify(data)
 });
 
-// 服务端验证token
+// token
 if (req.headers['x-csrf-token'] !== req.session.csrfToken) {
   return res.status(403).json({ error: 'Invalid CSRF token' });
 }
 
 // 2. SameSite Cookie
 res.cookie('session', sessionId, {
-  sameSite: 'strict'  // 或 'lax'
+  sameSite: 'strict'  //  'lax'
 });
 
-// 3. 验证Referer
+// 3. Referer
 if (!req.headers.referer?.startsWith('https://mysite.com')) {
   return res.status(403).json({ error: 'Invalid referer' });
 }
 
-// 4. 双重Cookie验证
+// 4. Cookie
 res.cookie('csrf', csrfToken);
-// 前端需要同时在Cookie和Header中发送
+// CookieHeader
 ```
 
-## SQL注入
+## SQL
 
-### 攻击原理
+### 
 
 ```javascript
-// ❌ 危险：直接拼接SQL
+//  SQL
 const username = req.body.username;  // "admin' OR '1'='1"
 const sql = `SELECT * FROM users WHERE username = '${username}'`;
-// 实际执行：SELECT * FROM users WHERE username = 'admin' OR '1'='1'
+// SELECT * FROM users WHERE username = 'admin' OR '1'='1'
 ```
 
-### 防护措施
+### 
 
 ```javascript
-// 1. 使用参数化查询
-// ✅ 安全
+// 1. 
+//  
 const sql = 'SELECT * FROM users WHERE username = ?';
 db.query(sql, [username]);
 
-// 2. ORM框架
+// 2. ORM
 // Sequelize
 const user = await User.findOne({
   where: { username: username }
 });
 
-// 3. 输入验证
+// 3. 
 function validateUsername(username) {
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
     throw new Error('Invalid username');
@@ -146,52 +146,52 @@ function validateUsername(username) {
   return username;
 }
 
-// 4. 最小权限原则
-// 数据库用户只授予必要的权限
+// 4. 
+// 
 GRANT SELECT, INSERT, UPDATE ON mydb.* TO 'app_user'@'localhost';
 ```
 
-## 文件上传漏洞
+## 
 
-### 攻击原理
+### 
 
 ```javascript
-// 上传恶意文件
+// 
 // shell.php
 <?php system($_GET['cmd']); ?>
 ```
 
-### 防护措施
+### 
 
 ```javascript
 const multer = require('multer');
 const path = require('path');
 
-// 1. 文件类型验证
+// 1. 
 const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
 
 const upload = multer({
   storage: multer.diskStorage({
     destination: './uploads/',
     filename: (req, file, cb) => {
-      // 2. 重命名文件
+      // 2. 
       const uniqueName = `${Date.now()}-${Math.random().toString(36)}${path.extname(file.originalname)}`;
       cb(null, uniqueName);
     }
   }),
   fileFilter: (req, file, cb) => {
-    // 3. 验证MIME类型
+    // 3. MIME
     if (!allowedTypes.includes(file.mimetype)) {
       return cb(new Error('Invalid file type'));
     }
     cb(null, true);
   },
   limits: {
-    fileSize: 5 * 1024 * 1024  // 4. 限制文件大小：5MB
+    fileSize: 5 * 1024 * 1024  // 4. 5MB
   }
 });
 
-// 5. 验证文件内容（魔数）
+// 5. 
 const fileType = require('file-type');
 
 async function validateFile(filePath) {
@@ -201,18 +201,18 @@ async function validateFile(filePath) {
   }
 }
 
-// 6. 存储在非Web目录
-// 或使用对象存储服务（OSS）
+// 6. Web
+// OSS
 ```
 
-## 认证与授权
+## 
 
-### JWT实现
+### JWT
 
 ```javascript
 const jwt = require('jsonwebtoken');
 
-// 生成Token
+// Token
 function generateToken(user) {
   return jwt.sign(
     { 
@@ -228,7 +228,7 @@ function generateToken(user) {
   );
 }
 
-// 验证Token
+// Token
 function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   
@@ -245,15 +245,15 @@ function verifyToken(req, res, next) {
   }
 }
 
-// 刷新Token
+// Token
 function refreshToken(oldToken) {
   const decoded = jwt.verify(oldToken, process.env.JWT_SECRET, {
     ignoreExpiration: true
   });
   
-  // 检查是否在刷新窗口内
+  // 
   const now = Math.floor(Date.now() / 1000);
-  if (now - decoded.exp > 86400) {  // 24小时
+  if (now - decoded.exp > 86400) {  // 24
     throw new Error('Token expired');
   }
   
@@ -261,17 +261,17 @@ function refreshToken(oldToken) {
 }
 ```
 
-### RBAC权限控制
+### RBAC
 
 ```javascript
-// 角色定义
+// 
 const roles = {
   admin: ['read', 'write', 'delete'],
   editor: ['read', 'write'],
   viewer: ['read']
 };
 
-// 权限检查中间件
+// 
 function checkPermission(requiredPermission) {
   return (req, res, next) => {
     const userRole = req.user.role;
@@ -285,7 +285,7 @@ function checkPermission(requiredPermission) {
   };
 }
 
-// 使用
+// 
 app.delete('/api/users/:id', 
   verifyToken,
   checkPermission('delete'),
@@ -293,23 +293,23 @@ app.delete('/api/users/:id',
 );
 ```
 
-## 密码安全
+## 
 
 ```javascript
 const bcrypt = require('bcrypt');
 
-// 1. 密码哈希
+// 1. 
 async function hashPassword(password) {
   const saltRounds = 10;
   return await bcrypt.hash(password, saltRounds);
 }
 
-// 2. 密码验证
+// 2. 
 async function verifyPassword(password, hash) {
   return await bcrypt.compare(password, hash);
 }
 
-// 3. 密码强度验证
+// 3. 
 function validatePassword(password) {
   const minLength = 8;
   const hasUpperCase = /[A-Z]/.test(password);
@@ -326,37 +326,37 @@ function validatePassword(password) {
   }
 }
 
-// 4. 防止暴力破解
+// 4. 
 const rateLimit = require('express-rate-limit');
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15分钟
-  max: 5,  // 最多5次尝试
+  windowMs: 15 * 60 * 1000,  // 15
+  max: 5,  // 5
   message: 'Too many login attempts'
 });
 
 app.post('/api/login', loginLimiter, login);
 ```
 
-## 安全Headers
+## Headers
 
 ```javascript
 const helmet = require('helmet');
 
 app.use(helmet());
 
-// 或手动设置
+// 
 app.use((req, res, next) => {
-  // 防止点击劫持
+  // 
   res.setHeader('X-Frame-Options', 'DENY');
   
-  // 防止MIME类型嗅探
+  // MIME
   res.setHeader('X-Content-Type-Options', 'nosniff');
   
-  // XSS保护
+  // XSS
   res.setHeader('X-XSS-Protection', '1; mode=block');
   
-  // HTTPS强制
+  // HTTPS
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   
   // CSP
@@ -366,24 +366,24 @@ app.use((req, res, next) => {
 });
 ```
 
-## 最佳实践
+## 
 
-1. **永远不要信任用户输入**
-2. **使用HTTPS**加密传输
-3. **定期更新依赖**修复漏洞
-4. **最小权限原则**
-5. **日志记录**安全事件
-6. **定期安全审计**
-7. **使用安全的库和框架**
-8. **敏感数据加密存储**
+1. ****
+2. **HTTPS**
+3. ****
+4. ****
+5. ****
+6. ****
+7. ****
+8. ****
 
-## 总结
+## 
 
-Web安全的核心是：
-- ✅ 防止XSS、CSRF、SQL注入
-- ✅ 安全的文件上传
-- ✅ 强密码和JWT认证
-- ✅ RBAC权限控制
-- ✅ 设置安全Headers
-- ✅ 持续监控和更新
+Web
+-  XSSCSRFSQL
+-  
+-  JWT
+-  RBAC
+-  Headers
+-  
 

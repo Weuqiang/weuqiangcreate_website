@@ -1,13 +1,13 @@
 ---
 sidebar_position: 2
-title: Redis实战应用
+title: Redis
 ---
 
-# Redis实战应用
+# Redis
 
-Redis是高性能的内存数据库，广泛应用于缓存、消息队列、分布式锁等场景。
+Redis
 
-## 数据结构
+## 
 
 ### String
 
@@ -16,13 +16,13 @@ import redis
 
 r = redis.Redis(host='localhost', port=6379, db=0)
 
-# 基本操作
+# 
 r.set('key', 'value')
 r.get('key')
-r.incr('counter')  # 自增
-r.expire('key', 3600)  # 设置过期时间
+r.incr('counter')  # 
+r.expire('key', 3600)  # 
 
-# 批量操作
+# 
 r.mset({'key1': 'value1', 'key2': 'value2'})
 r.mget(['key1', 'key2'])
 ```
@@ -30,76 +30,76 @@ r.mget(['key1', 'key2'])
 ### Hash
 
 ```python
-# 存储对象
+# 
 r.hset('user:1', 'name', 'John')
 r.hset('user:1', 'age', 30)
 r.hget('user:1', 'name')
 r.hgetall('user:1')
 
-# 批量操作
+# 
 r.hmset('user:2', {'name': 'Alice', 'age': 25})
 ```
 
 ### List
 
 ```python
-# 队列操作
-r.lpush('queue', 'task1')  # 左侧插入
-r.rpush('queue', 'task2')  # 右侧插入
-r.lpop('queue')  # 左侧弹出
-r.rpop('queue')  # 右侧弹出
+# 
+r.lpush('queue', 'task1')  # 
+r.rpush('queue', 'task2')  # 
+r.lpop('queue')  # 
+r.rpop('queue')  # 
 
-# 阻塞队列
+# 
 r.blpop('queue', timeout=5)
 ```
 
 ### Set
 
 ```python
-# 集合操作
+# 
 r.sadd('tags', 'python', 'redis', 'database')
 r.smembers('tags')
 r.sismember('tags', 'python')
 
-# 集合运算
-r.sinter('set1', 'set2')  # 交集
-r.sunion('set1', 'set2')  # 并集
-r.sdiff('set1', 'set2')   # 差集
+# 
+r.sinter('set1', 'set2')  # 
+r.sunion('set1', 'set2')  # 
+r.sdiff('set1', 'set2')   # 
 ```
 
 ### Sorted Set
 
 ```python
-# 排行榜
+# 
 r.zadd('leaderboard', {'player1': 100, 'player2': 200})
-r.zrange('leaderboard', 0, 9, withscores=True)  # 前10名
-r.zrevrange('leaderboard', 0, 9, withscores=True)  # 倒序
-r.zrank('leaderboard', 'player1')  # 排名
+r.zrange('leaderboard', 0, 9, withscores=True)  # 10
+r.zrevrange('leaderboard', 0, 9, withscores=True)  # 
+r.zrank('leaderboard', 'player1')  # 
 ```
 
-## 实战场景
+## 
 
-### 1. 缓存
+### 1. 
 
 ```python
 def get_user(user_id):
-    # 先查缓存
+    # 
     cache_key = f'user:{user_id}'
     user = r.get(cache_key)
     
     if user:
         return json.loads(user)
     
-    # 缓存未命中，查数据库
+    # 
     user = db.query(f'SELECT * FROM users WHERE id = {user_id}')
     
-    # 写入缓存
+    # 
     r.setex(cache_key, 3600, json.dumps(user))
     
     return user
 ```
 
-### 2. 分布式锁
+### 2. 
 
 ```python
 import uuid
@@ -113,7 +113,7 @@ class RedisLock:
         self.identifier = str(uuid.uuid4())
     
     def acquire(self):
-        """获取锁"""
+        """"""
         end_time = time.time() + self.timeout
         
         while time.time() < end_time:
@@ -129,7 +129,7 @@ class RedisLock:
         return False
     
     def release(self):
-        """释放锁"""
+        """"""
         lua_script = """
         if redis.call("get", KEYS[1]) == ARGV[1] then
             return redis.call("del", KEYS[1])
@@ -140,22 +140,22 @@ class RedisLock:
         self.redis.eval(lua_script, 1, self.lock_name, self.identifier)
 ```
 
-### 3. 限流器
+### 3. 
 
 ```python
 def rate_limiter(user_id, max_requests=100, window=60):
-    """滑动窗口限流"""
+    """"""
     key = f'rate_limit:{user_id}'
     now = time.time()
     
-    # 删除窗口外的记录
+    # 
     r.zremrangebyscore(key, 0, now - window)
     
-    # 统计当前窗口内的请求数
+    # 
     count = r.zcard(key)
     
     if count < max_requests:
-        # 添加当前请求
+        # 
         r.zadd(key, {str(uuid.uuid4()): now})
         r.expire(key, window)
         return True
@@ -163,14 +163,14 @@ def rate_limiter(user_id, max_requests=100, window=60):
     return False
 ```
 
-### 4. 消息队列
+### 4. 
 
 ```python
-# 生产者
+# 
 def publish_message(channel, message):
     r.publish(channel, json.dumps(message))
 
-# 消费者
+# 
 def consume_messages(channel):
     pubsub = r.pubsub()
     pubsub.subscribe(channel)
@@ -181,26 +181,26 @@ def consume_messages(channel):
             process_message(data)
 ```
 
-### 5. 排行榜
+### 5. 
 
 ```python
 def update_score(user_id, score):
-    """更新分数"""
+    """"""
     r.zadd('leaderboard', {user_id: score})
 
 def get_top_users(n=10):
-    """获取前N名"""
+    """N"""
     return r.zrevrange('leaderboard', 0, n-1, withscores=True)
 
 def get_user_rank(user_id):
-    """获取用户排名"""
+    """"""
     rank = r.zrevrank('leaderboard', user_id)
     return rank + 1 if rank is not None else None
 ```
 
-## Redis集群
+## Redis
 
-### Redis Sentinel（哨兵）
+### Redis Sentinel
 
 ```python
 from redis.sentinel import Sentinel
@@ -211,11 +211,11 @@ sentinel = Sentinel([
     ('localhost', 26381)
 ], socket_timeout=0.1)
 
-# 获取主节点
+# 
 master = sentinel.master_for('mymaster', socket_timeout=0.1)
 master.set('key', 'value')
 
-# 获取从节点
+# 
 slave = sentinel.slave_for('mymaster', socket_timeout=0.1)
 value = slave.get('key')
 ```
@@ -235,76 +235,76 @@ rc = RedisCluster(startup_nodes=startup_nodes, decode_responses=True)
 rc.set('key', 'value')
 ```
 
-## 持久化
+## 
 
-### RDB（快照）
+### RDB
 
 ```conf
 # redis.conf
-save 900 1      # 900秒内至少1个key变化
-save 300 10     # 300秒内至少10个key变化
-save 60 10000   # 60秒内至少10000个key变化
+save 900 1      # 9001key
+save 300 10     # 30010key
+save 60 10000   # 6010000key
 ```
 
-### AOF（追加文件）
+### AOF
 
 ```conf
 # redis.conf
 appendonly yes
-appendfsync everysec  # 每秒同步一次
+appendfsync everysec  # 
 ```
 
-## 性能优化
+## 
 
-### 1. 使用Pipeline
+### 1. Pipeline
 
 ```python
-# ❌ 错误：逐条执行
+#  
 for i in range(1000):
     r.set(f'key:{i}', i)
 
-# ✅ 正确：使用Pipeline
+#  Pipeline
 pipe = r.pipeline()
 for i in range(1000):
     pipe.set(f'key:{i}', i)
 pipe.execute()
 ```
 
-### 2. 避免大key
+### 2. key
 
 ```python
-# ❌ 错误：单个key存储大量数据
+#  key
 r.hset('user:all', mapping={f'user:{i}': data for i in range(100000)})
 
-# ✅ 正确：拆分为多个key
+#  key
 for i in range(100000):
     r.hset(f'user:{i}', mapping=data)
 ```
 
-### 3. 设置过期时间
+### 3. 
 
 ```python
-# 避免内存溢出
-r.setex('cache:key', 3600, value)  # 1小时过期
+# 
+r.setex('cache:key', 3600, value)  # 1
 ```
 
-## 最佳实践
+## 
 
-1. **合理选择数据结构**
-2. **设置过期时间**避免内存溢出
-3. **使用Pipeline**批量操作
-4. **避免大key**影响性能
-5. **使用连接池**复用连接
-6. **监控内存使用**及时清理
-7. **配置持久化**保证数据安全
-8. **使用集群**提高可用性
+1. ****
+2. ****
+3. **Pipeline**
+4. **key**
+5. ****
+6. ****
+7. ****
+8. ****
 
-## 总结
+## 
 
-Redis的核心是：
-- ✅ 掌握五种数据结构
-- ✅ 理解常见应用场景
-- ✅ 实现分布式锁和限流
-- ✅ 配置集群和持久化
-- ✅ 优化性能和内存使用
+Redis
+-  
+-  
+-  
+-  
+-  
 

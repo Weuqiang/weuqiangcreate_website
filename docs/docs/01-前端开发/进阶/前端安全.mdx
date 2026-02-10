@@ -1,86 +1,86 @@
 ---
 sidebarDepth: 4
 ---
-# 前端安全
+# 
 
-前端安全听起来很高大上，其实就是防止别人在你网站上搞破坏。主要防三种攻击：XSS（注入恶意脚本）、CSRF（伪造用户请求）、点击劫持（骗用户点击）。
+XSSCSRF
 
-## XSS（跨站脚本攻击）
+## XSS
 
-XSS就是黑客想办法把自己的JavaScript代码塞进你的网页，然后偷用户的Cookie、劫持账号、搞破坏。
+XSSJavaScriptCookie
 
-### XSS 类型
+### XSS 
 
-**1. 反射型 XSS**
+**1.  XSS**
 
-最简单的一种。黑客把恶意代码藏在URL里，诱导你点击，服务器傻乎乎地把这段代码直接输出到页面上。
+URL
 
 ```javascript
-// 危险代码
+// 
 app.get('/', (req, res) => {
   const { content } = req.query;
-  res.send(`<div>${content}</div>`);  // 直接输出用户输入
+  res.send(`<div>${content}</div>`);  // 
 });
 
-// 攻击示例
+// 
 // http://example.com/?content=<script>alert(document.cookie)</script>
 ```
 
-**2. 存储型 XSS**
+**2.  XSS**
 
-最危险的一种。恶意代码被存进数据库（比如评论区），所有看到这条评论的人都中招。
+
 
 ```javascript
-// 危险代码
+// 
 app.post('/comment', async (req, res) => {
   const { content } = req.body;
-  await db.insert({ content });  // 直接存储用户输入
+  await db.insert({ content });  // 
 });
 
 app.get('/comments', async (req, res) => {
   const comments = await db.find();
-  res.render('comments', { comments });  // 直接渲染
+  res.render('comments', { comments });  // 
 });
 ```
 
-**3. DOM 型 XSS**
+**3. DOM  XSS**
 
-纯前端的锅。JavaScript直接把用户输入塞进DOM，没做任何过滤。
+JavaScriptDOM
 
 ```javascript
-// 危险代码
+// 
 const hash = location.hash.slice(1);
 document.getElementById('content').innerHTML = hash;
 
-// 攻击示例
+// 
 // http://example.com/#<img src=x onerror=alert(1)>
 ```
 
-### 怎么防XSS
+### XSS
 
-**1. 输入验证**
+**1. **
 
-别信任用户输入的任何东西。能用白名单就别用黑名单（黑名单总有漏网之鱼）。
+
 
 ```javascript
-// 白名单验证
+// 
 function validateInput(input) {
   const allowedPattern = /^[a-zA-Z0-9\s]+$/;
   return allowedPattern.test(input);
 }
 
-// 黑名单过滤（不推荐，容易被绕过）
+// 
 function filterInput(input) {
   return input.replace(/<script>/gi, '');
 }
 ```
 
-**2. 输出编码**
+**2. **
 
-把特殊字符转义。`<script>`变成`&lt;script&gt;`，浏览器就不会当成代码执行了。
+`<script>``&lt;script&gt;`
 
 ```javascript
-// HTML 实体编码
+// HTML 
 function escapeHtml(str) {
   const map = {
     '&': '&amp;',
@@ -93,38 +93,38 @@ function escapeHtml(str) {
   return str.replace(/[&<>"'/]/g, char => map[char]);
 }
 
-// 使用
+// 
 const userInput = '<script>alert(1)</script>';
 const safe = escapeHtml(userInput);
 // &lt;script&gt;alert(1)&lt;/script&gt;
 ```
 
-**3. 用安全的API**
+**3. API**
 
-能用`textContent`就别用`innerHTML`。前者只会当成纯文本，后者会解析HTML。
+`textContent``innerHTML`HTML
 
 ```javascript
-// 危险
+// 
 element.innerHTML = userInput;
 
-// 安全
+// 
 element.textContent = userInput;
 element.innerText = userInput;
 ```
 
-**4. CSP（内容安全策略）**
+**4. CSP**
 
-告诉浏览器：只能加载我指定来源的脚本，其他的一律拦截。
+
 
 ```html
-<!-- 通过 meta 标签设置 -->
+<!--  meta  -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://trusted.com">
 
-<!-- 或通过 HTTP 响应头 -->
+<!--  HTTP  -->
 ```
 
 ```javascript
-// Node.js 设置 CSP
+// Node.js  CSP
 app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
@@ -134,44 +134,44 @@ app.use((req, res, next) => {
 });
 ```
 
-**CSP 指令**：
-- `default-src`：默认策略
-- `script-src`：脚本来源
-- `style-src`：样式来源
-- `img-src`：图片来源
-- `connect-src`：AJAX、WebSocket 等连接来源
-- `font-src`：字体来源
-- `frame-src`：iframe 来源
+**CSP **
+- `default-src`
+- `script-src`
+- `style-src`
+- `img-src`
+- `connect-src`AJAXWebSocket 
+- `font-src`
+- `frame-src`iframe 
 
 **5. HttpOnly Cookie**
 
-给Cookie加上HttpOnly标记，JavaScript就读不到了。就算XSS成功，也偷不走Cookie。
+CookieHttpOnlyJavaScriptXSSCookie
 
 ```javascript
-// 设置 HttpOnly，防止 JavaScript 访问 Cookie
+//  HttpOnly JavaScript  Cookie
 res.cookie('sessionId', 'xxx', {
   httpOnly: true,
-  secure: true,      // 仅 HTTPS
-  sameSite: 'strict' // 防 CSRF
+  secure: true,      //  HTTPS
+  sameSite: 'strict' //  CSRF
 });
 ```
 
-## CSRF（跨站请求伪造）
+## CSRF
 
-CSRF的套路是：你登录了银行网站，然后点了个钓鱼链接，那个页面偷偷用你的身份给银行发请求（比如转账）。因为浏览器会自动带上Cookie，银行以为是你本人操作。
+CSRFCookie
 
-攻击流程：
-1. 你登录`bank.com`，浏览器存了Cookie
-2. 你访问恶意网站`evil.com`
-3. `evil.com`的代码偷偷向`bank.com`发请求
-4. 浏览器自动带上Cookie
-5. 银行以为是你本人，转账成功
+
+1. `bank.com`Cookie
+2. `evil.com`
+3. `evil.com``bank.com`
+4. Cookie
+5. 
 
 ```html
-<!-- 恶意网站 evil.com -->
+<!--  evil.com -->
 <img src="https://bank.com/transfer?to=hacker&amount=10000">
 
-<!-- 或使用表单自动提交 -->
+<!--  -->
 <form action="https://bank.com/transfer" method="POST">
   <input type="hidden" name="to" value="hacker">
   <input type="hidden" name="amount" value="10000">
@@ -179,55 +179,55 @@ CSRF的套路是：你登录了银行网站，然后点了个钓鱼链接，那�
 <script>document.forms[0].submit();</script>
 ```
 
-### 怎么防CSRF
+### CSRF
 
 **1. CSRF Token**
 
-最常用的方法。服务器生成一个随机token，藏在表单里。提交时验证这个token，黑客网站拿不到这个token，请求就会被拒绝。
+tokentokentoken
 
 ```javascript
-// 服务端生成 token
+//  token
 app.get('/form', (req, res) => {
   const csrfToken = generateToken();
   req.session.csrfToken = csrfToken;
   res.render('form', { csrfToken });
 });
 
-// 验证 token
+//  token
 app.post('/submit', (req, res) => {
   const { csrfToken } = req.body;
   if (csrfToken !== req.session.csrfToken) {
     return res.status(403).send('Invalid CSRF token');
   }
-  // 处理请求
+  // 
 });
 ```
 
 ```html
-<!-- 表单中包含 token -->
+<!--  token -->
 <form method="POST" action="/submit">
   <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
-  <button type="submit">提交</button>
+  <button type="submit"></button>
 </form>
 ```
 
 **2. SameSite Cookie**
 
-给Cookie加个SameSite属性，浏览器就不会在跨站请求时自动带上Cookie了。
+CookieSameSiteCookie
 
 ```javascript
 res.cookie('sessionId', 'xxx', {
-  sameSite: 'strict'  // 或 'lax'
+  sameSite: 'strict'  //  'lax'
 });
 ```
 
-- `Strict`：最严格，跨站请求完全不带Cookie
-- `Lax`：宽松点，GET请求和链接跳转可以带Cookie
-- `None`：不限制，但必须配合HTTPS（Secure）
+- `Strict`Cookie
+- `Lax`GETCookie
+- `None`HTTPSSecure
 
-**3. 验证Referer**
+**3. Referer**
 
-检查请求是从哪个页面发过来的。不是自己网站的请求就拒绝。不过Referer可以被伪造，不太靠谱。
+Referer
 
 ```javascript
 app.post('/api', (req, res) => {
@@ -235,24 +235,24 @@ app.post('/api', (req, res) => {
   if (!referer || !referer.startsWith('https://example.com')) {
     return res.status(403).send('Invalid referer');
   }
-  // 处理请求
+  // 
 });
 ```
 
-**4. 双重 Cookie 验证**
+**4.  Cookie **
 
 ```javascript
-// 设置 Cookie
+//  Cookie
 res.cookie('csrfToken', token);
 
-// 请求时在请求头中也带上 token
+//  token
 fetch('/api', {
   headers: {
     'X-CSRF-Token': getCookie('csrfToken')
   }
 });
 
-// 服务端验证
+// 
 app.post('/api', (req, res) => {
   const cookieToken = req.cookies.csrfToken;
   const headerToken = req.headers['x-csrf-token'];
@@ -262,24 +262,24 @@ app.post('/api', (req, res) => {
 });
 ```
 
-## 点击劫持
+## 
 
-黑客用透明的iframe把你的网站盖在他的页面上，用户以为点的是他的按钮，实际上点的是你网站的按钮（比如"删除账号"）。
+iframe""
 
-### 怎么防点击劫持
+### 
 
 **1. X-Frame-Options**
 
-最简单粗暴的方法，直接禁止别人用iframe嵌入你的网站。
+iframe
 
 ```javascript
-// 禁止被 iframe 嵌入
+//  iframe 
 res.setHeader('X-Frame-Options', 'DENY');
 
-// 只允许同源嵌入
+// 
 res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
-// 允许指定来源嵌入
+// 
 res.setHeader('X-Frame-Options', 'ALLOW-FROM https://example.com');
 ```
 
@@ -292,45 +292,45 @@ res.setHeader(
 );
 ```
 
-**3. JavaScript 防御**
+**3. JavaScript **
 
 ```javascript
-// 检测是否被嵌入
+// 
 if (top !== self) {
   top.location = self.location;
 }
 ```
 
-## SQL 注入
+## SQL 
 
-虽然是后端问题，但前端也需要了解。
 
-### 危险代码
+
+### 
 
 ```javascript
-// 危险：直接拼接 SQL
+//  SQL
 const username = req.body.username;
 const sql = `SELECT * FROM users WHERE username = '${username}'`;
 
-// 攻击示例
+// 
 // username = "admin' OR '1'='1"
-// 最终 SQL: SELECT * FROM users WHERE username = 'admin' OR '1'='1'
+//  SQL: SELECT * FROM users WHERE username = 'admin' OR '1'='1'
 ```
 
-### 防御方法
+### 
 
-**1. 参数化查询**
+**1. **
 
 ```javascript
-// 使用参数化查询
+// 
 const sql = 'SELECT * FROM users WHERE username = ?';
 db.query(sql, [username]);
 
-// 或使用 ORM
+//  ORM
 const user = await User.findOne({ where: { username } });
 ```
 
-**2. 输入验证**
+**2. **
 
 ```javascript
 function validateUsername(username) {
@@ -339,36 +339,36 @@ function validateUsername(username) {
 }
 ```
 
-## 密码安全
+## 
 
-### 密码存储
+### 
 
 ```javascript
 const bcrypt = require('bcrypt');
 
-// 加密密码
+// 
 async function hashPassword(password) {
   const salt = await bcrypt.genSalt(10);
   return await bcrypt.hash(password, salt);
 }
 
-// 验证密码
+// 
 async function verifyPassword(password, hash) {
   return await bcrypt.compare(password, hash);
 }
 
-// 使用
+// 
 const hashedPassword = await hashPassword('user123');
 // $2b$10$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 const isValid = await verifyPassword('user123', hashedPassword);
 ```
 
-### 密码强度验证
+### 
 
 ```javascript
 function validatePassword(password) {
-  // 至少8位，包含大小写字母、数字、特殊字符
+  // 8
   const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return pattern.test(password);
 }
@@ -376,40 +376,40 @@ function validatePassword(password) {
 
 ## HTTPS
 
-HTTPS 通过 TLS/SSL 加密通信，防止中间人攻击。
+HTTPS  TLS/SSL 
 
-### 工作原理
+### 
 
-1. **客户端发起请求**：支持的加密算法列表
-2. **服务器响应**：选择加密算法，发送证书（包含公钥）
-3. **客户端验证证书**：验证证书有效性
-4. **生成会话密钥**：客户端生成随机密钥，用服务器公钥加密发送
-5. **服务器解密**：用私钥解密获得会话密钥
-6. **加密通信**：双方使用会话密钥进行对称加密通信
+1. ****
+2. ****
+3. ****
+4. ****
+5. ****
+6. ****
 
-### 证书验证
+### 
 
-浏览器会验证：
-- 证书是否过期
-- 证书域名是否匹配
-- 证书是否被信任的 CA 签发
-- 证书是否被吊销
 
-## 其他安全措施
+- 
+- 
+-  CA 
+- 
 
-### 1. 输入长度限制
+## 
+
+### 1. 
 
 ```javascript
-// 前端限制
+// 
 <input type="text" maxlength="100">
 
-// 后端验证
+// 
 if (input.length > 100) {
   return res.status(400).send('Input too long');
 }
 ```
 
-### 2. 文件上传安全
+### 2. 
 
 ```javascript
 const multer = require('multer');
@@ -419,7 +419,7 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024  // 5MB
   },
   fileFilter: (req, file, cb) => {
-    // 验证文件类型
+    // 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
@@ -430,26 +430,26 @@ const upload = multer({
 });
 ```
 
-### 3. 敏感信息保护
+### 3. 
 
 ```javascript
-// 不要在前端存储敏感信息
-// 错误
+// 
+// 
 localStorage.setItem('password', 'xxx');
 localStorage.setItem('creditCard', 'xxx');
 
-// 正确：只存储必要的非敏感信息
+// 
 localStorage.setItem('theme', 'dark');
 localStorage.setItem('language', 'zh-CN');
 ```
 
-### 4. 安全的随机数
+### 4. 
 
 ```javascript
-// 不安全
+// 
 Math.random();
 
-// 安全
+// 
 crypto.getRandomValues(new Uint32Array(1))[0];
 
 // Node.js
@@ -457,40 +457,40 @@ const crypto = require('crypto');
 crypto.randomBytes(32).toString('hex');
 ```
 
-### 5. 依赖安全
+### 5. 
 
 ```bash
-# 检查依赖漏洞
+# 
 npm audit
 
-# 自动修复
+# 
 npm audit fix
 
-# 使用 Snyk 等工具
+#  Snyk 
 npx snyk test
 ```
 
-## 安全检查清单
+## 
 
-**前端**：
-- [ ] 所有用户输入都经过验证和编码
-- [ ] 使用 `textContent` 而非 `innerHTML`
-- [ ] 设置 CSP 策略
-- [ ] Cookie 设置 HttpOnly 和 Secure
-- [ ] 实现 CSRF 防护
-- [ ] 不在前端存储敏感信息
-- [ ] 使用 HTTPS
+****
+- [ ] 
+- [ ]  `textContent`  `innerHTML`
+- [ ]  CSP 
+- [ ] Cookie  HttpOnly  Secure
+- [ ]  CSRF 
+- [ ] 
+- [ ]  HTTPS
 
-**后端**：
-- [ ] 使用参数化查询防止 SQL 注入
-- [ ] 密码使用 bcrypt 等算法加密
-- [ ] 实现请求频率限制
-- [ ] 验证文件上传类型和大小
-- [ ] 设置安全响应头
-- [ ] 定期更新依赖
-- [ ] 记录安全日志
+****
+- [ ]  SQL 
+- [ ]  bcrypt 
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] 
 
-## 参考资源
+## 
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [MDN Web Security](https://developer.mozilla.org/en-US/docs/Web/Security)

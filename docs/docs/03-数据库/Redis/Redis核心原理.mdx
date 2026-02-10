@@ -1,252 +1,252 @@
 ---
 sidebar_position: 3
-title: Redis核心原理与实战
-tags: [数据库, Redis, 缓存, 数据结构]
+title: Redis
+tags: [, Redis, , ]
 ---
 
-# Redis核心原理与实战
+# Redis
 
-Redis是高性能的内存数据库，本文将深入讲解Redis的数据结构、持久化、集群等核心原理。
+RedisRedis
 
-## 数据结构
+## 
 
-### 1. String（字符串）
+### 1. String
 
 ```bash
-# 基本操作
+# 
 SET key value
 GET key
 DEL key
 
-# 数值操作
+# 
 SET counter 0
 INCR counter        # 1
 INCRBY counter 10   # 11
 DECR counter        # 10
 
-# 批量操作
+# 
 MSET key1 value1 key2 value2
 MGET key1 key2
 
-# 过期时间
-SETEX key 3600 value  # 设置并指定过期时间
-EXPIRE key 3600       # 设置过期时间
-TTL key              # 查看剩余时间
+# 
+SETEX key 3600 value  # 
+EXPIRE key 3600       # 
+TTL key              # 
 
-# 应用场景
-# 1. 缓存
+# 
+# 1. 
 SET user:1:info '{"name":"John","age":30}'
 
-# 2. 计数器
+# 2. 
 INCR page:views
 INCR user:1:followers
 
-# 3. 分布式锁
+# 3. 
 SET lock:order:123 uuid NX EX 30
 ```
 
-### 2. Hash（哈希）
+### 2. Hash
 
 ```bash
-# 基本操作
+# 
 HSET user:1 name John
 HSET user:1 age 30
 HGET user:1 name
 HGETALL user:1
 
-# 批量操作
+# 
 HMSET user:1 name John age 30 email john@example.com
 HMGET user:1 name age
 
-# 数值操作
+# 
 HINCRBY user:1 age 1
 
-# 应用场景
-# 1. 对象存储
+# 
+# 1. 
 HMSET product:1 name iPhone price 999 stock 100
 
-# 2. 购物车
+# 2. 
 HSET cart:user:1 product:1 2
 HSET cart:user:1 product:2 1
 HGETALL cart:user:1
 ```
 
-### 3. List（列表）
+### 3. List
 
 ```bash
-# 基本操作
-LPUSH list value1    # 左侧插入
-RPUSH list value2    # 右侧插入
-LPOP list           # 左侧弹出
-RPOP list           # 右侧弹出
-LRANGE list 0 -1    # 查看所有元素
+# 
+LPUSH list value1    # 
+RPUSH list value2    # 
+LPOP list           # 
+RPOP list           # 
+LRANGE list 0 -1    # 
 
-# 阻塞操作
-BLPOP list 30       # 阻塞弹出，超时30秒
+# 
+BLPOP list 30       # 30
 
-# 应用场景
-# 1. 消息队列
+# 
+# 1. 
 LPUSH queue:tasks task1
 BRPOP queue:tasks 0
 
-# 2. 最新列表
+# 2. 
 LPUSH news:latest article1
-LRANGE news:latest 0 9  # 最新10条
+LRANGE news:latest 0 9  # 10
 
-# 3. 时间线
+# 3. 
 LPUSH timeline:user:1 post1
-LRANGE timeline:user:1 0 19  # 最新20条
+LRANGE timeline:user:1 0 19  # 20
 ```
 
-### 4. Set（集合）
+### 4. Set
 
 ```bash
-# 基本操作
+# 
 SADD set member1
 SREM set member1
 SMEMBERS set
 SISMEMBER set member1
 
-# 集合运算
-SINTER set1 set2     # 交集
-SUNION set1 set2     # 并集
-SDIFF set1 set2      # 差集
+# 
+SINTER set1 set2     # 
+SUNION set1 set2     # 
+SDIFF set1 set2      # 
 
-# 应用场景
-# 1. 标签系统
+# 
+# 1. 
 SADD user:1:tags tech music
 SADD user:2:tags tech sports
-SINTER user:1:tags user:2:tags  # 共同兴趣
+SINTER user:1:tags user:2:tags  # 
 
-# 2. 好友关系
+# 2. 
 SADD user:1:friends user:2 user:3
 SADD user:2:friends user:1 user:4
-SINTER user:1:friends user:2:friends  # 共同好友
+SINTER user:1:friends user:2:friends  # 
 
-# 3. 去重
+# 3. 
 SADD unique:visitors user:1
-SCARD unique:visitors  # 独立访客数
+SCARD unique:visitors  # 
 ```
 
-### 5. Sorted Set（有序集合）
+### 5. Sorted Set
 
 ```bash
-# 基本操作
+# 
 ZADD zset 100 member1
 ZADD zset 200 member2
 ZRANGE zset 0 -1 WITHSCORES
-ZREVRANGE zset 0 -1  # 倒序
+ZREVRANGE zset 0 -1  # 
 
-# 范围查询
+# 
 ZRANGEBYSCORE zset 100 200
 ZCOUNT zset 100 200
 
-# 排名
+# 
 ZRANK zset member1
 ZREVRANK zset member1
 
-# 应用场景
-# 1. 排行榜
+# 
+# 1. 
 ZADD leaderboard 1000 user:1
 ZADD leaderboard 2000 user:2
 ZREVRANGE leaderboard 0 9 WITHSCORES  # Top 10
 
-# 2. 延迟队列
-ZADD delay:queue 1704067200 task1  # 时间戳作为分数
-ZRANGEBYSCORE delay:queue 0 [当前时间戳]  # 获取到期任务
+# 2. 
+ZADD delay:queue 1704067200 task1  # 
+ZRANGEBYSCORE delay:queue 0 []  # 
 
-# 3. 热门文章
+# 3. 
 ZINCRBY hot:articles 1 article:1
-ZREVRANGE hot:articles 0 9  # 热门Top 10
+ZREVRANGE hot:articles 0 9  # Top 10
 ```
 
-## 持久化机制
+## 
 
-### RDB（快照）
+### RDB
 
 ```bash
-# 配置
-save 900 1      # 900秒内至少1个key变化
-save 300 10     # 300秒内至少10个key变化
-save 60 10000   # 60秒内至少10000个key变化
+# 
+save 900 1      # 9001key
+save 300 10     # 30010key
+save 60 10000   # 6010000key
 
-# 手动触发
-SAVE            # 阻塞保存
-BGSAVE          # 后台保存
+# 
+SAVE            # 
+BGSAVE          # 
 
-# RDB文件
+# RDB
 dbfilename dump.rdb
 dir /var/lib/redis
 
-# 优点
-# 1. 文件紧凑，适合备份
-# 2. 恢复速度快
-# 3. 性能影响小（fork子进程）
+# 
+# 1. 
+# 2. 
+# 3. fork
 
-# 缺点
-# 1. 可能丢失最后一次快照后的数据
-# 2. fork子进程耗时
+# 
+# 1. 
+# 2. fork
 ```
 
-### AOF（追加文件）
+### AOF
 
 ```bash
-# 配置
+# 
 appendonly yes
 appendfilename "appendonly.aof"
 
-# 同步策略
-appendfsync always      # 每次写入都同步（最安全，最慢）
-appendfsync everysec    # 每秒同步（推荐）
-appendfsync no          # 由OS决定（最快，最不安全）
+# 
+appendfsync always      # 
+appendfsync everysec    # 
+appendfsync no          # OS
 
-# AOF重写
+# AOF
 auto-aof-rewrite-percentage 100
 auto-aof-rewrite-min-size 64mb
 
-# 手动重写
+# 
 BGREWRITEAOF
 
-# 优点
-# 1. 数据更安全
-# 2. 可读性好
-# 3. 可修复
+# 
+# 1. 
+# 2. 
+# 3. 
 
-# 缺点
-# 1. 文件大
-# 2. 恢复慢
-# 3. 性能影响大
+# 
+# 1. 
+# 2. 
+# 3. 
 ```
 
-### 混合持久化
+### 
 
 ```bash
 # Redis 4.0+
 aof-use-rdb-preamble yes
 
-# AOF文件 = RDB快照 + AOF增量
-# 结合两者优点：恢复快 + 数据安全
+# AOF = RDB + AOF
+#  + 
 ```
 
-## 缓存策略
+## 
 
-### 1. Cache-Aside（旁路缓存）
+### 1. Cache-Aside
 
 ```javascript
 class CacheAside {
   async get(key) {
-    // 1. 查缓存
+    // 1. 
     let value = await redis.get(key);
     
     if (value) {
       return JSON.parse(value);
     }
     
-    // 2. 查数据库
+    // 2. 
     value = await db.query(`SELECT * FROM users WHERE id = ?`, [key]);
     
     if (value) {
-      // 3. 写缓存
+      // 3. 
       await redis.setex(key, 3600, JSON.stringify(value));
     }
     
@@ -254,10 +254,10 @@ class CacheAside {
   }
   
   async update(key, value) {
-    // 1. 更新数据库
+    // 1. 
     await db.query(`UPDATE users SET ... WHERE id = ?`, [key]);
     
-    // 2. 删除缓存
+    // 2. 
     await redis.del(key);
   }
 }
@@ -268,7 +268,7 @@ class CacheAside {
 ```javascript
 class ReadThrough {
   async get(key) {
-    // 缓存层自动加载数据
+    // 
     return await cache.get(key, async () => {
       return await db.query(`SELECT * FROM users WHERE id = ?`, [key]);
     });
@@ -281,7 +281,7 @@ class ReadThrough {
 ```javascript
 class WriteThrough {
   async update(key, value) {
-    // 同时更新缓存和数据库
+    // 
     await Promise.all([
       redis.set(key, JSON.stringify(value)),
       db.query(`UPDATE users SET ... WHERE id = ?`, [key])
@@ -299,10 +299,10 @@ class WriteBehind {
   }
   
   async update(key, value) {
-    // 1. 立即更新缓存
+    // 1. 
     await redis.set(key, JSON.stringify(value));
     
-    // 2. 异步更新数据库
+    // 2. 
     this.writeQueue.push({ key, value });
     
     if (this.writeQueue.length >= 100) {
@@ -313,19 +313,19 @@ class WriteBehind {
   async flush() {
     const batch = this.writeQueue.splice(0, 100);
     
-    // 批量写入数据库
+    // 
     await db.batchUpdate(batch);
   }
 }
 ```
 
-## 缓存问题
+## 
 
-### 1. 缓存穿透
+### 1. 
 
 ```javascript
-// 问题：查询不存在的数据，缓存和数据库都没有
-// 解决方案1：缓存空值
+// 
+// 1
 class CachePenetration {
   async get(key) {
     let value = await redis.get(key);
@@ -343,7 +343,7 @@ class CachePenetration {
     if (value) {
       await redis.setex(key, 3600, JSON.stringify(value));
     } else {
-      // 缓存空值，过期时间短
+      // 
       await redis.setex(key, 60, 'NULL');
     }
     
@@ -351,7 +351,7 @@ class CachePenetration {
   }
 }
 
-// 解决方案2：布隆过滤器
+// 2
 class BloomFilter {
   constructor(size = 10000000, hashCount = 7) {
     this.size = size;
@@ -387,11 +387,11 @@ class BloomFilter {
 }
 ```
 
-### 2. 缓存击穿
+### 2. 
 
 ```javascript
-// 问题：热点key过期，大量请求打到数据库
-// 解决方案：互斥锁
+// key
+// 
 class CacheBreakdown {
   async get(key) {
     let value = await redis.get(key);
@@ -400,19 +400,19 @@ class CacheBreakdown {
       return JSON.parse(value);
     }
     
-    // 获取锁
+    // 
     const lockKey = `lock:${key}`;
     const locked = await redis.set(lockKey, '1', 'NX', 'EX', 10);
     
     if (locked) {
       try {
-        // 再次检查缓存
+        // 
         value = await redis.get(key);
         if (value) {
           return JSON.parse(value);
         }
         
-        // 查询数据库
+        // 
         value = await db.query(`SELECT * FROM users WHERE id = ?`, [key]);
         
         if (value) {
@@ -424,7 +424,7 @@ class CacheBreakdown {
         await redis.del(lockKey);
       }
     } else {
-      // 等待并重试
+      // 
       await new Promise(resolve => setTimeout(resolve, 50));
       return await this.get(key);
     }
@@ -432,34 +432,34 @@ class CacheBreakdown {
 }
 ```
 
-### 3. 缓存雪崩
+### 3. 
 
 ```javascript
-// 问题：大量key同时过期
-// 解决方案1：随机过期时间
+// key
+// 1
 class CacheAvalanche {
   async set(key, value, ttl = 3600) {
-    // 添加随机时间（±10%）
+    // ±10%
     const randomTTL = ttl + Math.floor(Math.random() * ttl * 0.2 - ttl * 0.1);
     await redis.setex(key, randomTTL, JSON.stringify(value));
   }
 }
 
-// 解决方案2：多级缓存
+// 2
 class MultiLevelCache {
   async get(key) {
-    // L1: 本地缓存
+    // L1: 
     let value = localCache.get(key);
     if (value) return value;
     
-    // L2: Redis缓存
+    // L2: Redis
     value = await redis.get(key);
     if (value) {
       localCache.set(key, value, 60);
       return JSON.parse(value);
     }
     
-    // L3: 数据库
+    // L3: 
     value = await db.query(`SELECT * FROM users WHERE id = ?`, [key]);
     if (value) {
       await redis.setex(key, 3600, JSON.stringify(value));
@@ -471,7 +471,7 @@ class MultiLevelCache {
 }
 ```
 
-## 分布式锁
+## 
 
 ```javascript
 class RedisLock {
@@ -495,7 +495,7 @@ class RedisLock {
   }
   
   async release(key, value) {
-    // Lua脚本保证原子性
+    // Lua
     const script = `
       if redis.call("get", KEYS[1]) == ARGV[1] then
         return redis.call("del", KEYS[1])
@@ -526,86 +526,86 @@ class RedisLock {
   }
 }
 
-// 使用示例
+// 
 const lock = new RedisLock();
 
 await lock.withLock('order:123', async () => {
-  // 处理订单
+  // 
   const order = await getOrder(123);
   order.status = 'paid';
   await saveOrder(order);
 });
 ```
 
-## Redis集群
+## Redis
 
-### 主从复制
+### 
 
 ```bash
-# 从节点配置
+# 
 replicaof 127.0.0.1 6379
 masterauth password
 
-# 查看复制状态
+# 
 INFO replication
 
-# 特点
-# 1. 读写分离
-# 2. 数据备份
-# 3. 高可用
+# 
+# 1. 
+# 2. 
+# 3. 
 
-# 复制流程
-# 1. 从节点发送SYNC命令
-# 2. 主节点执行BGSAVE
-# 3. 主节点发送RDB文件
-# 4. 主节点发送缓冲区命令
-# 5. 从节点加载RDB并执行命令
+# 
+# 1. SYNC
+# 2. BGSAVE
+# 3. RDB
+# 4. 
+# 5. RDB
 ```
 
-### 哨兵模式
+### 
 
 ```bash
-# 哨兵配置
+# 
 sentinel monitor mymaster 127.0.0.1 6379 2
 sentinel down-after-milliseconds mymaster 5000
 sentinel parallel-syncs mymaster 1
 sentinel failover-timeout mymaster 180000
 
-# 功能
-# 1. 监控：检查主从节点状态
-# 2. 通知：故障通知
-# 3. 自动故障转移：选举新主节点
-# 4. 配置提供：客户端获取主节点地址
+# 
+# 1. 
+# 2. 
+# 3. 
+# 4. 
 ```
 
-### Cluster集群
+### Cluster
 
 ```bash
-# 创建集群
+# 
 redis-cli --cluster create \
   127.0.0.1:7000 127.0.0.1:7001 \
   127.0.0.1:7002 127.0.0.1:7003 \
   127.0.0.1:7004 127.0.0.1:7005 \
   --cluster-replicas 1
 
-# 特点
-# 1. 数据分片：16384个槽位
-# 2. 高可用：主从自动切换
-# 3. 水平扩展：动态添加节点
+# 
+# 1. 16384
+# 2. 
+# 3. 
 
-# 槽位分配
+# 
 # CRC16(key) % 16384
 
-# 重定向
-# MOVED：槽位已迁移
-# ASK：槽位正在迁移
+# 
+# MOVED
+# ASK
 ```
 
-## 性能优化
+## 
 
 ```javascript
 const optimizationTips = {
-  // 1. 使用Pipeline
+  // 1. Pipeline
   pipeline: async () => {
     const pipeline = redis.pipeline();
     for (let i = 0; i < 1000; i++) {
@@ -614,24 +614,24 @@ const optimizationTips = {
     await pipeline.exec();
   },
   
-  // 2. 使用批量操作
+  // 2. 
   batch: async () => {
     await redis.mset('key1', 'value1', 'key2', 'value2');
     const values = await redis.mget('key1', 'key2');
   },
   
-  // 3. 避免大key
+  // 3. key
   avoidBigKey: {
-    problem: 'String > 10KB, List/Set/Hash > 5000元素',
-    solution: '拆分成多个小key'
+    problem: 'String > 10KB, List/Set/Hash > 5000',
+    solution: 'key'
   },
   
-  // 4. 设置过期时间
+  // 4. 
   expiration: async () => {
     await redis.setex('key', 3600, 'value');
   },
   
-  // 5. 使用合适的数据结构
+  // 5. 
   dataStructure: {
     counter: 'String + INCR',
     ranking: 'Sorted Set',
@@ -641,15 +641,15 @@ const optimizationTips = {
 };
 ```
 
-## 总结
+## 
 
-Redis核心知识点：
-- 📦 **数据结构**：String、Hash、List、Set、Sorted Set
-- 💾 **持久化**：RDB快照 + AOF日志
-- 🔄 **缓存策略**：Cache-Aside、Read/Write-Through
-- ⚠️ **缓存问题**：穿透、击穿、雪崩
-- 🔒 **分布式锁**：SET NX EX + Lua脚本
-- 🌐 **集群方案**：主从复制、哨兵、Cluster
+Redis
+-  ****StringHashListSetSorted Set
+-  ****RDB + AOF
+-  ****Cache-AsideRead/Write-Through
+-  ****
+-  ****SET NX EX + Lua
+-  ****Cluster
 
-记住：**Redis是高性能缓存的首选方案！**
+**Redis**
 

@@ -2,126 +2,126 @@
 
 # Unity
 
-Unity是一个跨平台的游戏引擎，支持2D和3D游戏开发，可以发布到多个平台包括PC、移动设备、主机和Web。
+Unity2D3DPCWeb
 
-## 核心概念
+## 
 
-### GameObject（游戏对象）
-Unity中的基本实体，所有在场景中的物体都是GameObject。每个GameObject可以包含多个Component。
+### GameObject
+UnityGameObjectGameObjectComponent
 
 ```csharp
-// 创建新的GameObject
+// GameObject
 GameObject myObject = new GameObject("MyObject");
 
-// 查找GameObject
+// GameObject
 GameObject player = GameObject.Find("Player");
 GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
 ```
 
-### Component（组件）
-Component是附加到GameObject上的功能模块，如Transform、Renderer、Collider等。
+### Component
+ComponentGameObjectTransformRendererCollider
 
 ```csharp
-// 获取组件
+// 
 Transform transform = GetComponent<Transform>();
 Rigidbody rb = GetComponent<Rigidbody>();
 
-// 添加组件
+// 
 Rigidbody newRb = gameObject.AddComponent<Rigidbody>();
 ```
 
 ### MonoBehaviour
-所有自定义脚本的基类，提供了Unity的生命周期方法。
+Unity
 
 ```csharp
 public class PlayerController : MonoBehaviour
 {
     void Start()
     {
-        // 游戏开始时调用一次
+        // 
     }
     
     void Update()
     {
-        // 每帧调用
+        // 
     }
     
     void FixedUpdate()
     {
-        // 固定时间间隔调用，用于物理计算
+        // 
     }
 }
 ```
 
-## 常用系统
+## 
 
-### 输入系统
+### 
 ```csharp
-// 传统输入系统
+// 
 if (Input.GetKeyDown(KeyCode.Space))
 {
-    // 空格键按下
+    // 
 }
 
 float horizontal = Input.GetAxis("Horizontal");
 float vertical = Input.GetAxis("Vertical");
 ```
 
-### 物理系统
+### 
 ```csharp
-// 刚体操作
+// 
 Rigidbody rb = GetComponent<Rigidbody>();
 rb.AddForce(Vector3.up * 10f, ForceMode.Impulse);
 rb.velocity = new Vector3(5f, 0f, 0f);
 
-// 碰撞检测
+// 
 void OnCollisionEnter(Collision collision)
 {
     if (collision.gameObject.CompareTag("Enemy"))
     {
-        // 碰撞处理
+        // 
     }
 }
 ```
 
-### 动画系统
+### 
 ```csharp
-// Animator控制
+// Animator
 Animator animator = GetComponent<Animator>();
 animator.SetBool("isRunning", true);
 animator.SetTrigger("Jump");
 ```
 
-## 场景管理
+## 
 ```csharp
 using UnityEngine.SceneManagement;
 
-// 加载场景
+// 
 SceneManager.LoadScene("GameScene");
 SceneManager.LoadSceneAsync("GameScene");
 
-// 获取当前场景
+// 
 Scene currentScene = SceneManager.GetActiveScene();
 ```
 
-## 协程（Coroutines）
+## Coroutines
 ```csharp
-// 启动协程
+// 
 StartCoroutine(DelayedAction());
 
 IEnumerator DelayedAction()
 {
     yield return new WaitForSeconds(2f);
-    Debug.Log("2秒后执行");
+    Debug.Log("2");
     
     yield return new WaitForEndOfFrame();
-    Debug.Log("帧结束后执行");
+    Debug.Log("");
 }
 ```
 
-## 常用设计模式
+## 
 
-### 单例模式
+### 
 ```csharp
 public class GameManager : MonoBehaviour
 {
@@ -142,7 +142,7 @@ public class GameManager : MonoBehaviour
 }
 ```
 
-### 对象池模式
+### 
 ```csharp
 public class ObjectPool : MonoBehaviour
 {

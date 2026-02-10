@@ -1,38 +1,38 @@
 ---
 sidebar_position: 4
-title: Flink - 流批一体的实时计算引擎
+title: Flink - 
 ---
 
-# Flink - 新一代大数据处理框架
+# Flink - 
 
-Flink是目前最强大的实时计算框架。这一章教你**用Flink构建真正的实时应用**。
+Flink**Flink**
 
-## 第一部分：为什么选择Flink？
+## Flink
 
 ### Flink vs Spark Streaming
 
 ```python
-# Spark Streaming：微批处理
-# 每隔1秒处理一批数据
+# Spark Streaming
+# 1
 stream.window(1, 'seconds').process()
 
-# Flink：真正的流处理
-# 每条数据到达立即处理
-stream.process()  # 延迟更低！
+# Flink
+# 
+stream.process()  # 
 ```
 
-**Flink的优势**：
-- **真正的流处理**：逐条处理，延迟毫秒级
-- **精确一次**：Exactly-Once语义
-- **状态管理**：内置状态存储
-- **事件时间**：支持乱序数据
-- **流批一体**：同一套API处理流和批
+**Flink**
+- ****
+- ****Exactly-Once
+- ****
+- ****
+- ****API
 
-## 第二部分：快速开始
+## 
 
-### 安装Flink
+### Flink
 
-**方法1：Docker（推荐）**
+**1Docker**
 
 ```yaml
 # docker-compose.yml
@@ -61,43 +61,43 @@ services:
 ```
 
 ```bash
-# 启动
+# 
 docker-compose up -d
 
-# 访问Web UI
+# Web UI
 # http://localhost:8081
 ```
 
-**方法2：PyFlink**
+**2PyFlink**
 
 ```bash
 pip install apache-flink
 ```
 
-### 第一个Flink程序
+### Flink
 
 ```python
 from pyflink.datastream import StreamExecutionEnvironment
 
-# 创建执行环境
+# 
 env = StreamExecutionEnvironment.get_execution_environment()
 
-# 创建数据流
+# 
 data = env.from_collection([1, 2, 3, 4, 5])
 
-# 转换
+# 
 result = data.map(lambda x: x * 2)
 
-# 输出
+# 
 result.print()
 
-# 执行
+# 
 env.execute("First Flink Job")
 ```
 
-## 第三部分：DataStream API
+## DataStream API
 
-### 基本操作
+### 
 
 ```python
 from pyflink.datastream import StreamExecutionEnvironment
@@ -105,28 +105,28 @@ from pyflink.common.typeinfo import Types
 
 env = StreamExecutionEnvironment.get_execution_environment()
 
-# 1. map：转换每个元素
+# 1. map
 data = env.from_collection([1, 2, 3, 4, 5])
 result = data.map(lambda x: x * 2, output_type=Types.INT())
 
-# 2. filter：过滤元素
+# 2. filter
 result = data.filter(lambda x: x % 2 == 0)
 
-# 3. flat_map：展平
+# 3. flat_map
 text = env.from_collection(["hello world", "flink is great"])
 words = text.flat_map(
     lambda line: line.split(),
     output_type=Types.STRING()
 )
 
-# 4. key_by：按key分组
+# 4. key_bykey
 pairs = env.from_collection([("a", 1), ("b", 2), ("a", 3)])
 keyed = pairs.key_by(lambda x: x[0])
 
-# 5. reduce：聚合
+# 5. reduce
 result = keyed.reduce(lambda x, y: (x[0], x[1] + y[1]))
 
-# 6. window：窗口操作
+# 6. window
 from pyflink.datastream.window import TumblingProcessingTimeWindows
 from pyflink.common.time import Time
 
@@ -137,39 +137,39 @@ result.print()
 env.execute("DataStream Operations")
 ```
 
-### 实战：WordCount
+### WordCount
 
 ```python
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.common.typeinfo import Types
 
 def word_count():
-    """流式WordCount"""
+    """WordCount"""
     env = StreamExecutionEnvironment.get_execution_environment()
     
-    # 从socket读取数据
-    # 先启动：nc -lk 9999
+    # socket
+    # nc -lk 9999
     text = env.socket_text_stream("localhost", 9999)
     
-    # 处理
+    # 
     counts = text.flat_map(lambda line: line.split()) \
         .map(lambda word: (word, 1), output_type=Types.TUPLE([Types.STRING(), Types.INT()])) \
         .key_by(lambda x: x[0]) \
         .reduce(lambda x, y: (x[0], x[1] + y[1]))
     
-    # 输出
+    # 
     counts.print()
     
-    # 执行
+    # 
     env.execute("Streaming WordCount")
 
 if __name__ == '__main__':
     word_count()
 ```
 
-## 第四部分：窗口操作
+## 
 
-### 窗口类型
+### 
 
 ```python
 from pyflink.datastream import StreamExecutionEnvironment
@@ -180,7 +180,7 @@ from pyflink.common.typeinfo import Types
 
 env = StreamExecutionEnvironment.get_execution_environment()
 
-# 模拟数据流
+# 
 data = env.from_collection([
     ("user1", 100),
     ("user2", 200),
@@ -189,26 +189,26 @@ data = env.from_collection([
 
 keyed = data.key_by(lambda x: x[0])
 
-# 1. 滚动窗口：不重叠
+# 1. 
 tumbling = keyed.window(TumblingProcessingTimeWindows.of(Time.seconds(10)))
 
-# 2. 滑动窗口：有重叠
+# 2. 
 sliding = keyed.window(SlidingProcessingTimeWindows.of(
-    Time.seconds(10),  # 窗口大小
-    Time.seconds(5)    # 滑动步长
+    Time.seconds(10),  # 
+    Time.seconds(5)    # 
 ))
 
-# 3. 会话窗口：基于活动间隔
+# 3. 
 session = keyed.window(SessionWindows.with_gap(Time.seconds(30)))
 
-# 聚合
+# 
 result = tumbling.reduce(lambda x, y: (x[0], x[1] + y[1]))
 result.print()
 
 env.execute("Window Operations")
 ```
 
-### 实战：实时销售统计
+### 
 
 ```python
 from pyflink.datastream import StreamExecutionEnvironment
@@ -218,13 +218,13 @@ from pyflink.common.typeinfo import Types
 import json
 
 class SalesAnalyzer:
-    """实时销售分析"""
+    """"""
     
     @staticmethod
     def run():
         env = StreamExecutionEnvironment.get_execution_environment()
         
-        # 从Kafka读取订单数据
+        # Kafka
         from pyflink.datastream.connectors import FlinkKafkaConsumer
         from pyflink.common.serialization import SimpleStringSchema
         
@@ -236,24 +236,24 @@ class SalesAnalyzer:
         
         orders = env.add_source(kafka_consumer)
         
-        # 解析JSON
+        # JSON
         parsed = orders.map(
             lambda x: json.loads(x),
             output_type=Types.MAP(Types.STRING(), Types.STRING())
         )
         
-        # 提取金额
+        # 
         amounts = parsed.map(
             lambda x: (x['category'], float(x['amount'])),
             output_type=Types.TUPLE([Types.STRING(), Types.FLOAT()])
         )
         
-        # 按类别分组，5秒窗口统计
+        # 5
         result = amounts.key_by(lambda x: x[0]) \
             .window(TumblingProcessingTimeWindows.of(Time.seconds(5))) \
             .reduce(lambda x, y: (x[0], x[1] + y[1]))
         
-        # 输出
+        # 
         result.print()
         
         env.execute("Real-time Sales Analysis")
@@ -262,11 +262,11 @@ if __name__ == '__main__':
     SalesAnalyzer.run()
 ```
 
-## 第五部分：状态管理
+## 
 
-### 什么是状态？
+### 
 
-**状态就是计算过程中需要记住的信息**。
+****
 
 ```python
 from pyflink.datastream import StreamExecutionEnvironment
@@ -274,35 +274,35 @@ from pyflink.datastream.functions import MapFunction, RuntimeContext
 from pyflink.common.typeinfo import Types
 
 class StatefulMapper(MapFunction):
-    """有状态的Map函数"""
+    """Map"""
     
     def open(self, runtime_context: RuntimeContext):
-        """初始化状态"""
-        # 获取状态描述符
+        """"""
+        # 
         from pyflink.datastream.state import ValueStateDescriptor
         
         descriptor = ValueStateDescriptor(
-            "count",  # 状态名称
-            Types.INT()  # 状态类型
+            "count",  # 
+            Types.INT()  # 
         )
         
-        # 获取状态
+        # 
         self.count_state = runtime_context.get_state(descriptor)
     
     def map(self, value):
-        """处理元素"""
-        # 读取状态
+        """"""
+        # 
         count = self.count_state.value()
         if count is None:
             count = 0
         
-        # 更新状态
+        # 
         count += 1
         self.count_state.update(count)
         
         return f"{value}: count={count}"
 
-# 使用
+# 
 env = StreamExecutionEnvironment.get_execution_environment()
 data = env.from_collection(["a", "b", "a", "c", "a"])
 
@@ -315,7 +315,7 @@ result.print()
 env.execute("Stateful Processing")
 ```
 
-### 实战：用户行为追踪
+### 
 
 ```python
 from pyflink.datastream import StreamExecutionEnvironment
@@ -324,48 +324,48 @@ from pyflink.common.typeinfo import Types
 import json
 
 class UserBehaviorTracker(KeyedProcessFunction):
-    """用户行为追踪器"""
+    """"""
     
     def open(self, runtime_context):
         from pyflink.datastream.state import ValueStateDescriptor, ListStateDescriptor
         
-        # 用户最后活跃时间
+        # 
         self.last_active = runtime_context.get_state(
             ValueStateDescriptor("last_active", Types.LONG())
         )
         
-        # 用户行为历史
+        # 
         self.behavior_history = runtime_context.get_list_state(
             ListStateDescriptor("history", Types.STRING())
         )
     
     def process_element(self, value, ctx):
-        """处理用户行为"""
+        """"""
         user_id = value[0]
         action = value[1]
         timestamp = ctx.timestamp()
         
-        # 更新最后活跃时间
+        # 
         last_time = self.last_active.value()
         self.last_active.update(timestamp)
         
-        # 添加到历史
+        # 
         self.behavior_history.add(action)
         
-        # 计算用户活跃度
+        # 
         history = list(self.behavior_history.get())
         activity_score = len(history)
         
-        # 检测异常行为
-        if last_time and (timestamp - last_time) < 1000:  # 1秒内多次操作
-            yield f"⚠️ 异常: 用户{user_id}操作过于频繁"
+        # 
+        if last_time and (timestamp - last_time) < 1000:  # 1
+            yield f" : {user_id}"
         
-        yield f"用户{user_id}: {action}, 活跃度={activity_score}"
+        yield f"{user_id}: {action}, ={activity_score}"
 
-# 使用
+# 
 env = StreamExecutionEnvironment.get_execution_environment()
 
-# 模拟用户行为流
+# 
 behaviors = env.from_collection([
     ("user1", "login"),
     ("user1", "view"),
@@ -383,9 +383,9 @@ result.print()
 env.execute("User Behavior Tracking")
 ```
 
-## 第六部分：实战项目
+## 
 
-### 项目：实时推荐系统
+### 
 
 ```python
 from pyflink.datastream import StreamExecutionEnvironment
@@ -395,40 +395,40 @@ from collections import defaultdict
 import json
 
 class RealtimeRecommender(KeyedProcessFunction):
-    """实时推荐引擎"""
+    """"""
     
     def open(self, runtime_context):
         from pyflink.datastream.state import MapStateDescriptor
         
-        # 用户浏览历史
+        # 
         self.view_history = runtime_context.get_map_state(
             MapStateDescriptor("views", Types.STRING(), Types.INT())
         )
         
-        # 用户兴趣标签
+        # 
         self.interest_tags = runtime_context.get_map_state(
             MapStateDescriptor("tags", Types.STRING(), Types.FLOAT())
         )
     
     def process_element(self, value, ctx):
-        """处理用户行为，生成推荐"""
+        """"""
         user_id = value['user_id']
         item_id = value['item_id']
         action = value['action']
         category = value['category']
         
-        # 更新浏览历史
+        # 
         view_count = self.view_history.get(item_id)
         if view_count is None:
             view_count = 0
         self.view_history.put(item_id, view_count + 1)
         
-        # 更新兴趣标签
+        # 
         interest_score = self.interest_tags.get(category)
         if interest_score is None:
             interest_score = 0.0
         
-        # 根据行为类型更新分数
+        # 
         if action == 'view':
             interest_score += 1.0
         elif action == 'click':
@@ -440,7 +440,7 @@ class RealtimeRecommender(KeyedProcessFunction):
         
         self.interest_tags.put(category, interest_score)
         
-        # 生成推荐
+        # 
         recommendations = self.generate_recommendations()
         
         yield {
@@ -450,26 +450,26 @@ class RealtimeRecommender(KeyedProcessFunction):
         }
     
     def generate_recommendations(self):
-        """生成推荐列表"""
-        # 获取Top3兴趣类别
+        """"""
+        # Top3
         interests = list(self.interest_tags.items())
         interests.sort(key=lambda x: x[1], reverse=True)
         
         top_categories = [cat for cat, score in interests[:3]]
         
-        # 基于兴趣类别推荐商品
+        # 
         recommendations = []
         for category in top_categories:
-            # 这里应该从商品库查询
-            recommendations.append(f"推荐{category}类商品")
+            # 
+            recommendations.append(f"{category}")
         
         return recommendations
 
-# 使用
+# 
 def run_recommender():
     env = StreamExecutionEnvironment.get_execution_environment()
     
-    # 从Kafka读取用户行为
+    # Kafka
     from pyflink.datastream.connectors import FlinkKafkaConsumer
     from pyflink.common.serialization import SimpleStringSchema
     
@@ -481,19 +481,19 @@ def run_recommender():
     
     behaviors = env.add_source(kafka_consumer)
     
-    # 解析JSON
+    # JSON
     parsed = behaviors.map(
         lambda x: json.loads(x),
         output_type=Types.MAP(Types.STRING(), Types.STRING())
     )
     
-    # 实时推荐
+    # 
     recommendations = parsed.key_by(lambda x: x['user_id']).process(
         RealtimeRecommender(),
         output_type=Types.MAP(Types.STRING(), Types.STRING())
     )
     
-    # 输出到Kafka
+    # Kafka
     from pyflink.datastream.connectors import FlinkKafkaProducer
     
     kafka_producer = FlinkKafkaProducer(
@@ -513,7 +513,7 @@ if __name__ == '__main__':
     run_recommender()
 ```
 
-### 项目：实时异常检测
+### 
 
 ```python
 from pyflink.datastream import StreamExecutionEnvironment
@@ -522,47 +522,47 @@ from pyflink.common.typeinfo import Types
 import json
 
 class AnomalyDetector(KeyedProcessFunction):
-    """实时异常检测"""
+    """"""
     
     def open(self, runtime_context):
         from pyflink.datastream.state import ValueStateDescriptor, ListStateDescriptor
         
-        # 最近N个值
+        # N
         self.recent_values = runtime_context.get_list_state(
             ListStateDescriptor("recent", Types.FLOAT())
         )
         
-        # 统计信息
+        # 
         self.stats = runtime_context.get_value_state(
             ValueStateDescriptor("stats", Types.MAP(Types.STRING(), Types.FLOAT()))
         )
     
     def process_element(self, value, ctx):
-        """检测异常"""
+        """"""
         metric_name = value['metric']
         metric_value = float(value['value'])
         timestamp = value['timestamp']
         
-        # 获取历史数据
+        # 
         history = list(self.recent_values.get())
         history.append(metric_value)
         
-        # 保持最近100个值
+        # 100
         if len(history) > 100:
             history = history[-100:]
         
-        # 更新状态
+        # 
         self.recent_values.clear()
         for v in history:
             self.recent_values.add(v)
         
-        # 计算统计量
+        # 
         if len(history) >= 10:
             import numpy as np
             mean = np.mean(history)
             std = np.std(history)
             
-            # 3-sigma规则检测异常
+            # 3-sigma
             if abs(metric_value - mean) > 3 * std:
                 yield {
                     'type': 'anomaly',
@@ -571,7 +571,7 @@ class AnomalyDetector(KeyedProcessFunction):
                     'mean': mean,
                     'std': std,
                     'timestamp': timestamp,
-                    'message': f'异常值检测: {metric_value:.2f} (均值={mean:.2f}, 标准差={std:.2f})'
+                    'message': f': {metric_value:.2f} (={mean:.2f}, ={std:.2f})'
                 }
             else:
                 yield {
@@ -580,28 +580,28 @@ class AnomalyDetector(KeyedProcessFunction):
                     'value': metric_value
                 }
 
-# 使用
+# 
 def run_anomaly_detector():
     env = StreamExecutionEnvironment.get_execution_environment()
     
-    # 模拟监控数据
+    # 
     metrics = env.from_collection([
         {'metric': 'cpu', 'value': 50, 'timestamp': 1000},
         {'metric': 'cpu', 'value': 52, 'timestamp': 2000},
-        {'metric': 'cpu', 'value': 95, 'timestamp': 3000},  # 异常
+        {'metric': 'cpu', 'value': 95, 'timestamp': 3000},  # 
         {'metric': 'cpu', 'value': 51, 'timestamp': 4000},
     ])
     
-    # 检测异常
+    # 
     results = metrics.key_by(lambda x: x['metric']).process(
         AnomalyDetector(),
         output_type=Types.MAP(Types.STRING(), Types.STRING())
     )
     
-    # 过滤异常
+    # 
     anomalies = results.filter(lambda x: x['type'] == 'anomaly')
     
-    # 输出告警
+    # 
     anomalies.print()
     
     env.execute("Anomaly Detection")
@@ -610,23 +610,23 @@ if __name__ == '__main__':
     run_anomaly_detector()
 ```
 
-## 总结
+## 
 
-Flink是实时计算的未来：
+Flink
 
-1. **真正的流处理**：毫秒级延迟
-2. **精确一次**：数据不丢不重
-3. **状态管理**：轻松处理有状态计算
-4. **流批一体**：统一API
+1. ****
+2. ****
+3. ****
+4. ****API
 
-记住：**Flink让实时计算变得简单**！
+**Flink**
 
-## 练习题
+## 
 
-1. 实现实时Top-N热榜
-2. 构建实时风控系统
-3. 实现CEP复杂事件处理
-4. 搭建Flink集群
+1. Top-N
+2. 
+3. CEP
+4. Flink
 
-下一章：Hive数据仓库（即将推出）
+Hive
 

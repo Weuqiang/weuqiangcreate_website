@@ -1,14 +1,14 @@
 ---
 sidebar_position: 1
-title: Vue3响应式原理深度解析
-tags: [前端, Vue3, 响应式, Proxy, 源码]
+title: Vue3
+tags: [, Vue3, , Proxy, ]
 ---
 
-# Vue3响应式原理深度解析
+# Vue3
 
-Vue3采用Proxy重写了响应式系统，本文将深入讲解Vue3响应式原理和源码实现。
+Vue3ProxyVue3
 
-## 响应式基础
+## 
 
 ### Proxy vs Object.defineProperty
 
@@ -19,11 +19,11 @@ const vue2Reactive = (obj) => {
     let value = obj[key];
     Object.defineProperty(obj, key, {
       get() {
-        console.log(`读取 ${key}`);
+        console.log(` ${key}`);
         return value;
       },
       set(newValue) {
-        console.log(`设置 ${key} = ${newValue}`);
+        console.log(` ${key} = ${newValue}`);
         value = newValue;
       }
     });
@@ -31,24 +31,24 @@ const vue2Reactive = (obj) => {
   return obj;
 };
 
-// 缺点
+// 
 const vue2Limitations = {
   issues: [
-    '无法检测属性的添加和删除',
-    '无法检测数组索引和length的变化',
-    '需要递归遍历所有属性',
-    '性能开销大'
+    '',
+    'length',
+    '',
+    ''
   ],
   
   examples: {
     addProperty: () => {
       const obj = vue2Reactive({ name: 'Vue' });
-      obj.age = 3; // 不会触发响应式
+      obj.age = 3; // 
     },
     
     arrayIndex: () => {
       const arr = vue2Reactive([1, 2, 3]);
-      arr[0] = 10; // 不会触发响应式
+      arr[0] = 10; // 
     }
   }
 };
@@ -57,80 +57,80 @@ const vue2Limitations = {
 const vue3Reactive = (obj) => {
   return new Proxy(obj, {
     get(target, key, receiver) {
-      console.log(`读取 ${key}`);
+      console.log(` ${key}`);
       return Reflect.get(target, key, receiver);
     },
     set(target, key, value, receiver) {
-      console.log(`设置 ${key} = ${value}`);
+      console.log(` ${key} = ${value}`);
       return Reflect.set(target, key, value, receiver);
     },
     deleteProperty(target, key) {
-      console.log(`删除 ${key}`);
+      console.log(` ${key}`);
       return Reflect.deleteProperty(target, key);
     }
   });
 };
 
-// 优点
+// 
 const vue3Advantages = {
   benefits: [
-    '可以检测属性的添加和删除',
-    '可以检测数组索引和length的变化',
-    '不需要递归遍历',
-    '性能更好'
+    '',
+    'length',
+    '',
+    ''
   ],
   
   examples: {
     addProperty: () => {
       const obj = vue3Reactive({ name: 'Vue' });
-      obj.age = 3; // ✅ 可以检测到
+      obj.age = 3; //  
     },
     
     arrayIndex: () => {
       const arr = vue3Reactive([1, 2, 3]);
-      arr[0] = 10; // ✅ 可以检测到
+      arr[0] = 10; //  
     }
   }
 };
 ```
 
-## 响应式核心实现
+## 
 
-### reactive实现
+### reactive
 
 ```javascript
-// 存储原始对象到代理对象的映射
+// 
 const reactiveMap = new WeakMap();
 
-// 判断是否为对象
+// 
 const isObject = (val) => val !== null && typeof val === 'object';
 
-// reactive函数
+// reactive
 function reactive(target) {
-  // 如果不是对象，直接返回
+  // 
   if (!isObject(target)) {
     return target;
   }
   
-  // 如果已经是代理对象，直接返回
+  // 
   if (reactiveMap.has(target)) {
     return reactiveMap.get(target);
   }
   
-  // 创建代理对象
+  // 
   const proxy = new Proxy(target, {
     get(target, key, receiver) {
-      // 特殊key处理
+      // key
       if (key === '__v_isReactive') {
         return true;
       }
       
-      // 收集依赖
+      // 
       track(target, key);
       
       const result = Reflect.get(target, key, receiver);
       
-      // 如果是对象，递归代理
+      // 
       if (isObject(result)) {
         return reactive(result);
       }
@@ -142,7 +142,7 @@ function reactive(target) {
       const oldValue = target[key];
       const result = Reflect.set(target, key, value, receiver);
       
-      // 值发生变化，触发更新
+      // 
       if (oldValue !== value) {
         trigger(target, key);
       }
@@ -162,13 +162,13 @@ function reactive(target) {
     }
   });
   
-  // 缓存代理对象
+  // 
   reactiveMap.set(target, proxy);
   
   return proxy;
 }
 
-// 使用示例
+// 
 const state = reactive({
   count: 0,
   user: {
@@ -177,11 +177,11 @@ const state = reactive({
   }
 });
 
-console.log(state.count); // 触发get，收集依赖
-state.count++; // 触发set，触发更新
+console.log(state.count); // get
+state.count++; // set
 ```
 
-### ref实现
+### ref
 
 ```javascript
 class RefImpl {
@@ -191,7 +191,7 @@ class RefImpl {
   }
   
   get value() {
-    // 收集依赖
+    // 
     track(this, 'value');
     return this._value;
   }
@@ -199,67 +199,67 @@ class RefImpl {
   set value(newValue) {
     if (newValue !== this._value) {
       this._value = convert(newValue);
-      // 触发更新
+      // 
       trigger(this, 'value');
     }
   }
 }
 
-// 转换值
+// 
 function convert(value) {
   return isObject(value) ? reactive(value) : value;
 }
 
-// ref函数
+// ref
 function ref(value) {
   return new RefImpl(value);
 }
 
-// 使用示例
+// 
 const count = ref(0);
 console.log(count.value); // 0
-count.value++; // 触发更新
+count.value++; // 
 
 const user = ref({ name: 'Vue' });
 console.log(user.value.name); // 'Vue'
-user.value.name = 'React'; // 触发更新
+user.value.name = 'React'; // 
 ```
 
-## 依赖收集与触发
+## 
 
-### effect实现
+### effect
 
 ```javascript
-// 当前活跃的effect
+// effect
 let activeEffect = null;
 
-// effect栈
+// effect
 const effectStack = [];
 
-// 依赖映射：target -> key -> effects
+// target -> key -> effects
 const targetMap = new WeakMap();
 
-// effect函数
+// effect
 function effect(fn, options = {}) {
   const effectFn = () => {
     try {
-      // 入栈
+      // 
       effectStack.push(effectFn);
       activeEffect = effectFn;
       
-      // 执行函数，触发依赖收集
+      // 
       return fn();
     } finally {
-      // 出栈
+      // 
       effectStack.pop();
       activeEffect = effectStack[effectStack.length - 1];
     }
   };
   
-  // 保存选项
+  // 
   effectFn.options = options;
   
-  // 立即执行
+  // 
   if (!options.lazy) {
     effectFn();
   }
@@ -267,29 +267,29 @@ function effect(fn, options = {}) {
   return effectFn;
 }
 
-// 依赖收集
+// 
 function track(target, key) {
   if (!activeEffect) {
     return;
   }
   
-  // 获取target的依赖映射
+  // target
   let depsMap = targetMap.get(target);
   if (!depsMap) {
     targetMap.set(target, (depsMap = new Map()));
   }
   
-  // 获取key的依赖集合
+  // key
   let deps = depsMap.get(key);
   if (!deps) {
     depsMap.set(key, (deps = new Set()));
   }
   
-  // 添加当前effect
+  // effect
   deps.add(activeEffect);
 }
 
-// 触发更新
+// 
 function trigger(target, key) {
   const depsMap = targetMap.get(target);
   if (!depsMap) {
@@ -301,7 +301,7 @@ function trigger(target, key) {
     return;
   }
   
-  // 执行所有effect
+  // effect
   deps.forEach(effect => {
     if (effect.options.scheduler) {
       effect.options.scheduler(effect);
@@ -311,30 +311,30 @@ function trigger(target, key) {
   });
 }
 
-// 使用示例
+// 
 const state = reactive({ count: 0 });
 
 effect(() => {
   console.log('count:', state.count);
 });
-// 输出: count: 0
+// : count: 0
 
-state.count++; // 触发effect，输出: count: 1
+state.count++; // effect: count: 1
 ```
 
-### computed实现
+### computed
 
 ```javascript
 function computed(getter) {
   let value;
-  let dirty = true; // 是否需要重新计算
+  let dirty = true; // 
   
   const effectFn = effect(getter, {
     lazy: true,
     scheduler: () => {
-      // 依赖变化时，标记为脏
+      // 
       dirty = true;
-      // 触发computed的依赖
+      // computed
       trigger(computed, 'value');
     }
   });
@@ -345,7 +345,7 @@ function computed(getter) {
         value = effectFn();
         dirty = false;
       }
-      // 收集computed的依赖
+      // computed
       track(computed, 'value');
       return value;
     }
@@ -354,28 +354,28 @@ function computed(getter) {
   return computed;
 }
 
-// 使用示例
+// 
 const state = reactive({ count: 0 });
 
 const double = computed(() => {
-  console.log('计算double');
+  console.log('double');
   return state.count * 2;
 });
 
-console.log(double.value); // 计算double, 输出: 0
-console.log(double.value); // 不会重新计算，输出: 0
+console.log(double.value); // double, : 0
+console.log(double.value); // : 0
 
-state.count++; // 标记dirty
-console.log(double.value); // 计算double, 输出: 2
+state.count++; // dirty
+console.log(double.value); // double, : 2
 ```
 
-### watch实现
+### watch
 
 ```javascript
 function watch(source, cb, options = {}) {
   let getter;
   
-  // 处理source
+  // source
   if (typeof source === 'function') {
     getter = source;
   } else {
@@ -385,13 +385,13 @@ function watch(source, cb, options = {}) {
   let oldValue;
   let cleanup;
   
-  // 清理函数
+  // 
   const onCleanup = (fn) => {
     cleanup = fn;
   };
   
   const job = () => {
-    // 执行清理
+    // 
     if (cleanup) {
       cleanup();
     }
@@ -405,7 +405,7 @@ function watch(source, cb, options = {}) {
     lazy: true,
     scheduler: () => {
       if (options.flush === 'post') {
-        // 在DOM更新后执行
+        // DOM
         Promise.resolve().then(job);
       } else {
         job();
@@ -420,7 +420,7 @@ function watch(source, cb, options = {}) {
   }
 }
 
-// 递归遍历对象
+// 
 function traverse(value, seen = new Set()) {
   if (!isObject(value) || seen.has(value)) {
     return value;
@@ -435,7 +435,7 @@ function traverse(value, seen = new Set()) {
   return value;
 }
 
-// 使用示例
+// 
 const state = reactive({ count: 0 });
 
 watch(
@@ -445,12 +445,12 @@ watch(
   }
 );
 
-state.count++; // 输出: count changed: 0 -> 1
+state.count++; // : count changed: 0 -> 1
 ```
 
-## 组件更新机制
+## 
 
-### 组件渲染
+### 
 
 ```javascript
 class Component {
@@ -459,12 +459,12 @@ class Component {
     this.$data = reactive(options.data());
     this.$el = null;
     
-    // 创建渲染effect
+    // effect
     this.update = effect(() => {
       this.render();
     }, {
       scheduler: () => {
-        // 异步更新
+        // 
         queueJob(this.update);
       }
     });
@@ -474,26 +474,26 @@ class Component {
     const vnode = this.$options.render.call(this.$data);
     
     if (!this.$el) {
-      // 首次渲染
+      // 
       this.$el = this.mount(vnode);
     } else {
-      // 更新渲染
+      // 
       this.patch(this.$el, vnode);
     }
   }
   
   mount(vnode) {
-    // 创建真实DOM
+    // DOM
     const el = document.createElement(vnode.tag);
     
-    // 设置属性
+    // 
     if (vnode.props) {
       for (const key in vnode.props) {
         el.setAttribute(key, vnode.props[key]);
       }
     }
     
-    // 处理子节点
+    // 
     if (typeof vnode.children === 'string') {
       el.textContent = vnode.children;
     } else if (Array.isArray(vnode.children)) {
@@ -506,13 +506,13 @@ class Component {
   }
   
   patch(el, vnode) {
-    // 简化的diff算法
-    // 实际Vue3使用更复杂的diff算法
+    // diff
+    // Vue3diff
     el.textContent = vnode.children;
   }
 }
 
-// 使用示例
+// 
 const app = new Component({
   data() {
     return {
@@ -529,11 +529,11 @@ const app = new Component({
 
 document.body.appendChild(app.$el);
 
-// 更新数据，自动触发重新渲染
+// 
 app.$data.count++;
 ```
 
-### 异步更新队列
+### 
 
 ```javascript
 const queue = [];
@@ -558,7 +558,7 @@ function flushJobs() {
   isFlushPending = false;
   isFlushing = true;
   
-  // 排序：父组件先于子组件更新
+  // 
   queue.sort((a, b) => a.id - b.id);
   
   try {
@@ -572,12 +572,12 @@ function flushJobs() {
   }
 }
 
-// nextTick实现
+// nextTick
 function nextTick(fn) {
   return fn ? Promise.resolve().then(fn) : Promise.resolve();
 }
 
-// 使用示例
+// 
 const state = reactive({ count: 0 });
 
 effect(() => {
@@ -588,15 +588,15 @@ state.count++;
 state.count++;
 state.count++;
 
-// 只会执行一次effect
-// 输出: effect: 3
+// effect
+// : effect: 3
 
 nextTick(() => {
   console.log('nextTick:', state.count);
 });
 ```
 
-## 性能优化
+## 
 
 ### shallowReactive
 
@@ -616,7 +616,7 @@ function shallowReactive(target) {
   });
 }
 
-// 使用场景：大型数据结构，只需要监听第一层
+// 
 const state = shallowReactive({
   user: {
     name: 'Vue',
@@ -626,10 +626,10 @@ const state = shallowReactive({
   }
 });
 
-// ✅ 触发更新
+//  
 state.user = { name: 'React' };
 
-// ❌ 不会触发更新
+//  
 state.user.name = 'Angular';
 ```
 
@@ -645,20 +645,20 @@ function readonly(target) {
     },
     
     set() {
-      console.warn('readonly对象不能修改');
+      console.warn('readonly');
       return true;
     },
     
     deleteProperty() {
-      console.warn('readonly对象不能删除属性');
+      console.warn('readonly');
       return true;
     }
   });
 }
 
-// 使用场景：props、store state
+// propsstore state
 const props = readonly({ msg: 'Hello' });
-props.msg = 'World'; // 警告：readonly对象不能修改
+props.msg = 'World'; // readonly
 ```
 
 ### markRaw
@@ -675,25 +675,25 @@ function isRaw(value) {
   return rawMap.has(value);
 }
 
-// 在reactive中检查
+// reactive
 function reactive(target) {
   if (isRaw(target)) {
     return target;
   }
-  // ... 其他逻辑
+  // ... 
 }
 
-// 使用场景：第三方库实例、大型不可变数据
+// 
 const map = markRaw(new Map());
 const state = reactive({ map });
 
-// map不会被代理
+// map
 console.log(state.map === map); // true
 ```
 
-## 实战应用
+## 
 
-### 自定义响应式Hook
+### Hook
 
 ```javascript
 // useCounter
@@ -737,13 +737,13 @@ function useMouse() {
 function useLocalStorage(key, initialValue) {
   const data = ref(initialValue);
   
-  // 从localStorage读取
+  // localStorage
   const stored = localStorage.getItem(key);
   if (stored) {
     data.value = JSON.parse(stored);
   }
   
-  // 监听变化，同步到localStorage
+  // localStorage
   watch(data, (newValue) => {
     localStorage.setItem(key, JSON.stringify(newValue));
   }, { deep: true });
@@ -752,15 +752,15 @@ function useLocalStorage(key, initialValue) {
 }
 ```
 
-## 总结
+## 
 
-Vue3响应式系统的核心：
-- 🎯 **Proxy代理**：完美的响应式拦截
-- 📦 **依赖收集**：track收集，trigger触发
-- 🔄 **effect系统**：响应式副作用
-- 💡 **computed**：懒计算，缓存结果
-- 👀 **watch**：监听数据变化
-- 🚀 **异步更新**：批量更新，性能优化
+Vue3
+-  **Proxy**
+-  ****tracktrigger
+-  **effect**
+-  **computed**
+-  **watch**
+-  ****
 
-记住：**理解响应式原理是掌握Vue3的关键！**
+**Vue3**
 

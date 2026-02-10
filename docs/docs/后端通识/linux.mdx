@@ -3,535 +3,535 @@ sidebarDepth: 4
 ---
 # Linux
 
-Linux是服务器的标配系统。会用Linux命令行能让你效率翻倍，装逼指数也翻倍。
+LinuxLinux
 
-## 快捷键（必须记住）
+## 
 
-这些快捷键能让你在命令行里飞起来：
+
 
 ```bash
-Ctrl + A        # 跳到行首（比狂按←快多了）
-Ctrl + E        # 跳到行尾
-Ctrl + U        # 删光标前的所有内容
-Ctrl + K        # 删光标后的所有内容
-Ctrl + W        # 删前一个单词
-Ctrl + L        # 清屏（比输入clear快）
-Ctrl + C        # 杀掉当前命令
-Ctrl + Z        # 暂停当前命令（用fg恢复）
-Ctrl + R        # 搜索历史命令（超好用）
-Ctrl + D        # 退出（等于exit）
+Ctrl + A        # ←
+Ctrl + E        # 
+Ctrl + U        # 
+Ctrl + K        # 
+Ctrl + W        # 
+Ctrl + L        # clear
+Ctrl + C        # 
+Ctrl + Z        # fg
+Ctrl + R        # 
+Ctrl + D        # exit
 ```
 
-## 文件和目录
+## 
 
-### 基础操作（天天用）
+### 
 
 ```bash
-# 看文件
-ls                  # 列出当前目录的文件
-ls -l               # 详细信息（权限、大小、时间）
-ls -a               # 包括隐藏文件（.开头的）
-ls -lh              # 文件大小用人话显示（1K、2M而不是字节数）
-ls -lt              # 按时间排序，最新的在上面
+# 
+ls                  # 
+ls -l               # 
+ls -a               # .
+ls -lh              # 1K2M
+ls -lt              # 
 
-# 切目录
-cd /path/to/dir     # 去指定目录
-cd ~                # 回家目录（/home/你的用户名）
-cd -                # 回上一个目录（来回切很方便）
-cd ..               # 去父目录
+# 
+cd /path/to/dir     # 
+cd ~                # /home/
+cd -                # 
+cd ..               # 
 
-# 看当前在哪
+# 
 pwd
 
-# 建目录
-mkdir dir           # 建一个目录
-mkdir -p a/b/c      # 一次建多层目录
+# 
+mkdir dir           # 
+mkdir -p a/b/c      # 
 
-# 删东西（危险操作，小心）
-rm file             # 删文件
-rm -r dir           # 删目录（递归删）
-rm -rf dir          # 强制删，不问你确认（慎用！）
-rmdir dir           # 删空目录
+# 
+rm file             # 
+rm -r dir           # 
+rm -rf dir          # 
+rmdir dir           # 
 
-# 复制
-cp file1 file2      # 复制文件
-cp -r dir1 dir2     # 复制目录
+# 
+cp file1 file2      # 
+cp -r dir1 dir2     # 
 
-# 移动/改名
-mv file1 file2      # 改名
-mv file dir/        # 移动文件
+# /
+mv file1 file2      # 
+mv file dir/        # 
 
-# 建空文件
-touch file          # 建个空文件，或者更新文件时间
+# 
+touch file          # 
 ```
 
-### 看文件内容
+### 
 
 ```bash
-# 直接看
-cat file            # 一次性显示全部（小文件用）
-head file           # 看前10行
-head -n 20 file     # 看前20行
-tail file           # 看后10行
-tail -n 20 file     # 看后20行
-tail -f file        # 实时看文件更新（看日志必备）
+# 
+cat file            # 
+head file           # 10
+head -n 20 file     # 20
+tail file           # 10
+tail -n 20 file     # 20
+tail -f file        # 
 
-# 分页看（大文件用这个）
-less file           # 推荐，功能强大（空格翻页，q退出）
-more file           # 老古董，能用但不如less
+# 
+less file           # q
+more file           # less
 
-# 看文件类型
-file filename       # 告诉你这是啥文件
+# 
+file filename       # 
 ```
 
-### 文件权限（重要但容易搞混）
+### 
 
 ```bash
-# 看权限
+# 
 ls -l file
 # -rwxr-xr-x  1 user group 1234 Jan 1 12:00 file
-# │ │││ │││ │││
-# │ │││ │││ │└─ 其他人的权限（r-x = 读+执行）
-# │ │││ │└───── 组的权限（r-x = 读+执行）
-# │ │└─────── 所有者的权限（rwx = 读+写+执行）
-# └────────── 文件类型（- = 普通文件，d = 目录）
+#    
+#     r-x = +
+#    r-x = +
+#   rwx = ++
+#  - = d = 
 
-# 改权限
-chmod 755 file      # rwxr-xr-x（常用于脚本）
-chmod 644 file      # rw-r--r--（常用于普通文件）
-chmod +x file       # 加执行权限
-chmod -x file       # 去掉执行权限
+# 
+chmod 755 file      # rwxr-xr-x
+chmod 644 file      # rw-r--r--
+chmod +x file       # 
+chmod -x file       # 
 
-# 改所有者
+# 
 chown user file
 chown user:group file
-chown -R user:group dir  # 递归改整个目录
+chown -R user:group dir  # 
 
-# 权限数字速查表
-# r(读)=4, w(写)=2, x(执行)=1
+# 
+# r()=4, w()=2, x()=1
 # 755 = 7(4+2+1) 5(4+1) 5(4+1) = rwxr-xr-x
 # 644 = 6(4+2) 4(4) 4(4) = rw-r--r--
-# 777 = 所有人都能读写执行（危险，别乱用）
+# 777 = 
 ```
 
-## 文本处理（神器三件套）
+## 
 
-### grep - 搜索文本（找日志必备）
+### grep - 
 
 ```bash
-# 基础用法
+# 
 grep "pattern" file
-grep "error" app.log        # 在日志里找error
+grep "error" app.log        # error
 
-# 常用选项
-grep -i "pattern" file      # 不区分大小写
-grep -r "pattern" dir/      # 递归搜整个目录
-grep -n "pattern" file      # 显示行号
-grep -v "pattern" file      # 反向匹配（找不包含的）
-grep -c "pattern" file      # 数有多少行匹配
-grep -l "pattern" *.txt     # 只显示文件名
-grep -A 3 "pattern" file    # 显示匹配行和后面3行
-grep -B 3 "pattern" file    # 显示匹配行和前面3行
-grep -C 3 "pattern" file    # 显示匹配行和前后各3行
+# 
+grep -i "pattern" file      # 
+grep -r "pattern" dir/      # 
+grep -n "pattern" file      # 
+grep -v "pattern" file      # 
+grep -c "pattern" file      # 
+grep -l "pattern" *.txt     # 
+grep -A 3 "pattern" file    # 3
+grep -B 3 "pattern" file    # 3
+grep -C 3 "pattern" file    # 3
 
-# 正则表达式
-grep -E "error|warning" file    # 找error或warning
-grep "^start" file              # 找以start开头的行
-grep "end$" file                # 找以end结尾的行
+# 
+grep -E "error|warning" file    # errorwarning
+grep "^start" file              # start
+grep "end$" file                # end
 
-# 实战例子
-grep -i "exception" *.log       # 在所有日志里找异常
-grep -rn "TODO" src/            # 在代码里找TODO注释
+# 
+grep -i "exception" *.log       # 
+grep -rn "TODO" src/            # TODO
 ```
 
-### sed - 文本替换（批量改文件神器）
+### sed - 
 
 ```bash
-# 替换
-sed 's/old/new/' file           # 每行只替换第一个
-sed 's/old/new/g' file          # 替换所有
-sed 's/old/new/gi' file         # 不区分大小写替换
-sed -i 's/old/new/g' file       # 直接改文件（危险，建议先备份）
+# 
+sed 's/old/new/' file           # 
+sed 's/old/new/g' file          # 
+sed 's/old/new/gi' file         # 
+sed -i 's/old/new/g' file       # 
 
-# 删除
-sed '/pattern/d' file           # 删除匹配的行
-sed '1d' file                   # 删除第一行
-sed '1,5d' file                 # 删除1到5行
+# 
+sed '/pattern/d' file           # 
+sed '1d' file                   # 
+sed '1,5d' file                 # 15
 
-# 实战例子
-sed -i 's/localhost/0.0.0.0/g' config.ini    # 批量改配置
-sed -i '/^#/d' file                          # 删除所有注释行
+# 
+sed -i 's/localhost/0.0.0.0/g' config.ini    # 
+sed -i '/^#/d' file                          # 
 ```
-sed '1d' file                   # 删除第一行
-sed '1,5d' file                 # 删除1-5行
+sed '1d' file                   # 
+sed '1,5d' file                 # 1-5
 
-# 插入
-sed '1i\new line' file          # 在第一行前插入
-sed '1a\new line' file          # 在第一行后插入
+# 
+sed '1i\new line' file          # 
+sed '1a\new line' file          # 
 ```
 
-### awk - 文本分析
+### awk - 
 
 ```bash
-# 打印列
-awk '{print $1}' file           # 打印第一列
-awk '{print $1, $3}' file       # 打印第1和第3列
-awk '{print $NF}' file          # 打印最后一列
+# 
+awk '{print $1}' file           # 
+awk '{print $1, $3}' file       # 13
+awk '{print $NF}' file          # 
 
-# 条件过滤
-awk '$3 > 100' file             # 第3列大于100
-awk '/pattern/ {print $1}' file # 匹配行打印第1列
+# 
+awk '$3 > 100' file             # 3100
+awk '/pattern/ {print $1}' file # 1
 
-# 统计
-awk '{sum+=$1} END {print sum}' file    # 求和
-awk '{count++} END {print count}' file  # 计数
+# 
+awk '{sum+=$1} END {print sum}' file    # 
+awk '{count++} END {print count}' file  # 
 ```
 
-### 其他文本工具
+### 
 
 ```bash
-# 排序
-sort file               # 排序
-sort -r file            # 逆序
-sort -n file            # 数字排序
-sort -u file            # 去重排序
+# 
+sort file               # 
+sort -r file            # 
+sort -n file            # 
+sort -u file            # 
 
-# 去重
-uniq file               # 去除相邻重复行
-sort file | uniq        # 先排序再去重
-uniq -c file            # 统计重复次数
+# 
+uniq file               # 
+sort file | uniq        # 
+uniq -c file            # 
 
-# 统计
-wc file                 # 行数 单词数 字节数
-wc -l file              # 只统计行数
-wc -w file              # 只统计单词数
+# 
+wc file                 #   
+wc -l file              # 
+wc -w file              # 
 
-# 比较文件
-diff file1 file2        # 比较文件差异
+# 
+diff file1 file2        # 
 ```
 
-## 进程管理
+## 
 
 ```bash
-# 查看进程
-ps                      # 当前终端进程
-ps aux                  # 所有进程
-ps aux | grep nginx     # 查找特定进程
+# 
+ps                      # 
+ps aux                  # 
+ps aux | grep nginx     # 
 
-# 实时监控
-top                     # 实时进程监控
-htop                    # 更友好的 top（需安装）
+# 
+top                     # 
+htop                    #  top
 
-# 终止进程
-kill PID                # 终止进程
-kill -9 PID             # 强制终止
-killall nginx           # 终止所有 nginx 进程
-pkill -f "python app"   # 按名称终止
+# 
+kill PID                # 
+kill -9 PID             # 
+killall nginx           #  nginx 
+pkill -f "python app"   # 
 
-# 后台运行
-command &               # 后台运行
-nohup command &         # 后台运行，忽略挂断信号
-nohup command > output.log 2>&1 &  # 重定向输出
+# 
+command &               # 
+nohup command &         # 
+nohup command > output.log 2>&1 &  # 
 
-# 查看后台任务
-jobs                    # 查看后台任务
-fg %1                   # 将任务1调到前台
-bg %1                   # 将任务1放到后台
+# 
+jobs                    # 
+fg %1                   # 1
+bg %1                   # 1
 ```
 
-## 系统信息
+## 
 
 ```bash
-# 系统信息
-uname -a                # 系统信息
-hostname                # 主机名
-uptime                  # 运行时间
-date                    # 当前时间
+# 
+uname -a                # 
+hostname                # 
+uptime                  # 
+date                    # 
 
-# CPU 和内存
-free -h                 # 内存使用情况
-df -h                   # 磁盘使用情况
-du -sh dir              # 目录大小
-du -h --max-depth=1     # 当前目录各子目录大小
+# CPU 
+free -h                 # 
+df -h                   # 
+du -sh dir              # 
+du -h --max-depth=1     # 
 
-# 网络
-ifconfig                # 网络接口信息
-ip addr                 # 网络接口信息（新）
-netstat -tuln           # 监听的端口
-ss -tuln                # 监听的端口（新）
-ping host               # 测试连通性
-curl ifconfig.me        # 查看公网 IP
+# 
+ifconfig                # 
+ip addr                 # 
+netstat -tuln           # 
+ss -tuln                # 
+ping host               # 
+curl ifconfig.me        #  IP
 ```
 
-## 网络和下载
+## 
 
 ```bash
-# 下载文件
-wget url                # 下载文件
-wget -O file url        # 指定文件名
-curl -O url             # 下载文件
-curl url > file         # 下载并保存
+# 
+wget url                # 
+wget -O file url        # 
+curl -O url             # 
+curl url > file         # 
 
-# HTTP 请求
-curl url                # GET 请求
-curl -X POST url        # POST 请求
+# HTTP 
+curl url                # GET 
+curl -X POST url        # POST 
 curl -H "Content-Type: application/json" -d '{"key":"value"}' url
 
 # SSH
-ssh user@host           # 连接远程主机
-ssh -p 2222 user@host   # 指定端口
-ssh-keygen              # 生成 SSH 密钥
-ssh-copy-id user@host   # 复制公钥到远程主机
+ssh user@host           # 
+ssh -p 2222 user@host   # 
+ssh-keygen              #  SSH 
+ssh-copy-id user@host   # 
 
-# SCP - 远程复制
-scp file user@host:/path        # 上传文件
-scp user@host:/path/file .      # 下载文件
-scp -r dir user@host:/path      # 上传目录
+# SCP - 
+scp file user@host:/path        # 
+scp user@host:/path/file .      # 
+scp -r dir user@host:/path      # 
 ```
 
-## 压缩和解压
+## 
 
 ```bash
 # tar.gz
-tar -czf archive.tar.gz dir/    # 压缩
-tar -xzf archive.tar.gz         # 解压
-tar -xzf archive.tar.gz -C dir/ # 解压到指定目录
+tar -czf archive.tar.gz dir/    # 
+tar -xzf archive.tar.gz         # 
+tar -xzf archive.tar.gz -C dir/ # 
 
 # tar.bz2
-tar -cjf archive.tar.bz2 dir/   # 压缩
-tar -xjf archive.tar.bz2        # 解压
+tar -cjf archive.tar.bz2 dir/   # 
+tar -xjf archive.tar.bz2        # 
 
 # zip
-zip -r archive.zip dir/         # 压缩
-unzip archive.zip               # 解压
-unzip archive.zip -d dir/       # 解压到指定目录
+zip -r archive.zip dir/         # 
+unzip archive.zip               # 
+unzip archive.zip -d dir/       # 
 
-# 查看压缩包内容
-tar -tzf archive.tar.gz         # 查看 tar.gz
-unzip -l archive.zip            # 查看 zip
+# 
+tar -tzf archive.tar.gz         #  tar.gz
+unzip -l archive.zip            #  zip
 ```
 
-## 查找
+## 
 
 ```bash
-# 查找文件
-find /path -name "*.txt"        # 按名称查找
-find /path -type f              # 查找文件
-find /path -type d              # 查找目录
-find /path -size +100M          # 查找大于100M的文件
-find /path -mtime -7            # 查找7天内修改的文件
-find /path -name "*.log" -delete # 查找并删除
+# 
+find /path -name "*.txt"        # 
+find /path -type f              # 
+find /path -type d              # 
+find /path -size +100M          # 100M
+find /path -mtime -7            # 7
+find /path -name "*.log" -delete # 
 
-# 查找命令
-which command           # 查找命令路径
-whereis command         # 查找命令、源码、手册
-type command            # 查看命令类型
+# 
+which command           # 
+whereis command         # 
+type command            # 
 ```
 
-## 用户管理
+## 
 
 ```bash
-# 用户信息
-whoami                  # 当前用户
-who                     # 登录用户
-id                      # 用户 ID 和组 ID
-groups                  # 用户所属组
+# 
+whoami                  # 
+who                     # 
+id                      #  ID  ID
+groups                  # 
 
-# 添加用户
-useradd username        # 添加用户
-useradd -m -s /bin/bash username  # 创建家目录并指定 shell
-passwd username         # 设置密码
+# 
+useradd username        # 
+useradd -m -s /bin/bash username  #  shell
+passwd username         # 
 
-# 删除用户
-userdel username        # 删除用户
-userdel -r username     # 删除用户及家目录
+# 
+userdel username        # 
+userdel -r username     # 
 
-# 切换用户
-su username             # 切换用户
-su -                    # 切换到 root
-sudo command            # 以 root 权限执行命令
+# 
+su username             # 
+su -                    #  root
+sudo command            #  root 
 ```
 
-## 环境变量
+## 
 
 ```bash
-# 查看环境变量
-env                     # 所有环境变量
-echo $PATH              # 查看 PATH
-echo $HOME              # 查看 HOME
+# 
+env                     # 
+echo $PATH              #  PATH
+echo $HOME              #  HOME
 
-# 设置环境变量
-export VAR=value        # 临时设置
-export PATH=$PATH:/new/path  # 添加到 PATH
+# 
+export VAR=value        # 
+export PATH=$PATH:/new/path  #  PATH
 
-# 永久设置（添加到配置文件）
-# ~/.bashrc 或 ~/.zshrc
+# 
+# ~/.bashrc  ~/.zshrc
 echo 'export VAR=value' >> ~/.bashrc
-source ~/.bashrc        # 重新加载配置
+source ~/.bashrc        # 
 ```
 
-## 定时任务
+## 
 
 ```bash
 # crontab
-crontab -l              # 查看定时任务
-crontab -e              # 编辑定时任务
-crontab -r              # 删除所有定时任务
+crontab -l              # 
+crontab -e              # 
+crontab -r              # 
 
-# crontab 格式
-# 分 时 日 月 周 命令
+# crontab 
+#      
 # * * * * * command
-# 0 2 * * * /path/to/backup.sh  # 每天凌晨2点执行
+# 0 2 * * * /path/to/backup.sh  # 2
 
-# 常用示例
-# */5 * * * * command           # 每5分钟
-# 0 */2 * * * command           # 每2小时
-# 0 0 * * 0 command             # 每周日凌晨
-# 0 0 1 * * command             # 每月1号凌晨
+# 
+# */5 * * * * command           # 5
+# 0 */2 * * * command           # 2
+# 0 0 * * 0 command             # 
+# 0 0 1 * * command             # 1
 ```
 
-## 实用技巧
+## 
 
-### 管道和重定向
+### 
 
 ```bash
-# 管道
-command1 | command2     # command1 的输出作为 command2 的输入
-ps aux | grep nginx     # 查找进程
-cat file | wc -l        # 统计行数
+# 
+command1 | command2     # command1  command2 
+ps aux | grep nginx     # 
+cat file | wc -l        # 
 
-# 重定向
-command > file          # 覆盖写入
-command >> file         # 追加写入
-command 2> error.log    # 错误输出重定向
-command > output.log 2>&1  # 标准输出和错误都重定向
-command < input.txt     # 输入重定向
+# 
+command > file          # 
+command >> file         # 
+command 2> error.log    # 
+command > output.log 2>&1  # 
+command < input.txt     # 
 ```
 
-### 命令组合
+### 
 
 ```bash
-# 顺序执行
-command1; command2      # 依次执行
+# 
+command1; command2      # 
 
-# 条件执行
-command1 && command2    # command1 成功才执行 command2
-command1 || command2    # command1 失败才执行 command2
+# 
+command1 && command2    # command1  command2
+command1 || command2    # command1  command2
 
-# 后台执行
-command &               # 后台执行
+# 
+command &               # 
 ```
 
-### 别名
+### 
 
 ```bash
-# 设置别名
+# 
 alias ll='ls -lh'
 alias gs='git status'
 alias ..='cd ..'
 
-# 永久设置（添加到 ~/.bashrc）
+#  ~/.bashrc
 echo "alias ll='ls -lh'" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### 历史命令
+### 
 
 ```bash
-history                 # 查看历史命令
-!100                    # 执行第100条命令
-!!                      # 执行上一条命令
-!$                      # 上一条命令的最后一个参数
+history                 # 
+!100                    # 100
+!!                      # 
+!$                      # 
 ```
 
-## VIM 编辑器
+## VIM 
 
 ```bash
-# 打开文件
+# 
 vim file
 
-# 模式切换
-i                       # 进入插入模式
-Esc                     # 退出插入模式
-:                       # 进入命令模式
+# 
+i                       # 
+Esc                     # 
+:                       # 
 
-# 移动
-h j k l                 # 左下上右
-w                       # 下一个单词
-b                       # 上一个单词
-0                       # 行首
-$                       # 行尾
-gg                      # 文件开头
-G                       # 文件结尾
+# 
+h j k l                 # 
+w                       # 
+b                       # 
+0                       # 
+$                       # 
+gg                      # 
+G                       # 
 
-# 编辑
-x                       # 删除字符
-dd                      # 删除行
-yy                      # 复制行
-p                       # 粘贴
-u                       # 撤销
-Ctrl+r                  # 重做
+# 
+x                       # 
+dd                      # 
+yy                      # 
+p                       # 
+u                       # 
+Ctrl+r                  # 
 
-# 搜索
-/pattern                # 向下搜索
-?pattern                # 向上搜索
-n                       # 下一个匹配
-N                       # 上一个匹配
+# 
+/pattern                # 
+?pattern                # 
+n                       # 
+N                       # 
 
-# 保存和退出
-:w                      # 保存
-:q                      # 退出
-:wq                     # 保存并退出
-:q!                     # 强制退出不保存
+# 
+:w                      # 
+:q                      # 
+:wq                     # 
+:q!                     # 
 ```
 
-## 常用配置文件
+## 
 
 ```bash
-# 系统配置
-/etc/profile            # 系统环境变量
-/etc/hosts              # 主机名映射
-/etc/hostname           # 主机名
-/etc/resolv.conf        # DNS 配置
+# 
+/etc/profile            # 
+/etc/hosts              # 
+/etc/hostname           # 
+/etc/resolv.conf        # DNS 
 
-# 用户配置
-~/.bashrc               # Bash 配置
-~/.zshrc                # Zsh 配置
-~/.vimrc                # Vim 配置
-~/.ssh/config           # SSH 配置
-~/.ssh/authorized_keys  # SSH 公钥
+# 
+~/.bashrc               # Bash 
+~/.zshrc                # Zsh 
+~/.vimrc                # Vim 
+~/.ssh/config           # SSH 
+~/.ssh/authorized_keys  # SSH 
 
-# 应用配置
-/etc/nginx/nginx.conf   # Nginx 配置
-/etc/mysql/my.cnf       # MySQL 配置
+# 
+/etc/nginx/nginx.conf   # Nginx 
+/etc/mysql/my.cnf       # MySQL 
 ```
 
-## 性能分析
+## 
 
 ```bash
 # CPU
-top                     # 实时监控
-mpstat                  # CPU 统计
+top                     # 
+mpstat                  # CPU 
 
-# 内存
-free -h                 # 内存使用
-vmstat                  # 虚拟内存统计
+# 
+free -h                 # 
+vmstat                  # 
 
-# 磁盘 I/O
-iostat                  # I/O 统计
-iotop                   # I/O 监控
+#  I/O
+iostat                  # I/O 
+iotop                   # I/O 
 
-# 网络
-iftop                   # 网络流量监控
-nethogs                 # 按进程查看网络使用
+# 
+iftop                   # 
+nethogs                 # 
 ```
 
-## 最佳实践
+## 
 
-1. **使用 Tab 补全**：提高输入效率
-2. **善用历史命令**：Ctrl+R 搜索历史
-3. **使用别名**：简化常用命令
-4. **定期备份**：重要数据定期备份
-5. **权限最小化**：不要随意使用 root
-6. **查看日志**：出问题先看日志
-7. **学习 vim**：服务器上最常用的编辑器
+1. ** Tab **
+2. ****Ctrl+R 
+3. ****
+4. ****
+5. **** root
+6. ****
+7. ** vim**

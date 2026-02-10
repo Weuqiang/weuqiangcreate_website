@@ -1,27 +1,27 @@
 ---
 sidebar_position: 1
-title: 数据库
+title: 
 ---
 
 import DocCardList from '@theme/DocCardList';
 
-# 数据库 - 数据存储与管理
+#  - 
 
-数据库是应用程序的核心。这个模块教你**从基础到高级的数据库技术**。
+****
 
-## 🗺️ 学习路径
+##  
 
 ```mermaid
 graph LR
-    A[SQL基础] --> B[MySQL]
+    A[SQL] --> B[MySQL]
     A --> C[PostgreSQL]
-    B --> D[性能优化]
+    B --> D[]
     C --> D
-    D --> E[分布式数据库]
+    D --> E[]
     
-    F[NoSQL基础] --> G[MongoDB]
+    F[NoSQL] --> G[MongoDB]
     F --> H[Redis]
-    G --> I[数据建模]
+    G --> I[]
     H --> I
     
     style A fill:#e1f5ff
@@ -30,130 +30,130 @@ graph LR
     style E fill:#ffe1e1
 ```
 
-## 📚 模块内容
+##  
 
-### 🔵 关系型数据库
+###  
 
-#### MySQL - 最流行的开源数据库
-- **基础操作**：CRUD、索引、事务
-- **高级特性**：存储过程、触发器、视图
-- **性能优化**：查询优化、索引优化
-- **实战项目**：电商数据库设计
+#### MySQL - 
+- ****CRUD
+- ****
+- ****
+- ****
 
-#### PostgreSQL - 最先进的开源数据库
-- **高级特性**：JSON支持、全文搜索
-- **扩展功能**：PostGIS、时序数据
-- **性能调优**：查询计划、并发控制
+#### PostgreSQL - 
+- ****JSON
+- ****PostGIS
+- ****
 
-#### SQL Server - 企业级数据库
-- **T-SQL编程**
-- **高可用方案**
-- **商业智能**
+#### SQL Server - 
+- **T-SQL**
+- ****
+- ****
 
-### 🔴 NoSQL数据库
+###  NoSQL
 
-#### MongoDB - 文档数据库
-- **文档模型**：灵活的schema
-- **聚合管道**：复杂查询
-- **分片集群**：水平扩展
-- **实战项目**：内容管理系统
+#### MongoDB - 
+- ****schema
+- ****
+- ****
+- ****
 
-#### Redis - 内存数据库
-- **数据结构**：String、Hash、List、Set、ZSet
-- **持久化**：RDB、AOF
-- **高可用**：主从复制、哨兵、集群
-- **实战项目**：缓存系统、排行榜
+#### Redis - 
+- ****StringHashListSetZSet
+- ****RDBAOF
+- ****
+- ****
 
-#### Elasticsearch - 搜索引擎
-- **全文搜索**
-- **日志分析**
-- **实时分析**
+#### Elasticsearch - 
+- ****
+- ****
+- ****
 
-### 🟢 NewSQL数据库
+### 🟢 NewSQL
 
-#### TiDB - 分布式数据库
-- **水平扩展**
-- **强一致性**
-- **MySQL兼容**
+#### TiDB - 
+- ****
+- ****
+- **MySQL**
 
-### 🟡 时序数据库
+### 🟡 
 
-#### InfluxDB - 时序数据存储
-- **时序数据模型**
-- **高效写入**
-- **数据聚合**
+#### InfluxDB - 
+- ****
+- ****
+- ****
 
-## 🎯 学习建议
+##  
 
-### 初学者路径（2-3个月）
+### 2-3
 
-**第1-2周**：SQL基础
-- 学习SQL语法
-- 掌握CRUD操作
-- 理解表关系
+**1-2**SQL
+- SQL
+- CRUD
+- 
 
-**第3-4周**：MySQL深入
-- 索引原理
-- 事务ACID
-- 查询优化
+**3-4**MySQL
+- 
+- ACID
+- 
 
-**第5-6周**：NoSQL入门
-- MongoDB文档模型
-- Redis数据结构
-- 使用场景对比
+**5-6**NoSQL
+- MongoDB
+- Redis
+- 
 
-**第7-8周**：实战项目
-- 设计电商数据库
-- 实现缓存系统
-- 性能优化实践
+**7-8**
+- 
+- 
+- 
 
-### 进阶路径（3-6个月）
+### 3-6
 
-**数据库设计**：
-- 范式理论
-- 反范式设计
-- 数据建模
+****
+- 
+- 
+- 
 
-**性能优化**：
-- 慢查询分析
-- 索引优化
-- 分库分表
+****
+- 
+- 
+- 
 
-**高可用方案**：
-- 主从复制
-- 读写分离
-- 故障转移
+****
+- 
+- 
+- 
 
-**分布式数据库**：
-- 分片策略
-- 一致性协议
-- CAP理论
+****
+- 
+- 
+- CAP
 
-## 💡 技术选型
+##  
 
-### 关系型 vs NoSQL
+###  vs NoSQL
 
-| 场景 | 推荐数据库 | 原因 |
+|  |  |  |
 |------|-----------|------|
-| 电商订单 | MySQL | 强一致性、事务支持 |
-| 用户画像 | MongoDB | 灵活schema、快速迭代 |
-| 缓存 | Redis | 高性能、丰富数据结构 |
-| 日志分析 | Elasticsearch | 全文搜索、实时分析 |
-| 时序监控 | InfluxDB | 高效时序存储 |
+|  | MySQL |  |
+|  | MongoDB | schema |
+|  | Redis |  |
+|  | Elasticsearch |  |
+|  | InfluxDB |  |
 
-### 数据库对比
+### 
 
-| 特性 | MySQL | MongoDB | Redis | PostgreSQL |
+|  | MySQL | MongoDB | Redis | PostgreSQL |
 |------|-------|---------|-------|------------|
-| 类型 | 关系型 | 文档型 | KV型 | 关系型 |
-| 事务 | ✅ | ✅ | ✅ | ✅ |
-| 扩展性 | 垂直 | 水平 | 水平 | 垂直 |
-| 查询语言 | SQL | MQL | 命令 | SQL |
-| 适用场景 | OLTP | 灵活数据 | 缓存 | 复杂查询 |
+|  |  |  | KV |  |
+|  |  |  |  |  |
+|  |  |  |  |  |
+|  | SQL | MQL |  | SQL |
+|  | OLTP |  |  |  |
 
-## 🚀 快速开始
+##  
 
-### Docker快速部署
+### Docker
 
 ```bash
 # MySQL
@@ -179,7 +179,7 @@ docker run -d --name postgres \
   postgres:latest
 ```
 
-### 连接数据库
+### 
 
 ```python
 # MySQL
@@ -210,101 +210,101 @@ conn = psycopg2.connect(
 )
 ```
 
-## 📖 学习资源
+##  
 
-### 在线课程
-- **MySQL必知必会** - 入门经典
-- **MongoDB University** - 官方课程
-- **Redis实战** - 实用教程
+### 
+- **MySQL** - 
+- **MongoDB University** - 
+- **Redis** - 
 
-### 书籍推荐
-- 《高性能MySQL》
-- 《MongoDB权威指南》
-- 《Redis设计与实现》
-- 《数据库系统概念》
+### 
+- MySQL
+- MongoDB
+- Redis
+- 
 
-### 实践平台
-- **LeetCode Database** - SQL练习
-- **HackerRank SQL** - 在线刷题
-- **本地搭建** - Docker环境
+### 
+- **LeetCode Database** - SQL
+- **HackerRank SQL** - 
+- **** - Docker
 
-## 🎓 认证考试
+##  
 
-- **MySQL认证**：MySQL Database Administrator
-- **MongoDB认证**：MongoDB Certified Developer
-- **Redis认证**：Redis Certified Developer
-- **PostgreSQL认证**：PostgreSQL Certified Professional
+- **MySQL**MySQL Database Administrator
+- **MongoDB**MongoDB Certified Developer
+- **Redis**Redis Certified Developer
+- **PostgreSQL**PostgreSQL Certified Professional
 
-## 💼 职业发展
+##  
 
-### 数据库工程师技能树
+### 
 
 ```
-基础技能
-├── SQL语法
-├── 数据库原理
-├── 索引和事务
-└── 备份恢复
 
-核心技能
-├── 性能优化
-├── 高可用方案
-├── 分库分表
-└── 监控告警
+ SQL
+ 
+ 
+ 
 
-进阶技能
-├── 分布式数据库
-├── 数据库内核
-├── 架构设计
-└── 容量规划
+
+ 
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+ 
 ```
 
-### 职业路径
+### 
 
-1. **初级**：数据库开发工程师
-   - SQL开发
-   - 数据库设计
-   - 基础运维
+1. ****
+   - SQL
+   - 
+   - 
 
-2. **中级**：数据库管理员（DBA）
-   - 性能优化
-   - 高可用部署
-   - 故障处理
+2. ****DBA
+   - 
+   - 
+   - 
 
-3. **高级**：数据库架构师
-   - 架构设计
-   - 技术选型
-   - 团队管理
+3. ****
+   - 
+   - 
+   - 
 
-## 🔥 热门技术
+##  
 
-### 2024年数据库趋势
+### 2024
 
-1. **云原生数据库**
+1. ****
    - AWS Aurora
    - Google Cloud Spanner
-   - 阿里云PolarDB
+   - PolarDB
 
-2. **NewSQL数据库**
+2. **NewSQL**
    - TiDB
    - CockroachDB
    - YugabyteDB
 
-3. **向量数据库**
+3. ****
    - Milvus
    - Pinecone
    - Weaviate
 
-4. **图数据库**
+4. ****
    - Neo4j
    - ArangoDB
    - JanusGraph
 
-## 开始学习
+## 
 
-选择一个章节开始你的数据库之旅：
+
 
 <DocCardList />
 
-记住：**数据库是应用的基石，打好基础很重要！**
+****
 

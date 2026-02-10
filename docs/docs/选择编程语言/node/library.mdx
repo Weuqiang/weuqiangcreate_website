@@ -1,11 +1,11 @@
-# 第三方库
+# 
 ## bluebird
 
-可以将回调函数实现的异步改写成Promise的方式来写的第三方库。
+Promise
 
 ### bluebird + fs
 
-回调
+
 
 ```javascript
 const fs = require('fs')
@@ -28,15 +28,15 @@ fs.readFileAsync('index.html')
 
 ### bluebird + mysql
 
-回调
+
 
 ```javascript
 const mysql = require('mysql')
-// mysql配置文件
+// mysql
 let config = require('./config')
 conn.connect()
 
-// 使用
+// 
 conn.query(`sql code here...`, (err, data) => {
 
 })
@@ -47,21 +47,21 @@ Promise
 ```javascript
 const bluebird = require('bluebird')
 const mysql = require('mysql')
-// mysql配置文件
+// mysql
 let config = require('./config')
 const conn = bluebird.promisifyAll(mysql.createConnection(config))
 conn.connect()
 
-// 使用
+// 
 let data = await conn.queryAsync(`sql code here...`)
 ```
 
 ## PM2
 
-除了常见的 `pm2 start index.js`，我们也可以使用配置文件。
+ `pm2 start index.js`
 
 ```js
-// 比如取名为 ecosystem.config.js
+//  ecosystem.config.js
 module.exports = {
   apps: [{
     script: './server/app.js',
@@ -76,7 +76,7 @@ module.exports = {
 }
 ```
 
-之后通过以下命令来启动服务
+
 
 ```shell
 pm2 start ecosystem.config.js --env development
@@ -84,7 +84,7 @@ pm2 start ecosystem.config.js --env development
 pm2 start ecosystem.config.js --env production
 ```
 
-### 常用命令
+### 
 
 ```js
 pm2 start app.js
@@ -96,23 +96,23 @@ pm2 monit
 // ...
 ```
 
-## 命令行工具
+## 
 
-介绍常用的命令行工具
+
 
 ### chalk
 
-给日志输出加上颜色。
+
 
 ```js
 import chalk from 'chalk'
-console.log(chalk.blue('akara'))  // 蓝色字体
-console.log(chalk.blue.bgRed('akara')) // 蓝色字体，红色背景
+console.log(chalk.blue('akara'))  // 
+console.log(chalk.blue.bgRed('akara')) // 
 ```
 
 ### yargs
 
-提供了对命令行参数的解析功能，并且默认提供了 `--help`、`--version`选项。
+ `--help``--version`
 
 ```js
 #!/usr/bin/env node
@@ -120,11 +120,11 @@ const yargs = require("yargs/yargs");
 const { hideBin } = require("yargs/helpers");
 const http = require("http");
 
-yargs(hideBin(process.argv)) // hideBin(process.argv) 相当于 process.argv.slice(2)
+yargs(hideBin(process.argv)) // hideBin(process.argv)  process.argv.slice(2)
     .command( 
-        "serve [port]", // [port]为可选参数
-        "启动服务器",
-        { // 设置命令参数的别名、默认值等信息
+        "serve [port]", // [port]
+        "",
+        { // 
             port: {
                 alias: "p",
                 default: 3000,
@@ -132,12 +132,12 @@ yargs(hideBin(process.argv)) // hideBin(process.argv) 相当于 process.argv.sli
         },
         (argv) => {
             http.createServer((req, res) => {}).listen(argv.port, () => {
-                console.log(`服务器运行在${argv.port}端口`);
+                console.log(`${argv.port}`);
             });
         }
     )
-    .command("curl <url>", "发送请求", {}, (argv) => { // <url>为必须参数
-        if (argv.verbose) console.log('已经开启verbose')
+    .command("curl <url>", "", {}, (argv) => { // <url>
+        if (argv.verbose) console.log('verbose')
         console.log(argv.url);
     })
     .option('verbose', {
@@ -157,7 +157,7 @@ cli curl 'google.com' -v
 
 ### commander
 
-和 `yargs`作用差不多，可以选择其中一个来开发自己的命令行工具。
+ `yargs`
 
 ```js
 #!/usr/bin/env node
@@ -166,9 +166,9 @@ const { program } = require('commander')
 program
     .version('1.0.0')
     .description('cli tool')
-    .option('--verbose', 'use verbose') // 布尔值
-    .option('-u, --url <url>', 'url参数') // 必须参数
-    .option('-p, --port [port]', 'port参数', 3000) // 可选参数，可设置默认值
+    .option('--verbose', 'use verbose') // 
+    .option('-u, --url <url>', 'url') // 
+    .option('-p, --port [port]', 'port', 3000) // 
     .parse(process.argv)
 
 console.log(program.opts());
@@ -176,7 +176,7 @@ console.log(program.opts());
 
 ### inquirer
 
-非常有用的命令行工具，常见于各种脚手架中。
+
 
 ```js
 #!/usr/bin/env node
@@ -185,28 +185,28 @@ const questions = [
     {
         type: 'confirm',
         name: 'isPeople',
-        message: '你是人吗?',
+        message: '?',
         default: false
     },
     {
         type: 'input',
         name: 'name',
-        message: '请输入你的名字',
+        message: '',
     },
     {
         type: 'input',
         name: 'phone',
-        message: '请输入你的电话号码',
+        message: '',
         validate(value) {
             const pass = value.match(/^1[34578]\d{9}$/g)
             if (pass) return true
-            return '请输入正确的电话号码'
+            return ''
         }
     },
     {
         type: 'list',
         name: 'sex',
-        message: '请选择你的性别',
+        message: '',
         choices: ['Male', 'Female', 'None'],
         filter(val) {
             return val.toLowerCase();
@@ -224,7 +224,7 @@ inquirer
 ### readline
 
 ```js
-// 官网代码
+// 
 const readline = require('readline')
 
 const rl = readline.createInterface({
@@ -232,14 +232,14 @@ const rl = readline.createInterface({
     output: process.stdout
 })
 
-rl.question('你好', (answer) => {
+rl.question('', (answer) => {
     console.log('666');
     rl.close()
 })
 ```
 
 ```js
-// 官网代码
+// 
 const fs = require('fs');
 const readline = require('readline');
 
@@ -250,10 +250,10 @@ async function processLineByLine() {
     input: fileStream,
     crlfDelay: Infinity
   });
-  // 注意：我们使用 crlfDelay 选项将 input.txt 中的所有 CR LF 实例（'\r\n'）识别为单个换行符。
+  //  crlfDelay  input.txt  CR LF '\r\n'
 
   for await (const line of rl) {
-    // input.txt 中的每一行在这里将会被连续地用作 `line`。
+    // input.txt  `line`
     console.log(`Line from file: ${line}`);
   }
 }
@@ -263,10 +263,10 @@ processLineByLine();
 
 ## puppeteer
 
-使用 `puppeteer.connect`来复用已启动的浏览器进程。
+ `puppeteer.connect`
 
-1. 启动Chrome的时候加上 `--remote-debugging-port=9222 `，重启浏览器
-2. 访问 `http://127.0.0.1:9222/json/version`拿到 `webSocketDebuggerUrl`字段
+1. Chrome `--remote-debugging-port=9222 `
+2.  `http://127.0.0.1:9222/json/version` `webSocketDebuggerUrl`
 3. ```js
    const url = 'ws://127.0.0.1:9222/devtools/browser/81daad69-fb53-49ea-9f97-3683b73afea0'
    const browser = await puppeteer.connect({
@@ -274,11 +274,11 @@ processLineByLine();
    });
    ```
 
-参考：https://medium.com/@jaredpotter1/connecting-puppeteer-to-existing-chrome-window-8a10828149e0
+https://medium.com/@jaredpotter1/connecting-puppeteer-to-existing-chrome-window-8a10828149e0
 
 ## Koa
 
-### 基础
+### 
 
 ```javascript
 const Koa = require('koa');
@@ -301,18 +301,18 @@ app.use(ctx => {
 
 app.listen(3000);
 
-// 一些其他的方法
+// 
 ctx.redirect('/home')
-// 相当于
+// 
 // res.status = 302
 // res.setHeader('Location', '/home')
 ```
 
-#### 核心实现
+#### 
 
 ```javascript
 const Emitter = require('events')
-// 三个对象，提前定义好原型的方法
+// 
 const context = require('./context')
 const request = require('./request')
 const response = require('./response')
@@ -345,17 +345,17 @@ class Koa extends Emitter {
     }
 
     createContext(req, res) {
-        // 其实就是根据已有的req和res创建上下文context
+        // reqrescontext
         const context = Object.create(this.context);
         const request = Object.create(this.request);
         const response = Object.create(this.response);
         context.request = request
         context.response = response
         context.app = request.app = response.app = this;
-        // 重点，挂载req和res
+        // reqres
         context.req = request.req = response.req = req;
         context.res = request.res = response.res = res;
-        // 互相引用
+        // 
         request.ctx = response.ctx = context;
         request.response = response;
         response.request = request;
@@ -372,7 +372,7 @@ class Koa extends Emitter {
 }
 ```
 
-Koa的实例app有三个公共的API
+KoaappAPI
 
 - use
 
@@ -382,14 +382,14 @@ Koa的实例app有三个公共的API
   })
   ```
 
-  use方法用于将参数中间件放进app的middleware数组里
+  useappmiddleware
 - listen
 
   ```javascript
   app.listen(3000)
   ```
 
-  等价于
+  
 
   ```javascript
    const server = http.createServer(this.callback())
@@ -397,12 +397,12 @@ Koa的实例app有三个公共的API
   ```
 - callback
 
-  该函数内部实现三个功能
+  
 
-  1. 使用koa-compose函数将middleware中间件数组转化为中间件fn
-  2. 调用app.createContext函数。创建context，request，response对象；将request和response挂载在context上；把req和res挂载在三个对象上。
+  1. koa-composemiddlewarefn
+  2. app.createContextcontextrequestresponserequestresponsecontextreqres
 
-     例如：request的原型对象上部分代码如下
+     request
 
      ```javascript
      get header() {
@@ -413,10 +413,10 @@ Koa的实例app有三个公共的API
      },
      ```
 
-     我们现在就可以根据 `ctx.request.header`获取req的headers了
-  3. 执行handleRequest函数，本质是把组装好的context传入中间件fn执行
+      `ctx.request.header`reqheaders
+  3. handleRequestcontextfn
 
-Koa源码中使用到了Koa-compose， 用于将多个中间件函数组合为一个中间件函数
+KoaKoa-compose 
 
 #### koa-compose
 
@@ -431,7 +431,7 @@ const compose = (middleware) => {
         let index = -1
         return dispatch(0)
         function dispatch(i) {
-            // 一个中间件内部多次调用next时，index大于等于i
+            // nextindexi
             if ( index >= i) {
                 return Promise.reject(new Error('next() called multiple times'))
             }
@@ -441,12 +441,12 @@ const compose = (middleware) => {
                 fn = middleware[i]
             }
             else if (i === length) {
-                // 重点， 外部compose的next传进内部compose
+                //  composenextcompose
                 fn = next
             }
-            // 最后一个中间件调用next时，什么也不做
+            // next
             if (!fn) return
-            // 官方源码使用Promise是为了使用async中间件，不过这里没有怎么实现这个功能，就一个样子
+            // Promiseasync
             return Promise.resolve(fn(ctx, dispatch.bind(null, (i + 1))))
         }
     }
@@ -475,12 +475,12 @@ router
     // ...
   });
 app.use(router.routes())
-app.use(router.allowedMethods()) // 此处例子没有实现该方法
+app.use(router.allowedMethods()) // 
 ```
 
-#### 简易实现
+#### 
 
-简易实现，只实现一个get方法，实际上要更复杂的多。
+get
 
 ```javascript
 class Router {
@@ -491,11 +491,11 @@ class Router {
     get(url, fn) {
         function middleware(ctx, next) {
             if (ctx.req.method.toLowerCase() === 'get' && ctx.req.url === url) {
-                console.log('路由匹配成功');
+                console.log('');
                 fn(ctx, next)
             }
             else {
-                console.log('路由匹配失败');
+                console.log('');
                 next()
             }
         }
@@ -506,8 +506,8 @@ class Router {
     routes() {
         return (ctx, next) => {
             let fn = compose(this.stack)
-            // 必须加上next参数
-            // koa本身有一个compose， 这里也有一个，所以要把外部的next传给内部
+            // next
+            // koacompose next
             fn(ctx, next)
         }
     }
@@ -516,7 +516,7 @@ class Router {
 
 ### koa-static
 
-用于处理静态资源的koa中间件
+koa
 
 ```js
 const static = require('koa-static')
@@ -525,7 +525,7 @@ app.use(static('public'))
 
 ### koa-body
 
-处理请求的中间件，可以轻松获得请求的内容
+
 
 ```js
 const body = require('koa-body')
@@ -544,9 +544,9 @@ app.use(logger())
 
 ### koa-views
 
-通常用于搭配模板引擎进行服务端渲染，不过似乎现在不怎么用了。
 
-另外使用的场合要额外去安装对应的模板引擎，比如想用 `ejs`记得先 `npm i ejs`
+
+ `ejs` `npm i ejs`
 
 ```js
 const views = require('koa-views')
@@ -573,9 +573,9 @@ app.use(async ctx => {
 
 ## NestJS
 
-NextJS使用装饰器模式（风格类似前端的Angular）、依赖注入模式、对TypeScript支持友好，是一门广泛被应用的Node后端Web框架。
+NextJSAngularTypeScriptNodeWeb
 
-在NextJS中通过*Module*进行功能模块的划分，每个*Module*通常包括Controller和Service，Controller用于提供后端接口，Service则用于提供各种服务，一个*Module*内定义的Service可以通过放在*exports*中向外暴露，再另一个模块中可以通过*imports*来引入该模块，从而使用该模块暴露出的Service服务。
+NextJS*Module**Module*ControllerServiceControllerService*Module*Service*exports**imports*Service
 
 ```js
 npm i -g @nestjs/cli
@@ -613,25 +613,25 @@ export class AppModule {}
 
 ### Controller
 
-我们可以通过编写 `controller`来实现后端路由。
+ `controller`
 
 ```js
 // app.controller.ts
 import { Controller, Get, Post, Req, Res, Body, Param, Query, Headers, Header, HttpCode } from '@nestjs/common';
 import { Request } from 'express'
 
-export class DTO { // 数据传输对象
+export class DTO { // 
   value: string
 }
 
 @Controller()
 export class AppController {
-  @Get() // 匹配/路径
+  @Get() // /
   getText(): string {
     return 'hello'
   }
 
-  @Get('admin') // 匹配/admin路径
+  @Get('admin') // /admin
   getAdmin(): string {
     return 'admin'
   }
@@ -639,33 +639,33 @@ export class AppController {
 
 @Controller('/api')
 export class MyController {
-  @Get('fetchAllInfo') // 匹配/api/fetchAllInfo
-  fetchInfo(@Req() req: Request, @Query() query): string[] { // 拿到Req、Query
+  @Get('fetchAllInfo') // /api/fetchAllInfo
+  fetchInfo(@Req() req: Request, @Query() query): string[] { // ReqQuery
     console.log(req.url)
     console.log(query)
     return ['a', 'b', 'c']
   }
 
   @Get('/fetchOneInfo/:id')
-  fetchOneInfo(@Param() params, @Headers() headers): string { // 拿到Params、响应头Headers
+  fetchOneInfo(@Param() params, @Headers() headers): string { // ParamsHeaders
     console.log(params.id)
     console.log(headers)
     return 'a'
   }
 
   @Post('/updateOneInfo/:id')
-  updateOneInfo(@Param('id') id: number, @Body() body: DTO) { // 通过@Param('id')可以直接拿到具体的Param。拿到Body
+  updateOneInfo(@Param('id') id: number, @Body() body: DTO) { // @Param('id')ParamBody
     console.log(id)
     console.log(body)
-    return { // 自动序列化为JSON并设置对应Content-Type
+    return { // JSONContent-Type
       code: 200,
       msg: 'success'
     }
   }
 
   @Get('html')
-  @Header('Cache-Control', 'none') // 设置响应头部
-  getHtml(): string { // 自动设置Content-Type
+  @Header('Cache-Control', 'none') // 
+  getHtml(): string { // Content-Type
     return `
       <html>
         <body>
@@ -675,7 +675,7 @@ export class MyController {
     `
   }
 
-  @HttpCode(404) // 设置响应状态码
+  @HttpCode(404) // 
   @Get('404')
   four0four() {
     return '404 not Found'
@@ -695,9 +695,9 @@ export class MyController {
 
 ### Service
 
-我们使用 `Controller`来进行路由控制，具体的数据操作或逻辑操作由 `Service`负责（`Service`是一种 `Provider`）
+ `Controller` `Service``Service` `Provider`
 
-首先创建 `Service`类，并在 `app.module.ts`中声明该 `Service`为 `Provider`，然后 `Controller`的构造函数添加一个入参（为 `Service`类的实例）。
+ `Service` `app.module.ts` `Service` `Provider` `Controller` `Service`
 
 ```ts
 // app.service.ts

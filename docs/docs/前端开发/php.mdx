@@ -3,24 +3,24 @@ sidebarDepth: 4
 ---
 
 :::danger
-大学时候记的笔记，如今PHP已死
+PHP
 :::
 
 
-**单双引号**
+****
 
 ``` php
 <?php
 $value = 'abc';
-echo "变量的值为$value"; // 输出abc
-echo '变量的值为$value'; // 输出$value
-echo '变量的值为'.$value; // 输出abc
+echo "$value"; // abc
+echo '$value'; // $value
+echo ''.$value; // abc
 ?>
 ```
 
 
 
-**数组**
+****
 
 ``` php
 $arr = array('a', 'b', 'c');
@@ -33,85 +33,85 @@ echo $arr1[1]; // bbb
 
 
 
-**类**
+****
 
 ``` php
-// 两个下划线开头的函数通常被称为魔术方法，包括__construct, __destruct, __call,
-// __callStatic, __get, __set, __inset, __unset, __sleep, __wakeup, __clone等等。
+// __construct, __destruct, __call,
+// __callStatic, __get, __set, __inset, __unset, __sleep, __wakeup, __clone
 class People {
-    var $id; // 可以用public/protected/private
+    var $id; // public/protected/private
     var $name;
     
     private $n;
     
-    // 构造函数
+    // 
     function __construct($id, $name, $n) {
         $this->id = $id;
         $this->name = $name;
         $this->n = $n;
     }
     
-    // 析构函数
+    // 
     function __destruct() {
         
     }
     
-    // 搭配clone使用
+    // clone
     function __clone() {
         echo "clone function"
     }
     
-    // 实例调用方法时，若找不到方法，则调用该函数
+    // 
     function __call($name, $arguments) {
         echo 'call function';
     }
-    // 除此之外还有__callStatic，对应的是类方法
-    // BTW，类外部调用类函数时 People::Fn，类内部调用时Self::Fn
+    // __callStatic
+    // BTW People::FnSelf::Fn
     static function __callStatic($name, $arguments) {
         echo "$name".implode(',', $arguments);
     }
     
-    // 获取 $p->n的值的时候，因为private，所以实际上无法访问该属性的值。
-    // 此时会自动调用__get函数
+    //  $p->nprivate
+    // __get
     function __get($property) {
         echo $this->$property;
     }
     
-    // 修改 $p->n的值的时候，因为private，所以实际上无法修改该属性的值。
-    // 此时会自动调用__set函数
+    //  $p->nprivate
+    // __set
     function __set($property, $value) {
         $this->$property = $value;
     }
     
     
     function getInfo() {
-        echo $this->id.'号是'.$this->name;
+        echo $this->id.''.$this->name;
     }
 }
 
 $p = new People(1, 'akara');
 $p->getInfo();
 
-$p->test(); // 找不到，所以调用__call函数
+$p->test(); // __call
 
-echo $p->n; // 调用__get函数
-$p->n = 1; // 调用__set函数
+echo $p->n; // __get
+$p->n = 1; // __set
 
-$s = clone $p; // 调用__clone函数
+$s = clone $p; // __clone
 
 
 
-$data = serialize($arr); // 序列化
+$data = serialize($arr); // 
 echo $data;
-unserialize($data); // 反序列化
+unserialize($data); // 
 
-// 调用serialize函数时，先会查找类中是否有__sleep，如果有则调用后再序列化
-// 同理，调用unserialize时，查看是否有__wakeup，调用后才反序列化。
+// serialize__sleep
+// unserialize__wakeup
 ```
 
 
 
-**PHP连接数据库**
+**PHP**
 
 ``` php
 <?php
