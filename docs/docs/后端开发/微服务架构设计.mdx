@@ -1,0 +1,912 @@
+---
+sidebar_position: 3
+title: 微服务架构设计
+tags: [后端, 微服务, 分布式, Docker, Kubernetes]
+---
+
+# 微服务架构设计
+
+微服务架构是将单体应用拆分为多个小型服务的架构模式，本文将深入讲解微服务的设计与实践。
+
+## 微服务基础
+
+### 架构对比
+
+```javascript
+// 单体架构
+class MonolithicApp {
+  constructor() {
+    this.userService = new UserService();
+    this.orderService = new OrderService();
+    this.productService = new ProductService();
+    this.paymentService = new PaymentService();
+  }
+  
+  // 所有功能在一个应用中
+  async createOrder(userId, productId) {
+    const user = await this.userService.getUser(userId);
+    const product = await this.productService.getProduct(productId);
+    const order = await this.orderService.createOrder(user, product);
+    await this.paymentService.processPayment(order);
+    return order;
+  }
+}
+
+// 微服务架构
+class MicroservicesApp {
+  constructor() {
+    this.userServiceClient = new UserServiceClient('http://user-service');
+    this.orderServiceClient = new OrderServiceClient('http://order-service');
+    this.productServiceClient = new ProductServiceClient('http://product-service');
+    this.paymentServiceClient = new PaymentServiceClient('http://payment-service');
+  }
+  
+  // 通过HTTP/gRPC调用各个服务
+  async createOrder(userId, productId) {
+    const user = await this.userServiceClient.getUser(userId);
+    const product = await this.productServiceClient.getProduct(productId);
+    const order = await this.orderServiceClient.createOrder({
+      userId: user.id,
+      productId: product.id
+    });
+    await this.paymentServiceClient.processPayment(order.id);
+    return order;
+  }
+}
+```
+
+### 服务拆分原则
+
+```javascript
+// 按业务能力拆分
+const services = {
+  userService: {
+    responsibilities: [
+      '用户注册',
+      '用户登录',
+      '用户信息管理',
+      '权限管理'
+    ],
+    database: 'user_db',
+    port: 3001
+  },
+  
+  orderService: {
+    responsibilities: [
+      '订单创建',
+      '订单查询',
+      '订单状态管理'
+    ],
+    database: 'order_db',
+    port: 3002
+  },
+  
+  productService: {
+    responsibilities: [
+      '商品管理',
+      '库存管理',
+      '商品搜索'
+    ],
+    database: 'product_db',
+    port: 3003
+  },
+  
+  paymentService: {
+    responsibilities: [
+      '支付处理',
+      '退款处理',
+      '支付记录'
+    ],
+    database: 'payment_db',
+    port: 3004
+  }
+};
+
+// 单一职责原则
+class UserService {
+  // ✅ 正确：只负责用户相关功能
+  async createUser(userData) {
+    // 创建用户
+  }
+  
+  async getUser(userId) {
+    // 获取用户
+  }
+  
+  // ❌ 错误：不应该包含订单逻辑
+  async getUserOrders(userId) {
+    // 应该调用OrderService
+  }
+}
+```
+
+## 服务间通信
+
+### REST API
+
+```javascript
+// 用户服务
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+// 用户API
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/users', async (req, res) => {
+  try {
+    const user = await User.create(req.body);
+    res.status(201).json(user);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.listen(3001);
+
+// 订单服务调用用户服务
+const axios = require('axios');
+
+class OrderService {
+  async createOrder(orderData) {
+    // 调用用户服务验证用户
+    const userResponse = await axios.get(
+      `http://user-service:3001/api/users/${orderData.userId}`
+    );
+    
+    if (!userResponse.data) {
+      throw new Error('User not found');
+    }
+    
+    // 创建订单
+    const order = await Order.create(orderData);
+    return order;
+  }
+}
+```
+
+### gRPC
+
+```protobuf
+// user.proto
+syntax = "proto3";
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+}
+
+message User {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message GetUserRequest {
+  int64 id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+```
+
+```javascript
+// gRPC服务端
+const grpc = require('@grpc/grpc-js');
+const protoLoader = require('@grpc/proto-loader');
+
+const packageDefinition = protoLoader.loadSync('user.proto');
+const userProto = grpc.loadPackageDefinition(packageDefinition);
+
+const server = new grpc.Server();
+
+server.addService(userProto.UserService.service, {
+  getUser: async (call, callback) => {
+    try {
+      const user = await User.findById(call.request.id);
+      callback(null, { user });
+    } catch (err) {
+      callback(err);
+    }
+  },
+  
+  createUser: async (call, callback) => {
+    try {
+      const user = await User.create(call.request);
+      callback(null, { user });
+    } catch (err) {
+      callback(err);
+    }
+  }
+});
+
+server.bindAsync(
+  '0.0.0.0:50051',
+  grpc.ServerCredentials.createInsecure(),
+  () => {
+    server.start();
+  }
+);
+
+// gRPC客户端
+const client = new userProto.UserService(
+  'user-service:50051',
+  grpc.credentials.createInsecure()
+);
+
+client.getUser({ id: 1 }, (err, response) => {
+  if (err) {
+    console.error(err);
+  } else {
+    console.log(response.user);
+  }
+});
+```
+
+### 消息队列
+
+```javascript
+// RabbitMQ发布者
+const amqp = require('amqplib');
+
+class OrderPublisher {
+  async connect() {
+    this.connection = await amqp.connect('amqp://localhost');
+    this.channel = await this.connection.createChannel();
+    await this.channel.assertExchange('orders', 'topic', { durable: true });
+  }
+  
+  async publishOrderCreated(order) {
+    const message = JSON.stringify({
+      event: 'order.created',
+      data: order,
+      timestamp: new Date()
+    });
+    
+    this.channel.publish(
+      'orders',
+      'order.created',
+      Buffer.from(message),
+      { persistent: true }
+    );
+  }
+}
+
+// RabbitMQ订阅者
+class PaymentSubscriber {
+  async connect() {
+    this.connection = await amqp.connect('amqp://localhost');
+    this.channel = await this.connection.createChannel();
+    
+    await this.channel.assertExchange('orders', 'topic', { durable: true });
+    const queue = await this.channel.assertQueue('payment-queue', { durable: true });
+    
+    await this.channel.bindQueue(queue.queue, 'orders', 'order.created');
+    
+    this.channel.consume(queue.queue, async (msg) => {
+      const event = JSON.parse(msg.content.toString());
+      
+      try {
+        await this.handleOrderCreated(event.data);
+        this.channel.ack(msg);
+      } catch (err) {
+        console.error(err);
+        this.channel.nack(msg, false, true);
+      }
+    });
+  }
+  
+  async handleOrderCreated(order) {
+    // 处理支付
+    await Payment.create({
+      orderId: order.id,
+      amount: order.amount
+    });
+  }
+}
+```
+
+## 服务发现
+
+### Consul
+
+```javascript
+const Consul = require('consul');
+
+class ServiceRegistry {
+  constructor() {
+    this.consul = new Consul({
+      host: 'consul-server',
+      port: 8500
+    });
+  }
+  
+  // 注册服务
+  async register(serviceName, serviceId, port) {
+    await this.consul.agent.service.register({
+      id: serviceId,
+      name: serviceName,
+      address: 'localhost',
+      port: port,
+      check: {
+        http: `http://localhost:${port}/health`,
+        interval: '10s',
+        timeout: '5s'
+      }
+    });
+  }
+  
+  // 注销服务
+  async deregister(serviceId) {
+    await this.consul.agent.service.deregister(serviceId);
+  }
+  
+  // 发现服务
+  async discover(serviceName) {
+    const result = await this.consul.health.service({
+      service: serviceName,
+      passing: true
+    });
+    
+    return result.map(entry => ({
+      id: entry.Service.ID,
+      address: entry.Service.Address,
+      port: entry.Service.Port
+    }));
+  }
+  
+  // 负载均衡
+  async getServiceInstance(serviceName) {
+    const instances = await this.discover(serviceName);
+    
+    if (instances.length === 0) {
+      throw new Error(`No instances found for ${serviceName}`);
+    }
+    
+    // 随机选择
+    const index = Math.floor(Math.random() * instances.length);
+    return instances[index];
+  }
+}
+
+// 使用服务发现
+class OrderService {
+  constructor() {
+    this.registry = new ServiceRegistry();
+  }
+  
+  async createOrder(orderData) {
+    // 发现用户服务
+    const userService = await this.registry.getServiceInstance('user-service');
+    
+    // 调用用户服务
+    const response = await axios.get(
+      `http://${userService.address}:${userService.port}/api/users/${orderData.userId}`
+    );
+    
+    // 创建订单
+    const order = await Order.create(orderData);
+    return order;
+  }
+}
+```
+
+## API网关
+
+```javascript
+const express = require('express');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+
+class APIGateway {
+  constructor() {
+    this.app = express();
+    this.setupMiddleware();
+    this.setupRoutes();
+  }
+  
+  setupMiddleware() {
+    // 认证
+    this.app.use(async (req, res, next) => {
+      const token = req.headers.authorization;
+      
+      if (!token && !this.isPublicRoute(req.path)) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      
+      try {
+        req.user = await this.verifyToken(token);
+        next();
+      } catch (err) {
+        res.status(401).json({ error: 'Invalid token' });
+      }
+    });
+    
+    // 限流
+    this.app.use(this.rateLimiter());
+    
+    // 日志
+    this.app.use((req, res, next) => {
+      console.log(`${req.method} ${req.url}`);
+      next();
+    });
+  }
+  
+  setupRoutes() {
+    // 用户服务
+    this.app.use('/api/users', createProxyMiddleware({
+      target: 'http://user-service:3001',
+      changeOrigin: true,
+      pathRewrite: {
+        '^/api/users': '/api/users'
+      }
+    }));
+    
+    // 订单服务
+    this.app.use('/api/orders', createProxyMiddleware({
+      target: 'http://order-service:3002',
+      changeOrigin: true
+    }));
+    
+    // 商品服务
+    this.app.use('/api/products', createProxyMiddleware({
+      target: 'http://product-service:3003',
+      changeOrigin: true
+    }));
+  }
+  
+  isPublicRoute(path) {
+    const publicRoutes = ['/api/auth/login', '/api/auth/register'];
+    return publicRoutes.includes(path);
+  }
+  
+  async verifyToken(token) {
+    // 验证JWT token
+    return jwt.verify(token, process.env.JWT_SECRET);
+  }
+  
+  rateLimiter() {
+    const rateLimit = require('express-rate-limit');
+    return rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100
+    });
+  }
+  
+  start(port) {
+    this.app.listen(port, () => {
+      console.log(`API Gateway running on port ${port}`);
+    });
+  }
+}
+
+const gateway = new APIGateway();
+gateway.start(8080);
+```
+
+## 配置中心
+
+```javascript
+// 使用Consul作为配置中心
+class ConfigCenter {
+  constructor() {
+    this.consul = new Consul({
+      host: 'consul-server',
+      port: 8500
+    });
+    this.cache = new Map();
+  }
+  
+  // 获取配置
+  async get(key) {
+    // 先从缓存获取
+    if (this.cache.has(key)) {
+      return this.cache.get(key);
+    }
+    
+    // 从Consul获取
+    const result = await this.consul.kv.get(key);
+    if (result) {
+      const value = result.Value;
+      this.cache.set(key, value);
+      return value;
+    }
+    
+    return null;
+  }
+  
+  // 设置配置
+  async set(key, value) {
+    await this.consul.kv.set(key, value);
+    this.cache.set(key, value);
+  }
+  
+  // 监听配置变化
+  async watch(key, callback) {
+    const watcher = this.consul.watch({
+      method: this.consul.kv.get,
+      options: { key }
+    });
+    
+    watcher.on('change', (data) => {
+      const value = data.Value;
+      this.cache.set(key, value);
+      callback(value);
+    });
+    
+    watcher.on('error', (err) => {
+      console.error('Watch error:', err);
+    });
+  }
+}
+
+// 使用配置中心
+const config = new ConfigCenter();
+
+async function initService() {
+  // 获取数据库配置
+  const dbConfig = await config.get('service/database');
+  
+  // 监听配置变化
+  config.watch('service/database', (newConfig) => {
+    console.log('Database config changed:', newConfig);
+    // 重新连接数据库
+  });
+}
+```
+
+## 容器化部署
+
+### Docker
+
+```dockerfile
+# Dockerfile
+FROM node:16-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
+```
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  user-service:
+    build: ./user-service
+    ports:
+      - "3001:3000"
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=users
+    depends_on:
+      - postgres
+    networks:
+      - microservices
+  
+  order-service:
+    build: ./order-service
+    ports:
+      - "3002:3000"
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=orders
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - microservices
+  
+  product-service:
+    build: ./product-service
+    ports:
+      - "3003:3000"
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=products
+    depends_on:
+      - postgres
+    networks:
+      - microservices
+  
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - order-service
+      - product-service
+    networks:
+      - microservices
+  
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - microservices
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - microservices
+  
+  consul:
+    image: consul:latest
+    ports:
+      - "8500:8500"
+    networks:
+      - microservices
+
+networks:
+  microservices:
+    driver: bridge
+
+volumes:
+  postgres-data:
+```
+
+### Kubernetes
+
+```yaml
+# user-service-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: user-service:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DB_HOST
+          value: postgres
+        - name: DB_NAME
+          value: users
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: user-service
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: user-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: user-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+## 服务监控
+
+```javascript
+// Prometheus指标
+const promClient = require('prom-client');
+
+class MetricsCollector {
+  constructor() {
+    this.register = new promClient.Registry();
+    
+    // HTTP请求计数器
+    this.httpRequestCounter = new promClient.Counter({
+      name: 'http_requests_total',
+      help: 'Total number of HTTP requests',
+      labelNames: ['method', 'path', 'status'],
+      registers: [this.register]
+    });
+    
+    // HTTP请求延迟
+    this.httpRequestDuration = new promClient.Histogram({
+      name: 'http_request_duration_seconds',
+      help: 'HTTP request duration in seconds',
+      labelNames: ['method', 'path', 'status'],
+      registers: [this.register]
+    });
+    
+    // 默认指标
+    promClient.collectDefaultMetrics({ register: this.register });
+  }
+  
+  middleware() {
+    return (req, res, next) => {
+      const start = Date.now();
+      
+      res.on('finish', () => {
+        const duration = (Date.now() - start) / 1000;
+        
+        this.httpRequestCounter.inc({
+          method: req.method,
+          path: req.route?.path || req.path,
+          status: res.statusCode
+        });
+        
+        this.httpRequestDuration.observe({
+          method: req.method,
+          path: req.route?.path || req.path,
+          status: res.statusCode
+        }, duration);
+      });
+      
+      next();
+    };
+  }
+  
+  getMetrics() {
+    return this.register.metrics();
+  }
+}
+
+// 使用监控
+const metrics = new MetricsCollector();
+app.use(metrics.middleware());
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', this.register.contentType);
+  res.end(await metrics.getMetrics());
+});
+```
+
+## 链路追踪
+
+```javascript
+// Jaeger追踪
+const { initTracer } = require('jaeger-client');
+
+class TracingService {
+  constructor(serviceName) {
+    const config = {
+      serviceName: serviceName,
+      sampler: {
+        type: 'const',
+        param: 1
+      },
+      reporter: {
+        logSpans: true,
+        agentHost: 'jaeger-agent',
+        agentPort: 6832
+      }
+    };
+    
+    this.tracer = initTracer(config);
+  }
+  
+  middleware() {
+    return (req, res, next) => {
+      const span = this.tracer.startSpan(`${req.method} ${req.path}`);
+      
+      span.setTag('http.method', req.method);
+      span.setTag('http.url', req.url);
+      
+      req.span = span;
+      
+      res.on('finish', () => {
+        span.setTag('http.status_code', res.statusCode);
+        span.finish();
+      });
+      
+      next();
+    };
+  }
+  
+  async traceAsync(name, fn) {
+    const span = this.tracer.startSpan(name);
+    
+    try {
+      const result = await fn(span);
+      span.setTag('success', true);
+      return result;
+    } catch (err) {
+      span.setTag('error', true);
+      span.log({ event: 'error', message: err.message });
+      throw err;
+    } finally {
+      span.finish();
+    }
+  }
+}
+
+// 使用追踪
+const tracing = new TracingService('order-service');
+app.use(tracing.middleware());
+
+async function createOrder(orderData) {
+  return await tracing.traceAsync('create-order', async (span) => {
+    // 调用用户服务
+    span.log({ event: 'calling-user-service' });
+    const user = await getUserService(orderData.userId);
+    
+    // 创建订单
+    span.log({ event: 'creating-order' });
+    const order = await Order.create(orderData);
+    
+    return order;
+  });
+}
+```
+
+## 总结
+
+微服务架构的核心：
+- 🏗️ **服务拆分**：按业务能力拆分
+- 🔌 **服务通信**：REST、gRPC、消息队列
+- 🔍 **服务发现**：Consul、Eureka
+- 🚪 **API网关**：统一入口、认证、限流
+- ⚙️ **配置中心**：集中管理配置
+- 🐳 **容器化**：Docker、Kubernetes
+- 📊 **监控追踪**：Prometheus、Jaeger
+
+记住：**微服务不是银弹，要根据实际情况选择！**
+

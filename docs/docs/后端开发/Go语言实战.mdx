@@ -1,0 +1,827 @@
+---
+sidebar_position: 2
+title: Go语言实战指南
+tags: [后端, Go, Golang, 并发编程, 微服务]
+---
+
+# Go语言实战指南
+
+Go是Google开发的高性能编程语言，本文将深入讲解Go语言的核心特性和实战应用。
+
+## Go语言基础
+
+### 并发编程
+
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+    "time"
+)
+
+// Goroutine基础
+func sayHello() {
+    fmt.Println("Hello from goroutine")
+}
+
+func main() {
+    // 启动goroutine
+    go sayHello()
+    
+    // 主goroutine等待
+    time.Sleep(time.Second)
+}
+
+// Channel通信
+func channelExample() {
+    ch := make(chan int)
+    
+    // 发送数据
+    go func() {
+        ch <- 42
+    }()
+    
+    // 接收数据
+    value := <-ch
+    fmt.Println(value)
+}
+
+// 缓冲Channel
+func bufferedChannel() {
+    ch := make(chan int, 3)
+    
+    ch <- 1
+    ch <- 2
+    ch <- 3
+    
+    fmt.Println(<-ch)
+    fmt.Println(<-ch)
+    fmt.Println(<-ch)
+}
+
+// Select多路复用
+func selectExample() {
+    ch1 := make(chan string)
+    ch2 := make(chan string)
+    
+    go func() {
+        time.Sleep(time.Second)
+        ch1 <- "from ch1"
+    }()
+    
+    go func() {
+        time.Sleep(2 * time.Second)
+        ch2 <- "from ch2"
+    }()
+    
+    for i := 0; i < 2; i++ {
+        select {
+        case msg1 := <-ch1:
+            fmt.Println(msg1)
+        case msg2 := <-ch2:
+            fmt.Println(msg2)
+        case <-time.After(3 * time.Second):
+            fmt.Println("timeout")
+        }
+    }
+}
+
+// WaitGroup
+func waitGroupExample() {
+    var wg sync.WaitGroup
+    
+    for i := 0; i < 5; i++ {
+        wg.Add(1)
+        go func(id int) {
+            defer wg.Done()
+            fmt.Printf("Worker %d starting\n", id)
+            time.Sleep(time.Second)
+            fmt.Printf("Worker %d done\n", id)
+        }(i)
+    }
+    
+    wg.Wait()
+    fmt.Println("All workers done")
+}
+
+// Mutex互斥锁
+type Counter struct {
+    mu    sync.Mutex
+    value int
+}
+
+func (c *Counter) Increment() {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.value++
+}
+
+func (c *Counter) Value() int {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    return c.value
+}
+
+// RWMutex读写锁
+type Cache struct {
+    mu   sync.RWMutex
+    data map[string]string
+}
+
+func (c *Cache) Get(key string) string {
+    c.mu.RLock()
+    defer c.mu.RUnlock()
+    return c.data[key]
+}
+
+func (c *Cache) Set(key, value string) {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.data[key] = value
+}
+```
+
+### 错误处理
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+// 自定义错误
+type ValidationError struct {
+    Field   string
+    Message string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("%s: %s", e.Field, e.Message)
+}
+
+// 错误处理
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("division by zero")
+    }
+    return a / b, nil
+}
+
+// 错误包装
+func processFile(filename string) error {
+    data, err := readFile(filename)
+    if err != nil {
+        return fmt.Errorf("failed to process file: %w", err)
+    }
+    
+    if err := validateData(data); err != nil {
+        return fmt.Errorf("validation failed: %w", err)
+    }
+    
+    return nil
+}
+
+// 错误检查
+func handleError() {
+    result, err := divide(10, 0)
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    fmt.Println("Result:", result)
+}
+
+// Panic和Recover
+func safeDivide(a, b int) (result int) {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("Recovered from panic:", r)
+            result = 0
+        }
+    }()
+    
+    return a / b
+}
+```
+
+## Web开发
+
+### Gin框架
+
+```go
+package main
+
+import (
+    "github.com/gin-gonic/gin"
+    "net/http"
+)
+
+// 基础路由
+func main() {
+    r := gin.Default()
+    
+    // GET请求
+    r.GET("/", func(c *gin.Context) {
+        c.JSON(http.StatusOK, gin.H{
+            "message": "Hello World",
+        })
+    })
+    
+    // 路径参数
+    r.GET("/users/:id", func(c *gin.Context) {
+        id := c.Param("id")
+        c.JSON(http.StatusOK, gin.H{
+            "id": id,
+        })
+    })
+    
+    // 查询参数
+    r.GET("/search", func(c *gin.Context) {
+        query := c.Query("q")
+        page := c.DefaultQuery("page", "1")
+        
+        c.JSON(http.StatusOK, gin.H{
+            "query": query,
+            "page":  page,
+        })
+    })
+    
+    // POST请求
+    r.POST("/users", func(c *gin.Context) {
+        var user User
+        if err := c.ShouldBindJSON(&user); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{
+                "error": err.Error(),
+            })
+            return
+        }
+        
+        c.JSON(http.StatusCreated, user)
+    })
+    
+    r.Run(":8080")
+}
+
+// 模型定义
+type User struct {
+    ID    uint   `json:"id"`
+    Name  string `json:"name" binding:"required"`
+    Email string `json:"email" binding:"required,email"`
+    Age   int    `json:"age" binding:"gte=0,lte=130"`
+}
+
+// RESTful API
+type UserController struct {
+    db *gorm.DB
+}
+
+func (uc *UserController) GetUsers(c *gin.Context) {
+    var users []User
+    
+    page := c.DefaultQuery("page", "1")
+    pageSize := c.DefaultQuery("pageSize", "20")
+    
+    var total int64
+    uc.db.Model(&User{}).Count(&total)
+    
+    offset := (page - 1) * pageSize
+    uc.db.Offset(offset).Limit(pageSize).Find(&users)
+    
+    c.JSON(http.StatusOK, gin.H{
+        "data": users,
+        "pagination": gin.H{
+            "page":      page,
+            "pageSize":  pageSize,
+            "total":     total,
+            "totalPages": (total + pageSize - 1) / pageSize,
+        },
+    })
+}
+
+func (uc *UserController) GetUser(c *gin.Context) {
+    id := c.Param("id")
+    
+    var user User
+    if err := uc.db.First(&user, id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{
+            "error": "User not found",
+        })
+        return
+    }
+    
+    c.JSON(http.StatusOK, user)
+}
+
+func (uc *UserController) CreateUser(c *gin.Context) {
+    var user User
+    if err := c.ShouldBindJSON(&user); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error": err.Error(),
+        })
+        return
+    }
+    
+    if err := uc.db.Create(&user).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": err.Error(),
+        })
+        return
+    }
+    
+    c.JSON(http.StatusCreated, user)
+}
+
+func (uc *UserController) UpdateUser(c *gin.Context) {
+    id := c.Param("id")
+    
+    var user User
+    if err := uc.db.First(&user, id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{
+            "error": "User not found",
+        })
+        return
+    }
+    
+    if err := c.ShouldBindJSON(&user); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error": err.Error(),
+        })
+        return
+    }
+    
+    uc.db.Save(&user)
+    
+    c.JSON(http.StatusOK, user)
+}
+
+func (uc *UserController) DeleteUser(c *gin.Context) {
+    id := c.Param("id")
+    
+    if err := uc.db.Delete(&User{}, id).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": err.Error(),
+        })
+        return
+    }
+    
+    c.Status(http.StatusNoContent)
+}
+```
+
+### 中间件
+
+```go
+package main
+
+import (
+    "github.com/gin-gonic/gin"
+    "time"
+)
+
+// 日志中间件
+func Logger() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        start := time.Now()
+        
+        c.Next()
+        
+        duration := time.Since(start)
+        status := c.Writer.Status()
+        
+        log.Printf("%s %s %d %v",
+            c.Request.Method,
+            c.Request.URL.Path,
+            status,
+            duration,
+        )
+    }
+}
+
+// 认证中间件
+func AuthMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        
+        if token == "" {
+            c.JSON(http.StatusUnauthorized, gin.H{
+                "error": "No token provided",
+            })
+            c.Abort()
+            return
+        }
+        
+        // 验证token
+        claims, err := validateToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{
+                "error": "Invalid token",
+            })
+            c.Abort()
+            return
+        }
+        
+        c.Set("user", claims)
+        c.Next()
+    }
+}
+
+// CORS中间件
+func CORS() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+        c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(http.StatusNoContent)
+            return
+        }
+        
+        c.Next()
+    }
+}
+
+// 限流中间件
+func RateLimiter(maxRequests int, window time.Duration) gin.HandlerFunc {
+    limiter := rate.NewLimiter(rate.Every(window), maxRequests)
+    
+    return func(c *gin.Context) {
+        if !limiter.Allow() {
+            c.JSON(http.StatusTooManyRequests, gin.H{
+                "error": "Too many requests",
+            })
+            c.Abort()
+            return
+        }
+        
+        c.Next()
+    }
+}
+
+// 使用中间件
+func setupRouter() *gin.Engine {
+    r := gin.New()
+    
+    r.Use(Logger())
+    r.Use(CORS())
+    r.Use(gin.Recovery())
+    
+    // 公开路由
+    public := r.Group("/api")
+    {
+        public.POST("/login", login)
+        public.POST("/register", register)
+    }
+    
+    // 需要认证的路由
+    protected := r.Group("/api")
+    protected.Use(AuthMiddleware())
+    {
+        protected.GET("/profile", getProfile)
+        protected.PUT("/profile", updateProfile)
+    }
+    
+    return r
+}
+```
+
+## 数据库操作
+
+### GORM
+
+```go
+package main
+
+import (
+    "gorm.io/driver/mysql"
+    "gorm.io/gorm"
+    "time"
+)
+
+// 模型定义
+type User struct {
+    ID        uint           `gorm:"primaryKey"`
+    Name      string         `gorm:"size:100;not null"`
+    Email     string         `gorm:"size:100;uniqueIndex;not null"`
+    Password  string         `gorm:"size:255;not null"`
+    Role      string         `gorm:"size:20;default:user"`
+    CreatedAt time.Time
+    UpdatedAt time.Time
+    DeletedAt gorm.DeletedAt `gorm:"index"`
+    Posts     []Post         `gorm:"foreignKey:UserID"`
+}
+
+type Post struct {
+    ID        uint   `gorm:"primaryKey"`
+    Title     string `gorm:"size:200;not null"`
+    Content   string `gorm:"type:text"`
+    UserID    uint
+    User      User
+    CreatedAt time.Time
+    UpdatedAt time.Time
+}
+
+// 连接数据库
+func connectDB() (*gorm.DB, error) {
+    dsn := "user:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
+    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+    if err != nil {
+        return nil, err
+    }
+    
+    // 自动迁移
+    db.AutoMigrate(&User{}, &Post{})
+    
+    return db, nil
+}
+
+// CRUD操作
+type UserRepository struct {
+    db *gorm.DB
+}
+
+func (r *UserRepository) Create(user *User) error {
+    return r.db.Create(user).Error
+}
+
+func (r *UserRepository) FindByID(id uint) (*User, error) {
+    var user User
+    err := r.db.First(&user, id).Error
+    return &user, err
+}
+
+func (r *UserRepository) FindByEmail(email string) (*User, error) {
+    var user User
+    err := r.db.Where("email = ?", email).First(&user).Error
+    return &user, err
+}
+
+func (r *UserRepository) FindAll(page, pageSize int) ([]User, int64, error) {
+    var users []User
+    var total int64
+    
+    r.db.Model(&User{}).Count(&total)
+    
+    offset := (page - 1) * pageSize
+    err := r.db.Offset(offset).Limit(pageSize).Find(&users).Error
+    
+    return users, total, err
+}
+
+func (r *UserRepository) Update(user *User) error {
+    return r.db.Save(user).Error
+}
+
+func (r *UserRepository) Delete(id uint) error {
+    return r.db.Delete(&User{}, id).Error
+}
+
+// 关联查询
+func (r *UserRepository) FindWithPosts(id uint) (*User, error) {
+    var user User
+    err := r.db.Preload("Posts").First(&user, id).Error
+    return &user, err
+}
+
+// 事务
+func (r *UserRepository) CreateWithPost(user *User, post *Post) error {
+    return r.db.Transaction(func(tx *gorm.DB) error {
+        if err := tx.Create(user).Error; err != nil {
+            return err
+        }
+        
+        post.UserID = user.ID
+        if err := tx.Create(post).Error; err != nil {
+            return err
+        }
+        
+        return nil
+    })
+}
+```
+
+## 微服务
+
+### gRPC
+
+```protobuf
+// user.proto
+syntax = "proto3";
+
+package user;
+
+option go_package = "./proto";
+
+service UserService {
+    rpc GetUser(GetUserRequest) returns (GetUserResponse);
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+    rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+message User {
+    int64 id = 1;
+    string name = 2;
+    string email = 3;
+    string role = 4;
+}
+
+message GetUserRequest {
+    int64 id = 1;
+}
+
+message GetUserResponse {
+    User user = 1;
+}
+
+message CreateUserRequest {
+    string name = 1;
+    string email = 2;
+    string password = 3;
+}
+
+message CreateUserResponse {
+    User user = 1;
+}
+```
+
+```go
+// server.go
+package main
+
+import (
+    "context"
+    "google.golang.org/grpc"
+    "net"
+)
+
+type userServer struct {
+    pb.UnimplementedUserServiceServer
+    db *gorm.DB
+}
+
+func (s *userServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+    var user User
+    if err := s.db.First(&user, req.Id).Error; err != nil {
+        return nil, err
+    }
+    
+    return &pb.GetUserResponse{
+        User: &pb.User{
+            Id:    int64(user.ID),
+            Name:  user.Name,
+            Email: user.Email,
+            Role:  user.Role,
+        },
+    }, nil
+}
+
+func (s *userServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+    user := &User{
+        Name:     req.Name,
+        Email:    req.Email,
+        Password: hashPassword(req.Password),
+    }
+    
+    if err := s.db.Create(user).Error; err != nil {
+        return nil, err
+    }
+    
+    return &pb.CreateUserResponse{
+        User: &pb.User{
+            Id:    int64(user.ID),
+            Name:  user.Name,
+            Email: user.Email,
+        },
+    }, nil
+}
+
+func main() {
+    lis, err := net.Listen("tcp", ":50051")
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    db, err := connectDB()
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    s := grpc.NewServer()
+    pb.RegisterUserServiceServer(s, &userServer{db: db})
+    
+    log.Println("gRPC server listening on :50051")
+    if err := s.Serve(lis); err != nil {
+        log.Fatal(err)
+    }
+}
+
+// client.go
+func main() {
+    conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
+    
+    client := pb.NewUserServiceClient(conn)
+    
+    // 调用服务
+    resp, err := client.GetUser(context.Background(), &pb.GetUserRequest{
+        Id: 1,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Println("User:", resp.User)
+}
+```
+
+## 性能优化
+
+```go
+// 1. 使用sync.Pool复用对象
+var bufferPool = sync.Pool{
+    New: func() interface{} {
+        return new(bytes.Buffer)
+    },
+}
+
+func processData(data []byte) {
+    buf := bufferPool.Get().(*bytes.Buffer)
+    defer func() {
+        buf.Reset()
+        bufferPool.Put(buf)
+    }()
+    
+    buf.Write(data)
+    // 处理数据
+}
+
+// 2. 使用context控制超时
+func fetchData(ctx context.Context) ([]byte, error) {
+    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+    defer cancel()
+    
+    req, err := http.NewRequestWithContext(ctx, "GET", "https://api.example.com", nil)
+    if err != nil {
+        return nil, err
+    }
+    
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    return ioutil.ReadAll(resp.Body)
+}
+
+// 3. 并发处理
+func processItems(items []Item) []Result {
+    results := make([]Result, len(items))
+    var wg sync.WaitGroup
+    
+    for i, item := range items {
+        wg.Add(1)
+        go func(i int, item Item) {
+            defer wg.Done()
+            results[i] = process(item)
+        }(i, item)
+    }
+    
+    wg.Wait()
+    return results
+}
+
+// 4. 使用缓存
+type Cache struct {
+    data sync.Map
+}
+
+func (c *Cache) Get(key string) (interface{}, bool) {
+    return c.data.Load(key)
+}
+
+func (c *Cache) Set(key string, value interface{}) {
+    c.data.Store(key, value)
+}
+```
+
+## 总结
+
+Go语言开发的核心：
+- 🚀 **并发编程**：Goroutine、Channel、Select
+- 🌐 **Web开发**：Gin框架、RESTful API
+- 💾 **数据库**：GORM ORM框架
+- 🔌 **微服务**：gRPC、Protocol Buffers
+- ⚡ **性能优化**：sync.Pool、并发处理
+- 🛠️ **最佳实践**：错误处理、中间件
+
+记住：**Go语言简单、高效、并发性能强！**
+

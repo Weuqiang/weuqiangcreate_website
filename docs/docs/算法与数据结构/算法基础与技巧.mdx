@@ -1,0 +1,729 @@
+---
+sidebar_position: 2
+title: 算法基础与技巧
+tags: [算法, 排序, 搜索, 动态规划]
+---
+
+# 算法基础与技巧
+
+算法是解决问题的方法和步骤，本文讲解常用算法的实现和应用技巧。
+
+## 排序算法
+
+### 冒泡排序
+
+```javascript
+// 时间复杂度：O(n²)，空间复杂度：O(1)
+function bubbleSort(arr) {
+  const n = arr.length;
+  
+  for (let i = 0; i < n - 1; i++) {
+    let swapped = false;
+    
+    for (let j = 0; j < n - 1 - i; j++) {
+      if (arr[j] > arr[j + 1]) {
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        swapped = true;
+      }
+    }
+    
+    // 如果没有交换，说明已经有序
+    if (!swapped) break;
+  }
+  
+  return arr;
+}
+```
+
+### 选择排序
+
+```javascript
+// 时间复杂度：O(n²)，空间复杂度：O(1)
+function selectionSort(arr) {
+  const n = arr.length;
+  
+  for (let i = 0; i < n - 1; i++) {
+    let minIndex = i;
+    
+    // 找到最小元素的索引
+    for (let j = i + 1; j < n; j++) {
+      if (arr[j] < arr[minIndex]) {
+        minIndex = j;
+      }
+    }
+    
+    // 交换
+    if (minIndex !== i) {
+      [arr[i], arr[minIndex]] = [arr[minIndex], arr[i]];
+    }
+  }
+  
+  return arr;
+}
+```
+
+### 插入排序
+
+```javascript
+// 时间复杂度：O(n²)，空间复杂度：O(1)
+function insertionSort(arr) {
+  const n = arr.length;
+  
+  for (let i = 1; i < n; i++) {
+    const key = arr[i];
+    let j = i - 1;
+    
+    // 将大于key的元素向后移动
+    while (j >= 0 && arr[j] > key) {
+      arr[j + 1] = arr[j];
+      j--;
+    }
+    
+    arr[j + 1] = key;
+  }
+  
+  return arr;
+}
+```
+
+### 快速排序
+
+```javascript
+// 时间复杂度：O(n log n)，空间复杂度：O(log n)
+function quickSort(arr, left = 0, right = arr.length - 1) {
+  if (left < right) {
+    const pivotIndex = partition(arr, left, right);
+    quickSort(arr, left, pivotIndex - 1);
+    quickSort(arr, pivotIndex + 1, right);
+  }
+  
+  return arr;
+}
+
+function partition(arr, left, right) {
+  const pivot = arr[right];
+  let i = left - 1;
+  
+  for (let j = left; j < right; j++) {
+    if (arr[j] < pivot) {
+      i++;
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+  
+  [arr[i + 1], arr[right]] = [arr[right], arr[i + 1]];
+  return i + 1;
+}
+
+// 三路快排（处理重复元素）
+function quickSort3Way(arr, left = 0, right = arr.length - 1) {
+  if (left >= right) return arr;
+  
+  const pivot = arr[left];
+  let lt = left;      // arr[left+1...lt] < pivot
+  let gt = right;     // arr[gt...right] > pivot
+  let i = left + 1;   // arr[lt+1...i-1] == pivot
+  
+  while (i <= gt) {
+    if (arr[i] < pivot) {
+      [arr[lt], arr[i]] = [arr[i], arr[lt]];
+      lt++;
+      i++;
+    } else if (arr[i] > pivot) {
+      [arr[i], arr[gt]] = [arr[gt], arr[i]];
+      gt--;
+    } else {
+      i++;
+    }
+  }
+  
+  quickSort3Way(arr, left, lt - 1);
+  quickSort3Way(arr, gt + 1, right);
+  
+  return arr;
+}
+```
+
+### 归并排序
+
+```javascript
+// 时间复杂度：O(n log n)，空间复杂度：O(n)
+function mergeSort(arr) {
+  if (arr.length <= 1) return arr;
+  
+  const mid = Math.floor(arr.length / 2);
+  const left = mergeSort(arr.slice(0, mid));
+  const right = mergeSort(arr.slice(mid));
+  
+  return merge(left, right);
+}
+
+function merge(left, right) {
+  const result = [];
+  let i = 0, j = 0;
+  
+  while (i < left.length && j < right.length) {
+    if (left[i] < right[j]) {
+      result.push(left[i++]);
+    } else {
+      result.push(right[j++]);
+    }
+  }
+  
+  return result.concat(left.slice(i)).concat(right.slice(j));
+}
+```
+
+### 堆排序
+
+```javascript
+// 时间复杂度：O(n log n)，空间复杂度：O(1)
+function heapSort(arr) {
+  const n = arr.length;
+  
+  // 建堆
+  for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+    heapify(arr, n, i);
+  }
+  
+  // 排序
+  for (let i = n - 1; i > 0; i--) {
+    [arr[0], arr[i]] = [arr[i], arr[0]];
+    heapify(arr, i, 0);
+  }
+  
+  return arr;
+}
+
+function heapify(arr, n, i) {
+  let largest = i;
+  const left = 2 * i + 1;
+  const right = 2 * i + 2;
+  
+  if (left < n && arr[left] > arr[largest]) {
+    largest = left;
+  }
+  
+  if (right < n && arr[right] > arr[largest]) {
+    largest = right;
+  }
+  
+  if (largest !== i) {
+    [arr[i], arr[largest]] = [arr[largest], arr[i]];
+    heapify(arr, n, largest);
+  }
+}
+```
+
+## 搜索算法
+
+### 二分查找
+
+```javascript
+// 时间复杂度：O(log n)
+function binarySearch(arr, target) {
+  let left = 0;
+  let right = arr.length - 1;
+  
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    
+    if (arr[mid] === target) {
+      return mid;
+    } else if (arr[mid] < target) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+  
+  return -1;
+}
+
+// 查找第一个等于target的位置
+function binarySearchFirst(arr, target) {
+  let left = 0;
+  let right = arr.length - 1;
+  let result = -1;
+  
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    
+    if (arr[mid] === target) {
+      result = mid;
+      right = mid - 1; // 继续向左查找
+    } else if (arr[mid] < target) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+  
+  return result;
+}
+
+// 查找最后一个等于target的位置
+function binarySearchLast(arr, target) {
+  let left = 0;
+  let right = arr.length - 1;
+  let result = -1;
+  
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    
+    if (arr[mid] === target) {
+      result = mid;
+      left = mid + 1; // 继续向右查找
+    } else if (arr[mid] < target) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+  
+  return result;
+}
+```
+
+## 双指针技巧
+
+```javascript
+// 两数之和（有序数组）
+function twoSum(arr, target) {
+  let left = 0;
+  let right = arr.length - 1;
+  
+  while (left < right) {
+    const sum = arr[left] + arr[right];
+    
+    if (sum === target) {
+      return [left, right];
+    } else if (sum < target) {
+      left++;
+    } else {
+      right--;
+    }
+  }
+  
+  return [-1, -1];
+}
+
+// 三数之和
+function threeSum(nums) {
+  const result = [];
+  nums.sort((a, b) => a - b);
+  
+  for (let i = 0; i < nums.length - 2; i++) {
+    // 跳过重复元素
+    if (i > 0 && nums[i] === nums[i - 1]) continue;
+    
+    let left = i + 1;
+    let right = nums.length - 1;
+    
+    while (left < right) {
+      const sum = nums[i] + nums[left] + nums[right];
+      
+      if (sum === 0) {
+        result.push([nums[i], nums[left], nums[right]]);
+        
+        // 跳过重复元素
+        while (left < right && nums[left] === nums[left + 1]) left++;
+        while (left < right && nums[right] === nums[right - 1]) right--;
+        
+        left++;
+        right--;
+      } else if (sum < 0) {
+        left++;
+      } else {
+        right--;
+      }
+    }
+  }
+  
+  return result;
+}
+
+// 移除重复元素
+function removeDuplicates(nums) {
+  if (nums.length === 0) return 0;
+  
+  let slow = 0;
+  
+  for (let fast = 1; fast < nums.length; fast++) {
+    if (nums[fast] !== nums[slow]) {
+      slow++;
+      nums[slow] = nums[fast];
+    }
+  }
+  
+  return slow + 1;
+}
+
+// 反转字符串
+function reverseString(s) {
+  let left = 0;
+  let right = s.length - 1;
+  
+  while (left < right) {
+    [s[left], s[right]] = [s[right], s[left]];
+    left++;
+    right--;
+  }
+  
+  return s;
+}
+```
+
+## 滑动窗口
+
+```javascript
+// 最长无重复子串
+function lengthOfLongestSubstring(s) {
+  const map = new Map();
+  let left = 0;
+  let maxLen = 0;
+  
+  for (let right = 0; right < s.length; right++) {
+    const char = s[right];
+    
+    if (map.has(char)) {
+      left = Math.max(left, map.get(char) + 1);
+    }
+    
+    map.set(char, right);
+    maxLen = Math.max(maxLen, right - left + 1);
+  }
+  
+  return maxLen;
+}
+
+// 最小覆盖子串
+function minWindow(s, t) {
+  const need = new Map();
+  const window = new Map();
+  
+  for (const char of t) {
+    need.set(char, (need.get(char) || 0) + 1);
+  }
+  
+  let left = 0, right = 0;
+  let valid = 0;
+  let start = 0, len = Infinity;
+  
+  while (right < s.length) {
+    const c = s[right];
+    right++;
+    
+    if (need.has(c)) {
+      window.set(c, (window.get(c) || 0) + 1);
+      if (window.get(c) === need.get(c)) {
+        valid++;
+      }
+    }
+    
+    while (valid === need.size) {
+      if (right - left < len) {
+        start = left;
+        len = right - left;
+      }
+      
+      const d = s[left];
+      left++;
+      
+      if (need.has(d)) {
+        if (window.get(d) === need.get(d)) {
+          valid--;
+        }
+        window.set(d, window.get(d) - 1);
+      }
+    }
+  }
+  
+  return len === Infinity ? '' : s.substr(start, len);
+}
+```
+
+## 动态规划
+
+```javascript
+// 斐波那契数列
+function fibonacci(n) {
+  if (n <= 1) return n;
+  
+  const dp = [0, 1];
+  
+  for (let i = 2; i <= n; i++) {
+    dp[i] = dp[i - 1] + dp[i - 2];
+  }
+  
+  return dp[n];
+}
+
+// 空间优化
+function fibonacciOptimized(n) {
+  if (n <= 1) return n;
+  
+  let prev = 0, curr = 1;
+  
+  for (let i = 2; i <= n; i++) {
+    [prev, curr] = [curr, prev + curr];
+  }
+  
+  return curr;
+}
+
+// 爬楼梯
+function climbStairs(n) {
+  if (n <= 2) return n;
+  
+  const dp = [0, 1, 2];
+  
+  for (let i = 3; i <= n; i++) {
+    dp[i] = dp[i - 1] + dp[i - 2];
+  }
+  
+  return dp[n];
+}
+
+// 最长公共子序列
+function longestCommonSubsequence(text1, text2) {
+  const m = text1.length;
+  const n = text2.length;
+  const dp = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
+  
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (text1[i - 1] === text2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+  
+  return dp[m][n];
+}
+
+// 0-1背包问题
+function knapsack(weights, values, capacity) {
+  const n = weights.length;
+  const dp = Array(n + 1).fill(0).map(() => Array(capacity + 1).fill(0));
+  
+  for (let i = 1; i <= n; i++) {
+    for (let w = 1; w <= capacity; w++) {
+      if (weights[i - 1] <= w) {
+        dp[i][w] = Math.max(
+          dp[i - 1][w],
+          dp[i - 1][w - weights[i - 1]] + values[i - 1]
+        );
+      } else {
+        dp[i][w] = dp[i - 1][w];
+      }
+    }
+  }
+  
+  return dp[n][capacity];
+}
+
+// 最长递增子序列
+function lengthOfLIS(nums) {
+  if (nums.length === 0) return 0;
+  
+  const dp = Array(nums.length).fill(1);
+  
+  for (let i = 1; i < nums.length; i++) {
+    for (let j = 0; j < i; j++) {
+      if (nums[i] > nums[j]) {
+        dp[i] = Math.max(dp[i], dp[j] + 1);
+      }
+    }
+  }
+  
+  return Math.max(...dp);
+}
+
+// 编辑距离
+function minDistance(word1, word2) {
+  const m = word1.length;
+  const n = word2.length;
+  const dp = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
+  
+  // 初始化
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (word1[i - 1] === word2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,     // 删除
+          dp[i][j - 1] + 1,     // 插入
+          dp[i - 1][j - 1] + 1  // 替换
+        ) ;
+      }
+    }
+  }
+  
+  return dp[m][n];
+}
+```
+
+## 回溯算法
+
+```javascript
+// 全排列
+function permute(nums) {
+  const result = [];
+  const used = Array(nums.length).fill(false);
+  
+  function backtrack(path) {
+    if (path.length === nums.length) {
+      result.push([...path]);
+      return;
+    }
+    
+    for (let i = 0; i < nums.length; i++) {
+      if (used[i]) continue;
+      
+      path.push(nums[i]);
+      used[i] = true;
+      
+      backtrack(path);
+      
+      path.pop();
+      used[i] = false;
+    }
+  }
+  
+  backtrack([]);
+  return result;
+}
+
+// 组合总和
+function combinationSum(candidates, target) {
+  const result = [];
+  
+  function backtrack(start, path, sum) {
+    if (sum === target) {
+      result.push([...path]);
+      return;
+    }
+    
+    if (sum > target) return;
+    
+    for (let i = start; i < candidates.length; i++) {
+      path.push(candidates[i]);
+      backtrack(i, path, sum + candidates[i]);
+      path.pop();
+    }
+  }
+  
+  backtrack(0, [], 0);
+  return result;
+}
+
+// N皇后
+function solveNQueens(n) {
+  const result = [];
+  const board = Array(n).fill(0).map(() => Array(n).fill('.'));
+  
+  function isValid(row, col) {
+    // 检查列
+    for (let i = 0; i < row; i++) {
+      if (board[i][col] === 'Q') return false;
+    }
+    
+    // 检查左上对角线
+    for (let i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--) {
+      if (board[i][j] === 'Q') return false;
+    }
+    
+    // 检查右上对角线
+    for (let i = row - 1, j = col + 1; i >= 0 && j < n; i--, j++) {
+      if (board[i][j] === 'Q') return false;
+    }
+    
+    return true;
+  }
+  
+  function backtrack(row) {
+    if (row === n) {
+      result.push(board.map(row => row.join('')));
+      return;
+    }
+    
+    for (let col = 0; col < n; col++) {
+      if (!isValid(row, col)) continue;
+      
+      board[row][col] = 'Q';
+      backtrack(row + 1);
+      board[row][col] = '.';
+    }
+  }
+  
+  backtrack(0);
+  return result;
+}
+```
+
+## 贪心算法
+
+```javascript
+// 跳跃游戏
+function canJump(nums) {
+  let maxReach = 0;
+  
+  for (let i = 0; i < nums.length; i++) {
+    if (i > maxReach) return false;
+    maxReach = Math.max(maxReach, i + nums[i]);
+  }
+  
+  return true;
+}
+
+// 买卖股票最佳时机
+function maxProfit(prices) {
+  let profit = 0;
+  
+  for (let i = 1; i < prices.length; i++) {
+    if (prices[i] > prices[i - 1]) {
+      profit += prices[i] - prices[i - 1];
+    }
+  }
+  
+  return profit;
+}
+
+// 分发饼干
+function findContentChildren(g, s) {
+  g.sort((a, b) => a - b);
+  s.sort((a, b) => a - b);
+  
+  let i = 0, j = 0;
+  
+  while (i < g.length && j < s.length) {
+    if (s[j] >= g[i]) {
+      i++;
+    }
+    j++;
+  }
+  
+  return i;
+}
+```
+
+## 总结
+
+算法的核心：
+- 🔄 **排序**：快排、归并、堆排序
+- 🔍 **搜索**：二分查找、DFS、BFS
+- 👉 **双指针**：快慢指针、对撞指针
+- 🪟 **滑动窗口**：子串问题
+- 📈 **动态规划**：状态转移方程
+- 🔙 **回溯**：排列组合、N皇后
+- 💰 **贪心**：局部最优
+
+记住：**算法的本质是找到问题的规律和模式！**
+

@@ -1,0 +1,618 @@
+---
+sidebar_position: 4
+title: 分布式系统实战
+tags: [后端, 分布式, 高可用, 负载均衡]
+---
+
+# 分布式系统实战
+
+分布式系统是将应用部署在多台机器上协同工作的系统架构，本文讲解分布式系统的核心概念和实践。
+
+## 分布式理论
+
+### CAP定理
+
+```javascript
+// CAP定理：一致性(Consistency)、可用性(Availability)、分区容错性(Partition tolerance)
+// 只能同时满足两个
+
+// CP系统：保证一致性和分区容错性（如：Zookeeper、HBase）
+class CPSystem {
+  async write(key, value) {
+    // 写入主节点
+    await this.master.write(key, value);
+    
+    // 同步到所有从节点（强一致性）
+    await Promise.all(
+      this.slaves.map(slave => slave.write(key, value))
+    );
+    
+    // 如果网络分区，写入失败（牺牲可用性）
+    return { success: true };
+  }
+}
+
+// AP系统：保证可用性和分区容错性（如：Cassandra、DynamoDB）
+class APSystem {
+  async write(key, value) {
+    // 写入任意可用节点
+    const availableNode = this.getAvailableNode();
+    await availableNode.write(key, value);
+    
+    // 异步同步到其他节点（最终一致性）
+    this.asyncSync(key, value);
+    
+    // 即使网络分区也能写入（牺牲一致性）
+    return { success: true };
+  }
+}
+
+// CA系统：保证一致性和可用性（如：单机数据库）
+// 无法容忍网络分区
+```
+
+### BASE理论
+
+```javascript
+// BASE：基本可用(Basically Available)、软状态(Soft state)、最终一致性(Eventually consistent)
+
+class EventualConsistency {
+  async transferMoney(fromAccount, toAccount, amount) {
+    // 1. 基本可用：系统在出现故障时仍能提供基本服务
+    try {
+      // 扣款
+      await this.debit(fromAccount, amount);
+      
+      // 创建转账事件
+      await this.createEvent({
+        type: 'TRANSFER',
+        from: fromAccount,
+        to: toAccount,
+        amount: amount,
+        status: 'PENDING'
+      });
+      
+      return { success: true, message: '转账处理中' };
+    } catch (err) {
+      return { success: false, message: '系统繁忙，请稍后重试' };
+    }
+  }
+  
+  // 2. 软状态：允许系统中的数据存在中间状态
+  async processEvents() {
+    const events = await this.getPendingEvents();
+    
+    for (const event of events) {
+      try {
+        // 加款
+        await this.credit(event.to, event.amount);
+        
+        // 更新事件状态
+        await this.updateEventStatus(event.id, 'COMPLETED');
+      } catch (err) {
+        // 重试机制
+        await this.retryLater(event);
+      }
+    }
+  }
+  
+  // 3. 最终一致性：系统最终会达到一致状态
+  async reconcile() {
+    setInterval(async () => {
+      await this.processEvents();
+    }, 5000);
+  }
+}
+```
+
+## 分布式锁
+
+### Redis实现
+
+```javascript
+const Redis = require('ioredis');
+
+class RedisLock {
+  constructor() {
+    this.redis = new Redis();
+  }
+  
+  // 获取锁
+  async acquire(key, ttl = 10000) {
+    const lockKey = `lock:${key}`;
+    const lockValue = `${Date.now()}-${Math.random()}`;
+    
+    // SET key value NX PX ttl
+    const result = await this.redis.set(
+      lockKey,
+      lockValue,
+      'PX',
+      ttl,
+      'NX'
+    );
+    
+    if (result === 'OK') {
+      return lockValue;
+    }
+    
+    return null;
+  }
+  
+  // 释放锁（使用Lua脚本保证原子性）
+  async release(key, lockValue) {
+    const lockKey = `lock:${key}`;
+    
+    const script = `
+      if redis.call("get", KEYS[1]) == ARGV[1] then
+        return redis.call("del", KEYS[1])
+      else
+        return 0
+      end
+    `;
+    
+    return await this.redis.eval(script, 1, lockKey, lockValue);
+  }
+  
+  // 使用锁
+  async withLock(key, fn, ttl = 10000) {
+    const lockValue = await this.acquire(key, ttl);
+    
+    if (!lockValue) {
+      throw new Error('Failed to acquire lock');
+    }
+    
+    try {
+      return await fn();
+    } finally {
+      await this.release(key, lockValue);
+    }
+  }
+}
+
+// 使用示例
+const lock = new RedisLock();
+
+async function updateInventory(productId, quantity) {
+  await lock.withLock(`product:${productId}`, async () => {
+    const product = await Product.findById(productId);
+    product.inventory -= quantity;
+    await product.save();
+  });
+}
+```
+
+### Redlock算法
+
+```javascript
+// 多个Redis实例的分布式锁
+class Redlock {
+  constructor(redisClients) {
+    this.clients = redisClients;
+    this.quorum = Math.floor(redisClients.length / 2) + 1;
+  }
+  
+  async acquire(key, ttl = 10000) {
+    const lockValue = `${Date.now()}-${Math.random()}`;
+    const startTime = Date.now();
+    
+    let successCount = 0;
+    
+    // 尝试在所有实例上获取锁
+    const results = await Promise.all(
+      this.clients.map(async (client) => {
+        try {
+          const result = await client.set(
+            `lock:${key}`,
+            lockValue,
+            'PX',
+            ttl,
+            'NX'
+          );
+          return result === 'OK';
+        } catch (err) {
+          return false;
+        }
+      })
+    );
+    
+    successCount = results.filter(r => r).length;
+    
+    const elapsedTime = Date.now() - startTime;
+    const validityTime = ttl - elapsedTime;
+    
+    // 检查是否获取到足够多的锁
+    if (successCount >= this.quorum && validityTime > 0) {
+      return { lockValue, validityTime };
+    }
+    
+    // 获取失败，释放已获取的锁
+    await this.release(key, lockValue);
+    return null;
+  }
+  
+  async release(key, lockValue) {
+    const script = `
+      if redis.call("get", KEYS[1]) == ARGV[1] then
+        return redis.call("del", KEYS[1])
+      else
+        return 0
+      end
+    `;
+    
+    await Promise.all(
+      this.clients.map(client =>
+        client.eval(script, 1, `lock:${key}`, lockValue)
+      )
+    );
+  }
+}
+```
+
+## 分布式事务
+
+### 两阶段提交(2PC)
+
+```javascript
+class TwoPhaseCommit {
+  constructor() {
+    this.participants = [];
+  }
+  
+  async execute(transaction) {
+    // 阶段1：准备阶段
+    const prepareResults = await this.prepare(transaction);
+    
+    // 检查所有参与者是否准备好
+    const allPrepared = prepareResults.every(r => r.prepared);
+    
+    if (allPrepared) {
+      // 阶段2：提交阶段
+      await this.commit(transaction);
+      return { success: true };
+    } else {
+      // 回滚
+      await this.rollback(transaction);
+      return { success: false };
+    }
+  }
+  
+  async prepare(transaction) {
+    return await Promise.all(
+      this.participants.map(async (participant) => {
+        try {
+          await participant.prepare(transaction);
+          return { prepared: true };
+        } catch (err) {
+          return { prepared: false, error: err };
+        }
+      })
+    );
+  }
+  
+  async commit(transaction) {
+    await Promise.all(
+      this.participants.map(participant =>
+        participant.commit(transaction)
+      )
+    );
+  }
+  
+  async rollback(transaction) {
+    await Promise.all(
+      this.participants.map(participant =>
+        participant.rollback(transaction)
+      )
+    );
+  }
+}
+```
+
+### TCC模式
+
+```javascript
+// Try-Confirm-Cancel
+class TCCTransaction {
+  async transfer(fromAccount, toAccount, amount) {
+    const transactionId = generateId();
+    
+    try {
+      // Try阶段：预留资源
+      await this.tryDebit(fromAccount, amount, transactionId);
+      await this.tryCredit(toAccount, amount, transactionId);
+      
+      // Confirm阶段：确认操作
+      await this.confirmDebit(fromAccount, transactionId);
+      await this.confirmCredit(toAccount, transactionId);
+      
+      return { success: true };
+    } catch (err) {
+      // Cancel阶段：取消操作
+      await this.cancelDebit(fromAccount, transactionId);
+      await this.cancelCredit(toAccount, transactionId);
+      
+      return { success: false, error: err };
+    }
+  }
+  
+  async tryDebit(account, amount, transactionId) {
+    // 冻结金额
+    await Account.update(
+      { id: account },
+      {
+        $inc: { balance: -amount, frozen: amount }
+      }
+    );
+    
+    // 记录事务
+    await Transaction.create({
+      id: transactionId,
+      account: account,
+      amount: amount,
+      type: 'DEBIT',
+      status: 'TRY'
+    });
+  }
+  
+  async confirmDebit(account, transactionId) {
+    // 扣除冻结金额
+    await Account.update(
+      { id: account },
+      { $inc: { frozen: -amount } }
+    );
+    
+    // 更新事务状态
+    await Transaction.update(
+      { id: transactionId },
+      { status: 'CONFIRMED' }
+    );
+  }
+  
+  async cancelDebit(account, transactionId) {
+    // 解冻金额
+    const tx = await Transaction.findById(transactionId);
+    await Account.update(
+      { id: account },
+      {
+        $inc: { balance: tx.amount, frozen: -tx.amount }
+      }
+    );
+    
+    // 更新事务状态
+    await Transaction.update(
+      { id: transactionId },
+      { status: 'CANCELLED' }
+    );
+  }
+}
+```
+
+### Saga模式
+
+```javascript
+// 长事务拆分为多个本地事务
+class SagaOrchestrator {
+  async executeOrder(orderData) {
+    const saga = new Saga();
+    
+    try {
+      // 步骤1：创建订单
+      const order = await saga.execute(
+        () => this.createOrder(orderData),
+        (order) => this.cancelOrder(order.id)
+      );
+      
+      // 步骤2：扣减库存
+      await saga.execute(
+        () => this.reduceInventory(order.productId, order.quantity),
+        () => this.restoreInventory(order.productId, order.quantity)
+      );
+      
+      // 步骤3：扣款
+      await saga.execute(
+        () => this.debitAccount(order.userId, order.amount),
+        () => this.creditAccount(order.userId, order.amount)
+      );
+      
+      // 步骤4：发送通知
+      await saga.execute(
+        () => this.sendNotification(order.userId, order.id),
+        () => {} // 通知无需补偿
+      );
+      
+      return { success: true, order };
+    } catch (err) {
+      // 执行补偿操作
+      await saga.compensate();
+      return { success: false, error: err };
+    }
+  }
+}
+
+class Saga {
+  constructor() {
+    this.steps = [];
+  }
+  
+  async execute(action, compensation) {
+    const result = await action();
+    this.steps.push({ result, compensation });
+    return result;
+  }
+  
+  async compensate() {
+    // 反向执行补偿操作
+    for (let i = this.steps.length - 1; i >= 0; i--) {
+      const { result, compensation } = this.steps[i];
+      await compensation(result);
+    }
+  }
+}
+```
+
+## 负载均衡
+
+```javascript
+// 负载均衡算法
+class LoadBalancer {
+  constructor(servers) {
+    this.servers = servers;
+    this.currentIndex = 0;
+  }
+  
+  // 轮询
+  roundRobin() {
+    const server = this.servers[this.currentIndex];
+    this.currentIndex = (this.currentIndex + 1) % this.servers.length;
+    return server;
+  }
+  
+  // 随机
+  random() {
+    const index = Math.floor(Math.random() * this.servers.length);
+    return this.servers[index];
+  }
+  
+  // 加权轮询
+  weightedRoundRobin() {
+    let totalWeight = 0;
+    let maxWeight = 0;
+    let selectedServer = null;
+    
+    for (const server of this.servers) {
+      server.currentWeight += server.weight;
+      totalWeight += server.weight;
+      
+      if (server.currentWeight > maxWeight) {
+        maxWeight = server.currentWeight;
+        selectedServer = server;
+      }
+    }
+    
+    selectedServer.currentWeight -= totalWeight;
+    return selectedServer;
+  }
+  
+  // 最少连接
+  leastConnections() {
+    return this.servers.reduce((min, server) =>
+      server.connections < min.connections ? server : min
+    );
+  }
+  
+  // 一致性哈希
+  consistentHash(key) {
+    const hash = this.hash(key);
+    
+    // 找到第一个大于等于hash值的节点
+    for (const server of this.servers) {
+      if (server.hash >= hash) {
+        return server;
+      }
+    }
+    
+    // 如果没找到，返回第一个节点
+    return this.servers[0];
+  }
+  
+  hash(key) {
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      hash = ((hash << 5) - hash) + key.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+}
+```
+
+## 服务降级与熔断
+
+```javascript
+// 熔断器模式
+class CircuitBreaker {
+  constructor(options = {}) {
+    this.failureThreshold = options.failureThreshold || 5;
+    this.timeout = options.timeout || 60000;
+    this.resetTimeout = options.resetTimeout || 30000;
+    
+    this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+    this.failureCount = 0;
+    this.nextAttempt = Date.now();
+  }
+  
+  async execute(fn) {
+    if (this.state === 'OPEN') {
+      if (Date.now() < this.nextAttempt) {
+        throw new Error('Circuit breaker is OPEN');
+      }
+      
+      // 尝试半开状态
+      this.state = 'HALF_OPEN';
+    }
+    
+    try {
+      const result = await Promise.race([
+        fn(),
+        this.timeoutPromise()
+      ]);
+      
+      this.onSuccess();
+      return result;
+    } catch (err) {
+      this.onFailure();
+      throw err;
+    }
+  }
+  
+  onSuccess() {
+    this.failureCount = 0;
+    this.state = 'CLOSED';
+  }
+  
+  onFailure() {
+    this.failureCount++;
+    
+    if (this.failureCount >= this.failureThreshold) {
+      this.state = 'OPEN';
+      this.nextAttempt = Date.now() + this.resetTimeout;
+    }
+  }
+  
+  timeoutPromise() {
+    return new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout')), this.timeout);
+    });
+  }
+}
+
+// 使用熔断器
+const breaker = new CircuitBreaker({
+  failureThreshold: 5,
+  timeout: 3000,
+  resetTimeout: 30000
+});
+
+async function callExternalService() {
+  try {
+    return await breaker.execute(async () => {
+      const response = await axios.get('https://api.example.com/data');
+      return response.data;
+    });
+  } catch (err) {
+    // 降级处理
+    return getDefaultData();
+  }
+}
+```
+
+## 总结
+
+分布式系统的核心：
+- 📚 **理论基础**：CAP、BASE
+- 🔒 **分布式锁**：Redis、Redlock
+- 💳 **分布式事务**：2PC、TCC、Saga
+- ⚖️ **负载均衡**：轮询、一致性哈希
+- 🛡️ **容错机制**：熔断、降级、限流
+
+记住：**分布式系统要考虑网络延迟、节点故障、数据一致性！**
+

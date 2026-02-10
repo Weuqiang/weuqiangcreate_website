@@ -1,0 +1,611 @@
+---
+sidebar_position: 3
+title: LeetCode高频题解
+tags: [算法, LeetCode, 面试]
+---
+
+# LeetCode高频题解
+
+本文精选LeetCode高频面试题，提供详细解题思路和代码实现。
+
+## 数组类
+
+### 1. 两数之和
+
+```javascript
+/**
+ * 给定一个整数数组和目标值，找出数组中和为目标值的两个数
+ * 时间复杂度：O(n)，空间复杂度：O(n)
+ */
+function twoSum(nums, target) {
+  const map = new Map();
+  
+  for (let i = 0; i < nums.length; i++) {
+    const complement = target - nums[i];
+    
+    if (map.has(complement)) {
+      return [map.get(complement), i];
+    }
+    
+    map.set(nums[i], i);
+  }
+  
+  return [];
+}
+
+// 测试
+console.log(twoSum([2, 7, 11, 15], 9)); // [0, 1]
+```
+
+### 15. 三数之和
+
+```javascript
+/**
+ * 找出数组中所有和为0的三元组
+ * 时间复杂度：O(n²)
+ */
+function threeSum(nums) {
+  const result = [];
+  nums.sort((a, b) => a - b);
+  
+  for (let i = 0; i < nums.length - 2; i++) {
+    // 跳过重复元素
+    if (i > 0 && nums[i] === nums[i - 1]) continue;
+    
+    let left = i + 1;
+    let right = nums.length - 1;
+    
+    while (left < right) {
+      const sum = nums[i] + nums[left] + nums[right];
+      
+      if (sum === 0) {
+        result.push([nums[i], nums[left], nums[right]]);
+        
+        while (left < right && nums[left] === nums[left + 1]) left++;
+        while (left < right && nums[right] === nums[right - 1]) right--;
+        
+        left++;
+        right--;
+      } else if (sum < 0) {
+        left++;
+      } else {
+        right--;
+      }
+    }
+  }
+  
+  return result;
+}
+```
+
+### 53. 最大子数组和
+
+```javascript
+/**
+ * 找到连续子数组的最大和
+ * 动态规划：dp[i] = max(dp[i-1] + nums[i], nums[i])
+ */
+function maxSubArray(nums) {
+  let maxSum = nums[0];
+  let currentSum = nums[0];
+  
+  for (let i = 1; i < nums.length; i++) {
+    currentSum = Math.max(nums[i], currentSum + nums[i]);
+    maxSum = Math.max(maxSum, currentSum);
+  }
+  
+  return maxSum;
+}
+
+// 分治法
+function maxSubArrayDivide(nums, left = 0, right = nums.length - 1) {
+  if (left === right) return nums[left];
+  
+  const mid = Math.floor((left + right) / 2);
+  
+  const leftMax = maxSubArrayDivide(nums, left, mid);
+  const rightMax = maxSubArrayDivide(nums, mid + 1, right);
+  const crossMax = maxCrossingSum(nums, left, mid, right);
+  
+  return Math.max(leftMax, rightMax, crossMax);
+}
+
+function maxCrossingSum(nums, left, mid, right) {
+  let leftSum = -Infinity;
+  let sum = 0;
+  
+  for (let i = mid; i >= left; i--) {
+    sum += nums[i];
+    leftSum = Math.max(leftSum, sum);
+  }
+  
+  let rightSum = -Infinity;
+  sum = 0;
+  
+  for (let i = mid + 1; i <= right; i++) {
+    sum += nums[i];
+    rightSum = Math.max(rightSum, sum);
+  }
+  
+  return leftSum + rightSum;
+}
+```
+
+### 121. 买卖股票的最佳时机
+
+```javascript
+/**
+ * 只能买卖一次，求最大利润
+ */
+function maxProfit(prices) {
+  let minPrice = Infinity;
+  let maxProfit = 0;
+  
+  for (const price of prices) {
+    minPrice = Math.min(minPrice, price);
+    maxProfit = Math.max(maxProfit, price - minPrice);
+  }
+  
+  return maxProfit;
+}
+
+// 122. 可以多次买卖
+function maxProfitII(prices) {
+  let profit = 0;
+  
+  for (let i = 1; i < prices.length; i++) {
+    if (prices[i] > prices[i - 1]) {
+      profit += prices[i] - prices[i - 1];
+    }
+  }
+  
+  return profit;
+}
+```
+
+## 链表类
+
+### 206. 反转链表
+
+```javascript
+/**
+ * 反转单链表
+ */
+// 迭代法
+function reverseList(head) {
+  let prev = null;
+  let current = head;
+  
+  while (current) {
+    const next = current.next;
+    current.next = prev;
+    prev = current;
+    current = next;
+  }
+  
+  return prev;
+}
+
+// 递归法
+function reverseListRecursive(head) {
+  if (!head || !head.next) return head;
+  
+  const newHead = reverseListRecursive(head.next);
+  head.next.next = head;
+  head.next = null;
+  
+  return newHead;
+}
+```
+
+### 141. 环形链表
+
+```javascript
+/**
+ * 判断链表是否有环
+ * 快慢指针
+ */
+function hasCycle(head) {
+  let slow = head;
+  let fast = head;
+  
+  while (fast && fast.next) {
+    slow = slow.next;
+    fast = fast.next.next;
+    
+    if (slow === fast) return true;
+  }
+  
+  return false;
+}
+
+// 142. 找到环的入口
+function detectCycle(head) {
+  let slow = head;
+  let fast = head;
+  
+  // 判断是否有环
+  while (fast && fast.next) {
+    slow = slow.next;
+    fast = fast.next.next;
+    
+    if (slow === fast) {
+      // 找入口
+      let ptr = head;
+      while (ptr !== slow) {
+        ptr = ptr.next;
+        slow = slow.next;
+      }
+      return ptr;
+    }
+  }
+  
+  return null;
+}
+```
+
+### 21. 合并两个有序链表
+
+```javascript
+/**
+ * 合并两个升序链表
+ */
+function mergeTwoLists(l1, l2) {
+  const dummy = new ListNode(0);
+  let current = dummy;
+  
+  while (l1 && l2) {
+    if (l1.val < l2.val) {
+      current.next = l1;
+      l1 = l1.next;
+    } else {
+      current.next = l2;
+      l2 = l2.next;
+    }
+    current = current.next;
+  }
+  
+  current.next = l1 || l2;
+  
+  return dummy.next;
+}
+```
+
+## 树类
+
+### 104. 二叉树的最大深度
+
+```javascript
+/**
+ * 计算二叉树的最大深度
+ */
+// 递归
+function maxDepth(root) {
+  if (!root) return 0;
+  
+  return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));
+}
+
+// 迭代（层序遍历）
+function maxDepthIterative(root) {
+  if (!root) return 0;
+  
+  const queue = [root];
+  let depth = 0;
+  
+  while (queue.length > 0) {
+    const levelSize = queue.length;
+    
+    for (let i = 0; i < levelSize; i++) {
+      const node = queue.shift();
+      
+      if (node.left) queue.push(node.left);
+      if (node.right) queue.push(node.right);
+    }
+    
+    depth++;
+  }
+  
+  return depth;
+}
+```
+
+### 226. 翻转二叉树
+
+```javascript
+/**
+ * 翻转二叉树
+ */
+function invertTree(root) {
+  if (!root) return null;
+  
+  [root.left, root.right] = [root.right, root.left];
+  
+  invertTree(root.left);
+  invertTree(root.right);
+  
+  return root;
+}
+```
+
+### 102. 二叉树的层序遍历
+
+```javascript
+/**
+ * 层序遍历二叉树
+ */
+function levelOrder(root) {
+  if (!root) return [];
+  
+  const result = [];
+  const queue = [root];
+  
+  while (queue.length > 0) {
+    const level = [];
+    const levelSize = queue.length;
+    
+    for (let i = 0; i < levelSize; i++) {
+      const node = queue.shift();
+      level.push(node.val);
+      
+      if (node.left) queue.push(node.left);
+      if (node.right) queue.push(node.right);
+    }
+    
+    result.push(level);
+  }
+  
+  return result;
+}
+```
+
+### 236. 二叉树的最近公共祖先
+
+```javascript
+/**
+ * 找到两个节点的最近公共祖先
+ */
+function lowestCommonAncestor(root, p, q) {
+  if (!root || root === p || root === q) return root;
+  
+  const left = lowestCommonAncestor(root.left, p, q);
+  const right = lowestCommonAncestor(root.right, p, q);
+  
+  if (left && right) return root;
+  
+  return left || right;
+}
+```
+
+## 动态规划类
+
+### 70. 爬楼梯
+
+```javascript
+/**
+ * 每次可以爬1或2个台阶，求爬到n阶的方法数
+ */
+function climbStairs(n) {
+  if (n <= 2) return n;
+  
+  let prev = 1, curr = 2;
+  
+  for (let i = 3; i <= n; i++) {
+    [prev, curr] = [curr, prev + curr];
+  }
+  
+  return curr;
+}
+```
+
+### 198. 打家劫舍
+
+```javascript
+/**
+ * 不能偷相邻的房子，求最大金额
+ */
+function rob(nums) {
+  if (nums.length === 0) return 0;
+  if (nums.length === 1) return nums[0];
+  
+  let prev = 0, curr = 0;
+  
+  for (const num of nums) {
+    [prev, curr] = [curr, Math.max(curr, prev + num)];
+  }
+  
+  return curr;
+}
+
+// 213. 打家劫舍II（环形）
+function robII(nums) {
+  if (nums.length === 1) return nums[0];
+  
+  const robRange = (start, end) => {
+    let prev = 0, curr = 0;
+    
+    for (let i = start; i < end; i++) {
+      [prev, curr] = [curr, Math.max(curr, prev + nums[i])];
+    }
+    
+    return curr;
+  };
+  
+  return Math.max(
+    robRange(0, nums.length - 1),
+    robRange(1, nums.length)
+  );
+}
+```
+
+### 322. 零钱兑换
+
+```javascript
+/**
+ * 用最少的硬币凑出金额
+ */
+function coinChange(coins, amount) {
+  const dp = Array(amount + 1).fill(Infinity);
+  dp[0] = 0;
+  
+  for (let i = 1; i <= amount; i++) {
+    for (const coin of coins) {
+      if (i >= coin) {
+        dp[i] = Math.min(dp[i], dp[i - coin] + 1);
+      }
+    }
+  }
+  
+  return dp[amount] === Infinity ? -1 : dp[amount];
+}
+```
+
+### 300. 最长递增子序列
+
+```javascript
+/**
+ * 找到最长递增子序列的长度
+ */
+// 动态规划 O(n²)
+function lengthOfLIS(nums) {
+  if (nums.length === 0) return 0;
+  
+  const dp = Array(nums.length).fill(1);
+  
+  for (let i = 1; i < nums.length; i++) {
+    for (let j = 0; j < i; j++) {
+      if (nums[i] > nums[j]) {
+        dp[i] = Math.max(dp[i], dp[j] + 1);
+      }
+    }
+  }
+  
+  return Math.max(...dp);
+}
+
+// 二分查找 O(n log n)
+function lengthOfLISBinary(nums) {
+  const tails = [];
+  
+  for (const num of nums) {
+    let left = 0, right = tails.length;
+    
+    while (left < right) {
+      const mid = Math.floor((left + right) / 2);
+      if (tails[mid] < num) {
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
+    }
+    
+    if (left === tails.length) {
+      tails.push(num);
+    } else {
+      tails[left] = num;
+    }
+  }
+  
+  return tails.length;
+}
+```
+
+## 字符串类
+
+### 3. 无重复字符的最长子串
+
+```javascript
+/**
+ * 找到最长无重复字符子串
+ * 滑动窗口
+ */
+function lengthOfLongestSubstring(s) {
+  const map = new Map();
+  let left = 0;
+  let maxLen = 0;
+  
+  for (let right = 0; right < s.length; right++) {
+    const char = s[right];
+    
+    if (map.has(char)) {
+      left = Math.max(left, map.get(char) + 1);
+    }
+    
+    map.set(char, right);
+    maxLen = Math.max(maxLen, right - left + 1);
+  }
+  
+  return maxLen;
+}
+```
+
+### 5. 最长回文子串
+
+```javascript
+/**
+ * 找到最长回文子串
+ */
+// 中心扩展法
+function longestPalindrome(s) {
+  if (s.length < 2) return s;
+  
+  let start = 0, maxLen = 1;
+  
+  const expandAroundCenter = (left, right) => {
+    while (left >= 0 && right < s.length && s[left] === s[right]) {
+      left--;
+      right++;
+    }
+    return right - left - 1;
+  };
+  
+  for (let i = 0; i < s.length; i++) {
+    const len1 = expandAroundCenter(i, i);
+    const len2 = expandAroundCenter(i, i + 1);
+    const len = Math.max(len1, len2);
+    
+    if (len > maxLen) {
+      maxLen = len;
+      start = i - Math.floor((len - 1) / 2);
+    }
+  }
+  
+  return s.substr(start, maxLen);
+}
+```
+
+### 20. 有效的括号
+
+```javascript
+/**
+ * 判断括号是否有效
+ */
+function isValid(s) {
+  const stack = [];
+  const pairs = { '(': ')', '[': ']', '{': '}' };
+  
+  for (const char of s) {
+    if (char in pairs) {
+      stack.push(char);
+    } else {
+      const top = stack.pop();
+      if (pairs[top] !== char) return false;
+    }
+  }
+  
+  return stack.length === 0;
+}
+```
+
+## 总结
+
+LeetCode刷题技巧：
+- 📊 **数组**：双指针、滑动窗口
+- 🔗 **链表**：快慢指针、虚拟头节点
+- 🌲 **树**：递归、层序遍历
+- 📈 **动态规划**：状态定义、转移方程
+- 🔤 **字符串**：哈希表、滑动窗口
+- 🔙 **回溯**：剪枝优化
+
+记住：**多做题、多总结、找规律！**
+

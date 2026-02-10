@@ -1,0 +1,819 @@
+---
+sidebar_position: 1
+title: 数据结构基础
+tags: [算法, 数据结构, 面试]
+---
+
+# 数据结构基础
+
+数据结构是计算机存储、组织数据的方式，本文讲解常用数据结构的实现和应用。
+
+## 数组与链表
+
+### 数组
+
+```javascript
+// 数组基础操作
+class ArrayList {
+  constructor() {
+    this.data = [];
+  }
+  
+  // 添加元素 O(1)
+  push(value) {
+    this.data[this.data.length] = value;
+  }
+  
+  // 删除末尾元素 O(1)
+  pop() {
+    if (this.data.length === 0) return undefined;
+    const value = this.data[this.data.length - 1];
+    this.data.length--;
+    return value;
+  }
+  
+  // 插入元素 O(n)
+  insert(index, value) {
+    for (let i = this.data.length; i > index; i--) {
+      this.data[i] = this.data[i - 1];
+    }
+    this.data[index] = value;
+  }
+  
+  // 删除元素 O(n)
+  remove(index) {
+    const value = this.data[index];
+    for (let i = index; i < this.data.length - 1; i++) {
+      this.data[i] = this.data[i + 1];
+    }
+    this.data.length--;
+    return value;
+  }
+  
+  // 查找元素 O(n)
+  indexOf(value) {
+    for (let i = 0; i < this.data.length; i++) {
+      if (this.data[i] === value) return i;
+    }
+    return -1;
+  }
+}
+
+// 动态数组
+class DynamicArray {
+  constructor(capacity = 10) {
+    this.data = new Array(capacity);
+    this.size = 0;
+    this.capacity = capacity;
+  }
+  
+  push(value) {
+    if (this.size === this.capacity) {
+      this.resize(this.capacity * 2);
+    }
+    this.data[this.size++] = value;
+  }
+  
+  resize(newCapacity) {
+    const newData = new Array(newCapacity);
+    for (let i = 0; i < this.size; i++) {
+      newData[i] = this.data[i];
+    }
+    this.data = newData;
+    this.capacity = newCapacity;
+  }
+}
+```
+
+### 链表
+
+```javascript
+// 单链表节点
+class ListNode {
+  constructor(value) {
+    this.value = value;
+    this.next = null;
+  }
+}
+
+// 单链表
+class LinkedList {
+  constructor() {
+    this.head = null;
+    this.size = 0;
+  }
+  
+  // 添加到头部 O(1)
+  addFirst(value) {
+    const node = new ListNode(value);
+    node.next = this.head;
+    this.head = node;
+    this.size++;
+  }
+  
+  // 添加到尾部 O(n)
+  addLast(value) {
+    const node = new ListNode(value);
+    
+    if (!this.head) {
+      this.head = node;
+    } else {
+      let current = this.head;
+      while (current.next) {
+        current = current.next;
+      }
+      current.next = node;
+    }
+    this.size++;
+  }
+  
+  // 删除头节点 O(1)
+  removeFirst() {
+    if (!this.head) return null;
+    
+    const value = this.head.value;
+    this.head = this.head.next;
+    this.size--;
+    return value;
+  }
+  
+  // 反转链表 O(n)
+  reverse() {
+    let prev = null;
+    let current = this.head;
+    
+    while (current) {
+      const next = current.next;
+      current.next = prev;
+      prev = current;
+      current = next;
+    }
+    
+    this.head = prev;
+  }
+  
+  // 检测环
+  hasCycle() {
+    let slow = this.head;
+    let fast = this.head;
+    
+    while (fast && fast.next) {
+      slow = slow.next;
+      fast = fast.next.next;
+      
+      if (slow === fast) return true;
+    }
+    
+    return false;
+  }
+}
+
+// 双向链表
+class DoublyListNode {
+  constructor(value) {
+    this.value = value;
+    this.prev = null;
+    this.next = null;
+  }
+}
+
+class DoublyLinkedList {
+  constructor() {
+    this.head = null;
+    this.tail = null;
+    this.size = 0;
+  }
+  
+  addFirst(value) {
+    const node = new DoublyListNode(value);
+    
+    if (!this.head) {
+      this.head = this.tail = node;
+    } else {
+      node.next = this.head;
+      this.head.prev = node;
+      this.head = node;
+    }
+    this.size++;
+  }
+  
+  addLast(value) {
+    const node = new DoublyListNode(value);
+    
+    if (!this.tail) {
+      this.head = this.tail = node;
+    } else {
+      node.prev = this.tail;
+      this.tail.next = node;
+      this.tail = node;
+    }
+    this.size++;
+  }
+}
+```
+
+## 栈与队列
+
+### 栈
+
+```javascript
+// 数组实现栈
+class Stack {
+  constructor() {
+    this.items = [];
+  }
+  
+  push(element) {
+    this.items.push(element);
+  }
+  
+  pop() {
+    return this.items.pop();
+  }
+  
+  peek() {
+    return this.items[this.items.length - 1];
+  }
+  
+  isEmpty() {
+    return this.items.length === 0;
+  }
+  
+  size() {
+    return this.items.length;
+  }
+}
+
+// 链表实现栈
+class LinkedStack {
+  constructor() {
+    this.top = null;
+    this.size = 0;
+  }
+  
+  push(value) {
+    const node = new ListNode(value);
+    node.next = this.top;
+    this.top = node;
+    this.size++;
+  }
+  
+  pop() {
+    if (!this.top) return null;
+    
+    const value = this.top.value;
+    this.top = this.top.next;
+    this.size--;
+    return value;
+  }
+}
+
+// 应用：括号匹配
+function isValidParentheses(s) {
+  const stack = new Stack();
+  const pairs = { '(': ')', '[': ']', '{': '}' };
+  
+  for (const char of s) {
+    if (char in pairs) {
+      stack.push(char);
+    } else {
+      const top = stack.pop();
+      if (pairs[top] !== char) return false;
+    }
+  }
+  
+  return stack.isEmpty();
+}
+```
+
+### 队列
+
+```javascript
+// 数组实现队列
+class Queue {
+  constructor() {
+    this.items = [];
+  }
+  
+  enqueue(element) {
+    this.items.push(element);
+  }
+  
+  dequeue() {
+    return this.items.shift();
+  }
+  
+  front() {
+    return this.items[0];
+  }
+  
+  isEmpty() {
+    return this.items.length === 0;
+  }
+}
+
+// 循环队列
+class CircularQueue {
+  constructor(capacity) {
+    this.items = new Array(capacity);
+    this.capacity = capacity;
+    this.front = 0;
+    this.rear = 0;
+    this.size = 0;
+  }
+  
+  enqueue(element) {
+    if (this.isFull()) return false;
+    
+    this.items[this.rear] = element;
+    this.rear = (this.rear + 1) % this.capacity;
+    this.size++;
+    return true;
+  }
+  
+  dequeue() {
+    if (this.isEmpty()) return null;
+    
+    const element = this.items[this.front];
+    this.front = (this.front + 1) % this.capacity;
+    this.size--;
+    return element;
+  }
+  
+  isFull() {
+    return this.size === this.capacity;
+  }
+  
+  isEmpty() {
+    return this.size === 0;
+  }
+}
+
+// 双端队列
+class Deque {
+  constructor() {
+    this.items = [];
+  }
+  
+  addFront(element) {
+    this.items.unshift(element);
+  }
+  
+  addRear(element) {
+    this.items.push(element);
+  }
+  
+  removeFront() {
+    return this.items.shift();
+  }
+  
+  removeRear() {
+    return this.items.pop();
+  }
+}
+```
+
+## 树
+
+### 二叉树
+
+```javascript
+class TreeNode {
+  constructor(value) {
+    this.value = value;
+    this.left = null;
+    this.right = null;
+  }
+}
+
+class BinaryTree {
+  constructor() {
+    this.root = null;
+  }
+  
+  // 前序遍历：根-左-右
+  preorder(node = this.root, result = []) {
+    if (!node) return result;
+    
+    result.push(node.value);
+    this.preorder(node.left, result);
+    this.preorder(node.right, result);
+    return result;
+  }
+  
+  // 中序遍历：左-根-右
+  inorder(node = this.root, result = []) {
+    if (!node) return result;
+    
+    this.inorder(node.left, result);
+    result.push(node.value);
+    this.inorder(node.right, result);
+    return result;
+  }
+  
+  // 后序遍历：左-右-根
+  postorder(node = this.root, result = []) {
+    if (!node) return result;
+    
+    this.postorder(node.left, result);
+    this.postorder(node.right, result);
+    result.push(node.value);
+    return result;
+  }
+  
+  // 层序遍历
+  levelOrder() {
+    if (!this.root) return [];
+    
+    const result = [];
+    const queue = [this.root];
+    
+    while (queue.length > 0) {
+      const level = [];
+      const levelSize = queue.length;
+      
+      for (let i = 0; i < levelSize; i++) {
+        const node = queue.shift();
+        level.push(node.value);
+        
+        if (node.left) queue.push(node.left);
+        if (node.right) queue.push(node.right);
+      }
+      
+      result.push(level);
+    }
+    
+    return result;
+  }
+  
+  // 树的高度
+  height(node = this.root) {
+    if (!node) return 0;
+    
+    return 1 + Math.max(
+      this.height(node.left),
+      this.height(node.right)
+    );
+  }
+  
+  // 树的节点数
+  size(node = this.root) {
+    if (!node) return 0;
+    
+    return 1 + this.size(node.left) + this.size(node.right);
+  }
+}
+```
+
+### 二叉搜索树
+
+```javascript
+class BST {
+  constructor() {
+    this.root = null;
+  }
+  
+  // 插入节点
+  insert(value) {
+    this.root = this._insert(this.root, value);
+  }
+  
+  _insert(node, value) {
+    if (!node) return new TreeNode(value);
+    
+    if (value < node.value) {
+      node.left = this._insert(node.left, value);
+    } else if (value > node.value) {
+      node.right = this._insert(node.right, value);
+    }
+    
+    return node;
+  }
+  
+  // 查找节点
+  search(value) {
+    return this._search(this.root, value);
+  }
+  
+  _search(node, value) {
+    if (!node) return null;
+    
+    if (value === node.value) return node;
+    if (value < node.value) return this._search(node.left, value);
+    return this._search(node.right, value);
+  }
+  
+  // 删除节点
+  delete(value) {
+    this.root = this._delete(this.root, value);
+  }
+  
+  _delete(node, value) {
+    if (!node) return null;
+    
+    if (value < node.value) {
+      node.left = this._delete(node.left, value);
+    } else if (value > node.value) {
+      node.right = this._delete(node.right, value);
+    } else {
+      // 找到要删除的节点
+      if (!node.left) return node.right;
+      if (!node.right) return node.left;
+      
+      // 有两个子节点：找右子树最小值替换
+      const minNode = this._findMin(node.right);
+      node.value = minNode.value;
+      node.right = this._delete(node.right, minNode.value);
+    }
+    
+    return node;
+  }
+  
+  _findMin(node) {
+    while (node.left) {
+      node = node.left;
+    }
+    return node;
+  }
+}
+```
+
+## 哈希表
+
+```javascript
+class HashTable {
+  constructor(size = 53) {
+    this.keyMap = new Array(size);
+  }
+  
+  // 哈希函数
+  _hash(key) {
+    let total = 0;
+    const PRIME = 31;
+    
+    for (let i = 0; i < Math.min(key.length, 100); i++) {
+      const char = key[i];
+      const value = char.charCodeAt(0) - 96;
+      total = (total * PRIME + value) % this.keyMap.length;
+    }
+    
+    return total;
+  }
+  
+  // 设置键值对
+  set(key, value) {
+    const index = this._hash(key);
+    
+    if (!this.keyMap[index]) {
+      this.keyMap[index] = [];
+    }
+    
+    // 检查是否已存在
+    for (let i = 0; i < this.keyMap[index].length; i++) {
+      if (this.keyMap[index][i][0] === key) {
+        this.keyMap[index][i][1] = value;
+        return;
+      }
+    }
+    
+    this.keyMap[index].push([key, value]);
+  }
+  
+  // 获取值
+  get(key) {
+    const index = this._hash(key);
+    
+    if (this.keyMap[index]) {
+      for (let i = 0; i < this.keyMap[index].length; i++) {
+        if (this.keyMap[index][i][0] === key) {
+          return this.keyMap[index][i][1];
+        }
+      }
+    }
+    
+    return undefined;
+  }
+  
+  // 删除键值对
+  delete(key) {
+    const index = this._hash(key);
+    
+    if (this.keyMap[index]) {
+      for (let i = 0; i < this.keyMap[index].length; i++) {
+        if (this.keyMap[index][i][0] === key) {
+          this.keyMap[index].splice(i, 1);
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  // 获取所有键
+  keys() {
+    const keys = [];
+    
+    for (let i = 0; i < this.keyMap.length; i++) {
+      if (this.keyMap[i]) {
+        for (let j = 0; j < this.keyMap[i].length; j++) {
+          keys.push(this.keyMap[i][j][0]);
+        }
+      }
+    }
+    
+    return keys;
+  }
+  
+  // 获取所有值
+  values() {
+    const values = [];
+    
+    for (let i = 0; i < this.keyMap.length; i++) {
+      if (this.keyMap[i]) {
+        for (let j = 0; j < this.keyMap[i].length; j++) {
+          if (!values.includes(this.keyMap[i][j][1])) {
+            values.push(this.keyMap[i][j][1]);
+          }
+        }
+      }
+    }
+    
+    return values;
+  }
+}
+```
+
+## 堆
+
+```javascript
+// 最小堆
+class MinHeap {
+  constructor() {
+    this.heap = [];
+  }
+  
+  // 获取父节点索引
+  parent(i) {
+    return Math.floor((i - 1) / 2);
+  }
+  
+  // 获取左子节点索引
+  leftChild(i) {
+    return 2 * i + 1;
+  }
+  
+  // 获取右子节点索引
+  rightChild(i) {
+    return 2 * i + 2;
+  }
+  
+  // 交换元素
+  swap(i, j) {
+    [this.heap[i], this.heap[j]] = [this.heap[j], this.heap[i]];
+  }
+  
+  // 插入元素
+  insert(value) {
+    this.heap.push(value);
+    this.bubbleUp(this.heap.length - 1);
+  }
+  
+  // 上浮
+  bubbleUp(index) {
+    while (index > 0) {
+      const parentIndex = this.parent(index);
+      
+      if (this.heap[index] >= this.heap[parentIndex]) break;
+      
+      this.swap(index, parentIndex);
+      index = parentIndex;
+    }
+  }
+  
+  // 删除最小元素
+  extractMin() {
+    if (this.heap.length === 0) return null;
+    if (this.heap.length === 1) return this.heap.pop();
+    
+    const min = this.heap[0];
+    this.heap[0] = this.heap.pop();
+    this.bubbleDown(0);
+    
+    return min;
+  }
+  
+  // 下沉
+  bubbleDown(index) {
+    while (true) {
+      const left = this.leftChild(index);
+      const right = this.rightChild(index);
+      let smallest = index;
+      
+      if (left < this.heap.length && this.heap[left] < this.heap[smallest]) {
+        smallest = left;
+      }
+      
+      if (right < this.heap.length && this.heap[right] < this.heap[smallest]) {
+        smallest = right;
+      }
+      
+      if (smallest === index) break;
+      
+      this.swap(index, smallest);
+      index = smallest;
+    }
+  }
+  
+  // 获取最小元素
+  peek() {
+    return this.heap[0];
+  }
+  
+  size() {
+    return this.heap.length;
+  }
+}
+```
+
+## 图
+
+```javascript
+// 邻接表表示图
+class Graph {
+  constructor() {
+    this.adjacencyList = new Map();
+  }
+  
+  // 添加顶点
+  addVertex(vertex) {
+    if (!this.adjacencyList.has(vertex)) {
+      this.adjacencyList.set(vertex, []);
+    }
+  }
+  
+  // 添加边
+  addEdge(v1, v2) {
+    this.adjacencyList.get(v1).push(v2);
+    this.adjacencyList.get(v2).push(v1); // 无向图
+  }
+  
+  // 深度优先遍历
+  dfs(start) {
+    const result = [];
+    const visited = new Set();
+    
+    const traverse = (vertex) => {
+      if (!vertex) return;
+      
+      visited.add(vertex);
+      result.push(vertex);
+      
+      for (const neighbor of this.adjacencyList.get(vertex)) {
+        if (!visited.has(neighbor)) {
+          traverse(neighbor);
+        }
+      }
+    };
+    
+    traverse(start);
+    return result;
+  }
+  
+  // 广度优先遍历
+  bfs(start) {
+    const result = [];
+    const visited = new Set();
+    const queue = [start];
+    
+    visited.add(start);
+    
+    while (queue.length > 0) {
+      const vertex = queue.shift();
+      result.push(vertex);
+      
+      for (const neighbor of this.adjacencyList.get(vertex)) {
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+          queue.push(neighbor);
+        }
+      }
+    }
+    
+    return result;
+  }
+}
+```
+
+## 总结
+
+数据结构的核心：
+- 📊 **数组与链表**：随机访问 vs 插入删除
+- 📚 **栈与队列**：LIFO vs FIFO
+- 🌲 **树**：二叉树、BST、AVL树
+- #️⃣ **哈希表**：O(1)查找
+- ⛰️ **堆**：优先队列
+- 🕸️ **图**：DFS、BFS
+
+记住：**选择合适的数据结构是优化算法的关键！**
+
