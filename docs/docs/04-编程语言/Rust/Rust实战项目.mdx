@@ -1,0 +1,767 @@
+---
+sidebar_position: 7
+title: Rust实战项目：CLI工具开发
+tags: [Rust, CLI, 实战项目, 命令行工具]
+---
+
+# Rust实战项目：CLI工具开发
+
+## 概述
+
+Rust非常适合开发命令行工具，本文将通过实战项目学习如何使用Rust开发一个功能完整的CLI工具。
+
+## 项目：文件搜索工具（minigrep）
+
+我们将开发一个类似`grep`的文件搜索工具，支持：
+- 在文件中搜索指定文本
+- 大小写敏感/不敏感搜索
+- 正则表达式支持
+- 多文件搜索
+- 彩色输出
+
+### 1. 项目初始化
+
+```bash
+cargo new minigrep
+cd minigrep
+```
+
+```toml
+# Cargo.toml
+[package]
+name = "minigrep"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+regex = "1.7"
+colored = "2.0"
+anyhow = "1.0"
+```
+
+### 2. 命令行参数解析
+
+```rust
+// src/cli.rs
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(name = "minigrep")]
+#[command(about = "A simple grep-like tool", long_about = None)]
+pub struct Cli {
+    /// 搜索的模式
+    #[arg(short, long)]
+    pub pattern: String,
+    
+    /// 要搜索的文件路径
+    #[arg(short, long)]
+    pub file: String,
+    
+    /// 忽略大小写
+    #[arg(short, long)]
+    pub ignore_case: bool,
+    
+    /// 使用正则表达式
+    #[arg(short, long)]
+    pub regex: bool,
+    
+    /// 显示行号
+    #[arg(short = 'n', long)]
+    pub line_number: bool,
+    
+    /// 只显示匹配的文件名
+    #[arg(short = 'l', long)]
+    pub files_with_matches: bool,
+    
+    /// 显示匹配的行数
+    #[arg(short = 'c', long)]
+    pub count: bool,
+}
+```
+
+### 3. 核心搜索逻辑
+
+```rust
+// src/search.rs
+use anyhow::{Context, Result};
+use colored::*;
+use regex::Regex;
+use std::fs;
+
+pub struct SearchConfig {
+    pub pattern: String,
+    pub ignore_case: bool,
+    pub use_regex: bool,
+    pub show_line_number: bool,
+    pub files_with_matches: bool,
+    pub count_only: bool,
+}
+
+pub struct SearchResult {
+    pub line_number: usize,
+    pub line_content: String,
+    pub matched_text: String,
+}
+
+pub fn search_in_file(
+    file_path: &str,
+    config: &SearchConfig,
+) -> Result<Vec<SearchResult>> {
+    let contents = fs::read_to_string(file_path)
+        .context(format!("无法读取文件: {}", file_path))?;
+    
+    let results = if config.use_regex {
+        search_with_regex(&contents, &config.pattern, config.ignore_case)?
+    } else {
+        search_simple(&contents, &config.pattern, config.ignore_case)
+    };
+    
+    Ok(results)
+}
+
+fn search_simple(
+    contents: &str,
+    pattern: &str,
+    ignore_case: bool,
+) -> Vec<SearchResult> {
+    let pattern = if ignore_case {
+        pattern.to_lowercase()
+    } else {
+        pattern.to_string()
+    };
+    
+    contents
+        .lines()
+        .enumerate()
+        .filter_map(|(index, line)| {
+            let line_to_search = if ignore_case {
+                line.to_lowercase()
+            } else {
+                line.to_string()
+            };
+            
+            if line_to_search.contains(&pattern) {
+                Some(SearchResult {
+                    line_number: index + 1,
+                    line_content: line.to_string(),
+                    matched_text: pattern.clone(),
+                })
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn search_with_regex(
+    contents: &str,
+    pattern: &str,
+    ignore_case: bool,
+) -> Result<Vec<SearchResult>> {
+    let pattern = if ignore_case {
+        format!("(?i){}", pattern)
+    } else {
+        pattern.to_string()
+    };
+    
+    let re = Regex::new(&pattern)
+        .context("无效的正则表达式")?;
+    
+    let results = contents
+        .lines()
+        .enumerate()
+        .filter_map(|(index, line)| {
+            if let Some(mat) = re.find(line) {
+                Some(SearchResult {
+                    line_number: index + 1,
+                    line_content: line.to_string(),
+                    matched_text: mat.as_str().to_string(),
+                })
+            } else {
+                None
+            }
+        })
+        .collect();
+    
+    Ok(results)
+}
+
+pub fn highlight_match(line: &str, pattern: &str, ignore_case: bool) -> String {
+    if ignore_case {
+        let pattern_lower = pattern.to_lowercase();
+        let line_lower = line.to_lowercase();
+        
+        if let Some(pos) = line_lower.find(&pattern_lower) {
+            let before = &line[..pos];
+            let matched = &line[pos..pos + pattern.len()];
+            let after = &line[pos + pattern.len()..];
+            
+            format!("{}{}{}", before, matched.red().bold(), after)
+        } else {
+            line.to_string()
+        }
+    } else {
+        line.replace(pattern, &pattern.red().bold().to_string())
+    }
+}
+```
+
+### 4. 输出格式化
+
+```rust
+// src/output.rs
+use crate::search::{SearchResult, highlight_match};
+use colored::*;
+
+pub struct OutputConfig {
+    pub show_line_number: bool,
+    pub highlight: bool,
+}
+
+pub fn print_results(
+    file_path: &str,
+    results: &[SearchResult],
+    pattern: &str,
+    ignore_case: bool,
+    config: &OutputConfig,
+) {
+    if results.is_empty() {
+        return;
+    }
+    
+    println!("\n{}", file_path.green().bold());
+    println!("{}", "=".repeat(50).green());
+    
+    for result in results {
+        let line_content = if config.highlight {
+            highlight_match(&result.line_content, pattern, ignore_case)
+        } else {
+            result.line_content.clone()
+        };
+        
+        if config.show_line_number {
+            println!(
+                "{}: {}",
+                result.line_number.to_string().yellow(),
+                line_content
+            );
+        } else {
+            println!("{}", line_content);
+        }
+    }
+}
+
+pub fn print_count(file_path: &str, count: usize) {
+    println!("{}: {}", file_path.green(), count.to_string().yellow().bold());
+}
+
+pub fn print_file_with_matches(file_path: &str) {
+    println!("{}", file_path.green());
+}
+```
+
+### 5. 主程序
+
+```rust
+// src/main.rs
+mod cli;
+mod search;
+mod output;
+
+use anyhow::Result;
+use clap::Parser;
+use cli::Cli;
+use search::{search_in_file, SearchConfig};
+use output::{print_results, print_count, print_file_with_matches, OutputConfig};
+
+fn main() -> Result<()> {
+    let args = Cli::parse();
+    
+    let search_config = SearchConfig {
+        pattern: args.pattern.clone(),
+        ignore_case: args.ignore_case,
+        use_regex: args.regex,
+        show_line_number: args.line_number,
+        files_with_matches: args.files_with_matches,
+        count_only: args.count,
+    };
+    
+    let results = search_in_file(&args.file, &search_config)?;
+    
+    if args.count {
+        print_count(&args.file, results.len());
+    } else if args.files_with_matches {
+        if !results.is_empty() {
+            print_file_with_matches(&args.file);
+        }
+    } else {
+        let output_config = OutputConfig {
+            show_line_number: args.line_number,
+            highlight: true,
+        };
+        
+        print_results(
+            &args.file,
+            &results,
+            &args.pattern,
+            args.ignore_case,
+            &output_config,
+        );
+    }
+    
+    Ok(())
+}
+```
+
+### 6. 添加测试
+
+```rust
+// src/search.rs
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_search_simple() {
+        let contents = "\
+Rust:
+safe, fast, productive.
+Pick three.";
+        
+        let results = search_simple(contents, "rust", true);
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].line_number, 1);
+    }
+    
+    #[test]
+    fn test_search_case_sensitive() {
+        let contents = "\
+Rust:
+safe, fast, productive.
+Pick three.
+Trust me.";
+        
+        let results = search_simple(contents, "rust", false);
+        assert_eq!(results.len(), 0);
+        
+        let results = search_simple(contents, "Rust", false);
+        assert_eq!(results.len(), 1);
+    }
+    
+    #[test]
+    fn test_search_with_regex() {
+        let contents = "\
+test@example.com
+user@domain.org
+invalid-email";
+        
+        let results = search_with_regex(
+            contents,
+            r"\w+@\w+\.\w+",
+            false,
+        ).unwrap();
+        
+        assert_eq!(results.len(), 2);
+    }
+}
+```
+
+### 7. 使用示例
+
+```bash
+# 基本搜索
+cargo run -- -p "rust" -f test.txt
+
+# 忽略大小写
+cargo run -- -p "rust" -f test.txt -i
+
+# 使用正则表达式
+cargo run -- -p "\w+@\w+\.\w+" -f test.txt -r
+
+# 显示行号
+cargo run -- -p "rust" -f test.txt -n
+
+# 只显示匹配数量
+cargo run -- -p "rust" -f test.txt -c
+
+# 只显示包含匹配的文件名
+cargo run -- -p "rust" -f test.txt -l
+```
+
+## 扩展功能
+
+### 1. 多文件搜索
+
+```rust
+// src/cli.rs
+#[derive(Parser, Debug)]
+pub struct Cli {
+    // ... 其他字段
+    
+    /// 要搜索的文件路径（支持多个）
+    #[arg(short, long, num_args = 1..)]
+    pub files: Vec<String>,
+    
+    /// 递归搜索目录
+    #[arg(short = 'R', long)]
+    pub recursive: bool,
+}
+```
+
+```rust
+// src/search.rs
+use std::path::Path;
+use walkdir::WalkDir;
+
+pub fn search_in_directory(
+    dir_path: &str,
+    config: &SearchConfig,
+) -> Result<Vec<(String, Vec<SearchResult>)>> {
+    let mut all_results = Vec::new();
+    
+    for entry in WalkDir::new(dir_path)
+        .follow_links(true)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        if entry.file_type().is_file() {
+            let path = entry.path().to_string_lossy().to_string();
+            
+            if let Ok(results) = search_in_file(&path, config) {
+                if !results.is_empty() {
+                    all_results.push((path, results));
+                }
+            }
+        }
+    }
+    
+    Ok(all_results)
+}
+```
+
+### 2. 性能优化
+
+```rust
+// src/search.rs
+use rayon::prelude::*;
+
+pub fn search_in_files_parallel(
+    file_paths: &[String],
+    config: &SearchConfig,
+) -> Vec<(String, Vec<SearchResult>)> {
+    file_paths
+        .par_iter()
+        .filter_map(|path| {
+            search_in_file(path, config)
+                .ok()
+                .map(|results| (path.clone(), results))
+        })
+        .filter(|(_, results)| !results.is_empty())
+        .collect()
+}
+```
+
+### 3. 配置文件支持
+
+```rust
+// src/config.rs
+use serde::{Deserialize, Serialize};
+use std::fs;
+use anyhow::Result;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Config {
+    pub ignore_case: bool,
+    pub show_line_number: bool,
+    pub highlight: bool,
+    pub max_results: Option<usize>,
+}
+
+impl Config {
+    pub fn load(path: &str) -> Result<Self> {
+        let contents = fs::read_to_string(path)?;
+        let config: Config = toml::from_str(&contents)?;
+        Ok(config)
+    }
+    
+    pub fn default() -> Self {
+        Config {
+            ignore_case: false,
+            show_line_number: true,
+            highlight: true,
+            max_results: None,
+        }
+    }
+}
+```
+
+### 4. 进度条
+
+```rust
+// src/progress.rs
+use indicatif::{ProgressBar, ProgressStyle};
+
+pub fn create_progress_bar(total: u64) -> ProgressBar {
+    let pb = ProgressBar::new(total);
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
+            .unwrap()
+            .progress_chars("#>-")
+    );
+    pb
+}
+```
+
+## 项目2：HTTP服务器
+
+### 1. 基础服务器
+
+```rust
+// src/main.rs
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::thread;
+
+fn main() {
+    let listener = TcpListener::bind("127.0.0.1:8080")
+        .expect("无法绑定端口");
+    
+    println!("服务器运行在 http://127.0.0.1:8080");
+    
+    for stream in listener.incoming() {
+        match stream {
+            Ok(stream) => {
+                thread::spawn(|| {
+                    handle_connection(stream);
+                });
+            }
+            Err(e) => {
+                eprintln!("连接错误: {}", e);
+            }
+        }
+    }
+}
+
+fn handle_connection(mut stream: TcpStream) {
+    let mut buffer = [0; 1024];
+    stream.read(&mut buffer).unwrap();
+    
+    let request = String::from_utf8_lossy(&buffer[..]);
+    println!("请求:\n{}", request);
+    
+    let response = "HTTP/1.1 200 OK\r\n\r\nHello, World!";
+    stream.write_all(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
+}
+```
+
+### 2. 路由系统
+
+```rust
+// src/router.rs
+use std::collections::HashMap;
+
+type Handler = fn(&Request) -> Response;
+
+pub struct Router {
+    routes: HashMap<(String, String), Handler>,
+}
+
+impl Router {
+    pub fn new() -> Self {
+        Router {
+            routes: HashMap::new(),
+        }
+    }
+    
+    pub fn add_route(&mut self, method: &str, path: &str, handler: Handler) {
+        self.routes.insert(
+            (method.to_string(), path.to_string()),
+            handler,
+        );
+    }
+    
+    pub fn handle(&self, request: &Request) -> Response {
+        let key = (request.method.clone(), request.path.clone());
+        
+        if let Some(handler) = self.routes.get(&key) {
+            handler(request)
+        } else {
+            Response::not_found()
+        }
+    }
+}
+
+pub struct Request {
+    pub method: String,
+    pub path: String,
+    pub headers: HashMap<String, String>,
+    pub body: String,
+}
+
+pub struct Response {
+    pub status: u16,
+    pub headers: HashMap<String, String>,
+    pub body: String,
+}
+
+impl Response {
+    pub fn ok(body: String) -> Self {
+        Response {
+            status: 200,
+            headers: HashMap::new(),
+            body,
+        }
+    }
+    
+    pub fn not_found() -> Self {
+        Response {
+            status: 404,
+            headers: HashMap::new(),
+            body: "Not Found".to_string(),
+        }
+    }
+    
+    pub fn to_string(&self) -> String {
+        format!(
+            "HTTP/1.1 {} OK\r\nContent-Length: {}\r\n\r\n{}",
+            self.status,
+            self.body.len(),
+            self.body
+        )
+    }
+}
+```
+
+### 3. 线程池
+
+```rust
+// src/thread_pool.rs
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
+
+type Job = Box<dyn FnOnce() + Send + 'static>;
+
+pub struct ThreadPool {
+    workers: Vec<Worker>,
+    sender: mpsc::Sender<Job>,
+}
+
+impl ThreadPool {
+    pub fn new(size: usize) -> Self {
+        assert!(size > 0);
+        
+        let (sender, receiver) = mpsc::channel();
+        let receiver = Arc::new(Mutex::new(receiver));
+        
+        let mut workers = Vec::with_capacity(size);
+        
+        for id in 0..size {
+            workers.push(Worker::new(id, Arc::clone(&receiver)));
+        }
+        
+        ThreadPool { workers, sender }
+    }
+    
+    pub fn execute<F>(&self, f: F)
+    where
+        F: FnOnce() + Send + 'static,
+    {
+        let job = Box::new(f);
+        self.sender.send(job).unwrap();
+    }
+}
+
+struct Worker {
+    id: usize,
+    thread: thread::JoinHandle<()>,
+}
+
+impl Worker {
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Self {
+        let thread = thread::spawn(move || loop {
+            let job = receiver.lock().unwrap().recv().unwrap();
+            println!("Worker {} 执行任务", id);
+            job();
+        });
+        
+        Worker { id, thread }
+    }
+}
+```
+
+## 最佳实践
+
+### 1. 错误处理
+
+```rust
+use anyhow::{Context, Result};
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("文件未找到: {0}")]
+    FileNotFound(String),
+    
+    #[error("无效的参数: {0}")]
+    InvalidArgument(String),
+    
+    #[error("IO错误")]
+    IoError(#[from] std::io::Error),
+}
+
+pub fn read_config(path: &str) -> Result<Config> {
+    let contents = std::fs::read_to_string(path)
+        .context(format!("无法读取配置文件: {}", path))?;
+    
+    let config: Config = toml::from_str(&contents)
+        .context("配置文件格式错误")?;
+    
+    Ok(config)
+}
+```
+
+### 2. 日志记录
+
+```rust
+use log::{info, warn, error};
+use env_logger;
+
+fn main() {
+    env_logger::init();
+    
+    info!("应用启动");
+    warn!("这是一个警告");
+    error!("这是一个错误");
+}
+```
+
+### 3. 性能分析
+
+```bash
+# 使用 cargo-flamegraph
+cargo install flamegraph
+cargo flamegraph
+
+# 使用 criterion 进行基准测试
+cargo bench
+```
+
+## 总结
+
+通过这些实战项目，我们学习了：
+
+1. **CLI开发**：参数解析、文件操作、输出格式化
+2. **错误处理**：使用 anyhow 和 thiserror
+3. **并发编程**：多线程、线程池
+4. **性能优化**：并行处理、内存优化
+5. **测试**：单元测试、集成测试
+
+## 延伸阅读
+
+- [The Rust Programming Language](https://doc.rust-lang.org/book/)
+- [Rust by Example](https://doc.rust-lang.org/rust-by-example/)
+- [Command Line Applications in Rust](https://rust-cli.github.io/book/)
+

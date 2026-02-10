@@ -1,0 +1,771 @@
+---
+sidebar_position: 6
+title: Webpack完整指南
+tags: [Webpack, 前端工程化, 构建工具]
+---
+
+# Webpack完整指南
+
+Webpack是最流行的模块打包工具，本文将全面讲解Webpack的配置和优化技巧。
+
+## 核心概念
+
+### 五大核心
+
+```mermaid
+graph TB
+    A[Entry 入口] --> B[Output 输出]
+    A --> C[Loader 转换器]
+    A --> D[Plugin 插件]
+    A --> E[Mode 模式]
+    
+    style A fill:#42b883
+```
+
+1. **Entry**: 打包入口
+2. **Output**: 输出配置
+3. **Loader**: 文件转换器
+4. **Plugin**: 功能扩展
+5. **Mode**: 开发/生产模式
+
+## 基础配置
+
+### webpack.config.js
+
+```javascript
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+
+module.exports = {
+  // 入口
+  entry: {
+    main: './src/index.js',
+    vendor: './src/vendor.js'
+  },
+  
+  // 输出
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].[contenthash:8].js',
+    chunkFilename: '[name].[contenthash:8].chunk.js',
+    publicPath: '/',
+    clean: true // Webpack 5自动清理
+  },
+  
+  // 模式
+  mode: 'production', // 'development' | 'production' | 'none'
+  
+  // 模块规则
+  module: {
+    rules: [
+      // JavaScript/JSX
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              ['@babel/preset-env', { useBuiltIns: 'usage', corejs: 3 }],
+              '@babel/preset-react'
+            ],
+            plugins: ['@babel/plugin-transform-runtime']
+          }
+        }
+      },
+      
+      // TypeScript
+      {
+        test: /\.(ts|tsx)$/,
+        exclude: /node_modules/,
+        use: 'ts-loader'
+      },
+      
+      // CSS
+      {
+        test: /\.css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader',
+          'postcss-loader'
+        ]
+      },
+      
+      // SCSS
+      {
+        test: /\.scss$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader',
+          'postcss-loader',
+          'sass-loader'
+        ]
+      },
+      
+      // 图片
+      {
+        test: /\.(png|jpg|jpeg|gif|svg)$/,
+        type: 'asset',
+        parser: {
+          dataUrlCondition: {
+            maxSize: 8 * 1024 // 8kb
+          }
+        },
+        generator: {
+          filename: 'images/[name].[hash:8][ext]'
+        }
+      },
+      
+      // 字体
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'fonts/[name].[hash:8][ext]'
+        }
+      }
+    ]
+  },
+  
+  // 插件
+  plugins: [
+    // 清理输出目录
+    new CleanWebpackPlugin(),
+    
+    // HTML模板
+    new HtmlWebpackPlugin({
+      template: './public/index.html',
+      filename: 'index.html',
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true,
+        removeAttributeQuotes: true
+      }
+    }),
+    
+    // 提取CSS
+    new MiniCssExtractPlugin({
+      filename: 'css/[name].[contenthash:8].css',
+      chunkFilename: 'css/[name].[contenthash:8].chunk.css'
+    })
+  ],
+  
+  // 解析配置
+  resolve: {
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+      '@components': path.resolve(__dirname, 'src/components'),
+      '@utils': path.resolve(__dirname, 'src/utils')
+    }
+  },
+  
+  // 优化配置
+  optimization: {
+    // 代码分割
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          priority: 10
+        },
+        common: {
+          minChunks: 2,
+          priority: 5,
+          reuseExistingChunk: true
+        }
+      }
+    },
+    // 运行时代码单独打包
+    runtimeChunk: 'single'
+  },
+  
+  // 开发服务器
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'public')
+    },
+    port: 3000,
+    hot: true,
+    open: true,
+    compress: true,
+    historyApiFallback: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        pathRewrite: { '^/api': '' }
+      }
+    }
+  },
+  
+  // Source Map
+  devtool: 'source-map'
+};
+```
+
+## 环境配置
+
+### 分离配置文件
+
+```javascript
+// webpack.common.js - 公共配置
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+  entry: './src/index.js',
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].[contenthash:8].js'
+  },
+  module: {
+    rules: [
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: 'babel-loader'
+      }
+    ]
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './public/index.html'
+    })
+  ]
+};
+
+// webpack.dev.js - 开发配置
+const { merge } = require('webpack-merge');
+const common = require('./webpack.common.js');
+
+module.exports = merge(common, {
+  mode: 'development',
+  devtool: 'eval-source-map',
+  devServer: {
+    hot: true,
+    port: 3000
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
+      }
+    ]
+  }
+});
+
+// webpack.prod.js - 生产配置
+const { merge } = require('webpack-merge');
+const common = require('./webpack.common.js');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+
+module.exports = merge(common, {
+  mode: 'production',
+  devtool: 'source-map',
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [MiniCssExtractPlugin.loader, 'css-loader']
+      }
+    ]
+  },
+  plugins: [
+    new MiniCssExtractPlugin({
+      filename: 'css/[name].[contenthash:8].css'
+    })
+  ],
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          compress: {
+            drop_console: true
+          }
+        }
+      }),
+      new CssMinimizerPlugin()
+    ]
+  }
+});
+```
+
+### package.json脚本
+
+```json
+{
+  "scripts": {
+    "dev": "webpack serve --config webpack.dev.js",
+    "build": "webpack --config webpack.prod.js",
+    "analyze": "webpack --config webpack.prod.js --env analyze"
+  }
+}
+```
+
+## 性能优化
+
+### 1. 代码分割
+
+```javascript
+module.exports = {
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+      minSize: 20000,
+      maxSize: 244000,
+      minChunks: 1,
+      maxAsyncRequests: 30,
+      maxInitialRequests: 30,
+      cacheGroups: {
+        // React相关
+        react: {
+          test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+          name: 'react',
+          priority: 20
+        },
+        // UI库
+        antd: {
+          test: /[\\/]node_modules[\\/]antd[\\/]/,
+          name: 'antd',
+          priority: 15
+        },
+        // 其他第三方库
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          priority: 10
+        },
+        // 公共代码
+        common: {
+          minChunks: 2,
+          priority: 5,
+          reuseExistingChunk: true
+        }
+      }
+    }
+  }
+};
+```
+
+### 2. Tree Shaking
+
+```javascript
+// package.json
+{
+  "sideEffects": [
+    "*.css",
+    "*.scss"
+  ]
+}
+
+// webpack.config.js
+module.exports = {
+  mode: 'production',
+  optimization: {
+    usedExports: true, // 标记未使用的导出
+    minimize: true     // 删除未使用的代码
+  }
+};
+```
+
+### 3. 缓存优化
+
+```javascript
+module.exports = {
+  output: {
+    filename: '[name].[contenthash:8].js',
+    chunkFilename: '[name].[contenthash:8].chunk.js'
+  },
+  
+  optimization: {
+    moduleIds: 'deterministic',
+    runtimeChunk: 'single',
+    splitChunks: {
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all'
+        }
+      }
+    }
+  },
+  
+  cache: {
+    type: 'filesystem',
+    buildDependencies: {
+      config: [__filename]
+    }
+  }
+};
+```
+
+### 4. 并行构建
+
+```javascript
+const TerserPlugin = require('terser-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+
+module.exports = {
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        parallel: true // 多进程并行
+      }),
+      new CssMinimizerPlugin({
+        parallel: true
+      })
+    ]
+  },
+  
+  module: {
+    rules: [
+      {
+        test: /\.(js|jsx)$/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            cacheDirectory: true // 启用缓存
+          }
+        }
+      }
+    ]
+  }
+};
+```
+
+### 5. DLL优化
+
+```javascript
+// webpack.dll.js
+const path = require('path');
+const webpack = require('webpack');
+
+module.exports = {
+  mode: 'production',
+  entry: {
+    vendor: ['react', 'react-dom', 'react-router-dom']
+  },
+  output: {
+    path: path.resolve(__dirname, 'dll'),
+    filename: '[name].dll.js',
+    library: '[name]_library'
+  },
+  plugins: [
+    new webpack.DllPlugin({
+      name: '[name]_library',
+      path: path.resolve(__dirname, 'dll/[name].manifest.json')
+    })
+  ]
+};
+
+// webpack.config.js
+const webpack = require('webpack');
+const AddAssetHtmlPlugin = require('add-asset-html-webpack-plugin');
+
+module.exports = {
+  plugins: [
+    new webpack.DllReferencePlugin({
+      manifest: require('./dll/vendor.manifest.json')
+    }),
+    new AddAssetHtmlPlugin({
+      filepath: path.resolve(__dirname, 'dll/vendor.dll.js')
+    })
+  ]
+};
+```
+
+## 常用Loader
+
+### 样式处理
+
+```javascript
+module.exports = {
+  module: {
+    rules: [
+      // PostCSS
+      {
+        test: /\.css$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [
+                  'autoprefixer',
+                  'postcss-preset-env'
+                ]
+              }
+            }
+          }
+        ]
+      },
+      
+      // CSS Modules
+      {
+        test: /\.module\.css$/,
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              modules: {
+                localIdentName: '[name]__[local]--[hash:base64:5]'
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+};
+```
+
+### 文件处理
+
+```javascript
+module.exports = {
+  module: {
+    rules: [
+      // 图片优化
+      {
+        test: /\.(png|jpg|jpeg|gif)$/,
+        use: [
+          {
+            loader: 'image-webpack-loader',
+            options: {
+              mozjpeg: { quality: 80 },
+              pngquant: { quality: [0.8, 0.9] }
+            }
+          }
+        ],
+        type: 'asset'
+      },
+      
+      // SVG处理
+      {
+        test: /\.svg$/,
+        use: ['@svgr/webpack', 'url-loader']
+      }
+    ]
+  }
+};
+```
+
+## 常用Plugin
+
+### 功能增强
+
+```javascript
+const webpack = require('webpack');
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const CompressionPlugin = require('compression-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
+
+module.exports = {
+  plugins: [
+    // 环境变量
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify('production'),
+      'process.env.API_URL': JSON.stringify('https://api.example.com')
+    }),
+    
+    // 打包分析
+    new BundleAnalyzerPlugin({
+      analyzerMode: 'static',
+      openAnalyzer: false
+    }),
+    
+    // Gzip压缩
+    new CompressionPlugin({
+      algorithm: 'gzip',
+      test: /\.(js|css|html|svg)$/,
+      threshold: 10240,
+      minRatio: 0.8
+    }),
+    
+    // 复制文件
+    new CopyPlugin({
+      patterns: [
+        { from: 'public', to: 'public' }
+      ]
+    }),
+    
+    // 进度条
+    new webpack.ProgressPlugin()
+  ]
+};
+```
+
+## Module Federation
+
+```javascript
+// app1/webpack.config.js
+const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
+
+module.exports = {
+  plugins: [
+    new ModuleFederationPlugin({
+      name: 'app1',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './Button': './src/components/Button',
+        './Header': './src/components/Header'
+      },
+      shared: {
+        react: { singleton: true },
+        'react-dom': { singleton: true }
+      }
+    })
+  ]
+};
+
+// app2/webpack.config.js
+module.exports = {
+  plugins: [
+    new ModuleFederationPlugin({
+      name: 'app2',
+      remotes: {
+        app1: 'app1@http://localhost:3001/remoteEntry.js'
+      },
+      shared: {
+        react: { singleton: true },
+        'react-dom': { singleton: true }
+      }
+    })
+  ]
+};
+
+// 使用远程组件
+import React from 'react';
+const RemoteButton = React.lazy(() => import('app1/Button'));
+
+function App() {
+  return (
+    <React.Suspense fallback="Loading...">
+      <RemoteButton />
+    </React.Suspense>
+  );
+}
+```
+
+## 调试技巧
+
+### Source Map配置
+
+```javascript
+module.exports = {
+  // 开发环境
+  devtool: 'eval-source-map', // 快速，完整映射
+  
+  // 生产环境
+  devtool: 'source-map', // 慢，完整映射
+  // 或
+  devtool: 'hidden-source-map', // 不暴露源码
+  // 或
+  devtool: false // 不生成source map
+};
+```
+
+### 构建分析
+
+```bash
+# 生成stats.json
+webpack --profile --json > stats.json
+
+# 使用webpack-bundle-analyzer
+npm run build -- --env analyze
+
+# 使用webpack-visualizer
+webpack-visualizer stats.json
+```
+
+## 最佳实践
+
+### 1. 配置优化
+
+```javascript
+module.exports = {
+  // 减少解析范围
+  resolve: {
+    modules: [path.resolve(__dirname, 'node_modules')],
+    extensions: ['.js', '.jsx'],
+    alias: {
+      '@': path.resolve(__dirname, 'src')
+    }
+  },
+  
+  // 排除不需要解析的模块
+  module: {
+    noParse: /jquery|lodash/,
+    rules: [
+      {
+        test: /\.js$/,
+        include: path.resolve(__dirname, 'src'),
+        exclude: /node_modules/
+      }
+    ]
+  }
+};
+```
+
+### 2. 生产优化
+
+```javascript
+module.exports = {
+  mode: 'production',
+  
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+            pure_funcs: ['console.log']
+          }
+        }
+      })
+    ],
+    
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: 10
+        }
+      }
+    }
+  },
+  
+  performance: {
+    hints: 'warning',
+    maxAssetSize: 250000,
+    maxEntrypointSize: 250000
+  }
+};
+```
+
+## 总结
+
+Webpack的核心能力：
+- 📦 **模块打包**：支持各种模块规范
+- 🔄 **代码转换**：通过Loader转换文件
+- 🔌 **功能扩展**：通过Plugin扩展功能
+- ⚡ **性能优化**：代码分割、Tree Shaking、缓存
+- 🎯 **灵活配置**：适应各种项目需求
+
+掌握Webpack是前端工程化的基础！
+

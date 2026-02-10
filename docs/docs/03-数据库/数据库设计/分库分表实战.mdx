@@ -1,0 +1,930 @@
+---
+sidebar_position: 11
+title: 分库分表实战指南
+tags: [数据库, 分库分表, ShardingSphere, 数据库架构]
+---
+
+# 分库分表实战指南
+
+## 概述
+
+当单表数据量达到千万级别时，查询性能会显著下降。分库分表是解决大数据量问题的有效方案。
+
+### 什么时候需要分库分表
+
+- **单表数据量**：超过1000万行
+- **单库连接数**：接近数据库连接上限
+- **磁盘空间**：单库数据量过大
+- **QPS压力**：单库无法承受
+
+## 分库分表策略
+
+### 1. 垂直拆分
+
+#### 垂直分库
+
+按业务模块拆分数据库。
+
+```sql
+-- 拆分前：单一数据库
+ecommerce_db
+├── users
+├── products
+├── orders
+├── payments
+└── logistics
+
+-- 拆分后：多个数据库
+user_db
+└── users
+
+product_db
+└── products
+
+order_db
+├── orders
+├── order_items
+└── order_logs
+
+payment_db
+└── payments
+
+logistics_db
+└── logistics
+```
+
+**优点**：
+- 业务隔离，互不影响
+- 便于维护和扩展
+- 可以针对不同业务优化
+
+**缺点**：
+- 无法解决单表数据量问题
+- 跨库查询和事务复杂
+
+#### 垂直分表
+
+将宽表拆分为多个窄表。
+
+```sql
+-- 拆分前：宽表
+CREATE TABLE users (
+    user_id BIGINT PRIMARY KEY,
+    username VARCHAR(50),
+    password VARCHAR(255),
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    avatar VARCHAR(255),
+    bio TEXT,
+    settings JSON,
+    login_count INT,
+    last_login_at TIMESTAMP,
+    created_at TIMESTAMP
+);
+
+-- 拆分后：基础表 + 扩展表
+-- 基础表（高频访问）
+CREATE TABLE users (
+    user_id BIGINT PRIMARY KEY,
+    username VARCHAR(50),
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    status TINYINT,
+    created_at TIMESTAMP
+);
+
+-- 扩展表（低频访问）
+CREATE TABLE user_profiles (
+    user_id BIGINT PRIMARY KEY,
+    avatar VARCHAR(255),
+    bio TEXT,
+    settings JSON,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- 统计表（低频访问）
+CREATE TABLE user_stats (
+    user_id BIGINT PRIMARY KEY,
+    login_count INT,
+    order_count INT,
+    total_amount DECIMAL(10, 2),
+    last_login_at TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+```
+
+### 2. 水平拆分
+
+#### 水平分库
+
+将同一张表的数据分散到多个数据库。
+
+```javascript
+// 分库策略
+class DatabaseSharding {
+  constructor(dbCount = 4) {
+    this.dbCount = dbCount;
+    this.databases = [];
+    
+    // 初始化数据库连接
+    for (let i = 0; i < dbCount; i++) {
+      this.databases.push({
+        name: `order_db_${i}`,
+        connection: createConnection(`order_db_${i}`)
+      });
+    }
+  }
+  
+  // 根据用户ID选择数据库
+  getDatabase(userId) {
+    const dbIndex = userId % this.dbCount;
+    return this.databases[dbIndex];
+  }
+  
+  // 插入订单
+  async createOrder(order) {
+    const db = this.getDatabase(order.userId);
+    return await db.connection.query(
+      'INSERT INTO orders SET ?',
+      order
+    );
+  }
+  
+  // 查询用户订单
+  async getUserOrders(userId) {
+    const db = this.getDatabase(userId);
+    return await db.connection.query(
+      'SELECT * FROM orders WHERE user_id = ?',
+      [userId]
+    );
+  }
+  
+  // 查询所有订单（需要遍历所有库）
+  async getAllOrders(page, pageSize) {
+    const results = [];
+    
+    for (const db of this.databases) {
+      const orders = await db.connection.query(
+        'SELECT * FROM orders LIMIT ?, ?',
+        [(page - 1) * pageSize, pageSize]
+      );
+      results.push(...orders);
+    }
+    
+    // 合并排序
+    return results.sort((a, b) => b.created_at - a.created_at);
+  }
+}
+```
+
+#### 水平分表
+
+将同一张表的数据分散到多个表。
+
+```sql
+-- 按时间分表
+orders_202401
+orders_202402
+orders_202403
+...
+
+-- 按用户ID分表
+orders_0  -- user_id % 10 = 0
+orders_1  -- user_id % 10 = 1
+orders_2  -- user_id % 10 = 2
+...
+orders_9  -- user_id % 10 = 9
+```
+
+```javascript
+// 分表策略
+class TableSharding {
+  constructor(tableCount = 10) {
+    this.tableCount = tableCount;
+  }
+  
+  // 根据用户ID选择表
+  getTableName(userId) {
+    const tableIndex = userId % this.tableCount;
+    return `orders_${tableIndex}`;
+  }
+  
+  // 插入订单
+  async createOrder(order) {
+    const tableName = this.getTableName(order.userId);
+    return await db.query(
+      `INSERT INTO ${tableName} SET ?`,
+      order
+    );
+  }
+  
+  // 查询用户订单
+  async getUserOrders(userId) {
+    const tableName = this.getTableName(userId);
+    return await db.query(
+      `SELECT * FROM ${tableName} WHERE user_id = ?`,
+      [userId]
+    );
+  }
+}
+```
+
+## 分片算法
+
+### 1. 取模算法
+
+```javascript
+// 简单取模
+function getShardIndex(userId, shardCount) {
+  return userId % shardCount;
+}
+
+// 示例
+getShardIndex(12345, 4); // 1
+getShardIndex(12346, 4); // 2
+```
+
+**优点**：简单、均匀
+**缺点**：扩容困难
+
+### 2. 范围算法
+
+```javascript
+// 按ID范围分片
+function getShardByRange(userId) {
+  if (userId < 1000000) return 0;
+  if (userId < 2000000) return 1;
+  if (userId < 3000000) return 2;
+  return 3;
+}
+
+// 按时间范围分片
+function getShardByDate(date) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  return `orders_${year}${month.toString().padStart(2, '0')}`;
+}
+```
+
+**优点**：扩容简单、范围查询高效
+**缺点**：可能数据倾斜
+
+### 3. 一致性哈希
+
+```javascript
+class ConsistentHash {
+  constructor(nodes = [], virtualNodes = 150) {
+    this.virtualNodes = virtualNodes;
+    this.ring = new Map();
+    this.sortedKeys = [];
+    
+    nodes.forEach(node => this.addNode(node));
+  }
+  
+  // 哈希函数
+  hash(key) {
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      hash = ((hash << 5) - hash) + key.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+  
+  // 添加节点
+  addNode(node) {
+    for (let i = 0; i < this.virtualNodes; i++) {
+      const virtualKey = `${node}#${i}`;
+      const hash = this.hash(virtualKey);
+      this.ring.set(hash, node);
+      this.sortedKeys.push(hash);
+    }
+    this.sortedKeys.sort((a, b) => a - b);
+  }
+  
+  // 移除节点
+  removeNode(node) {
+    for (let i = 0; i < this.virtualNodes; i++) {
+      const virtualKey = `${node}#${i}`;
+      const hash = this.hash(virtualKey);
+      this.ring.delete(hash);
+      const index = this.sortedKeys.indexOf(hash);
+      if (index > -1) {
+        this.sortedKeys.splice(index, 1);
+      }
+    }
+  }
+  
+  // 获取节点
+  getNode(key) {
+    if (this.ring.size === 0) return null;
+    
+    const hash = this.hash(key.toString());
+    
+    // 顺时针查找第一个节点
+    for (const nodeHash of this.sortedKeys) {
+      if (hash <= nodeHash) {
+        return this.ring.get(nodeHash);
+      }
+    }
+    
+    // 如果没找到，返回第一个节点
+    return this.ring.get(this.sortedKeys[0]);
+  }
+}
+
+// 使用示例
+const ch = new ConsistentHash(['db0', 'db1', 'db2', 'db3']);
+console.log(ch.getNode(12345)); // db2
+console.log(ch.getNode(12346)); // db1
+
+// 添加新节点
+ch.addNode('db4');
+console.log(ch.getNode(12345)); // 可能还是db2（大部分数据不需要迁移）
+```
+
+**优点**：扩容时只需迁移部分数据
+**缺点**：实现复杂
+
+### 4. 地理位置算法
+
+```javascript
+// 按地区分片
+function getShardByRegion(region) {
+  const regionMap = {
+    'beijing': 'db_north',
+    'shanghai': 'db_east',
+    'guangzhou': 'db_south',
+    'chengdu': 'db_west'
+  };
+  return regionMap[region] || 'db_default';
+}
+```
+
+## ShardingSphere 实战
+
+### 1. 安装配置
+
+```yaml
+# application.yml
+spring:
+  shardingsphere:
+    datasource:
+      names: ds0,ds1,ds2,ds3
+      
+      # 数据源0
+      ds0:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/order_db_0
+        username: root
+        password: password
+      
+      # 数据源1
+      ds1:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/order_db_1
+        username: root
+        password: password
+      
+      # 数据源2
+      ds2:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/order_db_2
+        username: root
+        password: password
+      
+      # 数据源3
+      ds3:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/order_db_3
+        username: root
+        password: password
+    
+    rules:
+      sharding:
+        # 分片算法
+        sharding-algorithms:
+          database-inline:
+            type: INLINE
+            props:
+              algorithm-expression: ds$->{user_id % 4}
+          
+          table-inline:
+            type: INLINE
+            props:
+              algorithm-expression: orders_$->{order_id % 10}
+        
+        # 分片策略
+        tables:
+          orders:
+            # 实际节点
+            actual-data-nodes: ds$->{0..3}.orders_$->{0..9}
+            
+            # 分库策略
+            database-strategy:
+              standard:
+                sharding-column: user_id
+                sharding-algorithm-name: database-inline
+            
+            # 分表策略
+            table-strategy:
+              standard:
+                sharding-column: order_id
+                sharding-algorithm-name: table-inline
+            
+            # 主键生成策略
+            key-generate-strategy:
+              column: order_id
+              key-generator-name: snowflake
+        
+        # 主键生成器
+        key-generators:
+          snowflake:
+            type: SNOWFLAKE
+            props:
+              worker-id: 1
+    
+    props:
+      sql-show: true
+```
+
+### 2. Java 代码
+
+```java
+// 实体类
+@Data
+@TableName("orders")
+public class Order {
+    @TableId(type = IdType.INPUT)
+    private Long orderId;
+    
+    private Long userId;
+    private BigDecimal totalAmount;
+    private Integer status;
+    private LocalDateTime createdAt;
+}
+
+// Mapper
+@Mapper
+public interface OrderMapper extends BaseMapper<Order> {
+    // 根据用户ID查询订单
+    @Select("SELECT * FROM orders WHERE user_id = #{userId}")
+    List<Order> selectByUserId(@Param("userId") Long userId);
+    
+    // 根据订单ID查询
+    @Select("SELECT * FROM orders WHERE order_id = #{orderId}")
+    Order selectByOrderId(@Param("orderId") Long orderId);
+}
+
+// Service
+@Service
+public class OrderService {
+    @Autowired
+    private OrderMapper orderMapper;
+    
+    // 创建订单
+    public void createOrder(Order order) {
+        orderMapper.insert(order);
+    }
+    
+    // 查询用户订单
+    public List<Order> getUserOrders(Long userId) {
+        return orderMapper.selectByUserId(userId);
+    }
+    
+    // 查询订单详情
+    public Order getOrder(Long orderId) {
+        return orderMapper.selectByOrderId(orderId);
+    }
+}
+```
+
+### 3. 广播表
+
+```yaml
+# 配置广播表（每个库都有完整数据）
+spring:
+  shardingsphere:
+    rules:
+      sharding:
+        tables:
+          # 字典表作为广播表
+          dict:
+            actual-data-nodes: ds$->{0..3}.dict
+        
+        broadcast-tables:
+          - dict
+```
+
+### 4. 绑定表
+
+```yaml
+# 配置绑定表（关联表使用相同分片键）
+spring:
+  shardingsphere:
+    rules:
+      sharding:
+        tables:
+          orders:
+            actual-data-nodes: ds$->{0..3}.orders_$->{0..9}
+            database-strategy:
+              standard:
+                sharding-column: user_id
+                sharding-algorithm-name: database-inline
+            table-strategy:
+              standard:
+                sharding-column: order_id
+                sharding-algorithm-name: table-inline
+          
+          order_items:
+            actual-data-nodes: ds$->{0..3}.order_items_$->{0..9}
+            database-strategy:
+              standard:
+                sharding-column: user_id
+                sharding-algorithm-name: database-inline
+            table-strategy:
+              standard:
+                sharding-column: order_id
+                sharding-algorithm-name: table-inline
+        
+        # 绑定关系
+        binding-tables:
+          - orders,order_items
+```
+
+## 分布式主键
+
+### 1. 雪花算法（Snowflake）
+
+```javascript
+class SnowflakeIdGenerator {
+  constructor(workerId = 0, datacenterId = 0) {
+    this.workerId = workerId;
+    this.datacenterId = datacenterId;
+    this.sequence = 0;
+    this.lastTimestamp = -1;
+    
+    // 各部分位数
+    this.workerIdBits = 5;
+    this.datacenterIdBits = 5;
+    this.sequenceBits = 12;
+    
+    // 最大值
+    this.maxWorkerId = -1 ^ (-1 << this.workerIdBits);
+    this.maxDatacenterId = -1 ^ (-1 << this.datacenterIdBits);
+    this.maxSequence = -1 ^ (-1 << this.sequenceBits);
+    
+    // 位移
+    this.workerIdShift = this.sequenceBits;
+    this.datacenterIdShift = this.sequenceBits + this.workerIdBits;
+    this.timestampShift = this.sequenceBits + this.workerIdBits + this.datacenterIdBits;
+    
+    // 起始时间戳（2024-01-01）
+    this.epoch = 1704067200000;
+  }
+  
+  nextId() {
+    let timestamp = Date.now();
+    
+    // 时钟回拨
+    if (timestamp < this.lastTimestamp) {
+      throw new Error('Clock moved backwards');
+    }
+    
+    // 同一毫秒内
+    if (timestamp === this.lastTimestamp) {
+      this.sequence = (this.sequence + 1) & this.maxSequence;
+      if (this.sequence === 0) {
+        // 序列号用完，等待下一毫秒
+        timestamp = this.waitNextMillis(this.lastTimestamp);
+      }
+    } else {
+      this.sequence = 0;
+    }
+    
+    this.lastTimestamp = timestamp;
+    
+    // 组装ID
+    return (
+      ((timestamp - this.epoch) << this.timestampShift) |
+      (this.datacenterId << this.datacenterIdShift) |
+      (this.workerId << this.workerIdShift) |
+      this.sequence
+    );
+  }
+  
+  waitNextMillis(lastTimestamp) {
+    let timestamp = Date.now();
+    while (timestamp <= lastTimestamp) {
+      timestamp = Date.now();
+    }
+    return timestamp;
+  }
+}
+
+// 使用示例
+const idGen = new SnowflakeIdGenerator(1, 1);
+console.log(idGen.nextId()); // 7234567890123456789
+```
+
+### 2. 数据库号段模式
+
+```sql
+-- 创建号段表
+CREATE TABLE id_generator (
+    biz_type VARCHAR(50) PRIMARY KEY,
+    max_id BIGINT NOT NULL,
+    step INT NOT NULL DEFAULT 1000,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 初始化
+INSERT INTO id_generator (biz_type, max_id, step) VALUES ('order', 0, 1000);
+```
+
+```javascript
+class SegmentIdGenerator {
+  constructor(bizType, db) {
+    this.bizType = bizType;
+    this.db = db;
+    this.currentId = 0;
+    this.maxId = 0;
+    this.step = 1000;
+  }
+  
+  async nextId() {
+    // 当前号段用完，获取新号段
+    if (this.currentId >= this.maxId) {
+      await this.getNextSegment();
+    }
+    
+    return ++this.currentId;
+  }
+  
+  async getNextSegment() {
+    // 更新并获取新号段
+    const result = await this.db.query(`
+      UPDATE id_generator 
+      SET max_id = max_id + step 
+      WHERE biz_type = ?
+    `, [this.bizType]);
+    
+    const row = await this.db.query(`
+      SELECT max_id, step 
+      FROM id_generator 
+      WHERE biz_type = ?
+    `, [this.bizType]);
+    
+    this.maxId = row.max_id;
+    this.currentId = row.max_id - row.step;
+    this.step = row.step;
+  }
+}
+```
+
+### 3. Redis 生成ID
+
+```javascript
+class RedisIdGenerator {
+  constructor(redis, key) {
+    this.redis = redis;
+    this.key = key;
+  }
+  
+  async nextId() {
+    // 使用 Redis INCR 命令
+    return await this.redis.incr(this.key);
+  }
+  
+  async nextIdWithDate() {
+    // 带日期的ID：20240101000001
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const key = `${this.key}:${dateStr}`;
+    const seq = await this.redis.incr(key);
+    
+    // 设置过期时间（2天）
+    await this.redis.expire(key, 172800);
+    
+    return `${dateStr}${seq.toString().padStart(6, '0')}`;
+  }
+}
+```
+
+## 数据迁移
+
+### 1. 双写方案
+
+```javascript
+class DataMigration {
+  constructor(oldDb, newDb) {
+    this.oldDb = oldDb;
+    this.newDb = newDb;
+    this.migrationEnabled = false;
+  }
+  
+  // 写入数据
+  async insert(data) {
+    // 写入旧库
+    await this.oldDb.insert(data);
+    
+    // 如果开启迁移，同时写入新库
+    if (this.migrationEnabled) {
+      try {
+        await this.newDb.insert(data);
+      } catch (error) {
+        console.error('写入新库失败', error);
+        // 记录失败日志，后续补偿
+      }
+    }
+  }
+  
+  // 查询数据
+  async query(id) {
+    // 优先从新库查询
+    if (this.migrationEnabled) {
+      const data = await this.newDb.query(id);
+      if (data) return data;
+    }
+    
+    // 新库没有，从旧库查询
+    return await this.oldDb.query(id);
+  }
+}
+```
+
+### 2. 数据同步脚本
+
+```javascript
+class DataSync {
+  constructor(sourceDb, targetDb, batchSize = 1000) {
+    this.sourceDb = sourceDb;
+    this.targetDb = targetDb;
+    this.batchSize = batchSize;
+  }
+  
+  async syncData(tableName) {
+    let offset = 0;
+    let hasMore = true;
+    
+    while (hasMore) {
+      // 分批读取源数据
+      const rows = await this.sourceDb.query(`
+        SELECT * FROM ${tableName}
+        ORDER BY id
+        LIMIT ${offset}, ${this.batchSize}
+      `);
+      
+      if (rows.length === 0) {
+        hasMore = false;
+        break;
+      }
+      
+      // 批量插入目标库
+      for (const row of rows) {
+        const shardDb = this.getShardDb(row.user_id);
+        const shardTable = this.getShardTable(row.user_id);
+        
+        await shardDb.query(`
+          INSERT INTO ${shardTable} SET ?
+          ON DUPLICATE KEY UPDATE
+            total_amount = VALUES(total_amount),
+            status = VALUES(status)
+        `, row);
+      }
+      
+      offset += this.batchSize;
+      console.log(`已同步 ${offset} 条数据`);
+      
+      // 避免压力过大，休息一下
+      await this.sleep(100);
+    }
+    
+    console.log('数据同步完成');
+  }
+  
+  getShardDb(userId) {
+    const dbIndex = userId % 4;
+    return this.targetDb[dbIndex];
+  }
+  
+  getShardTable(userId) {
+    const tableIndex = userId % 10;
+    return `orders_${tableIndex}`;
+  }
+  
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+```
+
+## 常见问题
+
+### 1. 跨分片查询
+
+```javascript
+// 问题：查询所有用户的订单总数
+// 解决：分别查询每个分片，然后聚合
+
+async function getTotalOrders() {
+  const results = await Promise.all([
+    db0.query('SELECT COUNT(*) as count FROM orders'),
+    db1.query('SELECT COUNT(*) as count FROM orders'),
+    db2.query('SELECT COUNT(*) as count FROM orders'),
+    db3.query('SELECT COUNT(*) as count FROM orders'),
+  ]);
+  
+  return results.reduce((sum, r) => sum + r.count, 0);
+}
+```
+
+### 2. 分布式事务
+
+```javascript
+// 使用 Seata 实现分布式事务
+@GlobalTransactional
+public void createOrder(Order order) {
+    // 扣减库存（product_db）
+    productService.decreaseStock(order.getProductId(), order.getQuantity());
+    
+    // 创建订单（order_db）
+    orderService.create(order);
+    
+    // 扣减余额（user_db）
+    userService.decreaseBalance(order.getUserId(), order.getTotalAmount());
+}
+```
+
+### 3. 分页查询
+
+```javascript
+// 问题：跨分片分页
+// 解决：每个分片查询 N 条，合并排序后取前 N 条
+
+async function getOrders(page, pageSize) {
+  // 每个分片查询 pageSize 条
+  const results = await Promise.all([
+    db0.query('SELECT * FROM orders ORDER BY created_at DESC LIMIT ?', [pageSize]),
+    db1.query('SELECT * FROM orders ORDER BY created_at DESC LIMIT ?', [pageSize]),
+    db2.query('SELECT * FROM orders ORDER BY created_at DESC LIMIT ?', [pageSize]),
+    db3.query('SELECT * FROM orders ORDER BY created_at DESC LIMIT ?', [pageSize]),
+  ]);
+  
+  // 合并所有结果
+  const allOrders = results.flat();
+  
+  // 排序
+  allOrders.sort((a, b) => b.created_at - a.created_at);
+  
+  // 分页
+  const start = (page - 1) * pageSize;
+  return allOrders.slice(start, start + pageSize);
+}
+```
+
+## 最佳实践
+
+### 1. 选择合适的分片键
+
+- **用户维度**：user_id（适合查询用户相关数据）
+- **时间维度**：created_at（适合按时间范围查询）
+- **业务维度**：order_id、product_id 等
+
+### 2. 避免跨分片操作
+
+- 尽量在应用层聚合数据
+- 使用冗余字段减少关联查询
+- 使用缓存减少数据库查询
+
+### 3. 监控和运维
+
+- 监控各分片的数据量和负载
+- 定期检查数据倾斜
+- 准备扩容方案
+
+### 4. 灰度迁移
+
+- 先双写，再切读
+- 逐步迁移数据
+- 保留回滚方案
+
+## 总结
+
+分库分表是解决大数据量问题的有效方案，但也带来了复杂性：
+
+1. **选择合适的策略**：垂直拆分 vs 水平拆分
+2. **选择合适的算法**：取模 vs 范围 vs 一致性哈希
+3. **处理分布式问题**：跨分片查询、分布式事务、分布式ID
+4. **做好数据迁移**：双写、数据同步、灰度发布
+
+## 延伸阅读
+
+- [ShardingSphere 官方文档](https://shardingsphere.apache.org/)
+- [分库分表最佳实践](https://tech.meituan.com/2016/11/18/dianping-order-db-sharding.html)
+- [数据库扩展性设计](https://www.oreilly.com/library/view/designing-data-intensive-applications/9781491903063/)
+

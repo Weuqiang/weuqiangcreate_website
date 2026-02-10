@@ -1,0 +1,733 @@
+---
+sidebar_position: 3
+title: TypeScript完全指南
+tags: [TypeScript, 前端, 类型系统]
+---
+
+# TypeScript完全指南
+
+TypeScript是JavaScript的超集，为JavaScript添加了静态类型系统，让代码更加健壮和易于维护。
+
+## 为什么使用TypeScript？
+
+### 优势
+
+1. **类型安全**：在编译时捕获错误
+2. **更好的IDE支持**：智能提示、自动补全
+3. **代码可维护性**：类型即文档
+4. **重构友好**：类型系统保证重构安全
+5. **团队协作**：明确的接口定义
+
+### 示例对比
+
+```typescript
+// JavaScript - 运行时才发现错误
+function add(a, b) {
+  return a + b;
+}
+add(1, '2');  // '12' - 意外的字符串拼接
+
+// TypeScript - 编译时就发现错误
+function add(a: number, b: number): number {
+  return a + b;
+}
+add(1, '2');  // ❌ 编译错误：类型不匹配
+```
+
+## 基础类型
+
+### 原始类型
+
+```typescript
+// 布尔值
+let isDone: boolean = false;
+
+// 数字
+let decimal: number = 6;
+let hex: number = 0xf00d;
+let binary: number = 0b1010;
+let octal: number = 0o744;
+
+// 字符串
+let color: string = "blue";
+let fullName: string = `Bob Bobbington`;
+let sentence: string = `Hello, my name is ${fullName}`;
+
+// null和undefined
+let u: undefined = undefined;
+let n: null = null;
+
+// void - 没有返回值
+function warnUser(): void {
+  console.log("This is a warning message");
+}
+
+// never - 永远不会有返回值
+function error(message: string): never {
+  throw new Error(message);
+}
+
+function infiniteLoop(): never {
+  while (true) {}
+}
+```
+
+### 数组和元组
+
+```typescript
+// 数组
+let list1: number[] = [1, 2, 3];
+let list2: Array<number> = [1, 2, 3];
+
+// 只读数组
+let readonlyList: ReadonlyArray<number> = [1, 2, 3];
+// readonlyList[0] = 4;  // ❌ 错误
+
+// 元组 - 固定长度和类型的数组
+let tuple: [string, number];
+tuple = ["hello", 10];  // ✅
+// tuple = [10, "hello"];  // ❌ 错误
+
+// 访问元组元素
+console.log(tuple[0]);  // "hello"
+console.log(tuple[1]);  // 10
+
+// 元组解构
+let [str, num] = tuple;
+```
+
+### 枚举
+
+```typescript
+// 数字枚举
+enum Direction {
+  Up = 1,
+  Down,
+  Left,
+  Right
+}
+let dir: Direction = Direction.Up;  // 1
+
+// 字符串枚举
+enum Color {
+  Red = "RED",
+  Green = "GREEN",
+  Blue = "BLUE"
+}
+let color: Color = Color.Red;  // "RED"
+
+// 常量枚举（编译时内联）
+const enum Status {
+  Success = 200,
+  NotFound = 404,
+  ServerError = 500
+}
+let status: Status = Status.Success;
+
+// 异构枚举（不推荐）
+enum Mixed {
+  No = 0,
+  Yes = "YES"
+}
+```
+
+### Any和Unknown
+
+```typescript
+// any - 跳过类型检查（不推荐）
+let notSure: any = 4;
+notSure = "maybe a string";
+notSure = false;
+notSure.toFixed();  // 不会报错，但可能运行时出错
+
+// unknown - 类型安全的any
+let value: unknown = 4;
+value = "string";
+
+// 使用unknown需要类型检查
+if (typeof value === "string") {
+  console.log(value.toUpperCase());  // ✅
+}
+// console.log(value.toUpperCase());  // ❌ 错误
+```
+
+## 接口
+
+### 基础接口
+
+```typescript
+// 定义接口
+interface User {
+  name: string;
+  age: number;
+  email?: string;  // 可选属性
+  readonly id: number;  // 只读属性
+}
+
+// 使用接口
+const user: User = {
+  id: 1,
+  name: "John",
+  age: 30
+};
+
+// user.id = 2;  // ❌ 错误：只读属性
+```
+
+### 函数接口
+
+```typescript
+// 函数类型接口
+interface SearchFunc {
+  (source: string, subString: string): boolean;
+}
+
+const mySearch: SearchFunc = (src, sub) => {
+  return src.includes(sub);
+};
+```
+
+### 索引签名
+
+```typescript
+// 字符串索引
+interface StringArray {
+  [index: number]: string;
+}
+
+let myArray: StringArray = ["Bob", "Fred"];
+let myStr: string = myArray[0];
+
+// 对象索引
+interface Dictionary {
+  [key: string]: any;
+}
+
+let dict: Dictionary = {
+  name: "John",
+  age: 30,
+  active: true
+};
+```
+
+### 接口继承
+
+```typescript
+interface Shape {
+  color: string;
+}
+
+interface Square extends Shape {
+  sideLength: number;
+}
+
+let square: Square = {
+  color: "blue",
+  sideLength: 10
+};
+
+// 多重继承
+interface PenStroke {
+  penWidth: number;
+}
+
+interface ColoredSquare extends Square, PenStroke {
+  // 继承了color, sideLength, penWidth
+}
+```
+
+## 类型别名
+
+```typescript
+// 基础类型别名
+type Name = string;
+type Age = number;
+type User = {
+  name: Name;
+  age: Age;
+};
+
+// 联合类型
+type ID = string | number;
+let userId: ID = 123;
+userId = "abc123";
+
+// 交叉类型
+type Person = {
+  name: string;
+};
+
+type Employee = {
+  employeeId: number;
+};
+
+type Staff = Person & Employee;
+
+const staff: Staff = {
+  name: "John",
+  employeeId: 123
+};
+
+// 字面量类型
+type Direction = "north" | "south" | "east" | "west";
+let dir: Direction = "north";  // ✅
+// dir = "up";  // ❌ 错误
+
+// 类型别名 vs 接口
+// 类型别名可以表示原始类型、联合类型、元组
+type StringOrNumber = string | number;
+type Point = [number, number];
+
+// 接口可以被扩展和实现
+interface Animal {
+  name: string;
+}
+
+interface Dog extends Animal {
+  breed: string;
+}
+```
+
+## 泛型
+
+### 基础泛型
+
+```typescript
+// 泛型函数
+function identity<T>(arg: T): T {
+  return arg;
+}
+
+let output1 = identity<string>("myString");
+let output2 = identity(123);  // 类型推断
+
+// 泛型数组
+function loggingIdentity<T>(arg: T[]): T[] {
+  console.log(arg.length);
+  return arg;
+}
+
+// 泛型接口
+interface GenericIdentityFn<T> {
+  (arg: T): T;
+}
+
+let myIdentity: GenericIdentityFn<number> = identity;
+```
+
+### 泛型类
+
+```typescript
+class GenericNumber<T> {
+  zeroValue: T;
+  add: (x: T, y: T) => T;
+}
+
+let myGenericNumber = new GenericNumber<number>();
+myGenericNumber.zeroValue = 0;
+myGenericNumber.add = (x, y) => x + y;
+
+let stringNumeric = new GenericNumber<string>();
+stringNumeric.zeroValue = "";
+stringNumeric.add = (x, y) => x + y;
+```
+
+### 泛型约束
+
+```typescript
+// 约束泛型必须有length属性
+interface Lengthwise {
+  length: number;
+}
+
+function loggingIdentity<T extends Lengthwise>(arg: T): T {
+  console.log(arg.length);
+  return arg;
+}
+
+loggingIdentity("hello");  // ✅
+loggingIdentity([1, 2, 3]);  // ✅
+// loggingIdentity(3);  // ❌ 错误：number没有length属性
+
+// 使用类型参数
+function getProperty<T, K extends keyof T>(obj: T, key: K) {
+  return obj[key];
+}
+
+let x = { a: 1, b: 2, c: 3 };
+getProperty(x, "a");  // ✅
+// getProperty(x, "d");  // ❌ 错误：d不是x的属性
+```
+
+## 高级类型
+
+### 联合类型和类型守卫
+
+```typescript
+// 联合类型
+type StringOrNumber = string | number;
+
+function padLeft(value: string, padding: StringOrNumber) {
+  if (typeof padding === "number") {
+    return " ".repeat(padding) + value;
+  }
+  if (typeof padding === "string") {
+    return padding + value;
+  }
+}
+
+// 类型守卫
+interface Bird {
+  fly(): void;
+  layEggs(): void;
+}
+
+interface Fish {
+  swim(): void;
+  layEggs(): void;
+}
+
+// 自定义类型守卫
+function isFish(pet: Fish | Bird): pet is Fish {
+  return (pet as Fish).swim !== undefined;
+}
+
+function move(pet: Fish | Bird) {
+  if (isFish(pet)) {
+    pet.swim();
+  } else {
+    pet.fly();
+  }
+}
+```
+
+### 映射类型
+
+```typescript
+// Partial - 所有属性变为可选
+type Partial<T> = {
+  [P in keyof T]?: T[P];
+};
+
+interface User {
+  name: string;
+  age: number;
+}
+
+type PartialUser = Partial<User>;
+// { name?: string; age?: number; }
+
+// Required - 所有属性变为必需
+type Required<T> = {
+  [P in keyof T]-?: T[P];
+};
+
+// Readonly - 所有属性变为只读
+type Readonly<T> = {
+  readonly [P in keyof T]: T[P];
+};
+
+// Pick - 选择部分属性
+type Pick<T, K extends keyof T> = {
+  [P in K]: T[P];
+};
+
+type UserName = Pick<User, "name">;
+// { name: string; }
+
+// Omit - 排除部分属性
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+
+type UserWithoutAge = Omit<User, "age">;
+// { name: string; }
+
+// Record - 创建对象类型
+type Record<K extends keyof any, T> = {
+  [P in K]: T;
+};
+
+type PageInfo = Record<"home" | "about" | "contact", { title: string }>;
+// {
+//   home: { title: string };
+//   about: { title: string };
+//   contact: { title: string };
+// }
+```
+
+### 条件类型
+
+```typescript
+// 基础条件类型
+type IsString<T> = T extends string ? true : false;
+
+type A = IsString<string>;  // true
+type B = IsString<number>;  // false
+
+// 分布式条件类型
+type ToArray<T> = T extends any ? T[] : never;
+
+type StrArrOrNumArr = ToArray<string | number>;
+// string[] | number[]
+
+// infer关键字
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : any;
+
+function f() {
+  return { x: 10, y: 3 };
+}
+
+type P = ReturnType<typeof f>;
+// { x: number; y: number; }
+
+// 实用条件类型
+type Exclude<T, U> = T extends U ? never : T;
+type Extract<T, U> = T extends U ? T : never;
+type NonNullable<T> = T extends null | undefined ? never : T;
+
+type T0 = Exclude<"a" | "b" | "c", "a">;  // "b" | "c"
+type T1 = Extract<"a" | "b" | "c", "a" | "f">;  // "a"
+type T2 = NonNullable<string | number | undefined>;  // string | number
+```
+
+## 装饰器
+
+```typescript
+// 启用装饰器：tsconfig.json中设置 "experimentalDecorators": true
+
+// 类装饰器
+function sealed(constructor: Function) {
+  Object.seal(constructor);
+  Object.seal(constructor.prototype);
+}
+
+@sealed
+class Greeter {
+  greeting: string;
+  constructor(message: string) {
+    this.greeting = message;
+  }
+}
+
+// 方法装饰器
+function log(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  const originalMethod = descriptor.value;
+  
+  descriptor.value = function(...args: any[]) {
+    console.log(`Calling ${propertyKey} with`, args);
+    const result = originalMethod.apply(this, args);
+    console.log(`Result:`, result);
+    return result;
+  };
+  
+  return descriptor;
+}
+
+class Calculator {
+  @log
+  add(a: number, b: number) {
+    return a + b;
+  }
+}
+
+// 属性装饰器
+function readonly(target: any, propertyKey: string) {
+  Object.defineProperty(target, propertyKey, {
+    writable: false
+  });
+}
+
+class Person {
+  @readonly
+  name: string = "John";
+}
+
+// 参数装饰器
+function required(target: Object, propertyKey: string, parameterIndex: number) {
+  console.log(`Parameter ${parameterIndex} in ${propertyKey} is required`);
+}
+
+class User {
+  greet(@required name: string) {
+    return `Hello ${name}`;
+  }
+}
+```
+
+## 实战技巧
+
+### 类型断言
+
+```typescript
+// as语法
+let someValue: any = "this is a string";
+let strLength: number = (someValue as string).length;
+
+// 尖括号语法（JSX中不可用）
+let strLength2: number = (<string>someValue).length;
+
+// 非空断言
+function getValue(key: string): string | undefined {
+  return key === "name" ? "John" : undefined;
+}
+
+let name = getValue("name")!;  // 断言不为null/undefined
+```
+
+### 类型推断
+
+```typescript
+// 自动推断
+let x = 3;  // number
+let arr = [0, 1, null];  // (number | null)[]
+
+// 最佳通用类型
+let zoo = [new Rhino(), new Elephant(), new Snake()];
+// (Rhino | Elephant | Snake)[]
+
+// 上下文类型推断
+window.onmousedown = function(mouseEvent) {
+  console.log(mouseEvent.button);  // mouseEvent自动推断为MouseEvent
+};
+```
+
+### 类型兼容性
+
+```typescript
+// 结构类型系统
+interface Named {
+  name: string;
+}
+
+class Person {
+  name: string;
+}
+
+let p: Named;
+p = new Person();  // ✅ 结构兼容
+
+// 函数兼容性
+let x = (a: number) => 0;
+let y = (b: number, s: string) => 0;
+
+y = x;  // ✅ x的参数是y的子集
+// x = y;  // ❌ 错误
+```
+
+## 配置文件
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    // 基础选项
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    
+    // 严格模式
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    
+    // 模块解析
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "esModuleInterop": true,
+    
+    // 其他选项
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+## 最佳实践
+
+### 1. 启用严格模式
+
+```typescript
+// tsconfig.json
+{
+  "compilerOptions": {
+    "strict": true
+  }
+}
+```
+
+### 2. 避免使用any
+
+```typescript
+// ❌ 差
+function process(data: any) {
+  return data.value;
+}
+
+// ✅ 好
+function process<T extends { value: any }>(data: T) {
+  return data.value;
+}
+```
+
+### 3. 使用接口定义对象结构
+
+```typescript
+// ✅ 好
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+function getUser(id: number): User {
+  // ...
+}
+```
+
+### 4. 利用类型推断
+
+```typescript
+// ❌ 不必要的类型注解
+const numbers: number[] = [1, 2, 3];
+
+// ✅ 让TypeScript推断
+const numbers = [1, 2, 3];
+```
+
+### 5. 使用联合类型而非枚举
+
+```typescript
+// ✅ 更简洁
+type Status = "pending" | "success" | "error";
+
+// 而不是
+enum Status {
+  Pending = "pending",
+  Success = "success",
+  Error = "error"
+}
+```
+
+## 总结
+
+TypeScript提供了：
+- ✅ 强大的类型系统
+- ✅ 优秀的IDE支持
+- ✅ 更好的代码可维护性
+- ✅ 丰富的高级类型特性
+- ✅ 与JavaScript完全兼容
+
+掌握TypeScript是现代前端开发的必备技能！
+

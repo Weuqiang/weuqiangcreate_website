@@ -1,0 +1,578 @@
+---
+sidebar_position: 5
+title: 前端安全防护指南
+tags: [前端, 安全, XSS, CSRF, 安全防护]
+---
+
+# 前端安全防护指南
+
+前端安全是Web应用的重要组成部分，本文将详细讲解常见的前端安全问题和防护措施。
+
+## XSS攻击
+
+### XSS类型
+
+```javascript
+const xssTypes = {
+  // 1. 存储型XSS（最危险）
+  stored: {
+    description: '恶意脚本存储在服务器',
+    example: '评论、留言板',
+    flow: [
+      '1. 攻击者提交恶意脚本到服务器',
+      '2. 服务器存储恶意脚本',
+      '3. 其他用户访问页面时执行脚本'
+    ]
+  },
+  
+  // 2. 反射型XSS
+  reflected: {
+    description: '恶意脚本通过URL参数传递',
+    example: '搜索结果页面',
+    flow: [
+      '1. 攻击者构造恶意URL',
+      '2. 用户点击URL',
+      '3. 服务器将参数直接输出到页面',
+      '4. 恶意脚本执行'
+    ]
+  },
+  
+  // 3. DOM型XSS
+  dom: {
+    description: '通过修改DOM执行恶意脚本',
+    example: '前端路由、动态内容',
+    flow: [
+      '1. 攻击者构造恶意URL',
+      '2. 前端JS读取URL参数',
+      '3. 直接插入到DOM',
+      '4. 恶意脚本执行'
+    ]
+  }
+};
+```
+
+### XSS攻击示例
+
+```javascript
+// ❌ 存储型XSS
+// 用户提交评论
+const comment = '<script>alert("XSS")</script>';
+await api.post('/comments', { content: comment });
+
+// 服务器直接存储
+db.comments.insert({ content: comment });
+
+// 页面渲染时直接输出
+<div dangerouslySetInnerHTML={{ __html: comment }} />
+
+// ❌ 反射型XSS
+// URL: /search?q=<script>alert("XSS")</script>
+const query = new URLSearchParams(location.search).get('q');
+document.getElementById('result').innerHTML = `搜索结果：${query}`;
+
+// ❌ DOM型XSS
+// URL: #<img src=x onerror=alert("XSS")>
+const hash = location.hash.slice(1);
+document.getElementById('content').innerHTML = hash;
+```
+
+### XSS防护
+
+```javascript
+// 1. 输入过滤
+class InputFilter {
+  // HTML实体编码
+  escapeHtml(str) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#x27;',
+      '/': '&#x2F;'
+    };
+    return str.replace(/[&<>"'/]/g, char => map[char]);
+  }
+  
+  // 移除危险标签
+  sanitize(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    
+    // 移除script标签
+    const scripts = div.querySelectorAll('script');
+    scripts.forEach(script => script.remove());
+    
+    // 移除事件处理器
+    const elements = div.querySelectorAll('*');
+    elements.forEach(el => {
+      Array.from(el.attributes).forEach(attr => {
+        if (attr.name.startsWith('on')) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+    
+    return div.innerHTML;
+  }
+}
+
+// 2. 使用DOMPurify库
+import DOMPurify from 'dompurify';
+
+const clean = DOMPurify.sanitize(dirtyHtml, {
+  ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a'],
+  ALLOWED_ATTR: ['href']
+});
+
+// 3. React自动转义
+function SafeComponent({ userInput }) {
+  // React会自动转义
+  return <div>{userInput}</div>;
+}
+
+// 4. CSP（Content Security Policy）
+// HTTP响应头
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://trusted.cdn.com
+
+// HTML meta标签
+<meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; script-src 'self' https://trusted.cdn.com">
+
+// 5. HttpOnly Cookie
+// 防止JS访问Cookie
+Set-Cookie: sessionId=xxx; HttpOnly; Secure; SameSite=Strict
+```
+
+## CSRF攻击
+
+### CSRF原理
+
+```javascript
+const csrfConcept = {
+  description: '跨站请求伪造',
+  
+  attackFlow: [
+    '1. 用户登录网站A，获得Cookie',
+    '2. 用户访问恶意网站B',
+    '3. 网站B发起对网站A的请求',
+    '4. 浏览器自动带上Cookie',
+    '5. 网站A认为是合法请求'
+  ],
+  
+  example: `
+    <!-- 恶意网站B的页面 -->
+    <img src="https://bank.com/transfer?to=attacker&amount=1000">
+    
+    <!-- 或者自动提交表单 -->
+    <form action="https://bank.com/transfer" method="POST">
+      <input type="hidden" name="to" value="attacker">
+      <input type="hidden" name="amount" value="1000">
+    </form>
+    <script>document.forms[0].submit();</script>
+  `
+};
+```
+
+### CSRF防护
+
+```javascript
+// 1. CSRF Token
+class CSRFProtection {
+  // 生成Token
+  generateToken() {
+    return crypto.randomBytes(32).toString('hex');
+  }
+  
+  // 服务端中间件
+  middleware(req, res, next) {
+    if (req.method === 'GET') {
+      // GET请求生成Token
+      const token = this.generateToken();
+      req.session.csrfToken = token;
+      res.locals.csrfToken = token;
+      next();
+    } else {
+      // POST请求验证Token
+      const token = req.body._csrf || req.headers['x-csrf-token'];
+      if (token === req.session.csrfToken) {
+        next();
+      } else {
+        res.status(403).json({ error: 'Invalid CSRF token' });
+      }
+    }
+  }
+}
+
+// 前端使用
+// 在表单中添加Token
+<form action="/transfer" method="POST">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  <input type="text" name="amount">
+  <button type="submit">Transfer</button>
+</form>
+
+// AJAX请求中添加Token
+fetch('/api/transfer', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+  },
+  body: JSON.stringify({ amount: 1000 })
+});
+
+// 2. SameSite Cookie
+Set-Cookie: sessionId=xxx; SameSite=Strict
+
+// Strict: 完全禁止第三方Cookie
+// Lax: 允许部分第三方Cookie（GET请求）
+// None: 允许所有第三方Cookie（需要Secure）
+
+// 3. 验证Referer
+app.use((req, res, next) => {
+  const referer = req.headers.referer;
+  const host = req.headers.host;
+  
+  if (referer && !referer.includes(host)) {
+    return res.status(403).json({ error: 'Invalid referer' });
+  }
+  
+  next();
+});
+
+// 4. 双重Cookie验证
+// 设置Cookie
+res.cookie('csrf-token', token);
+
+// 前端读取Cookie并发送
+const csrfToken = document.cookie
+  .split('; ')
+  .find(row => row.startsWith('csrf-token='))
+  .split('=')[1];
+
+fetch('/api/transfer', {
+  headers: {
+    'X-CSRF-Token': csrfToken
+  }
+});
+```
+
+## 点击劫持
+
+### 点击劫持原理
+
+```html
+<!-- 攻击者页面 -->
+<style>
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    z-index: 999;
+  }
+  
+  .fake-button {
+    position: absolute;
+    top: 100px;
+    left: 100px;
+  }
+</style>
+
+<iframe src="https://bank.com/transfer"></iframe>
+<button class="fake-button">点击领取奖品</button>
+
+<!-- 用户以为点击的是"领取奖品"，实际点击的是iframe中的"转账"按钮 -->
+```
+
+### 点击劫持防护
+
+```javascript
+// 1. X-Frame-Options
+// HTTP响应头
+X-Frame-Options: DENY              // 禁止被iframe嵌入
+X-Frame-Options: SAMEORIGIN        // 只允许同源iframe
+X-Frame-Options: ALLOW-FROM https://trusted.com
+
+// 2. CSP frame-ancestors
+Content-Security-Policy: frame-ancestors 'self'
+
+// 3. JavaScript防护
+if (window.top !== window.self) {
+  // 检测是否在iframe中
+  window.top.location = window.self.location;
+}
+
+// 4. 使用sandbox属性
+<iframe src="untrusted.html" sandbox="allow-scripts"></iframe>
+```
+
+## SQL注入
+
+### SQL注入示例
+
+```javascript
+// ❌ 不安全的查询
+app.get('/user', (req, res) => {
+  const { id } = req.query;
+  const sql = `SELECT * FROM users WHERE id = ${id}`;
+  db.query(sql, (err, result) => {
+    res.json(result);
+  });
+});
+
+// 攻击：/user?id=1 OR 1=1
+// SQL: SELECT * FROM users WHERE id = 1 OR 1=1
+// 返回所有用户
+
+// ✅ 使用参数化查询
+app.get('/user', (req, res) => {
+  const { id } = req.query;
+  const sql = 'SELECT * FROM users WHERE id = ?';
+  db.query(sql, [id], (err, result) => {
+    res.json(result);
+  });
+});
+
+// ✅ 使用ORM
+const user = await User.findOne({
+  where: { id: req.query.id }
+});
+```
+
+## 敏感信息泄露
+
+### 防护措施
+
+```javascript
+// 1. 不在前端存储敏感信息
+// ❌ 不要这样做
+localStorage.setItem('password', 'secret123');
+localStorage.setItem('creditCard', '1234-5678-9012-3456');
+
+// ✅ 只存储必要的非敏感信息
+localStorage.setItem('theme', 'dark');
+localStorage.setItem('language', 'zh-CN');
+
+// 2. 加密敏感数据
+import CryptoJS from 'crypto-js';
+
+class SecureStorage {
+  constructor(secretKey) {
+    this.secretKey = secretKey;
+  }
+  
+  encrypt(data) {
+    return CryptoJS.AES.encrypt(
+      JSON.stringify(data),
+      this.secretKey
+    ).toString();
+  }
+  
+  decrypt(encrypted) {
+    const bytes = CryptoJS.AES.decrypt(encrypted, this.secretKey);
+    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+  }
+  
+  setItem(key, value) {
+    const encrypted = this.encrypt(value);
+    localStorage.setItem(key, encrypted);
+  }
+  
+  getItem(key) {
+    const encrypted = localStorage.getItem(key);
+    return encrypted ? this.decrypt(encrypted) : null;
+  }
+}
+
+// 3. HTTPS传输
+// 确保所有敏感数据通过HTTPS传输
+
+// 4. 清理日志
+console.log('User data:', user); // ❌ 可能泄露敏感信息
+
+// 生产环境禁用console
+if (process.env.NODE_ENV === 'production') {
+  console.log = () => {};
+  console.error = () => {};
+}
+
+// 5. 源码混淆
+// webpack配置
+const TerserPlugin = require('terser-webpack-plugin');
+
+module.exports = {
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true
+          },
+          mangle: true
+        }
+      })
+    ]
+  }
+};
+```
+
+## 依赖安全
+
+### 依赖检查
+
+```bash
+# 检查依赖漏洞
+npm audit
+
+# 自动修复
+npm audit fix
+
+# 强制修复
+npm audit fix --force
+
+# 使用Snyk
+npm install -g snyk
+snyk test
+snyk wizard
+```
+
+### 依赖管理
+
+```javascript
+// package.json
+{
+  "dependencies": {
+    // ✅ 锁定版本
+    "react": "18.2.0",
+    
+    // ❌ 不要使用通配符
+    "lodash": "*",
+    "axios": "^1.0.0"
+  },
+  
+  "scripts": {
+    "preinstall": "npx npm-force-resolutions"
+  },
+  
+  // 强制使用特定版本
+  "resolutions": {
+    "lodash": "4.17.21"
+  }
+}
+
+// 使用package-lock.json
+// 确保团队使用相同版本
+```
+
+## 安全最佳实践
+
+```javascript
+const securityBestPractices = {
+  // 1. 输入验证
+  input: {
+    validate: '验证所有用户输入',
+    sanitize: '清理危险字符',
+    whitelist: '使用白名单而非黑名单'
+  },
+  
+  // 2. 输出编码
+  output: {
+    escape: '转义HTML特殊字符',
+    contextAware: '根据上下文选择编码方式'
+  },
+  
+  // 3. 认证授权
+  auth: {
+    https: '使用HTTPS',
+    token: '使用JWT或Session',
+    expire: '设置合理的过期时间',
+    refresh: '实现Token刷新机制'
+  },
+  
+  // 4. 敏感操作
+  sensitive: {
+    confirm: '重要操作需要二次确认',
+    captcha: '使用验证码',
+    rateLimit: '限制请求频率'
+  },
+  
+  // 5. 错误处理
+  error: {
+    generic: '不暴露详细错误信息',
+    log: '记录错误日志',
+    monitor: '监控异常'
+  },
+  
+  // 6. 依赖管理
+  dependencies: {
+    audit: '定期检查依赖漏洞',
+    update: '及时更新依赖',
+    minimal: '最小化依赖'
+  }
+};
+```
+
+## 安全检查清单
+
+```javascript
+const securityChecklist = {
+  // XSS防护
+  xss: [
+    '✓ 所有用户输入都经过转义',
+    '✓ 使用CSP策略',
+    '✓ Cookie设置HttpOnly',
+    '✓ 避免使用dangerouslySetInnerHTML',
+    '✓ 使用DOMPurify清理HTML'
+  ],
+  
+  // CSRF防护
+  csrf: [
+    '✓ 使用CSRF Token',
+    '✓ Cookie设置SameSite',
+    '✓ 验证Referer',
+    '✓ 重要操作需要二次确认'
+  ],
+  
+  // 点击劫持防护
+  clickjacking: [
+    '✓ 设置X-Frame-Options',
+    '✓ 使用CSP frame-ancestors',
+    '✓ JavaScript检测iframe'
+  ],
+  
+  // 数据安全
+  data: [
+    '✓ 敏感数据加密存储',
+    '✓ HTTPS传输',
+    '✓ 不在前端存储密码',
+    '✓ 清理日志中的敏感信息'
+  ],
+  
+  // 依赖安全
+  dependencies: [
+    '✓ 定期运行npm audit',
+    '✓ 锁定依赖版本',
+    '✓ 使用package-lock.json',
+    '✓ 及时更新依赖'
+  ]
+};
+```
+
+## 总结
+
+前端安全防护的核心：
+- 🛡️ **XSS防护**：输入过滤、输出编码、CSP
+- 🔒 **CSRF防护**：Token验证、SameSite Cookie
+- 👆 **点击劫持**：X-Frame-Options、CSP
+- 💾 **数据安全**：加密存储、HTTPS传输
+- 📦 **依赖安全**：定期审计、及时更新
+- ✅ **最佳实践**：输入验证、输出编码、最小权限
+
+记住：**安全是一个持续的过程，需要不断学习和改进！**
+
