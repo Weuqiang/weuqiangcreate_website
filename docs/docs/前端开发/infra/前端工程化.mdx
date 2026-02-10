@@ -1,114 +1,829 @@
 ---
-sidebarDepth: 4
+sidebar_position: 1
+title: 前端工程化完全指南
+tags: [工程化, Webpack, Vite, 构建工具, 代码规范]
 ---
 
-# 前端工程化
+# 前端工程化完全指南
 
-## 配置文件
+## 概述
 
-对于大多数工具库，如`babel`、`webpack`、`eslint`等，都存在多种传递参数的方式。
+前端工程化是指将软件工程的方法和工具应用到前端开发中，以提高开发效率、代码质量和项目可维护性。
 
-- 命令行参数。如`npx babel src --out-dir dist`
+### 核心内容
 
-- 配置文件。部分工具可以通过类似`npx jest --init`的方式自动生成配置文件。通常形如`babel.config.js`、`babel.config.json`，或者`.babelrc`、`.babelrc.json`都是有效的文件格式。
+- **构建工具**：Webpack、Vite、Rollup 等
+- **代码规范**：ESLint、Prettier、Stylelint
+- **版本控制**：Git 工作流、Husky、Commitlint
+- **包管理**：npm、yarn、pnpm
+- **自动化**：CI/CD、自动化测试、自动化部署
 
-  > 注：`babel.config.js`指项目全局配置，而`.babelrc`只应用于项目中的一部分。
+## 构建工具
 
-- `package.json`的特定字段
+### 1. Webpack 配置
 
+Webpack 是最流行的模块打包工具。
 
+#### 基础配置
 
+```javascript
+// webpack.config.js
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
+module.exports = {
+  mode: 'production',
+  entry: './src/index.js',
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].[contenthash].js',
+    clean: true,
+  },
+  
+  module: {
+    rules: [
+      // JavaScript/TypeScript
+      {
+        test: /\.(js|jsx|ts|tsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              '@babel/preset-env',
+              '@babel/preset-react',
+              '@babel/preset-typescript',
+            ],
+          },
+        },
+      },
+      
+      // CSS
+      {
+        test: /\.css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader',
+          'postcss-loader',
+        ],
+      },
+      
+      // Less
+      {
+        test: /\.less$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader',
+          'postcss-loader',
+          'less-loader',
+        ],
+      },
+      
+      // 图片
+      {
+        test: /\.(png|jpg|jpeg|gif|svg)$/,
+        type: 'asset',
+        parser: {
+          dataUrlCondition: {
+            maxSize: 10 * 1024, // 10kb
+          },
+        },
+        generator: {
+          filename: 'images/[name].[hash][ext]',
+        },
+      },
+      
+      // 字体
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'fonts/[name].[hash][ext]',
+        },
+      },
+    ],
+  },
+  
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './public/index.html',
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true,
+      },
+    }),
+    new MiniCssExtractPlugin({
+      filename: '[name].[contenthash].css',
+    }),
+  ],
+  
+  resolve: {
+    extensions: ['.js', '.jsx', '.ts', '.tsx'],
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
+  
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          priority: 10,
+        },
+        common: {
+          minChunks: 2,
+          priority: 5,
+          reuseExistingChunk: true,
+        },
+      },
+    },
+  },
+  
+  devServer: {
+    port: 3000,
+    hot: true,
+    open: true,
+    historyApiFallback: true,
+  },
+};
+```
 
+#### 性能优化配置
 
+```javascript
+// webpack.prod.js
+const TerserPlugin = require('terser-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const CompressionPlugin = require('compression-webpack-plugin');
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
-<!-- ## VS Code
+module.exports = {
+  mode: 'production',
+  
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        parallel: true,
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+          },
+        },
+      }),
+      new CssMinimizerPlugin(),
+    ],
+    
+    splitChunks: {
+      chunks: 'all',
+      maxInitialRequests: 10,
+      cacheGroups: {
+        // React 相关
+        react: {
+          test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+          name: 'react',
+          priority: 20,
+        },
+        // UI 库
+        antd: {
+          test: /[\\/]node_modules[\\/]antd[\\/]/,
+          name: 'antd',
+          priority: 15,
+        },
+        // 其他第三方库
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          priority: 10,
+        },
+      },
+    },
+    
+    runtimeChunk: {
+      name: 'runtime',
+    },
+  },
+  
+  plugins: [
+    // Gzip 压缩
+    new CompressionPlugin({
+      algorithm: 'gzip',
+      test: /\.(js|css|html|svg)$/,
+      threshold: 10240,
+      minRatio: 0.8,
+    }),
+    
+    // 打包分析
+    new BundleAnalyzerPlugin({
+      analyzerMode: 'static',
+      openAnalyzer: false,
+    }),
+  ],
+  
+  performance: {
+    hints: 'warning',
+    maxEntrypointSize: 512000,
+    maxAssetSize: 512000,
+  },
+};
+```
 
-常用的VSCode插件。
+### 2. Vite 配置
 
-##### ESLint
+Vite 是新一代的前端构建工具，开发体验极佳。
 
-安装`VSCode`的同名`ESLint`插件后，当项目中**存在本地依赖**`eslint`并且存在`.eslintrc.js`**配置文件**时，`VSCode`会根据所指定的规则**自动提示代码的错误**。
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
 
-并且我们可以通过编辑`VSCode`的配置文件`setting.json`来开启**自动代码纠正**，每当保存文件就自动格式化文件。
+export default defineConfig({
+  plugins: [react()],
+  
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
+  
+  css: {
+    preprocessorOptions: {
+      less: {
+        javascriptEnabled: true,
+        modifyVars: {
+          '@primary-color': '#1890ff',
+        },
+      },
+    },
+    modules: {
+      localsConvention: 'camelCase',
+    },
+  },
+  
+  build: {
+    target: 'es2015',
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          vendor: ['axios', 'dayjs'],
+        },
+      },
+    },
+    
+    chunkSizeWarningLimit: 1000,
+  },
+  
+  server: {
+    port: 3000,
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
+});
+```
 
-``` json
-// .vscode/setting.json
+### 3. Rollup 配置（库打包）
+
+```javascript
+// rollup.config.js
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import typescript from '@rollup/plugin-typescript';
+import { terser } from 'rollup-plugin-terser';
+import postcss from 'rollup-plugin-postcss';
+
+export default {
+  input: 'src/index.ts',
+  
+  output: [
+    {
+      file: 'dist/index.esm.js',
+      format: 'esm',
+      sourcemap: true,
+    },
+    {
+      file: 'dist/index.cjs.js',
+      format: 'cjs',
+      sourcemap: true,
+    },
+    {
+      file: 'dist/index.umd.js',
+      format: 'umd',
+      name: 'MyLibrary',
+      sourcemap: true,
+      globals: {
+        react: 'React',
+      },
+    },
+  ],
+  
+  external: ['react', 'react-dom'],
+  
+  plugins: [
+    resolve(),
+    commonjs(),
+    typescript({
+      tsconfig: './tsconfig.json',
+    }),
+    postcss({
+      extract: true,
+      minimize: true,
+    }),
+    terser(),
+  ],
+};
+```
+
+## 代码规范
+
+### 1. ESLint 配置
+
+```javascript
+// .eslintrc.js
+module.exports = {
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+  },
+  extends: [
+    'eslint:recommended',
+    'plugin:react/recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react-hooks/recommended',
+    'prettier',
+  ],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
+    },
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+  },
+  plugins: ['react', '@typescript-eslint', 'react-hooks'],
+  rules: {
+    'react/react-in-jsx-scope': 'off',
+    'react/prop-types': 'off',
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
+  },
+  settings: {
+    react: {
+      version: 'detect',
+    },
+  },
+};
+```
+
+### 2. Prettier 配置
+
+```javascript
+// .prettierrc.js
+module.exports = {
+  printWidth: 100,
+  tabWidth: 2,
+  useTabs: false,
+  semi: true,
+  singleQuote: true,
+  quoteProps: 'as-needed',
+  jsxSingleQuote: false,
+  trailingComma: 'es5',
+  bracketSpacing: true,
+  jsxBracketSameLine: false,
+  arrowParens: 'always',
+  endOfLine: 'lf',
+};
+```
+
+### 3. Stylelint 配置
+
+```javascript
+// .stylelintrc.js
+module.exports = {
+  extends: [
+    'stylelint-config-standard',
+    'stylelint-config-prettier',
+  ],
+  rules: {
+    'selector-class-pattern': null,
+    'custom-property-pattern': null,
+    'no-descending-specificity': null,
+  },
+};
+```
+
+## Git 工作流
+
+### 1. Husky 配置
+
+```bash
+# 安装 Husky
+npm install -D husky
+npx husky install
+
+# 添加 pre-commit hook
+npx husky add .husky/pre-commit "npm run lint-staged"
+
+# 添加 commit-msg hook
+npx husky add .husky/commit-msg "npx commitlint --edit $1"
+```
+
+### 2. lint-staged 配置
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx,ts,tsx}': [
+    'eslint --fix',
+    'prettier --write',
+  ],
+  '*.{css,less,scss}': [
+    'stylelint --fix',
+    'prettier --write',
+  ],
+  '*.{json,md}': [
+    'prettier --write',
+  ],
+};
+```
+
+### 3. Commitlint 配置
+
+```javascript
+// commitlint.config.js
+module.exports = {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    'type-enum': [
+      2,
+      'always',
+      [
+        'feat',     // 新功能
+        'fix',      // 修复 bug
+        'docs',     // 文档更新
+        'style',    // 代码格式
+        'refactor', // 重构
+        'perf',     // 性能优化
+        'test',     // 测试
+        'chore',    // 构建/工具
+        'revert',   // 回滚
+      ],
+    ],
+    'subject-case': [0],
+  },
+};
+```
+
+## 包管理
+
+### 1. npm vs yarn vs pnpm
+
+```bash
+# npm
+npm install
+npm install lodash
+npm install -D webpack
+
+# yarn
+yarn
+yarn add lodash
+yarn add -D webpack
+
+# pnpm（推荐）
+pnpm install
+pnpm add lodash
+pnpm add -D webpack
+```
+
+### 2. package.json 配置
+
+```json
 {
-    "editor.codeActionsOnSave": {
-    	"source.fixAll": true
-	}
+  "name": "my-app",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,less,json}\"",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "prepare": "husky install"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^4.3.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
 }
 ```
 
+### 3. Monorepo 管理
 
-
-##### Prettier
-
-我们可以安装`VSCode`的`prettier-vscode`，这样我们可以直接在`VSCode`使用`prettier`格式化代码。
-
-``` json
-// .vscode/setting.json
-"editor.defaultFormatter": "esbenp.prettier-vscode"
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - 'packages/*'
+  - 'apps/*'
 ```
 
+```json
+// packages/shared/package.json
+{
+  "name": "@myapp/shared",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
 
-
-##### Gitlens
-
-能看到代码修改人和修改时间。
-
-
-
-##### Bracket Pair Colorizer 2
-
-括号高亮。
-
-
-
-##### Color HighLight 
-
-颜色高亮。
-
-
-
-##### ES7 React/Redux Snippets
-
-代码补全。
-
-
-
-##### Path Interllisense 
-
-代码补全
-
-
-
-##### EditorConfig
-
-该插件可以根据项目目录下的`.editorconfig`自动调整缩进等参数。
-
-``` 
-root = true
-
-[*]
-end_of_line = lf
-insert_final_newline = true
-trim_trailing_whitespace = true
-charset = utf-8
-indent_style = space
-indent_size = 4 
+// apps/web/package.json
+{
+  "name": "@myapp/web",
+  "dependencies": {
+    "@myapp/shared": "workspace:*"
+  }
+}
 ```
 
+## 环境变量管理
 
+### 1. .env 文件
 
-##### Code Spell Checker
+```bash
+# .env.development
+VITE_API_URL=http://localhost:8080
+VITE_APP_TITLE=My App (Dev)
 
-单词检查。
+# .env.production
+VITE_API_URL=https://api.example.com
+VITE_APP_TITLE=My App
+```
 
-##### Open In Browser
+### 2. 使用环境变量
 
-##### Live Server -->
+```typescript
+// Vite
+const apiUrl = import.meta.env.VITE_API_URL;
 
+// Webpack
+const apiUrl = process.env.REACT_APP_API_URL;
+```
 
+### 3. 类型定义
 
+```typescript
+// env.d.ts
+interface ImportMetaEnv {
+  readonly VITE_API_URL: string;
+  readonly VITE_APP_TITLE: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+```
+
+## CI/CD 配置
+
+### 1. GitHub Actions
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Lint
+        run: pnpm run lint
+      
+      - name: Test
+        run: pnpm run test
+      
+      - name: Build
+        run: pnpm run build
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+```
+
+### 2. 自动部署
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install and Build
+        run: |
+          pnpm install
+          pnpm run build
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID }}
+          vercel-project-id: ${{ secrets.PROJECT_ID }}
+```
+
+## 性能监控
+
+### 1. 构建分析
+
+```javascript
+// 使用 webpack-bundle-analyzer
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+
+module.exports = {
+  plugins: [
+    new BundleAnalyzerPlugin({
+      analyzerMode: 'static',
+      reportFilename: 'bundle-report.html',
+    }),
+  ],
+};
+```
+
+### 2. 运行时监控
+
+```typescript
+// 性能监控
+if ('PerformanceObserver' in window) {
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      console.log('Performance:', entry);
+      // 上报到监控平台
+    }
+  });
+  
+  observer.observe({ entryTypes: ['navigation', 'resource', 'paint'] });
+}
+
+// 错误监控
+window.addEventListener('error', (event) => {
+  console.error('Error:', event.error);
+  // 上报错误
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled Promise:', event.reason);
+  // 上报错误
+});
+```
+
+## 最佳实践
+
+### 1. 项目结构
+
+```
+my-app/
+├── public/              # 静态资源
+├── src/
+│   ├── assets/         # 资源文件
+│   ├── components/     # 组件
+│   ├── hooks/          # 自定义 Hooks
+│   ├── pages/          # 页面
+│   ├── services/       # API 服务
+│   ├── store/          # 状态管理
+│   ├── styles/         # 全局样式
+│   ├── utils/          # 工具函数
+│   ├── App.tsx
+│   └── main.tsx
+├── tests/              # 测试文件
+├── .env                # 环境变量
+├── .eslintrc.js        # ESLint 配置
+├── .prettierrc.js      # Prettier 配置
+├── tsconfig.json       # TypeScript 配置
+├── vite.config.ts      # Vite 配置
+└── package.json
+```
+
+### 2. 代码分割
+
+```typescript
+// 路由懒加载
+import { lazy, Suspense } from 'react';
+
+const Home = lazy(() => import('./pages/Home'));
+const About = lazy(() => import('./pages/About'));
+
+function App() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+      </Routes>
+    </Suspense>
+  );
+}
+```
+
+### 3. 资源优化
+
+```typescript
+// 图片懒加载
+import { useEffect, useRef } from 'react';
+
+function LazyImage({ src, alt }) {
+  const imgRef = useRef<HTMLImageElement>(null);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && imgRef.current) {
+          imgRef.current.src = src;
+          observer.disconnect();
+        }
+      });
+    });
+    
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [src]);
+  
+  return <img ref={imgRef} alt={alt} />;
+}
+```
+
+## 总结
+
+前端工程化涵盖了开发、构建、测试、部署的全流程，核心目标是：
+
+1. **提高开发效率**：使用现代化的工具和工作流
+2. **保证代码质量**：通过规范和自动化检查
+3. **优化性能**：构建优化和运行时监控
+4. **简化部署**：自动化 CI/CD 流程
+
+## 延伸阅读
+
+- [Webpack 官方文档](https://webpack.js.org/)
+- [Vite 官方文档](https://vitejs.dev/)
+- [ESLint 规则](https://eslint.org/docs/rules/)
+- [Conventional Commits](https://www.conventionalcommits.org/)

@@ -1,0 +1,916 @@
+---
+sidebar_position: 4
+title: 在线教育平台实战
+tags: [全栈, React, Spring Boot, MySQL, 在线教育]
+---
+
+# 在线教育平台实战
+
+## 项目概述
+
+构建一个功能完整的在线教育平台，包含课程管理、视频播放、在线考试、学习进度跟踪等功能。
+
+### 技术栈
+
+**前端**：
+- React 18 + TypeScript
+- Ant Design
+- Redux Toolkit
+- React Router v6
+- Video.js (视频播放)
+
+**后端**：
+- Spring Boot 3.0
+- Spring Security + JWT
+- MySQL + MyBatis Plus
+- Redis (缓存)
+- MinIO (文件存储)
+- RabbitMQ (消息队列)
+
+### 功能特性
+
+- ✅ 用户角色管理（学生、教师、管理员）
+- ✅ 课程管理（创建、编辑、发布）
+- ✅ 视频上传与播放
+- ✅ 章节管理
+- ✅ 在线考试
+- ✅ 学习进度跟踪
+- ✅ 评论与评分
+- ✅ 订单支付
+- ✅ 证书生成
+
+## 数据库设计
+
+### 用户表（user）
+
+```sql
+CREATE TABLE `user` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+  `username` VARCHAR(50) NOT NULL UNIQUE,
+  `password` VARCHAR(255) NOT NULL,
+  `email` VARCHAR(100) NOT NULL UNIQUE,
+  `phone` VARCHAR(20),
+  `avatar` VARCHAR(255),
+  `role` ENUM('STUDENT', 'TEACHER', 'ADMIN') DEFAULT 'STUDENT',
+  `status` TINYINT DEFAULT 1 COMMENT '1:正常 0:禁用',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_email (email),
+  INDEX idx_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### 课程表（course）
+
+```sql
+CREATE TABLE `course` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+  `title` VARCHAR(200) NOT NULL,
+  `description` TEXT,
+  `cover_image` VARCHAR(255),
+  `teacher_id` BIGINT NOT NULL,
+  `category_id` INT NOT NULL,
+  `level` ENUM('BEGINNER', 'INTERMEDIATE', 'ADVANCED') DEFAULT 'BEGINNER',
+  `price` DECIMAL(10, 2) DEFAULT 0,
+  `original_price` DECIMAL(10, 2),
+  `student_count` INT DEFAULT 0,
+  `rating` DECIMAL(3, 2) DEFAULT 0,
+  `rating_count` INT DEFAULT 0,
+  `status` ENUM('DRAFT', 'PUBLISHED', 'OFFLINE') DEFAULT 'DRAFT',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (teacher_id) REFERENCES user(id),
+  INDEX idx_teacher (teacher_id),
+  INDEX idx_category (category_id),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### 章节表（chapter）
+
+```sql
+CREATE TABLE `chapter` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+  `course_id` BIGINT NOT NULL,
+  `title` VARCHAR(200) NOT NULL,
+  `sort_order` INT DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE,
+  INDEX idx_course (course_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### 课时表（lesson）
+
+```sql
+CREATE TABLE `lesson` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+  `chapter_id` BIGINT NOT NULL,
+  `title` VARCHAR(200) NOT NULL,
+  `video_url` VARCHAR(255),
+  `duration` INT COMMENT '时长(秒)',
+  `is_free` TINYINT DEFAULT 0 COMMENT '是否免费试看',
+  `sort_order` INT DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (chapter_id) REFERENCES chapter(id) ON DELETE CASCADE,
+  INDEX idx_chapter (chapter_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### 学习进度表（learning_progress）
+
+```sql
+CREATE TABLE `learning_progress` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+  `user_id` BIGINT NOT NULL,
+  `lesson_id` BIGINT NOT NULL,
+  `progress` INT DEFAULT 0 COMMENT '进度百分比',
+  `last_position` INT DEFAULT 0 COMMENT '最后观看位置(秒)',
+  `is_completed` TINYINT DEFAULT 0,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES user(id),
+  FOREIGN KEY (lesson_id) REFERENCES lesson(id),
+  UNIQUE KEY uk_user_lesson (user_id, lesson_id),
+  INDEX idx_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### 订单表（order）
+
+```sql
+CREATE TABLE `order` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+  `order_no` VARCHAR(32) NOT NULL UNIQUE,
+  `user_id` BIGINT NOT NULL,
+  `course_id` BIGINT NOT NULL,
+  `amount` DECIMAL(10, 2) NOT NULL,
+  `status` ENUM('PENDING', 'PAID', 'CANCELLED', 'REFUNDED') DEFAULT 'PENDING',
+  `pay_type` ENUM('ALIPAY', 'WECHAT', 'BALANCE') DEFAULT 'ALIPAY',
+  `pay_time` TIMESTAMP NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES user(id),
+  FOREIGN KEY (course_id) REFERENCES course(id),
+  INDEX idx_user (user_id),
+  INDEX idx_order_no (order_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+## 后端实现
+
+### 1. 项目结构
+
+```
+edu-platform-backend/
+├── src/main/java/com/edu/
+│   ├── config/          # 配置类
+│   ├── controller/      # 控制器
+│   ├── service/         # 服务层
+│   ├── mapper/          # 数据访问层
+│   ├── entity/          # 实体类
+│   ├── dto/             # 数据传输对象
+│   ├── vo/              # 视图对象
+│   ├── security/        # 安全配置
+│   ├── exception/       # 异常处理
+│   └── util/            # 工具类
+└── src/main/resources/
+    ├── application.yml
+    └── mapper/          # MyBatis XML
+```
+
+### 2. 实体类
+
+```java
+// User.java
+@Data
+@TableName("user")
+public class User {
+    @TableId(type = IdType.AUTO)
+    private Long id;
+    
+    private String username;
+    private String password;
+    private String email;
+    private String phone;
+    private String avatar;
+    
+    @TableField("role")
+    private UserRole role;
+    
+    private Integer status;
+    
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createdAt;
+    
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updatedAt;
+}
+
+public enum UserRole {
+    STUDENT, TEACHER, ADMIN
+}
+```
+
+```java
+// Course.java
+@Data
+@TableName("course")
+public class Course {
+    @TableId(type = IdType.AUTO)
+    private Long id;
+    
+    private String title;
+    private String description;
+    private String coverImage;
+    private Long teacherId;
+    private Integer categoryId;
+    private CourseLevel level;
+    private BigDecimal price;
+    private BigDecimal originalPrice;
+    private Integer studentCount;
+    private BigDecimal rating;
+    private Integer ratingCount;
+    private CourseStatus status;
+    
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createdAt;
+    
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updatedAt;
+    
+    // 非数据库字段
+    @TableField(exist = false)
+    private User teacher;
+    
+    @TableField(exist = false)
+    private List<Chapter> chapters;
+}
+
+public enum CourseLevel {
+    BEGINNER, INTERMEDIATE, ADVANCED
+}
+
+public enum CourseStatus {
+    DRAFT, PUBLISHED, OFFLINE
+}
+```
+
+### 3. 服务层实现
+
+```java
+// CourseService.java
+@Service
+@Slf4j
+public class CourseService {
+    
+    @Autowired
+    private CourseMapper courseMapper;
+    
+    @Autowired
+    private ChapterMapper chapterMapper;
+    
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+    
+    /**
+     * 获取课程列表
+     */
+    public PageResult<CourseVO> getCourseList(CourseQueryDTO query) {
+        Page<Course> page = new Page<>(query.getPage(), query.getPageSize());
+        
+        LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Course::getStatus, CourseStatus.PUBLISHED)
+               .like(StringUtils.hasText(query.getKeyword()), 
+                     Course::getTitle, query.getKeyword())
+               .eq(query.getCategoryId() != null, 
+                   Course::getCategoryId, query.getCategoryId())
+               .eq(query.getLevel() != null, 
+                   Course::getLevel, query.getLevel())
+               .orderByDesc(Course::getCreatedAt);
+        
+        Page<Course> result = courseMapper.selectPage(page, wrapper);
+        
+        List<CourseVO> voList = result.getRecords().stream()
+            .map(this::convertToVO)
+            .collect(Collectors.toList());
+        
+        return PageResult.of(voList, result.getTotal());
+    }
+    
+    /**
+     * 获取课程详情
+     */
+    public CourseDetailVO getCourseDetail(Long courseId) {
+        // 先从缓存获取
+        String cacheKey = "course:detail:" + courseId;
+        CourseDetailVO cached = (CourseDetailVO) redisTemplate.opsForValue().get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+        
+        // 查询课程
+        Course course = courseMapper.selectById(courseId);
+        if (course == null) {
+            throw new BusinessException("课程不存在");
+        }
+        
+        // 查询章节和课时
+        List<Chapter> chapters = chapterMapper.selectList(
+            new LambdaQueryWrapper<Chapter>()
+                .eq(Chapter::getCourseId, courseId)
+                .orderByAsc(Chapter::getSortOrder)
+        );
+        
+        CourseDetailVO vo = convertToDetailVO(course, chapters);
+        
+        // 缓存1小时
+        redisTemplate.opsForValue().set(cacheKey, vo, 1, TimeUnit.HOURS);
+        
+        return vo;
+    }
+    
+    /**
+     * 创建课程
+     */
+    @Transactional
+    public Long createCourse(CreateCourseDTO dto, Long teacherId) {
+        Course course = new Course();
+        BeanUtils.copyProperties(dto, course);
+        course.setTeacherId(teacherId);
+        course.setStatus(CourseStatus.DRAFT);
+        
+        courseMapper.insert(course);
+        
+        return course.getId();
+    }
+    
+    /**
+     * 发布课程
+     */
+    @Transactional
+    public void publishCourse(Long courseId, Long teacherId) {
+        Course course = courseMapper.selectById(courseId);
+        
+        if (course == null) {
+            throw new BusinessException("课程不存在");
+        }
+        
+        if (!course.getTeacherId().equals(teacherId)) {
+            throw new BusinessException("无权限");
+        }
+        
+        // 检查课程是否完整
+        validateCourseComplete(courseId);
+        
+        course.setStatus(CourseStatus.PUBLISHED);
+        courseMapper.updateById(course);
+        
+        // 清除缓存
+        redisTemplate.delete("course:detail:" + courseId);
+    }
+    
+    private void validateCourseComplete(Long courseId) {
+        // 检查是否有章节
+        Long chapterCount = chapterMapper.selectCount(
+            new LambdaQueryWrapper<Chapter>()
+                .eq(Chapter::getCourseId, courseId)
+        );
+        
+        if (chapterCount == 0) {
+            throw new BusinessException("请先添加课程章节");
+        }
+        
+        // 检查是否有课时
+        // ...
+    }
+}
+```
+
+```java
+// LearningProgressService.java
+@Service
+public class LearningProgressService {
+    
+    @Autowired
+    private LearningProgressMapper progressMapper;
+    
+    @Autowired
+    private LessonMapper lessonMapper;
+    
+    /**
+     * 更新学习进度
+     */
+    @Transactional
+    public void updateProgress(Long userId, Long lessonId, 
+                               Integer position, Integer duration) {
+        LearningProgress progress = progressMapper.selectOne(
+            new LambdaQueryWrapper<LearningProgress>()
+                .eq(LearningProgress::getUserId, userId)
+                .eq(LearningProgress::getLessonId, lessonId)
+        );
+        
+        if (progress == null) {
+            progress = new LearningProgress();
+            progress.setUserId(userId);
+            progress.setLessonId(lessonId);
+        }
+        
+        progress.setLastPosition(position);
+        
+        // 计算进度百分比
+        int progressPercent = (int) ((position * 100.0) / duration);
+        progress.setProgress(Math.min(progressPercent, 100));
+        
+        // 判断是否完成
+        if (progressPercent >= 90) {
+            progress.setIsCompleted(1);
+        }
+        
+        if (progress.getId() == null) {
+            progressMapper.insert(progress);
+        } else {
+            progressMapper.updateById(progress);
+        }
+    }
+    
+    /**
+     * 获取课程学习进度
+     */
+    public CourseProgressVO getCourseProgress(Long userId, Long courseId) {
+        // 查询课程所有课时
+        List<Lesson> lessons = lessonMapper.selectByCourseId(courseId);
+        
+        // 查询学习进度
+        List<LearningProgress> progressList = progressMapper.selectList(
+            new LambdaQueryWrapper<LearningProgress>()
+                .eq(LearningProgress::getUserId, userId)
+                .in(LearningProgress::getLessonId, 
+                    lessons.stream().map(Lesson::getId).collect(Collectors.toList()))
+        );
+        
+        Map<Long, LearningProgress> progressMap = progressList.stream()
+            .collect(Collectors.toMap(LearningProgress::getLessonId, p -> p));
+        
+        // 计算总进度
+        int totalLessons = lessons.size();
+        int completedLessons = (int) progressList.stream()
+            .filter(p -> p.getIsCompleted() == 1)
+            .count();
+        
+        int overallProgress = totalLessons > 0 
+            ? (completedLessons * 100 / totalLessons) 
+            : 0;
+        
+        CourseProgressVO vo = new CourseProgressVO();
+        vo.setCourseId(courseId);
+        vo.setTotalLessons(totalLessons);
+        vo.setCompletedLessons(completedLessons);
+        vo.setOverallProgress(overallProgress);
+        vo.setLessonProgress(progressMap);
+        
+        return vo;
+    }
+}
+```
+
+### 4. 控制器
+
+```java
+// CourseController.java
+@RestController
+@RequestMapping("/api/courses")
+@Slf4j
+public class CourseController {
+    
+    @Autowired
+    private CourseService courseService;
+    
+    /**
+     * 获取课程列表
+     */
+    @GetMapping
+    public Result<PageResult<CourseVO>> getCourseList(CourseQueryDTO query) {
+        PageResult<CourseVO> result = courseService.getCourseList(query);
+        return Result.success(result);
+    }
+    
+    /**
+     * 获取课程详情
+     */
+    @GetMapping("/{id}")
+    public Result<CourseDetailVO> getCourseDetail(@PathVariable Long id) {
+        CourseDetailVO vo = courseService.getCourseDetail(id);
+        return Result.success(vo);
+    }
+    
+    /**
+     * 创建课程
+     */
+    @PostMapping
+    @PreAuthorize("hasRole('TEACHER')")
+    public Result<Long> createCourse(@RequestBody @Valid CreateCourseDTO dto) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Long courseId = courseService.createCourse(dto, userId);
+        return Result.success(courseId);
+    }
+    
+    /**
+     * 发布课程
+     */
+    @PostMapping("/{id}/publish")
+    @PreAuthorize("hasRole('TEACHER')")
+    public Result<Void> publishCourse(@PathVariable Long id) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        courseService.publishCourse(id, userId);
+        return Result.success();
+    }
+}
+```
+
+### 5. 文件上传
+
+```java
+// FileUploadService.java
+@Service
+public class FileUploadService {
+    
+    @Autowired
+    private MinioClient minioClient;
+    
+    @Value("${minio.bucket}")
+    private String bucket;
+    
+    /**
+     * 上传视频
+     */
+    public String uploadVideo(MultipartFile file) {
+        try {
+            String fileName = generateFileName(file.getOriginalFilename());
+            String objectName = "videos/" + fileName;
+            
+            minioClient.putObject(
+                PutObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(objectName)
+                    .stream(file.getInputStream(), file.getSize(), -1)
+                    .contentType(file.getContentType())
+                    .build()
+            );
+            
+            return getFileUrl(objectName);
+        } catch (Exception e) {
+            throw new BusinessException("视频上传失败");
+        }
+    }
+    
+    /**
+     * 生成文件名
+     */
+    private String generateFileName(String originalFilename) {
+        String extension = originalFilename.substring(
+            originalFilename.lastIndexOf(".")
+        );
+        return UUID.randomUUID().toString() + extension;
+    }
+    
+    /**
+     * 获取文件URL
+     */
+    private String getFileUrl(String objectName) {
+        try {
+            return minioClient.getPresignedObjectUrl(
+                GetPresignedObjectUrlArgs.builder()
+                    .bucket(bucket)
+                    .object(objectName)
+                    .expiry(7, TimeUnit.DAYS)
+                    .build()
+            );
+        } catch (Exception e) {
+            throw new BusinessException("获取文件URL失败");
+        }
+    }
+}
+```
+
+## 前端实现
+
+### 1. 课程列表页面
+
+```tsx
+// src/pages/CourseList/index.tsx
+import { useState } from 'react';
+import { Card, Row, Col, Pagination, Input, Select } from 'antd';
+import { useQuery } from '@tanstack/react-query';
+import { getCourseList } from '@/api/course';
+import CourseCard from '@/components/CourseCard';
+
+const { Search } = Input;
+
+export default function CourseList() {
+  const [page, setPage] = useState(1);
+  const [keyword, setKeyword] = useState('');
+  const [category, setCategory] = useState<number>();
+  
+  const { data, isLoading } = useQuery({
+    queryKey: ['courses', page, keyword, category],
+    queryFn: () => getCourseList({ page, pageSize: 12, keyword, categoryId: category }),
+  });
+  
+  return (
+    <div className="course-list">
+      {/* 搜索和筛选 */}
+      <div className="filter-bar">
+        <Search
+          placeholder="搜索课程"
+          onSearch={setKeyword}
+          style={{ width: 300 }}
+        />
+        <Select
+          placeholder="选择分类"
+          style={{ width: 200, marginLeft: 16 }}
+          onChange={setCategory}
+          allowClear
+        >
+          <Select.Option value={1}>前端开发</Select.Option>
+          <Select.Option value={2}>后端开发</Select.Option>
+          <Select.Option value={3}>移动开发</Select.Option>
+        </Select>
+      </div>
+      
+      {/* 课程列表 */}
+      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+        {data?.list.map((course) => (
+          <Col key={course.id} xs={24} sm={12} md={8} lg={6}>
+            <CourseCard course={course} />
+          </Col>
+        ))}
+      </Row>
+      
+      {/* 分页 */}
+      <Pagination
+        current={page}
+        total={data?.total}
+        pageSize={12}
+        onChange={setPage}
+        style={{ marginTop: 24, textAlign: 'center' }}
+      />
+    </div>
+  );
+}
+```
+
+### 2. 视频播放器
+
+```tsx
+// src/components/VideoPlayer/index.tsx
+import { useEffect, useRef } from 'react';
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
+
+interface VideoPlayerProps {
+  src: string;
+  onTimeUpdate?: (currentTime: number) => void;
+  onEnded?: () => void;
+  initialTime?: number;
+}
+
+export default function VideoPlayer({
+  src,
+  onTimeUpdate,
+  onEnded,
+  initialTime = 0,
+}: VideoPlayerProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<any>(null);
+  
+  useEffect(() => {
+    if (!videoRef.current) return;
+    
+    // 初始化播放器
+    const player = videojs(videoRef.current, {
+      controls: true,
+      autoplay: false,
+      preload: 'auto',
+      fluid: true,
+      sources: [{
+        src,
+        type: 'video/mp4',
+      }],
+    });
+    
+    playerRef.current = player;
+    
+    // 设置初始播放位置
+    if (initialTime > 0) {
+      player.currentTime(initialTime);
+    }
+    
+    // 监听时间更新
+    player.on('timeupdate', () => {
+      const currentTime = player.currentTime();
+      onTimeUpdate?.(currentTime);
+    });
+    
+    // 监听播放结束
+    player.on('ended', () => {
+      onEnded?.();
+    });
+    
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.dispose();
+      }
+    };
+  }, [src]);
+  
+  return (
+    <div data-vjs-player>
+      <video ref={videoRef} className="video-js" />
+    </div>
+  );
+}
+```
+
+### 3. 课程学习页面
+
+```tsx
+// src/pages/CourseLearn/index.tsx
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Layout, Menu, Progress } from 'antd';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { getCourseDetail, updateProgress } from '@/api/course';
+import VideoPlayer from '@/components/VideoPlayer';
+
+const { Sider, Content } = Layout;
+
+export default function CourseLearn() {
+  const { id } = useParams<{ id: string }>();
+  const [currentLesson, setCurrentLesson] = useState<any>(null);
+  
+  const { data: course } = useQuery({
+    queryKey: ['course', id],
+    queryFn: () => getCourseDetail(Number(id)),
+  });
+  
+  const updateProgressMutation = useMutation({
+    mutationFn: (data: { lessonId: number; position: number; duration: number }) =>
+      updateProgress(data),
+  });
+  
+  // 自动播放第一个课时
+  useEffect(() => {
+    if (course && !currentLesson) {
+      const firstLesson = course.chapters[0]?.lessons[0];
+      if (firstLesson) {
+        setCurrentLesson(firstLesson);
+      }
+    }
+  }, [course]);
+  
+  // 定时保存进度
+  useEffect(() => {
+    if (!currentLesson) return;
+    
+    const timer = setInterval(() => {
+      const video = document.querySelector('video');
+      if (video && !video.paused) {
+        updateProgressMutation.mutate({
+          lessonId: currentLesson.id,
+          position: Math.floor(video.currentTime),
+          duration: Math.floor(video.duration),
+        });
+      }
+    }, 10000); // 每10秒保存一次
+    
+    return () => clearInterval(timer);
+  }, [currentLesson]);
+  
+  return (
+    <Layout style={{ minHeight: '100vh' }}>
+      {/* 侧边栏 - 课程目录 */}
+      <Sider width={300} theme="light">
+        <div style={{ padding: 16 }}>
+          <h3>{course?.title}</h3>
+          <Progress percent={course?.progress || 0} />
+        </div>
+        
+        <Menu
+          mode="inline"
+          selectedKeys={[currentLesson?.id?.toString()]}
+          items={course?.chapters.map((chapter: any) => ({
+            key: chapter.id,
+            label: chapter.title,
+            children: chapter.lessons.map((lesson: any) => ({
+              key: lesson.id,
+              label: lesson.title,
+              onClick: () => setCurrentLesson(lesson),
+            })),
+          }))}
+        />
+      </Sider>
+      
+      {/* 主内容区 - 视频播放 */}
+      <Content style={{ padding: 24 }}>
+        {currentLesson && (
+          <>
+            <h2>{currentLesson.title}</h2>
+            <VideoPlayer
+              src={currentLesson.videoUrl}
+              initialTime={currentLesson.lastPosition || 0}
+              onTimeUpdate={(time) => {
+                // 实时更新进度
+              }}
+              onEnded={() => {
+                // 播放完成，自动播放下一个
+              }}
+            />
+          </>
+        )}
+      </Content>
+    </Layout>
+  );
+}
+```
+
+## 部署
+
+### 1. 后端部署
+
+```yaml
+# application-prod.yml
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/edu_platform?useSSL=false
+    username: root
+    password: ${DB_PASSWORD}
+  
+  redis:
+    host: redis
+    port: 6379
+  
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+
+minio:
+  endpoint: http://minio:9000
+  accessKey: ${MINIO_ACCESS_KEY}
+  secretKey: ${MINIO_SECRET_KEY}
+  bucket: edu-platform
+```
+
+```dockerfile
+# Dockerfile
+FROM openjdk:17-jdk-slim
+
+WORKDIR /app
+
+COPY target/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+### 2. 前端部署
+
+```dockerfile
+# Dockerfile
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+## 总结
+
+通过这个项目，我们学习了：
+
+1. **复杂业务逻辑**：课程管理、学习进度跟踪
+2. **视频处理**：上传、存储、播放
+3. **权限控制**：多角色权限管理
+4. **性能优化**：Redis缓存、分页查询
+5. **微服务架构**：消息队列、文件存储
+
+## 延伸阅读
+
+- [Spring Boot文档](https://spring.io/projects/spring-boot)
+- [MyBatis Plus文档](https://baomidou.com/)
+- [Video.js文档](https://videojs.com/)
+

@@ -1,0 +1,986 @@
+---
+sidebar_position: 3
+title: 组件库开发指南
+tags: [组件库, Monorepo, Storybook, 设计系统]
+---
+
+# 组件库开发指南
+
+## 概述
+
+组件库是一套可复用的 UI 组件集合，用于统一产品的视觉风格和交互体验。本文将介绍如何从零开始构建一个企业级组件库。
+
+### 核心目标
+
+- **可复用性**：组件可在多个项目中使用
+- **一致性**：统一的设计规范和交互体验
+- **可维护性**：清晰的代码结构和文档
+- **可扩展性**：易于添加新组件和功能
+
+## 技术选型
+
+### 1. 构建工具
+
+```bash
+# Vite - 快速的构建工具
+npm create vite@latest my-ui-library -- --template react-ts
+
+# Rollup - 专业的库打包工具
+npm install -D rollup @rollup/plugin-node-resolve @rollup/plugin-commonjs
+```
+
+### 2. 样式方案
+
+```bash
+# CSS-in-JS
+npm install styled-components
+
+# CSS Modules
+# Vite 原生支持
+
+# Less/Sass
+npm install -D less sass
+```
+
+### 3. 文档工具
+
+```bash
+# Storybook - 组件开发和文档
+npx storybook@latest init
+
+# VitePress - 文档站点
+npm install -D vitepress
+```
+
+## 项目初始化
+
+### 1. 创建 Monorepo 结构
+
+```bash
+my-ui-library/
+├── packages/
+│   ├── components/        # 组件源码
+│   ├── utils/            # 工具函数
+│   ├── hooks/            # React Hooks
+│   └── theme/            # 主题配置
+├── docs/                 # 文档站点
+├── examples/             # 示例项目
+├── scripts/              # 构建脚本
+├── package.json
+├── pnpm-workspace.yaml
+└── tsconfig.json
+```
+
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - 'packages/*'
+  - 'docs'
+  - 'examples/*'
+```
+
+### 2. 配置 TypeScript
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["packages/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+### 3. 配置构建工具
+
+```javascript
+// rollup.config.js
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import typescript from '@rollup/plugin-typescript';
+import { terser } from 'rollup-plugin-terser';
+import postcss from 'rollup-plugin-postcss';
+
+export default {
+  input: 'packages/components/index.ts',
+  output: [
+    {
+      file: 'dist/index.esm.js',
+      format: 'esm',
+      sourcemap: true,
+    },
+    {
+      file: 'dist/index.cjs.js',
+      format: 'cjs',
+      sourcemap: true,
+    },
+    {
+      file: 'dist/index.umd.js',
+      format: 'umd',
+      name: 'MyUI',
+      sourcemap: true,
+      globals: {
+        react: 'React',
+        'react-dom': 'ReactDOM',
+      },
+    },
+  ],
+  external: ['react', 'react-dom'],
+  plugins: [
+    resolve(),
+    commonjs(),
+    typescript({
+      tsconfig: './tsconfig.json',
+      declaration: true,
+      declarationDir: 'dist/types',
+    }),
+    postcss({
+      extract: true,
+      minimize: true,
+    }),
+    terser(),
+  ],
+};
+```
+
+## 组件开发
+
+### 1. Button 组件
+
+```tsx
+// packages/components/Button/Button.tsx
+import React, { ButtonHTMLAttributes, ReactNode } from 'react';
+import classNames from 'classnames';
+import './Button.css';
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** 按钮类型 */
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  /** 按钮尺寸 */
+  size?: 'small' | 'medium' | 'large';
+  /** 是否为块级按钮 */
+  block?: boolean;
+  /** 是否禁用 */
+  disabled?: boolean;
+  /** 是否加载中 */
+  loading?: boolean;
+  /** 图标 */
+  icon?: ReactNode;
+  /** 子元素 */
+  children?: ReactNode;
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  variant = 'primary',
+  size = 'medium',
+  block = false,
+  disabled = false,
+  loading = false,
+  icon,
+  children,
+  className,
+  ...rest
+}) => {
+  const classes = classNames(
+    'my-ui-button',
+    `my-ui-button--${variant}`,
+    `my-ui-button--${size}`,
+    {
+      'my-ui-button--block': block,
+      'my-ui-button--loading': loading,
+    },
+    className
+  );
+
+  return (
+    <button
+      className={classes}
+      disabled={disabled || loading}
+      {...rest}
+    >
+      {loading && <span className="my-ui-button__spinner" />}
+      {icon && <span className="my-ui-button__icon">{icon}</span>}
+      {children && <span className="my-ui-button__text">{children}</span>}
+    </button>
+  );
+};
+
+Button.displayName = 'Button';
+```
+
+```css
+/* packages/components/Button/Button.css */
+.my-ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.my-ui-button:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* 变体样式 */
+.my-ui-button--primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.my-ui-button--primary:hover {
+  background: var(--primary-color-hover);
+}
+
+.my-ui-button--secondary {
+  background: var(--secondary-color);
+  color: var(--text-color);
+}
+
+.my-ui-button--danger {
+  background: var(--danger-color);
+  color: white;
+}
+
+.my-ui-button--ghost {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+/* 尺寸样式 */
+.my-ui-button--small {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.my-ui-button--large {
+  padding: 12px 24px;
+  font-size: 16px;
+}
+
+/* 块级按钮 */
+.my-ui-button--block {
+  display: flex;
+  width: 100%;
+}
+
+/* 禁用状态 */
+.my-ui-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 加载状态 */
+.my-ui-button--loading {
+  pointer-events: none;
+}
+
+.my-ui-button__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+```
+
+### 2. Input 组件
+
+```tsx
+// packages/components/Input/Input.tsx
+import React, { InputHTMLAttributes, ReactNode, forwardRef } from 'react';
+import classNames from 'classnames';
+import './Input.css';
+
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  /** 输入框尺寸 */
+  size?: 'small' | 'medium' | 'large';
+  /** 是否显示错误状态 */
+  error?: boolean;
+  /** 错误提示信息 */
+  errorMessage?: string;
+  /** 前缀图标 */
+  prefix?: ReactNode;
+  /** 后缀图标 */
+  suffix?: ReactNode;
+  /** 是否允许清除 */
+  allowClear?: boolean;
+  /** 清除回调 */
+  onClear?: () => void;
+}
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  (
+    {
+      size = 'medium',
+      error = false,
+      errorMessage,
+      prefix,
+      suffix,
+      allowClear = false,
+      onClear,
+      className,
+      disabled,
+      value,
+      ...rest
+    },
+    ref
+  ) => {
+    const wrapperClasses = classNames(
+      'my-ui-input-wrapper',
+      `my-ui-input-wrapper--${size}`,
+      {
+        'my-ui-input-wrapper--error': error,
+        'my-ui-input-wrapper--disabled': disabled,
+      }
+    );
+
+    const inputClasses = classNames('my-ui-input', className);
+
+    const showClear = allowClear && value && !disabled;
+
+    return (
+      <div className="my-ui-input-container">
+        <div className={wrapperClasses}>
+          {prefix && <span className="my-ui-input__prefix">{prefix}</span>}
+          
+          <input
+            ref={ref}
+            className={inputClasses}
+            disabled={disabled}
+            value={value}
+            {...rest}
+          />
+          
+          {showClear && (
+            <button
+              type="button"
+              className="my-ui-input__clear"
+              onClick={onClear}
+            >
+              ×
+            </button>
+          )}
+          
+          {suffix && <span className="my-ui-input__suffix">{suffix}</span>}
+        </div>
+        
+        {error && errorMessage && (
+          <div className="my-ui-input__error-message">{errorMessage}</div>
+        )}
+      </div>
+    );
+  }
+);
+
+Input.displayName = 'Input';
+```
+
+### 3. Modal 组件
+
+```tsx
+// packages/components/Modal/Modal.tsx
+import React, { ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import classNames from 'classnames';
+import './Modal.css';
+
+export interface ModalProps {
+  /** 是否显示 */
+  visible: boolean;
+  /** 标题 */
+  title?: ReactNode;
+  /** 内容 */
+  children: ReactNode;
+  /** 底部内容 */
+  footer?: ReactNode;
+  /** 宽度 */
+  width?: number | string;
+  /** 是否显示关闭按钮 */
+  closable?: boolean;
+  /** 是否点击遮罩关闭 */
+  maskClosable?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
+  /** 确认回调 */
+  onOk?: () => void;
+  /** 取消回调 */
+  onCancel?: () => void;
+}
+
+export const Modal: React.FC<ModalProps> = ({
+  visible,
+  title,
+  children,
+  footer,
+  width = 520,
+  closable = true,
+  maskClosable = true,
+  onClose,
+  onOk,
+  onCancel,
+}) => {
+  // 禁止背景滚动
+  useEffect(() => {
+    if (visible) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [visible]);
+
+  // ESC 键关闭
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && visible && onClose) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [visible, onClose]);
+
+  if (!visible) return null;
+
+  const handleMaskClick = () => {
+    if (maskClosable && onClose) {
+      onClose();
+    }
+  };
+
+  const modalContent = (
+    <div className="my-ui-modal-root">
+      <div className="my-ui-modal-mask" onClick={handleMaskClick} />
+      
+      <div className="my-ui-modal-wrapper">
+        <div
+          className="my-ui-modal"
+          style={{ width }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {closable && (
+            <button className="my-ui-modal__close" onClick={onClose}>
+              ×
+            </button>
+          )}
+          
+          {title && <div className="my-ui-modal__header">{title}</div>}
+          
+          <div className="my-ui-modal__body">{children}</div>
+          
+          {footer !== null && (
+            <div className="my-ui-modal__footer">
+              {footer || (
+                <>
+                  <button
+                    className="my-ui-button my-ui-button--secondary"
+                    onClick={onCancel || onClose}
+                  >
+                    取消
+                  </button>
+                  <button
+                    className="my-ui-button my-ui-button--primary"
+                    onClick={onOk}
+                  >
+                    确定
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modalContent, document.body);
+};
+
+Modal.displayName = 'Modal';
+```
+
+## 主题系统
+
+### 1. 设计令牌（Design Tokens）
+
+```typescript
+// packages/theme/tokens.ts
+export const tokens = {
+  // 颜色
+  colors: {
+    primary: '#1890ff',
+    primaryHover: '#40a9ff',
+    primaryActive: '#096dd9',
+    success: '#52c41a',
+    warning: '#faad14',
+    danger: '#ff4d4f',
+    info: '#1890ff',
+    
+    // 中性色
+    gray1: '#ffffff',
+    gray2: '#fafafa',
+    gray3: '#f5f5f5',
+    gray4: '#e8e8e8',
+    gray5: '#d9d9d9',
+    gray6: '#bfbfbf',
+    gray7: '#8c8c8c',
+    gray8: '#595959',
+    gray9: '#262626',
+    gray10: '#000000',
+  },
+  
+  // 字体
+  fonts: {
+    family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    size: {
+      xs: '12px',
+      sm: '14px',
+      md: '16px',
+      lg: '18px',
+      xl: '20px',
+    },
+    weight: {
+      normal: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+    },
+  },
+  
+  // 间距
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+  },
+  
+  // 圆角
+  radius: {
+    sm: '2px',
+    md: '4px',
+    lg: '8px',
+    xl: '16px',
+    full: '9999px',
+  },
+  
+  // 阴影
+  shadows: {
+    sm: '0 1px 2px rgba(0, 0, 0, 0.05)',
+    md: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    lg: '0 10px 15px rgba(0, 0, 0, 0.1)',
+    xl: '0 20px 25px rgba(0, 0, 0, 0.15)',
+  },
+  
+  // 动画
+  transitions: {
+    fast: '0.1s',
+    normal: '0.2s',
+    slow: '0.3s',
+  },
+};
+```
+
+### 2. CSS 变量
+
+```css
+/* packages/theme/variables.css */
+:root {
+  /* 颜色 */
+  --primary-color: #1890ff;
+  --primary-color-hover: #40a9ff;
+  --primary-color-active: #096dd9;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --danger-color: #ff4d4f;
+  
+  /* 文字颜色 */
+  --text-color: rgba(0, 0, 0, 0.85);
+  --text-color-secondary: rgba(0, 0, 0, 0.65);
+  --text-color-disabled: rgba(0, 0, 0, 0.25);
+  
+  /* 边框 */
+  --border-color: #d9d9d9;
+  --border-radius: 4px;
+  
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* 字体 */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  
+  /* 动画 */
+  --transition-fast: 0.1s;
+  --transition-normal: 0.2s;
+  --transition-slow: 0.3s;
+}
+
+/* 暗色主题 */
+[data-theme='dark'] {
+  --primary-color: #177ddc;
+  --text-color: rgba(255, 255, 255, 0.85);
+  --text-color-secondary: rgba(255, 255, 255, 0.65);
+  --border-color: #434343;
+}
+```
+
+### 3. 主题切换
+
+```tsx
+// packages/theme/ThemeProvider.tsx
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { tokens } from './tokens';
+
+interface ThemeContextValue {
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  tokens: typeof tokens;
+}
+
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme, tokens }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within ThemeProvider');
+  }
+  return context;
+};
+```
+
+## 文档和示例
+
+### 1. Storybook 配置
+
+```typescript
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/react-vite';
+
+const config: StorybookConfig = {
+  stories: ['../packages/**/*.stories.@(js|jsx|ts|tsx)'],
+  addons: [
+    '@storybook/addon-links',
+    '@storybook/addon-essentials',
+    '@storybook/addon-interactions',
+    '@storybook/addon-a11y',
+  ],
+  framework: {
+    name: '@storybook/react-vite',
+    options: {},
+  },
+};
+
+export default config;
+```
+
+### 2. 编写 Story
+
+```tsx
+// packages/components/Button/Button.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react';
+import { Button } from './Button';
+
+const meta: Meta<typeof Button> = {
+  title: 'Components/Button',
+  component: Button,
+  tags: ['autodocs'],
+  argTypes: {
+    variant: {
+      control: 'select',
+      options: ['primary', 'secondary', 'danger', 'ghost'],
+    },
+    size: {
+      control: 'select',
+      options: ['small', 'medium', 'large'],
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof Button>;
+
+export const Primary: Story = {
+  args: {
+    variant: 'primary',
+    children: 'Primary Button',
+  },
+};
+
+export const Secondary: Story = {
+  args: {
+    variant: 'secondary',
+    children: 'Secondary Button',
+  },
+};
+
+export const WithIcon: Story = {
+  args: {
+    variant: 'primary',
+    icon: '🚀',
+    children: 'With Icon',
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    variant: 'primary',
+    loading: true,
+    children: 'Loading',
+  },
+};
+
+export const AllSizes: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+      <Button size="small">Small</Button>
+      <Button size="medium">Medium</Button>
+      <Button size="large">Large</Button>
+    </div>
+  ),
+};
+```
+
+## 测试
+
+### 1. 单元测试
+
+```bash
+npm install -D vitest @testing-library/react @testing-library/jest-dom
+```
+
+```typescript
+// packages/components/Button/Button.test.tsx
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Button } from './Button';
+
+describe('Button', () => {
+  it('renders correctly', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+
+  it('handles click events', () => {
+    const handleClick = vi.fn();
+    render(<Button onClick={handleClick}>Click me</Button>);
+    
+    fireEvent.click(screen.getByText('Click me'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables when loading', () => {
+    render(<Button loading>Click me</Button>);
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('applies correct variant class', () => {
+    render(<Button variant="danger">Delete</Button>);
+    expect(screen.getByRole('button')).toHaveClass('my-ui-button--danger');
+  });
+});
+```
+
+### 2. 可访问性测试
+
+```typescript
+// packages/components/Button/Button.a11y.test.tsx
+import { describe, it } from 'vitest';
+import { render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+import { Button } from './Button';
+
+expect.extend(toHaveNoViolations);
+
+describe('Button Accessibility', () => {
+  it('should not have accessibility violations', async () => {
+    const { container } = render(<Button>Click me</Button>);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+});
+```
+
+## 发布流程
+
+### 1. 版本管理
+
+```json
+// package.json
+{
+  "name": "@mycompany/ui",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "rollup -c",
+    "test": "vitest",
+    "lint": "eslint packages --ext .ts,.tsx",
+    "format": "prettier --write \"packages/**/*.{ts,tsx}\"",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "prepublishOnly": "npm run build && npm run test"
+  }
+}
+```
+
+### 2. 发布到 npm
+
+```bash
+# 登录 npm
+npm login
+
+# 发布
+npm publish --access public
+
+# 使用 changeset 管理版本
+npx changeset
+npx changeset version
+npx changeset publish
+```
+
+### 3. CI/CD 配置
+
+```yaml
+# .github/workflows/publish.yml
+name: Publish Package
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test
+      
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
+
+## 最佳实践
+
+### 1. 组件设计原则
+
+- **单一职责**：每个组件只做一件事
+- **可组合**：组件可以组合使用
+- **可控与非可控**：支持受控和非受控模式
+- **无障碍**：遵循 WCAG 标准
+
+### 2. API 设计
+
+```tsx
+// ✅ 好的 API 设计
+<Button variant="primary" size="large" onClick={handleClick}>
+  Submit
+</Button>
+
+// ❌ 避免的设计
+<Button isPrimary isLarge onClickHandler={handleClick}>
+  Submit
+</Button>
+```
+
+### 3. 性能优化
+
+```tsx
+// 使用 React.memo 避免不必要的重渲染
+export const Button = React.memo<ButtonProps>(({ children, ...props }) => {
+  return <button {...props}>{children}</button>;
+});
+
+// 使用 useMemo 缓存计算结果
+const classes = useMemo(
+  () => classNames('button', `button--${variant}`),
+  [variant]
+);
+```
+
+## 总结
+
+构建组件库需要考虑：
+
+1. **技术选型**：选择合适的构建工具和样式方案
+2. **组件设计**：遵循设计原则，提供良好的 API
+3. **主题系统**：支持主题定制和切换
+4. **文档和示例**：使用 Storybook 提供交互式文档
+5. **测试**：编写单元测试和可访问性测试
+6. **发布流程**：规范的版本管理和发布流程
+
+## 延伸阅读
+
+- [Ant Design 设计规范](https://ant.design/docs/spec/introduce-cn)
+- [Material Design](https://material.io/design)
+- [Storybook 官方文档](https://storybook.js.org/)
+- [React Aria](https://react-spectrum.adobe.com/react-aria/)
+
