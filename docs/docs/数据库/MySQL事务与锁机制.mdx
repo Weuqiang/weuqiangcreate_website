@@ -1,0 +1,603 @@
+---
+sidebar_position: 2
+title: MySQL事务与锁机制
+tags: [数据库, MySQL, 事务, 锁, MVCC]
+---
+
+# MySQL事务与锁机制
+
+事务和锁是保证数据一致性的核心机制，本文将深入讲解MySQL的事务隔离级别、锁机制和MVCC原理。
+
+## 事务ACID特性
+
+```javascript
+const acidProperties = {
+  // 原子性（Atomicity）
+  atomicity: {
+    definition: '事务是不可分割的最小单位',
+    implementation: 'undo log实现回滚',
+    example: '转账：扣款和加款要么都成功，要么都失败'
+  },
+  
+  // 一致性（Consistency）
+  consistency: {
+    definition: '事务前后数据完整性保持一致',
+    implementation: '约束、触发器、应用逻辑',
+    example: '转账前后总金额不变'
+  },
+  
+  // 隔离性（Isolation）
+  isolation: {
+    definition: '并发事务之间相互隔离',
+    implementation: '锁机制、MVCC',
+    example: '一个事务的修改在提交前对其他事务不可见'
+  },
+  
+  // 持久性（Durability）
+  durability: {
+    definition: '事务提交后永久保存',
+    implementation: 'redo log、binlog',
+    example: '提交后即使系统崩溃也不会丢失'
+  }
+};
+```
+
+## 事务隔离级别
+
+### 四种隔离级别
+
+```sql
+-- 1. READ UNCOMMITTED（读未提交）
+SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+-- 问题：脏读
+-- 事务A
+START TRANSACTION;
+UPDATE accounts SET balance = 1000 WHERE id = 1;
+-- 未提交
+
+-- 事务B
+START TRANSACTION;
+SELECT balance FROM accounts WHERE id = 1;  -- 读到1000（脏读）
+COMMIT;
+
+-- 事务A
+ROLLBACK;  -- 回滚，实际balance不是1000
+
+-- 2. READ COMMITTED（读已提交）
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+-- 问题：不可重复读
+-- 事务A
+START TRANSACTION;
+SELECT balance FROM accounts WHERE id = 1;  -- 读到500
+
+-- 事务B
+START TRANSACTION;
+UPDATE accounts SET balance = 1000 WHERE id = 1;
+COMMIT;
+
+-- 事务A
+SELECT balance FROM accounts WHERE id = 1;  -- 读到1000（不可重复读）
+COMMIT;
+
+-- 3. REPEATABLE READ（可重复读，MySQL默认）
+SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+-- 解决不可重复读，但有幻读问题
+-- 事务A
+START TRANSACTION;
+SELECT * FROM accounts WHERE balance > 500;  -- 返回2条
+
+-- 事务B
+START TRANSACTION;
+INSERT INTO accounts (id, balance) VALUES (3, 600);
+COMMIT;
+
+-- 事务A
+SELECT * FROM accounts WHERE balance > 500;  -- 仍返回2条（快照读）
+UPDATE accounts SET balance = balance + 100 WHERE balance > 500;  -- 影响3条（当前读）
+COMMIT;
+
+-- 4. SERIALIZABLE（串行化）
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+-- 完全串行执行，无并发问题，但性能最差
+START TRANSACTION;
+SELECT * FROM accounts WHERE id = 1;  -- 加共享锁
+-- 其他事务无法修改该行
+COMMIT;
+```
+
+### 隔离级别对比
+
+```javascript
+const isolationLevels = {
+  'READ UNCOMMITTED': {
+    dirtyRead: true,      // 脏读
+    nonRepeatableRead: true,  // 不可重复读
+    phantomRead: true,    // 幻读
+    performance: '最高',
+    usage: '几乎不用'
+  },
+  
+  'READ COMMITTED': {
+    dirtyRead: false,
+    nonRepeatableRead: true,
+    phantomRead: true,
+    performance: '较高',
+    usage: 'Oracle、PostgreSQL默认'
+  },
+  
+  'REPEATABLE READ': {
+    dirtyRead: false,
+    nonRepeatableRead: false,
+    phantomRead: false,   // MySQL通过Next-Key Lock解决
+    performance: '中等',
+    usage: 'MySQL默认'
+  },
+  
+  'SERIALIZABLE': {
+    dirtyRead: false,
+    nonRepeatableRead: false,
+    phantomRead: false,
+    performance: '最低',
+    usage: '极少使用'
+  }
+};
+```
+
+## MVCC机制
+
+### 版本链
+
+```sql
+-- InnoDB为每行记录添加隐藏列
+/*
+DB_TRX_ID: 事务ID（6字节）
+DB_ROLL_PTR: 回滚指针（7字节）
+DB_ROW_ID: 行ID（6字节，无主键时使用）
+*/
+
+-- 示例：账户余额的版本链
+CREATE TABLE accounts (
+    id INT PRIMARY KEY,
+    balance INT,
+    -- 隐藏列
+    -- DB_TRX_ID
+    -- DB_ROLL_PTR
+);
+
+-- 初始数据
+INSERT INTO accounts VALUES (1, 500);
+-- 版本1: balance=500, trx_id=100
+
+-- 事务101修改
+UPDATE accounts SET balance = 600 WHERE id = 1;
+-- 版本2: balance=600, trx_id=101, roll_ptr -> 版本1
+
+-- 事务102修改
+UPDATE accounts SET balance = 700 WHERE id = 1;
+-- 版本3: balance=700, trx_id=102, roll_ptr -> 版本2
+
+-- 版本链：版本3 -> 版本2 -> 版本1
+```
+
+### ReadView
+
+```javascript
+class ReadView {
+  constructor(trxId) {
+    this.creatorTrxId = trxId;           // 创建ReadView的事务ID
+    this.trxIds = [];                     // 活跃事务ID列表
+    this.minTrxId = Math.min(...this.trxIds);  // 最小活跃事务ID
+    this.maxTrxId = Math.max(...this.trxIds);  // 最大活跃事务ID
+  }
+  
+  // 判断版本是否可见
+  isVisible(versionTrxId) {
+    // 1. 版本由当前事务创建，可见
+    if (versionTrxId === this.creatorTrxId) {
+      return true;
+    }
+    
+    // 2. 版本在ReadView创建前已提交，可见
+    if (versionTrxId < this.minTrxId) {
+      return true;
+    }
+    
+    // 3. 版本在ReadView创建后创建，不可见
+    if (versionTrxId >= this.maxTrxId) {
+      return false;
+    }
+    
+    // 4. 版本在活跃事务列表中，不可见
+    if (this.trxIds.includes(versionTrxId)) {
+      return false;
+    }
+    
+    // 5. 其他情况，可见
+    return true;
+  }
+}
+
+// RC和RR的区别
+const mvccDifference = {
+  'READ COMMITTED': {
+    readView: '每次读取都创建新的ReadView',
+    result: '可以读到其他事务已提交的修改'
+  },
+  
+  'REPEATABLE READ': {
+    readView: '事务开始时创建ReadView，之后复用',
+    result: '只能读到事务开始前已提交的数据'
+  }
+};
+```
+
+## 锁机制
+
+### 锁的分类
+
+```sql
+-- 1. 共享锁（S锁）- 读锁
+SELECT * FROM accounts WHERE id = 1 LOCK IN SHARE MODE;
+
+-- 2. 排他锁（X锁）- 写锁
+SELECT * FROM accounts WHERE id = 1 FOR UPDATE;
+
+-- 3. 意向锁（Intention Lock）
+-- IS锁：意向共享锁
+-- IX锁：意向排他锁
+
+-- 锁兼容矩阵
+/*
+        S    X    IS   IX
+S       ✓    ✗    ✓    ✗
+X       ✗    ✗    ✗    ✗
+IS      ✓    ✗    ✓    ✓
+IX      ✗    ✗    ✓    ✓
+*/
+
+-- 4. 行锁
+-- Record Lock：锁定单行
+UPDATE accounts SET balance = 1000 WHERE id = 1;
+
+-- Gap Lock：锁定间隙
+SELECT * FROM accounts WHERE id > 5 AND id < 10 FOR UPDATE;
+
+-- Next-Key Lock：Record Lock + Gap Lock
+-- 锁定记录及其前面的间隙
+SELECT * FROM accounts WHERE id >= 5 FOR UPDATE;
+
+-- 5. 表锁
+LOCK TABLES accounts READ;   -- 表级读锁
+LOCK TABLES accounts WRITE;  -- 表级写锁
+UNLOCK TABLES;
+
+-- 6. 自增锁
+-- AUTO-INC Lock：表级锁
+-- 轻量级锁：只在分配ID时持有
+```
+
+### 行锁示例
+
+```sql
+-- 创建测试表
+CREATE TABLE accounts (
+    id INT PRIMARY KEY,
+    balance INT,
+    INDEX idx_balance (balance)
+);
+
+INSERT INTO accounts VALUES 
+(1, 100), (5, 500), (10, 1000), (15, 1500);
+
+-- 1. Record Lock（记录锁）
+-- 事务A
+START TRANSACTION;
+SELECT * FROM accounts WHERE id = 5 FOR UPDATE;  -- 锁定id=5的记录
+
+-- 事务B
+UPDATE accounts SET balance = 600 WHERE id = 5;  -- 等待
+UPDATE accounts SET balance = 200 WHERE id = 1;  -- 成功
+
+-- 2. Gap Lock（间隙锁）
+-- 事务A
+START TRANSACTION;
+SELECT * FROM accounts WHERE id > 5 AND id < 10 FOR UPDATE;
+
+-- 锁定间隙：(5, 10)
+-- 事务B
+INSERT INTO accounts VALUES (7, 700);  -- 等待（在间隙内）
+INSERT INTO accounts VALUES (11, 1100);  -- 成功（不在间隙内）
+
+-- 3. Next-Key Lock
+-- 事务A
+START TRANSACTION;
+SELECT * FROM accounts WHERE id >= 5 FOR UPDATE;
+
+-- 锁定：(1, 5], (5, 10], (10, 15], (15, +∞)
+-- 事务B
+INSERT INTO accounts VALUES (3, 300);   -- 成功
+INSERT INTO accounts VALUES (7, 700);   -- 等待
+INSERT INTO accounts VALUES (20, 2000); -- 等待
+```
+
+### 死锁
+
+```sql
+-- 死锁示例
+-- 事务A
+START TRANSACTION;
+UPDATE accounts SET balance = 1000 WHERE id = 1;  -- 锁定id=1
+
+-- 事务B
+START TRANSACTION;
+UPDATE accounts SET balance = 2000 WHERE id = 2;  -- 锁定id=2
+
+-- 事务A
+UPDATE accounts SET balance = 1500 WHERE id = 2;  -- 等待事务B释放id=2
+
+-- 事务B
+UPDATE accounts SET balance = 2500 WHERE id = 1;  -- 等待事务A释放id=1
+-- 死锁！MySQL会回滚其中一个事务
+
+-- 查看死锁日志
+SHOW ENGINE INNODB STATUS;
+
+-- 避免死锁的方法
+-- 1. 按相同顺序访问资源
+-- 2. 缩短事务时间
+-- 3. 降低隔离级别
+-- 4. 使用乐观锁
+-- 5. 添加合理的索引
+```
+
+## 锁优化
+
+### 1. 减少锁持有时间
+
+```sql
+-- ❌ 锁持有时间长
+START TRANSACTION;
+SELECT * FROM accounts WHERE id = 1 FOR UPDATE;
+-- 执行复杂业务逻辑（耗时）
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+COMMIT;
+
+-- ✅ 缩短锁持有时间
+-- 先执行业务逻辑
+-- 计算结果
+START TRANSACTION;
+SELECT * FROM accounts WHERE id = 1 FOR UPDATE;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+COMMIT;
+```
+
+### 2. 使用合适的索引
+
+```sql
+-- ❌ 无索引，锁全表
+UPDATE accounts SET balance = 1000 WHERE name = 'John';
+
+-- ✅ 有索引，只锁匹配行
+CREATE INDEX idx_name ON accounts(name);
+UPDATE accounts SET balance = 1000 WHERE name = 'John';
+```
+
+### 3. 乐观锁
+
+```sql
+-- 使用版本号实现乐观锁
+CREATE TABLE accounts (
+    id INT PRIMARY KEY,
+    balance INT,
+    version INT DEFAULT 0
+);
+
+-- 更新时检查版本号
+UPDATE accounts 
+SET balance = balance - 100, version = version + 1
+WHERE id = 1 AND version = 10;
+
+-- 检查影响行数
+SELECT ROW_COUNT();  -- 0表示版本冲突，需要重试
+```
+
+### 4. 分段锁
+
+```javascript
+class SegmentLock {
+  constructor(segmentCount = 16) {
+    this.segmentCount = segmentCount;
+    this.locks = Array(segmentCount).fill(null).map(() => new Lock());
+  }
+  
+  getSegment(key) {
+    const hash = this.hashCode(key);
+    return hash % this.segmentCount;
+  }
+  
+  async lock(key) {
+    const segment = this.getSegment(key);
+    await this.locks[segment].acquire();
+  }
+  
+  unlock(key) {
+    const segment = this.getSegment(key);
+    this.locks[segment].release();
+  }
+  
+  hashCode(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+}
+```
+
+## 事务实战
+
+### 转账示例
+
+```javascript
+class TransferService {
+  async transfer(fromId, toId, amount) {
+    const connection = await db.getConnection();
+    
+    try {
+      await connection.beginTransaction();
+      
+      // 1. 锁定账户（按ID顺序，避免死锁）
+      const [from, to] = fromId < toId ? [fromId, toId] : [toId, fromId];
+      
+      const [fromAccount] = await connection.query(
+        'SELECT * FROM accounts WHERE id = ? FOR UPDATE',
+        [from]
+      );
+      
+      const [toAccount] = await connection.query(
+        'SELECT * FROM accounts WHERE id = ? FOR UPDATE',
+        [to]
+      );
+      
+      // 2. 检查余额
+      const actualFrom = fromId < toId ? fromAccount : toAccount;
+      if (actualFrom.balance < amount) {
+        throw new Error('余额不足');
+      }
+      
+      // 3. 扣款
+      await connection.query(
+        'UPDATE accounts SET balance = balance - ? WHERE id = ?',
+        [amount, fromId]
+      );
+      
+      // 4. 加款
+      await connection.query(
+        'UPDATE accounts SET balance = balance + ? WHERE id = ?',
+        [amount, toId]
+      );
+      
+      // 5. 记录流水
+      await connection.query(
+        'INSERT INTO transactions (from_id, to_id, amount) VALUES (?, ?, ?)',
+        [fromId, toId, amount]
+      );
+      
+      await connection.commit();
+      
+      return { success: true };
+      
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+}
+```
+
+### 分布式事务
+
+```javascript
+// 2PC（两阶段提交）
+class TwoPhaseCommit {
+  async execute(operations) {
+    const participants = [];
+    
+    try {
+      // 阶段1：准备
+      for (const op of operations) {
+        const prepared = await op.prepare();
+        participants.push({ op, prepared });
+      }
+      
+      // 阶段2：提交
+      for (const { op } of participants) {
+        await op.commit();
+      }
+      
+      return { success: true };
+      
+    } catch (error) {
+      // 回滚
+      for (const { op, prepared } of participants) {
+        if (prepared) {
+          await op.rollback();
+        }
+      }
+      
+      throw error;
+    }
+  }
+}
+
+// TCC（Try-Confirm-Cancel）
+class TCCTransaction {
+  async execute(actions) {
+    const tryResults = [];
+    
+    try {
+      // Try阶段：预留资源
+      for (const action of actions) {
+        const result = await action.try();
+        tryResults.push({ action, result });
+      }
+      
+      // Confirm阶段：确认提交
+      for (const { action, result } of tryResults) {
+        await action.confirm(result);
+      }
+      
+      return { success: true };
+      
+    } catch (error) {
+      // Cancel阶段：取消预留
+      for (const { action, result } of tryResults) {
+        await action.cancel(result);
+      }
+      
+      throw error;
+    }
+  }
+}
+```
+
+## 监控与诊断
+
+```sql
+-- 查看当前事务
+SELECT * FROM INFORMATION_SCHEMA.INNODB_TRX;
+
+-- 查看锁等待
+SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCK_WAITS;
+
+-- 查看锁信息
+SELECT * FROM performance_schema.data_locks;
+
+-- 查看死锁信息
+SHOW ENGINE INNODB STATUS;
+
+-- 查看事务隔离级别
+SELECT @@transaction_isolation;
+SELECT @@global.transaction_isolation;
+```
+
+## 总结
+
+MySQL事务与锁的核心：
+- 🔒 **ACID特性**：原子性、一致性、隔离性、持久性
+- 📊 **隔离级别**：RU、RC、RR、Serializable
+- 🔄 **MVCC**：多版本并发控制，提高并发性能
+- 🔐 **锁机制**：共享锁、排他锁、行锁、表锁
+- ⚠️ **死锁避免**：按序访问、缩短事务、合理索引
+- 🎯 **优化技巧**：乐观锁、分段锁、减少锁时间
+
+记住：**理解事务和锁是写出高并发程序的基础！**
+
