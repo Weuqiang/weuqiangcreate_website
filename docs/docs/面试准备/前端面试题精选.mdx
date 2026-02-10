@@ -1,0 +1,782 @@
+---
+sidebar_position: 1
+title: 前端面试题精选
+tags: [面试, 前端, JavaScript, Vue, React]
+---
+
+# 前端面试题精选
+
+本文精选前端高频面试题，涵盖JavaScript、Vue、React等核心知识点。
+
+## JavaScript基础
+
+### 1. 数据类型
+
+```javascript
+// 基本数据类型（7种）
+const types = {
+  number: 42,
+  string: 'hello',
+  boolean: true,
+  undefined: undefined,
+  null: null,
+  symbol: Symbol('id'),
+  bigint: 9007199254740991n
+};
+
+// 引用数据类型
+const reference = {
+  object: {},
+  array: [],
+  function: function() {},
+  date: new Date(),
+  regexp: /pattern/
+};
+
+// 类型检测
+console.log(typeof 42);              // 'number'
+console.log(typeof 'hello');         // 'string'
+console.log(typeof true);            // 'boolean'
+console.log(typeof undefined);       // 'undefined'
+console.log(typeof null);            // 'object' (历史遗留bug)
+console.log(typeof Symbol('id'));    // 'symbol'
+console.log(typeof 42n);             // 'bigint'
+
+// 精确类型检测
+function getType(value) {
+  return Object.prototype.toString.call(value).slice(8, -1);
+}
+
+console.log(getType(null));          // 'Null'
+console.log(getType([]));            // 'Array'
+console.log(getType(new Date()));    // 'Date'
+```
+
+### 2. 闭包
+
+```javascript
+/**
+ * 闭包：函数能够访问其外部作用域的变量
+ */
+
+// 基础闭包
+function createCounter() {
+  let count = 0;
+  
+  return {
+    increment() {
+      return ++count;
+    },
+    decrement() {
+      return --count;
+    },
+    getCount() {
+      return count;
+    }
+  };
+}
+
+const counter = createCounter();
+console.log(counter.increment()); // 1
+console.log(counter.increment()); // 2
+console.log(counter.getCount());  // 2
+
+// 闭包陷阱
+for (var i = 0; i < 5; i++) {
+  setTimeout(() => console.log(i), 1000); // 输出5个5
+}
+
+// 解决方案1：使用let
+for (let i = 0; i < 5; i++) {
+  setTimeout(() => console.log(i), 1000); // 输出0,1,2,3,4
+}
+
+// 解决方案2：使用闭包
+for (var i = 0; i < 5; i++) {
+  (function(j) {
+    setTimeout(() => console.log(j), 1000);
+  })(i);
+}
+
+// 闭包应用：模块化
+const Module = (function() {
+  let privateVar = 'private';
+  
+  function privateMethod() {
+    console.log(privateVar);
+  }
+  
+  return {
+    publicMethod() {
+      privateMethod();
+    }
+  };
+})();
+```
+
+### 3. 原型与原型链
+
+```javascript
+/**
+ * 原型链：对象通过__proto__连接到原型对象
+ */
+
+// 构造函数
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.sayHello = function() {
+  console.log(`Hello, I'm ${this.name}`);
+};
+
+const person = new Person('John');
+
+// 原型链
+console.log(person.__proto__ === Person.prototype);           // true
+console.log(Person.prototype.__proto__ === Object.prototype); // true
+console.log(Object.prototype.__proto__);                      // null
+
+// instanceof原理
+function myInstanceof(obj, constructor) {
+  let proto = obj.__proto__;
+  
+  while (proto) {
+    if (proto === constructor.prototype) {
+      return true;
+    }
+    proto = proto.__proto__;
+  }
+  
+  return false;
+}
+
+// 继承
+// 1. 原型链继承
+function Parent() {
+  this.name = 'parent';
+}
+
+function Child() {}
+Child.prototype = new Parent();
+
+// 2. 构造函数继承
+function Child() {
+  Parent.call(this);
+}
+
+// 3. 组合继承
+function Child(name) {
+  Parent.call(this, name);
+}
+Child.prototype = new Parent();
+Child.prototype.constructor = Child;
+
+// 4. 寄生组合继承（最优）
+function Child(name) {
+  Parent.call(this, name);
+}
+Child.prototype = Object.create(Parent.prototype);
+Child.prototype.constructor = Child;
+
+// 5. ES6 Class
+class Parent {
+  constructor(name) {
+    this.name = name;
+  }
+  
+  sayHello() {
+    console.log(`Hello, I'm ${this.name}`);
+  }
+}
+
+class Child extends Parent {
+  constructor(name, age) {
+    super(name);
+    this.age = age;
+  }
+}
+```
+
+### 4. this指向
+
+```javascript
+/**
+ * this的指向取决于函数的调用方式
+ */
+
+// 1. 默认绑定：指向全局对象（严格模式下为undefined）
+function foo() {
+  console.log(this);
+}
+foo(); // window (浏览器) 或 global (Node.js)
+
+// 2. 隐式绑定：指向调用对象
+const obj = {
+  name: 'obj',
+  foo() {
+    console.log(this.name);
+  }
+};
+obj.foo(); // 'obj'
+
+// 隐式绑定丢失
+const bar = obj.foo;
+bar(); // undefined
+
+// 3. 显式绑定：call、apply、bind
+function greet(greeting) {
+  console.log(`${greeting}, ${this.name}`);
+}
+
+const person = { name: 'John' };
+greet.call(person, 'Hello');    // 'Hello, John'
+greet.apply(person, ['Hi']);    // 'Hi, John'
+const boundGreet = greet.bind(person);
+boundGreet('Hey');              // 'Hey, John'
+
+// 4. new绑定：指向新创建的对象
+function Person(name) {
+  this.name = name;
+}
+const p = new Person('John');
+console.log(p.name); // 'John'
+
+// 5. 箭头函数：继承外层作用域的this
+const obj2 = {
+  name: 'obj2',
+  foo: () => {
+    console.log(this.name);
+  },
+  bar() {
+    const arrow = () => {
+      console.log(this.name);
+    };
+    arrow();
+  }
+};
+obj2.foo(); // undefined (继承全局this)
+obj2.bar(); // 'obj2' (继承bar的this)
+
+// 手写bind
+Function.prototype.myBind = function(context, ...args) {
+  const fn = this;
+  
+  return function(...newArgs) {
+    return fn.apply(context, [...args, ...newArgs]);
+  };
+};
+```
+
+### 5. 异步编程
+
+```javascript
+/**
+ * Promise、async/await
+ */
+
+// Promise基础
+const promise = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    resolve('success');
+  }, 1000);
+});
+
+promise
+  .then(result => console.log(result))
+  .catch(error => console.error(error));
+
+// Promise链式调用
+fetch('/api/user')
+  .then(response => response.json())
+  .then(user => fetch(`/api/posts/${user.id}`))
+  .then(response => response.json())
+  .then(posts => console.log(posts))
+  .catch(error => console.error(error));
+
+// async/await
+async function fetchUserPosts() {
+  try {
+    const userResponse = await fetch('/api/user');
+    const user = await userResponse.json();
+    
+    const postsResponse = await fetch(`/api/posts/${user.id}`);
+    const posts = await postsResponse.json();
+    
+    return posts;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// 并发执行
+async function fetchAll() {
+  const [users, posts, comments] = await Promise.all([
+    fetch('/api/users').then(r => r.json()),
+    fetch('/api/posts').then(r => r.json()),
+    fetch('/api/comments').then(r => r.json())
+  ]);
+  
+  return { users, posts, comments };
+}
+
+// 手写Promise
+class MyPromise {
+  constructor(executor) {
+    this.state = 'pending';
+    this.value = undefined;
+    this.callbacks = [];
+    
+    const resolve = (value) => {
+      if (this.state === 'pending') {
+        this.state = 'fulfilled';
+        this.value = value;
+        this.callbacks.forEach(cb => cb.onFulfilled(value));
+      }
+    };
+    
+    const reject = (reason) => {
+      if (this.state === 'pending') {
+        this.state = 'rejected';
+        this.value = reason;
+        this.callbacks.forEach(cb => cb.onRejected(reason));
+      }
+    };
+    
+    try {
+      executor(resolve, reject);
+    } catch (error) {
+      reject(error);
+    }
+  }
+  
+  then(onFulfilled, onRejected) {
+    return new MyPromise((resolve, reject) => {
+      const handle = () => {
+        if (this.state === 'fulfilled') {
+          try {
+            const result = onFulfilled(this.value);
+            resolve(result);
+          } catch (error) {
+            reject(error);
+          }
+        } else if (this.state === 'rejected') {
+          try {
+            const result = onRejected(this.value);
+            resolve(result);
+          } catch (error) {
+            reject(error);
+          }
+        }
+      };
+      
+      if (this.state === 'pending') {
+        this.callbacks.push({
+          onFulfilled: () => handle(),
+          onRejected: () => handle()
+        });
+      } else {
+        handle();
+      }
+    });
+  }
+}
+```
+
+## Vue面试题
+
+### 1. 响应式原理
+
+```javascript
+/**
+ * Vue2：Object.defineProperty
+ * Vue3：Proxy
+ */
+
+// Vue2响应式实现
+function defineReactive(obj, key, val) {
+  const dep = new Dep();
+  
+  Object.defineProperty(obj, key, {
+    get() {
+      if (Dep.target) {
+        dep.depend();
+      }
+      return val;
+    },
+    set(newVal) {
+      if (newVal !== val) {
+        val = newVal;
+        dep.notify();
+      }
+    }
+  });
+}
+
+class Dep {
+  constructor() {
+    this.subs = [];
+  }
+  
+  depend() {
+    if (Dep.target) {
+      this.subs.push(Dep.target);
+    }
+  }
+  
+  notify() {
+    this.subs.forEach(sub => sub.update());
+  }
+}
+
+// Vue3响应式实现
+function reactive(obj) {
+  return new Proxy(obj, {
+    get(target, key) {
+      track(target, key);
+      return target[key];
+    },
+    set(target, key, value) {
+      target[key] = value;
+      trigger(target, key);
+      return true;
+    }
+  });
+}
+
+const targetMap = new WeakMap();
+
+function track(target, key) {
+  if (!activeEffect) return;
+  
+  let depsMap = targetMap.get(target);
+  if (!depsMap) {
+    targetMap.set(target, (depsMap = new Map()));
+  }
+  
+  let dep = depsMap.get(key);
+  if (!dep) {
+    depsMap.set(key, (dep = new Set()));
+  }
+  
+  dep.add(activeEffect);
+}
+
+function trigger(target, key) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) return;
+  
+  const dep = depsMap.get(key);
+  if (dep) {
+    dep.forEach(effect => effect());
+  }
+}
+```
+
+### 2. 虚拟DOM与Diff算法
+
+```javascript
+/**
+ * 虚拟DOM：用JavaScript对象描述DOM结构
+ */
+
+// 创建虚拟节点
+function h(tag, props, children) {
+  return {
+    tag,
+    props,
+    children
+  };
+}
+
+// 渲染虚拟节点
+function render(vnode) {
+  if (typeof vnode === 'string') {
+    return document.createTextNode(vnode);
+  }
+  
+  const el = document.createElement(vnode.tag);
+  
+  // 设置属性
+  if (vnode.props) {
+    for (const [key, value] of Object.entries(vnode.props)) {
+      el.setAttribute(key, value);
+    }
+  }
+  
+  // 渲染子节点
+  if (vnode.children) {
+    vnode.children.forEach(child => {
+      el.appendChild(render(child));
+    });
+  }
+  
+  return el;
+}
+
+// Diff算法（简化版）
+function diff(oldVNode, newVNode) {
+  // 节点类型不同，直接替换
+  if (oldVNode.tag !== newVNode.tag) {
+    return { type: 'REPLACE', newVNode };
+  }
+  
+  // 文本节点
+  if (typeof newVNode === 'string') {
+    if (oldVNode !== newVNode) {
+      return { type: 'TEXT', text: newVNode };
+    }
+    return null;
+  }
+  
+  // 对比属性
+  const propsPatches = diffProps(oldVNode.props, newVNode.props);
+  
+  // 对比子节点
+  const childrenPatches = diffChildren(oldVNode.children, newVNode.children);
+  
+  return {
+    type: 'UPDATE',
+    props: propsPatches,
+    children: childrenPatches
+  };
+}
+```
+
+### 3. 组件通信
+
+```javascript
+/**
+ * Vue组件通信方式
+ */
+
+// 1. Props / Emit
+// Parent.vue
+export default {
+  template: `
+    <Child :message="msg" @update="handleUpdate" />
+  `,
+  data() {
+    return { msg: 'Hello' };
+  },
+  methods: {
+    handleUpdate(newMsg) {
+      this.msg = newMsg;
+    }
+  }
+};
+
+// Child.vue
+export default {
+  props: ['message'],
+  methods: {
+    updateMessage() {
+      this.$emit('update', 'New message');
+    }
+  }
+};
+
+// 2. EventBus
+const EventBus = new Vue();
+
+// 发送事件
+EventBus.$emit('event-name', data);
+
+// 监听事件
+EventBus.$on('event-name', (data) => {
+  console.log(data);
+});
+
+// 3. Vuex
+const store = new Vuex.Store({
+  state: {
+    count: 0
+  },
+  mutations: {
+    increment(state) {
+      state.count++;
+    }
+  },
+  actions: {
+    incrementAsync({ commit }) {
+      setTimeout(() => {
+        commit('increment');
+      }, 1000);
+    }
+  }
+});
+
+// 4. Provide / Inject
+// Parent.vue
+export default {
+  provide() {
+    return {
+      theme: 'dark'
+    };
+  }
+};
+
+// Child.vue
+export default {
+  inject: ['theme']
+};
+```
+
+## React面试题
+
+### 1. 生命周期
+
+```javascript
+/**
+ * React生命周期
+ */
+
+class Component extends React.Component {
+  // 挂载阶段
+  constructor(props) {
+    super(props);
+    this.state = { count: 0 };
+  }
+  
+  static getDerivedStateFromProps(props, state) {
+    // 从props派生state
+    return null;
+  }
+  
+  componentDidMount() {
+    // 组件挂载后
+    // 适合发送网络请求、订阅事件
+  }
+  
+  // 更新阶段
+  shouldComponentUpdate(nextProps, nextState) {
+    // 是否需要更新
+    return true;
+  }
+  
+  getSnapshotBeforeUpdate(prevProps, prevState) {
+    // 更新前获取快照
+    return null;
+  }
+  
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    // 组件更新后
+  }
+  
+  // 卸载阶段
+  componentWillUnmount() {
+    // 组件卸载前
+    // 适合清理定时器、取消订阅
+  }
+  
+  // 错误处理
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error, info) {
+    console.error(error, info);
+  }
+  
+  render() {
+    return <div>{this.state.count}</div>;
+  }
+}
+```
+
+### 2. Hooks
+
+```javascript
+/**
+ * React Hooks
+ */
+
+// useState
+function Counter() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div>
+      <p>{count}</p>
+      <button onClick={() => setCount(count + 1)}>+1</button>
+    </div>
+  );
+}
+
+// useEffect
+function DataFetcher() {
+  const [data, setData] = useState(null);
+  
+  useEffect(() => {
+    fetch('/api/data')
+      .then(r => r.json())
+      .then(setData);
+    
+    // 清理函数
+    return () => {
+      // 取消请求、清理订阅
+    };
+  }, []); // 依赖数组
+  
+  return <div>{data}</div>;
+}
+
+// useContext
+const ThemeContext = React.createContext('light');
+
+function ThemedButton() {
+  const theme = useContext(ThemeContext);
+  return <button className={theme}>Button</button>;
+}
+
+// useReducer
+function reducer(state, action) {
+  switch (action.type) {
+    case 'increment':
+      return { count: state.count + 1 };
+    case 'decrement':
+      return { count: state.count - 1 };
+    default:
+      return state;
+  }
+}
+
+function Counter() {
+  const [state, dispatch] = useReducer(reducer, { count: 0 });
+  
+  return (
+    <div>
+      <p>{state.count}</p>
+      <button onClick={() => dispatch({ type: 'increment' })}>+</button>
+      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>
+    </div>
+  );
+}
+
+// 自定义Hook
+function useLocalStorage(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : initialValue;
+  });
+  
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+  
+  return [value, setValue];
+}
+```
+
+## 总结
+
+前端面试核心：
+- 🔧 **JavaScript**：闭包、原型、this、异步
+- 🎨 **Vue**：响应式、虚拟DOM、组件通信
+- ⚛️ **React**：生命周期、Hooks、状态管理
+- 🌐 **浏览器**：事件循环、渲染机制
+- 🚀 **性能优化**：懒加载、防抖节流
+- 📦 **工程化**：Webpack、Vite、CI/CD
+
+记住：**理解原理比记住API更重要！**
+
