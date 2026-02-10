@@ -1,0 +1,792 @@
+---
+sidebar_position: 2
+title: React性能优化完全指南
+tags: [前端, React, 性能优化, Hooks, 虚拟DOM]
+---
+
+# React性能优化完全指南
+
+本文将深入讲解React性能优化的方法和技巧，从原理到实战全面覆盖。
+
+## 性能分析工具
+
+### React DevTools Profiler
+
+```javascript
+// 使用Profiler组件
+import { Profiler } from 'react';
+
+function App() {
+  const onRenderCallback = (
+    id,                   // 组件标识
+    phase,                // "mount" 或 "update"
+    actualDuration,       // 本次渲染耗时
+    baseDuration,         // 估计不使用memoization的渲染耗时
+    startTime,            // 开始渲染时间
+    commitTime,           // 提交渲染时间
+    interactions          // 本次更新的interactions集合
+  ) => {
+    console.log(`${id} ${phase} phase:`);
+    console.log(`Actual duration: ${actualDuration}ms`);
+    console.log(`Base duration: ${baseDuration}ms`);
+  };
+  
+  return (
+    <Profiler id="App" onRender={onRenderCallback}>
+      <div>
+        <Header />
+        <Main />
+        <Footer />
+      </div>
+    </Profiler>
+  );
+}
+```
+
+### Chrome Performance
+
+```javascript
+// 性能标记
+function expensiveOperation() {
+  performance.mark('expensive-start');
+  
+  // 执行耗时操作
+  for (let i = 0; i < 1000000; i++) {
+    // ...
+  }
+  
+  performance.mark('expensive-end');
+  performance.measure('expensive', 'expensive-start', 'expensive-end');
+  
+  const measure = performance.getEntriesByName('expensive')[0];
+  console.log(`耗时: ${measure.duration}ms`);
+}
+```
+
+## 组件优化
+
+### React.memo
+
+```javascript
+// ❌ 每次父组件更新都会重新渲染
+function Child({ name }) {
+  console.log('Child render');
+  return <div>{name}</div>;
+}
+
+// ✅ 使用React.memo，props不变时不重新渲染
+const Child = React.memo(function Child({ name }) {
+  console.log('Child render');
+  return <div>{name}</div>;
+});
+
+// 自定义比较函数
+const Child = React.memo(
+  function Child({ user }) {
+    return <div>{user.name}</div>;
+  },
+  (prevProps, nextProps) => {
+    // 返回true表示不需要重新渲染
+    return prevProps.user.id === nextProps.user.id;
+  }
+);
+
+// 使用示例
+function Parent() {
+  const [count, setCount] = useState(0);
+  const [name, setName] = useState('John');
+  
+  return (
+    <div>
+      <button onClick={() => setCount(count + 1)}>
+        Count: {count}
+      </button>
+      <Child name={name} />
+      {/* count变化时，Child不会重新渲染 */}
+    </div>
+  );
+}
+```
+
+### useMemo
+
+```javascript
+// ❌ 每次渲染都会重新计算
+function Component({ items }) {
+  const expensiveValue = computeExpensiveValue(items);
+  return <div>{expensiveValue}</div>;
+}
+
+// ✅ 使用useMemo，只在items变化时重新计算
+function Component({ items }) {
+  const expensiveValue = useMemo(() => {
+    console.log('计算expensiveValue');
+    return computeExpensiveValue(items);
+  }, [items]);
+  
+  return <div>{expensiveValue}</div>;
+}
+
+// 实战示例：过滤和排序
+function TodoList({ todos, filter, sortBy }) {
+  const filteredAndSortedTodos = useMemo(() => {
+    console.log('过滤和排序');
+    
+    let result = todos;
+    
+    // 过滤
+    if (filter) {
+      result = result.filter(todo => 
+        todo.title.includes(filter)
+      );
+    }
+    
+    // 排序
+    if (sortBy === 'date') {
+      result = result.sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+    } else if (sortBy === 'priority') {
+      result = result.sort((a, b) => 
+        b.priority - a.priority
+      );
+    }
+    
+    return result;
+  }, [todos, filter, sortBy]);
+  
+  return (
+    <ul>
+      {filteredAndSortedTodos.map(todo => (
+        <li key={todo.id}>{todo.title}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### useCallback
+
+```javascript
+// ❌ 每次渲染都会创建新函数
+function Parent() {
+  const [count, setCount] = useState(0);
+  
+  const handleClick = () => {
+    console.log('clicked');
+  };
+  
+  return (
+    <div>
+      <button onClick={() => setCount(count + 1)}>
+        Count: {count}
+      </button>
+      <Child onClick={handleClick} />
+      {/* handleClick每次都是新函数，Child会重新渲染 */}
+    </div>
+  );
+}
+
+// ✅ 使用useCallback，函数引用保持不变
+function Parent() {
+  const [count, setCount] = useState(0);
+  
+  const handleClick = useCallback(() => {
+    console.log('clicked');
+  }, []); // 依赖为空，函数永远不变
+  
+  return (
+    <div>
+      <button onClick={() => setCount(count + 1)}>
+        Count: {count}
+      </button>
+      <Child onClick={handleClick} />
+      {/* handleClick引用不变，Child不会重新渲染 */}
+    </div>
+  );
+}
+
+// 带依赖的useCallback
+function SearchBox({ onSearch }) {
+  const [query, setQuery] = useState('');
+  
+  const handleSearch = useCallback(() => {
+    onSearch(query);
+  }, [query, onSearch]); // query或onSearch变化时，函数才更新
+  
+  return (
+    <div>
+      <input 
+        value={query} 
+        onChange={e => setQuery(e.target.value)} 
+      />
+      <button onClick={handleSearch}>Search</button>
+    </div>
+  );
+}
+```
+
+## 列表优化
+
+### 虚拟列表
+
+```javascript
+import { useState, useRef, useEffect } from 'react';
+
+function VirtualList({ items, itemHeight, containerHeight }) {
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef(null);
+  
+  // 计算可见范围
+  const visibleCount = Math.ceil(containerHeight / itemHeight);
+  const startIndex = Math.floor(scrollTop / itemHeight);
+  const endIndex = Math.min(startIndex + visibleCount + 1, items.length);
+  
+  // 可见项
+  const visibleItems = items.slice(startIndex, endIndex);
+  
+  // 总高度
+  const totalHeight = items.length * itemHeight;
+  
+  // 偏移量
+  const offsetY = startIndex * itemHeight;
+  
+  const handleScroll = (e) => {
+    setScrollTop(e.target.scrollTop);
+  };
+  
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        height: containerHeight,
+        overflow: 'auto'
+      }}
+      onScroll={handleScroll}
+    >
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        <div style={{ transform: `translateY(${offsetY}px)` }}>
+          {visibleItems.map((item, index) => (
+            <div
+              key={startIndex + index}
+              style={{ height: itemHeight }}
+            >
+              {item.content}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 使用示例
+function App() {
+  const items = Array.from({ length: 10000 }, (_, i) => ({
+    id: i,
+    content: `Item ${i}`
+  }));
+  
+  return (
+    <VirtualList
+      items={items}
+      itemHeight={50}
+      containerHeight={600}
+    />
+  );
+}
+```
+
+### key优化
+
+```javascript
+// ❌ 使用索引作为key
+function BadList({ items }) {
+  return (
+    <ul>
+      {items.map((item, index) => (
+        <li key={index}>{item.name}</li>
+      ))}
+    </ul>
+  );
+}
+
+// ✅ 使用唯一ID作为key
+function GoodList({ items }) {
+  return (
+    <ul>
+      {items.map(item => (
+        <li key={item.id}>{item.name}</li>
+      ))}
+    </ul>
+  );
+}
+
+// key的重要性
+const items1 = [
+  { id: 1, name: 'A' },
+  { id: 2, name: 'B' },
+  { id: 3, name: 'C' }
+];
+
+const items2 = [
+  { id: 1, name: 'A' },
+  { id: 4, name: 'D' }, // 新插入
+  { id: 2, name: 'B' },
+  { id: 3, name: 'C' }
+];
+
+// 使用index作为key：React会认为所有项都变了
+// 使用id作为key：React只会插入新项
+```
+
+## 状态管理优化
+
+### 状态拆分
+
+```javascript
+// ❌ 所有状态放在一起
+function BadComponent() {
+  const [state, setState] = useState({
+    user: { name: 'John', age: 30 },
+    posts: [],
+    comments: [],
+    loading: false
+  });
+  
+  // 更新user会导致整个组件重新渲染
+  const updateUser = (name) => {
+    setState(prev => ({
+      ...prev,
+      user: { ...prev.user, name }
+    }));
+  };
+  
+  return <div>...</div>;
+}
+
+// ✅ 状态拆分
+function GoodComponent() {
+  const [user, setUser] = useState({ name: 'John', age: 30 });
+  const [posts, setPosts] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // 只更新user，不影响其他状态
+  const updateUser = (name) => {
+    setUser(prev => ({ ...prev, name }));
+  };
+  
+  return <div>...</div>;
+}
+```
+
+### Context优化
+
+```javascript
+// ❌ 单一Context，所有消费者都会重新渲染
+const AppContext = createContext();
+
+function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState('light');
+  const [language, setLanguage] = useState('en');
+  
+  return (
+    <AppContext.Provider value={{ user, setUser, theme, setTheme, language, setLanguage }}>
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+// ✅ 拆分Context
+const UserContext = createContext();
+const ThemeContext = createContext();
+const LanguageContext = createContext();
+
+function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState('light');
+  const [language, setLanguage] = useState('en');
+  
+  return (
+    <UserContext.Provider value={{ user, setUser }}>
+      <ThemeContext.Provider value={{ theme, setTheme }}>
+        <LanguageContext.Provider value={{ language, setLanguage }}>
+          {children}
+        </LanguageContext.Provider>
+      </ThemeContext.Provider>
+    </UserContext.Provider>
+  );
+}
+
+// 使用useMemo优化Context value
+function UserProvider({ children }) {
+  const [user, setUser] = useState(null);
+  
+  const value = useMemo(() => ({ user, setUser }), [user]);
+  
+  return (
+    <UserContext.Provider value={value}>
+      {children}
+    </UserContext.Provider>
+  );
+}
+```
+
+## 懒加载
+
+### React.lazy
+
+```javascript
+import { lazy, Suspense } from 'react';
+
+// 懒加载组件
+const Dashboard = lazy(() => import('./Dashboard'));
+const Profile = lazy(() => import('./Profile'));
+const Settings = lazy(() => import('./Settings'));
+
+function App() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
+// 预加载
+const Dashboard = lazy(() => import('./Dashboard'));
+
+function App() {
+  const preloadDashboard = () => {
+    // 鼠标悬停时预加载
+    import('./Dashboard');
+  };
+  
+  return (
+    <nav>
+      <Link 
+        to="/dashboard" 
+        onMouseEnter={preloadDashboard}
+      >
+        Dashboard
+      </Link>
+    </nav>
+  );
+}
+```
+
+### 图片懒加载
+
+```javascript
+function LazyImage({ src, alt, placeholder }) {
+  const [imageSrc, setImageSrc] = useState(placeholder);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const imgRef = useRef(null);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setImageSrc(src);
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [src]);
+  
+  return (
+    <img
+      ref={imgRef}
+      src={imageSrc}
+      alt={alt}
+      onLoad={() => setIsLoaded(true)}
+      style={{
+        opacity: isLoaded ? 1 : 0,
+        transition: 'opacity 0.3s'
+      }}
+    />
+  );
+}
+```
+
+## 事件处理优化
+
+### 防抖和节流
+
+```javascript
+import { useCallback, useRef } from 'react';
+
+// 防抖Hook
+function useDebounce(callback, delay) {
+  const timeoutRef = useRef(null);
+  
+  return useCallback((...args) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  }, [callback, delay]);
+}
+
+// 节流Hook
+function useThrottle(callback, delay) {
+  const lastRunRef = useRef(Date.now());
+  
+  return useCallback((...args) => {
+    const now = Date.now();
+    
+    if (now - lastRunRef.current >= delay) {
+      callback(...args);
+      lastRunRef.current = now;
+    }
+  }, [callback, delay]);
+}
+
+// 使用示例
+function SearchBox() {
+  const [query, setQuery] = useState('');
+  
+  const handleSearch = useCallback((value) => {
+    console.log('搜索:', value);
+    // 调用API
+  }, []);
+  
+  const debouncedSearch = useDebounce(handleSearch, 500);
+  
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    debouncedSearch(value);
+  };
+  
+  return (
+    <input
+      value={query}
+      onChange={handleChange}
+      placeholder="搜索..."
+    />
+  );
+}
+
+// 滚动节流
+function ScrollComponent() {
+  const handleScroll = useCallback(() => {
+    console.log('滚动位置:', window.scrollY);
+  }, []);
+  
+  const throttledScroll = useThrottle(handleScroll, 200);
+  
+  useEffect(() => {
+    window.addEventListener('scroll', throttledScroll);
+    return () => window.removeEventListener('scroll', throttledScroll);
+  }, [throttledScroll]);
+  
+  return <div>...</div>;
+}
+```
+
+## 渲染优化
+
+### 条件渲染
+
+```javascript
+// ❌ 使用三元运算符，两个分支都会创建
+function Component({ isLoading, data }) {
+  return (
+    <div>
+      {isLoading ? <Loading /> : <DataView data={data} />}
+    </div>
+  );
+}
+
+// ✅ 使用&&运算符，只创建需要的分支
+function Component({ isLoading, data }) {
+  return (
+    <div>
+      {isLoading && <Loading />}
+      {!isLoading && <DataView data={data} />}
+    </div>
+  );
+}
+
+// ✅ 提前返回
+function Component({ isLoading, data }) {
+  if (isLoading) {
+    return <Loading />;
+  }
+  
+  return <DataView data={data} />;
+}
+```
+
+### Fragment优化
+
+```javascript
+// ❌ 额外的div包裹
+function Component() {
+  return (
+    <div>
+      <Header />
+      <Main />
+      <Footer />
+    </div>
+  );
+}
+
+// ✅ 使用Fragment
+function Component() {
+  return (
+    <>
+      <Header />
+      <Main />
+      <Footer />
+    </>
+  );
+}
+
+// 带key的Fragment
+function List({ items }) {
+  return (
+    <>
+      {items.map(item => (
+        <Fragment key={item.id}>
+          <dt>{item.term}</dt>
+          <dd>{item.description}</dd>
+        </Fragment>
+      ))}
+    </>
+  );
+}
+```
+
+## 并发特性
+
+### useTransition
+
+```javascript
+import { useState, useTransition } from 'react';
+
+function SearchResults() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [isPending, startTransition] = useTransition();
+  
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    
+    // 标记为低优先级更新
+    startTransition(() => {
+      const filtered = largeDataset.filter(item =>
+        item.name.includes(value)
+      );
+      setResults(filtered);
+    });
+  };
+  
+  return (
+    <div>
+      <input value={query} onChange={handleChange} />
+      {isPending && <div>搜索中...</div>}
+      <ul>
+        {results.map(item => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### useDeferredValue
+
+```javascript
+import { useState, useDeferredValue, useMemo } from 'react';
+
+function SearchResults() {
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
+  
+  const results = useMemo(() => {
+    return largeDataset.filter(item =>
+      item.name.includes(deferredQuery)
+    );
+  }, [deferredQuery]);
+  
+  return (
+    <div>
+      <input 
+        value={query} 
+        onChange={e => setQuery(e.target.value)} 
+      />
+      <ul>
+        {results.map(item => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+## 性能监控
+
+```javascript
+// 自定义性能监控Hook
+function usePerformance(componentName) {
+  useEffect(() => {
+    const startTime = performance.now();
+    
+    return () => {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      
+      console.log(`${componentName} 渲染耗时: ${duration}ms`);
+      
+      // 上报到监控系统
+      reportPerformance({
+        component: componentName,
+        duration,
+        timestamp: Date.now()
+      });
+    };
+  });
+}
+
+// 使用
+function ExpensiveComponent() {
+  usePerformance('ExpensiveComponent');
+  
+  return <div>...</div>;
+}
+```
+
+## 总结
+
+React性能优化的核心：
+- 🎯 **避免不必要的渲染**：React.memo、useMemo、useCallback
+- 📦 **优化列表渲染**：虚拟列表、正确的key
+- 🔄 **状态管理**：状态拆分、Context优化
+- 🚀 **懒加载**：代码分割、图片懒加载
+- ⚡ **事件优化**：防抖、节流
+- 🎨 **并发特性**：useTransition、useDeferredValue
+
+记住：**性能优化要基于实际测量，不要过早优化！**
+
