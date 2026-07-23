@@ -1,0 +1,52 @@
+---
+title: STM32 与 HAL 库入门
+sidebar_position: 2
+---
+
+# STM32 与 HAL 库入门
+
+STM32（ARM Cortex-M）性能远超 8 位 Arduino，是工业与产品的主流 MCU。HAL 库把寄存器操作封装成统一 API，降低上手门槛。
+
+## 1. 开发环境
+
+- **STM32CubeMX**：图形化配置时钟、引脚、外设，自动生成初始化代码。
+- **IDE**：STM32CubeIDE（基于 Eclipse）或 VS Code + 插件。
+
+## 2. 用 CubeMX 配置一个点灯
+
+1. 选芯片（如 STM32F103C8T6「蓝丸」）。
+2. 把某个引脚设为 `GPIO_Output`。
+3. 配置系统时钟（HSE→PLL）。
+4. 生成代码（选 HAL 库）。
+
+生成的 `main()` 里你只需写业务：
+
+```cpp
+while (1) {
+  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+  HAL_Delay(500);
+}
+```
+
+## 3. 定时器与中断
+
+相比 `HAL_Delay` 的「忙等」，定时器中断不阻塞主循环：
+
+```cpp
+// 在定时器溢出回调里翻转 LED
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  if (htim->Instance == TIM2) {
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+  }
+}
+```
+
+启动：`HAL_TIM_Base_Start_IT(&htim2);`
+
+## 4. 为什么用 HAL
+
+- 统一 API，换芯片改动小。
+- 自动处理时钟树与引脚复用。
+- 代价：代码体积略大、抽象层稍慢（对多数应用无感）。
+
+> 追求极致性能时可改用 LL 库或直接寄存器操作。

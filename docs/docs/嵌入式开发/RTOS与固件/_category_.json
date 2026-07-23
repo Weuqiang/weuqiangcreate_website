@@ -1,0 +1,5 @@
+{
+  "label": "RTOS 与固件",
+  "position": 3,
+  "description": "FreeRTOS 任务调度、内存与栈、固件烧录与调试。"
+}

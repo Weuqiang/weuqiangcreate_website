@@ -1,0 +1,57 @@
+---
+title: UART / SPI / I2C 详解
+sidebar_position: 1
+---
+
+# UART / SPI / I2C 详解
+
+MCU 与外部芯片（传感器、显示屏、存储器）靠板级总线通信。三种最常见：
+
+## 1. UART（异步串口）
+
+- 两根线：TX（发）、RX（收），**交叉连接**。
+- 参数：波特率（如 9600/115200）、数据位、停止位、校验位。
+- 全双工、点对点，无时钟线（靠双方约定波特率）。
+
+```cpp
+Serial.begin(115200);
+Serial.println("hello");   // Arduino 的 Serial 就是 UART
+```
+
+## 2. SPI（同步、高速）
+
+- 四线：SCK（时钟）、MOSI、MISO、CS（片选）。
+- 主从结构，全双工，速度可达数十 MHz。
+- 每个从设备一根 CS 线——设备多时引脚占用大。
+
+```cpp
+// 伪代码：读 SPI 传感器
+digitalWrite(CS, LOW);
+SPI.transfer(0x80);              // 发命令
+uint8_t data = SPI.transfer(0);  // 收数据
+digitalWrite(CS, HIGH);
+```
+
+## 3. I2C（同步、省线）
+
+- 两线：SCL（时钟）、SDA（数据），**所有设备共享总线**。
+- 每个从机有 7 位地址，主机会寻址。
+- 速度较低（标准 100k / 快速 400k），但省引脚，适合挂多个传感器。
+
+```cpp
+Wire.beginTransmission(0x48);   // 从机地址
+Wire.write(0x00);
+Wire.endTransmission();
+Wire.requestFrom(0x48, 2);
+int val = (Wire.read() << 8) | Wire.read();
+```
+
+## 4. 怎么选
+
+| 总线 | 速度 | 连线 | 适用 |
+|------|------|------|------|
+| UART | 中 | 2 | 调试、GPS、蓝牙模块 |
+| SPI | 高 | 4+ | 屏幕、Flash、ADC |
+| I2C | 低 | 2 | 多传感器、EEPROM |
+
+> 上拉电阻：I2C 的 SCL/SDA 必须外接上拉（通常 4.7kΩ）到 VCC。

@@ -1,0 +1,51 @@
+---
+title: Arduino 入门
+sidebar_position: 1
+---
+
+# Arduino 入门
+
+Arduino 把「单片机 + 板载电源 + 串口」打包好，是嵌入式最友好的起点。本篇跑通第一个点灯与串口程序。
+
+## 1. 开发模型：`setup` + `loop`
+
+```cpp
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);   // 只跑一次：初始化
+  Serial.begin(9600);             // 打开串口
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500);
+  Serial.println("blink");
+}
+```
+
+- `setup()`：上电后执行一次，做引脚/外设初始化。
+- `loop()`：反复执行，即「主循环」。
+
+## 2. 数字与模拟
+
+```cpp
+int v = analogRead(A0);          // 读 10 位 ADC（0~1023）
+analogWrite(9, 128);             // PWM 输出（近似模拟电压）
+```
+
+> `analogWrite` 实际输出的是 PWM（脉宽调制），不是真正的 DAC 电压。
+
+## 3. 串口调试
+
+串口是嵌入式最重要的「printf」：
+
+```cpp
+Serial.print("val="); Serial.println(v);
+```
+
+打开 IDE 的串口监视器（波特率 9600）即可看到输出。
+
+## 4. 下一步
+
+Arduino 帮你建立「引脚→代码→现象」的直觉。进阶请移步「STM32 与 HAL 库入门」，接触更专业的定时器、中断与外设。

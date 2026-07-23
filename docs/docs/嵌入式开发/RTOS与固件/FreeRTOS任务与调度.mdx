@@ -1,0 +1,58 @@
+---
+title: FreeRTOS 任务与调度
+sidebar_position: 1
+---
+
+# FreeRTOS 任务与调度
+
+当项目变复杂（要同时读传感器、跑通信、控电机），`while(1)` 大循环就力不从心了。**RTOS** 让你把工作拆成多个「任务」，由内核调度。
+
+## 1. 任务 = 一个独立函数
+
+```cpp
+void vBlinkTask(void *pv) {
+  for (;;) {
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    vTaskDelay(pdMS_TO_TICKS(500));   // 主动让出 CPU
+  }
+}
+
+void vSensorTask(void *pv) {
+  for (;;) {
+    read_sensor();
+    vTaskDelay(pdMS_TO_TICKS(100));
+  }
+}
+```
+
+创建并启动：
+
+```cpp
+xTaskCreate(vBlinkTask, "blink", 128, NULL, 1, NULL);
+xTaskCreate(vSensorTask, "sensor", 256, NULL, 2, NULL);
+vTaskStartScheduler();   // 把控制权交给内核
+```
+
+## 2. 调度：优先级 + 时间片
+
+- 高优先级任务就绪时，抢占低优先级。
+- 同优先级按时间片轮转。
+- `vTaskDelay` 让任务进入阻塞态，CPU 转去跑别的任务。
+
+## 3. 任务间通信
+
+不要在任务间直接共享全局变量，用 RTOS 原语：
+
+- **队列（Queue）**：任务 A 发、任务 B 收（如传感器→网络）。
+- **信号量（Semaphore）**：资源互斥或事件通知。
+- **互斥量（Mutex）**：保护共享资源，避免竞态。
+
+```cpp
+QueueHandle_t q = xQueueCreate(10, sizeof(int));
+xQueueSend(q, &value, portMAX_DELAY);
+xQueueReceive(q, &value, portMAX_DELAY);
+```
+
+## 4. 栈空间
+
+每个任务有独立栈。栈溢出是 RTOS 最常见崩溃源——CubeMX 里给任务分配足够栈，并开启 `Stack Overflow Checking` 调试。

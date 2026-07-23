@@ -1,0 +1,5 @@
+{
+  "label": "单片机 MCU",
+  "position": 2,
+  "description": "Arduino 入门、STM32 与 HAL 库、GPIO/定时器/中断与外设驱动。"
+}

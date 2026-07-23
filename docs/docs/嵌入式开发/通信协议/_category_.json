@@ -1,0 +1,5 @@
+{
+  "label": "通信协议",
+  "position": 4,
+  "description": "UART/SPI/I2C、CAN 总线与无线通信（蓝牙 / WiFi / LoRa）。"
+}

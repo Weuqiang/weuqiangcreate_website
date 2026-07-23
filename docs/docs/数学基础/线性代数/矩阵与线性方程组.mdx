@@ -1,0 +1,75 @@
+---
+title: 矩阵与线性方程组
+sidebar_position: 2
+---
+
+# 矩阵与线性方程组
+
+在「线性代数入门」中我们认识了向量与矩阵的基本运算。本篇聚焦**如何用矩阵表示并求解线性方程组**——这是科学计算与机器学习中最常见的操作之一。
+
+## 1. 用矩阵表示方程组
+
+方程组
+
+$$
+\begin{cases}
+x + 2y = 5 \\
+3x + 4y = 11
+\end{cases}
+$$
+
+可写成矩阵形式 $A\vec{x}=\vec{b}$：
+
+$$
+\begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}
+\begin{bmatrix} x \\ y \end{bmatrix}
+=
+\begin{bmatrix} 5 \\ 11 \end{bmatrix}
+$$
+
+其中 $A$ 是系数矩阵，$\vec{x}$ 是未知数向量，$\vec{b}$ 是常数向量。
+
+## 2. 求解：逆矩阵法
+
+若 $A$ 可逆，则 $\vec{x}=A^{-1}\vec{b}$。
+
+```python
+import numpy as np
+A = np.array([[1., 2.], [3., 4.]])
+b = np.array([5., 11.])
+x = np.linalg.solve(A, b)   # 比直接求逆更稳定
+print(x)                    # [1. 2.]
+```
+
+> 工程上优先用 `np.linalg.solve` 而非先求 `inv(A)`：数值更稳定、速度更快。
+
+## 3. 无解与无穷多解
+
+并非所有方程组都有唯一解：
+
+- **满秩（$rank(A)=n$）**：唯一解。
+- **欠定（$rank<n$）**：无穷多解。
+- **矛盾**：无解（最小二乘求近似解）。
+
+```python
+A = np.array([[1., 2.], [2., 4.]])   # 第二行是第一行的 2 倍，秩为 1
+b = np.array([3., 7.])
+print(np.linalg.matrix_rank(A))       # 1 -> 无唯一解
+```
+
+## 4. 最小二乘
+
+当方程数多于未知数（超定）时，常用最小二乘求「最优近似」：
+
+$$
+\vec{x}^* = \arg\min_{\vec{x}} \|A\vec{x}-\vec{b}\|^2 = (A^TA)^{-1}A^T\vec{b}
+$$
+
+```python
+A = np.array([[1., 1.], [1., 2.], [1., 3.]])  # 3 行 2 列（超定）
+b = np.array([2., 2.5, 4.])
+x, *_ = np.linalg.lstsq(A, b, rcond=None)
+print(x)   # 拟合直线的斜率与截距
+```
+
+线性回归的本质，就是求这个最小二乘解。

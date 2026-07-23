@@ -1,0 +1,58 @@
+---
+title: CAN 总线与无线通信
+sidebar_position: 2
+---
+
+# CAN 总线与无线通信
+
+当设备需要在更远、更复杂的环境互联，就要用到 CAN 与无线通信。
+
+## 1. CAN 总线（汽车/工业）
+
+CAN（Controller Area Network）是差分串口，抗干扰强，广泛用于汽车与工业：
+
+- 两线 `CAN_H` / `CAN_L`，终端各接 120Ω 电阻。
+- **多主**、广播式，靠**仲裁**决定谁先发（ID 小的优先）。
+- 帧带 ID 而非地址，所有节点都能收，自行决定是否处理。
+
+```cpp
+// Arduino + MCP2515（CAN 控制器）示意
+CAN.beginPacket(0x100);     // 标准帧 ID
+CAN.write('H'); CAN.write('i');
+CAN.endPacket();
+```
+
+> 汽车里发动机、刹车、门窗都挂在同一条 CAN 上，ECU 互相收发报文。
+
+## 2. 蓝牙（BLE）
+
+低功耗蓝牙适合手机互联、可穿戴：
+
+- 以**服务（Service）/ 特征（Characteristic）**组织数据（GATT）。
+- 手机做中心设备，MCU 做外设广播。
+
+## 3. WiFi
+
+- ESP8266 / ESP32 自带 WiFi，可直接联网或做热点。
+- 常见用法：MQTT 上报传感器数据到云端。
+
+```cpp
+WiFi.begin("SSID", "password");
+while (WiFi.status() != WL_CONNECTED) delay(500);
+// 之后可用 WiFiClient / PubSubClient 发 HTTP 或 MQTT
+```
+
+## 4. LoRa
+
+远距离、低功耗、小数据量的星型网络，适合农业、表计等广域物联网（数公里，但速率极低）。
+
+## 5. 选型速查
+
+| 技术 | 距离 | 速率 | 典型场景 |
+|------|------|------|----------|
+| CAN | 不超过 40m（总线） | 中 | 汽车、工业控制 |
+| BLE | ~10–100m | 低 | 可穿戴、手机配网 |
+| WiFi | ~50–100m | 高 | 智能家居、网关 |
+| LoRa | km 级 | 极低 | 广域低功耗 IoT |
+
+> 实际项目常组合：CAN/Wireless 做采集，WiFi/LoRa 做回传，UART/SPI/I2C 做板级。

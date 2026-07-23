@@ -1,0 +1,71 @@
+---
+title: 图论与组合基础
+sidebar_position: 2
+---
+
+# 图论与组合基础
+
+图是「点 + 边」的结构，几乎能建模一切关系：社交网络、依赖图、路由、任务调度。组合数学则回答「有多少种可能」。
+
+## 1. 图的基本概念
+
+- **无向图 / 有向图**：边是否区分方向。
+- **度（degree）**：与某点相连的边数。
+- **路径 / 环**：顶点序列；首尾相连即成环。
+
+```python
+from collections import defaultdict
+# 邻接表表示图
+graph = defaultdict(list)
+edges = [("A","B"), ("B","C"), ("A","C"), ("C","D")]
+for u, v in edges:
+    graph[u].append(v)
+    graph[v].append(u)
+print(graph["C"])   # ['B', 'A', 'D']
+```
+
+## 2. 遍历：BFS 与 DFS
+
+- **广度优先（BFS）**：逐层扩展，求无权图最短路径。
+- **深度优先（DFS）**：一路到底再回溯，用于连通性、拓扑排序。
+
+```python
+from collections import deque
+def bfs(start):
+    seen, q = {start}, deque([start])
+    while q:
+        u = q.popleft()
+        for v in graph[u]:
+            if v not in seen:
+                seen.add(v); q.append(v)
+    return seen
+print(bfs("A"))   # {'A','B','C','D'}
+```
+
+## 3. 最短路径
+
+带权图常用 Dijkstra：每次松弛「当前最近且未确定」的节点。
+
+```python
+import heapq
+# 简例：{(u, v): 权重}
+def dijkstra(adj, src):
+    dist = {src: 0}
+    pq = [(0, src)]
+    while pq:
+        d, u = heapq.heappop(pq)
+        if d > dist.get(u, float("inf")): continue
+        for v, w in adj[u]:
+            if d + w < dist.get(v, float("inf")):
+                dist[v] = d + w
+                heapq.heappush(pq, (dist[v], v))
+    return dist
+```
+
+## 4. 组合计数
+
+- 排列 $P(n,k)=\frac{n!}{(n-k)!}$
+- 组合 $C(n,k)=\binom{n}{k}=\frac{n!}{k!(n-k)!}$
+- 鸽巢原理：把 $n+1$ 个物体放入 $n$ 个盒子，必有一盒 ≥2。
+
+组合数是概率分母、哈希冲突分析、信息论熵的基础。
