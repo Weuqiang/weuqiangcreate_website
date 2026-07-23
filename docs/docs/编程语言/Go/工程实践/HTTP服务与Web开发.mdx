@@ -1,0 +1,91 @@
+---
+title: HTTP 服务与 Web 开发
+sidebar_position: 2
+---
+
+# HTTP 服务与 Web 开发
+
+Go 标准库 `net/http` 就能起一个生产级 HTTP 服务，无需框架。本篇从原生到常用框架。
+
+## 1. 原生 HTTP 服务
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintln(w, "Hello, Go!")
+    })
+    http.ListenAndServe(":8080", nil)   // 阻塞监听
+}
+```
+
+- `http.Request` 含方法、路径、查询、Body；
+- `http.ResponseWriter` 写响应。
+
+## 2. 路由与 JSON
+
+```go
+type User struct {
+    ID   int    `json:"id"`
+    Name string `json:"name"`
+}
+
+func userHandler(w http.ResponseWriter, r *http.Request) {
+    u := User{ID: 1, Name: "Ada"}
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(u)          // 自动序列化
+}
+```
+
+结构体 tag `json:"..."` 控制字段名；`json` 包完成（反）序列化。
+
+## 3. 中间件（手写）
+
+```go
+func logMiddleware(next http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        log.Println(r.Method, r.URL.Path)
+        next(w, r)
+    }
+}
+http.HandleFunc("/api", logMiddleware(apiHandler))
+```
+
+## 4. 主流 Web 框架
+
+标准库够小项目；复杂路由/分组可用：
+
+| 框架 | 特点 |
+|------|------|
+| Gin | 快、API 友好、中间件生态好 |
+| Echo | 极简、高性能 |
+| chi | 轻量、标准库风格路由 |
+
+Gin 示例：
+
+```go
+r := gin.Default()
+r.GET("/users/:id", func(c *gin.Context) {
+    c.JSON(200, gin.H{"id": c.Param("id")})
+})
+r.Run(":8080")
+```
+
+## 5. 部署
+
+```bash
+go build -o server .     # 编译单二进制
+./server                 # 直接运行，无运行时依赖
+```
+
+> 单二进制 + 小镜像（可基于 `scratch`），是 Go 云原生部署的核心优势。
+
+## 小结
+
+Go 写 Web 服务：原生 `net/http` 起步，Gin 等提速，最终编译成无依赖的单文件，非常适合容器化部署。

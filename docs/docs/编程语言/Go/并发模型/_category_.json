@@ -1,0 +1,5 @@
+{
+  "label": "并发模型",
+  "position": 2,
+  "description": "goroutine、channel、select 与 sync 并发原语。"
+}

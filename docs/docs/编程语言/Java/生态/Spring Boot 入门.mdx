@@ -1,0 +1,85 @@
+---
+title: Spring Boot 入门
+sidebar_position: 2
+---
+
+# Spring Boot 入门
+
+Spring Boot 让 Java 后端开发"开箱即用"：自动配置、内嵌服务器、起步依赖，几行代码起一个 Web 服务。
+
+## 1. 一个最小应用
+
+```java
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+    @GetMapping("/hello")
+    public String hello() { return "Hello, Spring!"; }
+}
+```
+
+- `@SpringBootApplication`：开启自动配置与组件扫描。
+- 内嵌 Tomcat，默认端口 8080，无需外部部署。
+
+## 2. 依赖管理（Maven）
+
+```xml
+<parent>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-parent</artifactId>
+  <version>3.3.0</version>
+</parent>
+<dependencies>
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+  </dependency>
+</dependencies>
+```
+
+`spring-boot-starter-web` 一个依赖就拉齐了 Web 所需全部库。
+
+## 3. 分层架构
+
+```java
+@RestController
+@RequestMapping("/users")
+public class UserController {
+    private final UserService service;          // 构造注入
+    public UserController(UserService service) { this.service = service; }
+
+    @GetMapping("/{id}")
+    public User get(@PathVariable Long id) { return service.findById(id); }
+}
+```
+
+典型分层：`Controller`（接收请求）→ `Service`（业务逻辑）→ `Repository`（数据访问）。
+
+## 4. 常用注解
+
+| 注解 | 作用 |
+|------|------|
+| `@RestController` | 返回 JSON 的控制器 |
+| `@Service` / `@Repository` | 标记业务/数据层组件 |
+| `@Autowired` / 构造注入 | 依赖注入 |
+| `@ConfigurationProperties` | 绑定 `application.yml` 配置 |
+
+## 5. 配置与运行
+
+```yaml
+# application.yml
+server:
+  port: 9000
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/demo
+```
+
+运行：`mvn spring-boot:run` 或打包 `java -jar demo.jar`。
+
+## 小结
+
+Spring Boot 的核心价值是"约定优于配置"：合理的默认让你专注业务。下一步可学 `Spring Data JPA`（ORM）、`Spring Security`（安全）与 `MyBatis`。

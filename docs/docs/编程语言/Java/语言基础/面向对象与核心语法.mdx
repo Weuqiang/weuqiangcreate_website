@@ -1,0 +1,83 @@
+---
+title: 面向对象与核心语法
+sidebar_position: 2
+---
+
+# 面向对象与核心语法
+
+在 [Java 语言入门](../Java语言入门) 之后，本篇梳理 Java 面向对象（OOP）的核心语法：类、接口、继承、多态、泛型与异常。
+
+## 1. 类与对象
+
+```java
+public class User {
+    private String name;          // 封装：私有字段
+    public User(String name) { this.name = name; }
+    public String getName() { return name; }
+}
+User u = new User("Ada");         // 实例化
+```
+
+- `private` 隐藏内部细节，`getter/setter` 暴露受控访问。
+- `new` 在堆上创建对象，变量持有的是引用。
+
+## 2. 继承与多态
+
+```java
+abstract class Shape {
+    abstract double area();       // 抽象方法
+}
+class Circle extends Shape {
+    double r;
+    Circle(double r) { this.r = r; }
+    @Override double area() { return Math.PI * r * r; }
+}
+```
+
+- 单继承：`extends` 复用父类；`implements` 可实现多个接口。
+- 多态：父类引用指向子类对象，运行时调用实际类型的方法。
+
+## 3. 接口与默认方法
+
+```java
+interface Comparable<T> {
+    int compareTo(T o);
+    default boolean eq(T o) { return compareTo(o) == 0; }  // Java 8+ 默认方法
+}
+```
+
+## 4. 泛型
+
+泛型提供编译期类型安全，避免强制转换：
+
+```java
+List<String> list = new ArrayList<>();
+list.add("hi");
+String s = list.get(0);           // 无需 (String) 强转
+```
+
+## 5. 异常处理
+
+```java
+try {
+    int x = 1 / 0;
+} catch (ArithmeticException e) {
+    System.out.println("除零：" + e.getMessage());
+} finally {
+    System.out.println("总是执行");
+}
+```
+
+- 受检异常（`IOException`）必须 `try/catch` 或声明 `throws`；运行时异常（`RuntimeException`）可不捕获。
+
+## 小结
+
+| 概念 | 关键字 | 作用 |
+|------|--------|------|
+| 封装 | `private` | 隐藏实现 |
+| 继承 | `extends` | 复用 |
+| 多态 | `@Override` | 同一接口不同行为 |
+| 泛型 | `<T>` | 类型安全 |
+| 异常 | `try/catch` | 容错 |
+
+掌握这些，Java 的大部分业务代码都能读懂与编写。

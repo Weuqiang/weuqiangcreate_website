@@ -1,0 +1,82 @@
+---
+title: 错误处理与 Result
+sidebar_position: 1
+---
+
+# 错误处理与 Result
+
+Rust 没有异常，用 `Result<T, E>` 在类型上显式表达"可能失败"，强制调用者处理。本篇讲错误处理范式。
+
+## 1. Result 枚举
+
+```rust
+enum Result<T, E> {
+    Ok(T),     // 成功，携带值
+    Err(E),    // 失败，携带错误
+}
+```
+
+```rust
+use std::fs::File;
+let f = File::open("a.txt");
+match f {
+    Ok(file) => println!("打开成功"),
+    Err(e) => println!("失败: {}", e),
+}
+```
+
+## 2. ? 运算符：错误传播
+
+`?` 简化"有错就返回、没错就解包"：
+
+```rust
+use std::fs::File;
+use std::io::{self, Read};
+
+fn read_text(path: &str) -> Result<String, io::Error> {
+    let mut f = File::open(path)?;     // 失败则直接 return Err
+    let mut s = String::new();
+    f.read_to_string(&mut s)?;
+    Ok(s)
+}
+```
+
+- `?` 在 `Err` 时提前返回，在 `Ok` 时取出内部值。
+- 比层层 `match` 清爽得多。
+
+## 3. 自定义错误与 thiserror
+
+```rust
+use thiserror::Error;
+#[derive(Error, Debug)]
+pub enum MyError {
+    #[error("IO 错误: {0}")]
+    Io(#[from] io::Error),             // 自动 From 转换
+    #[error("解析失败: {0}")]
+    Parse(String),
+}
+```
+
+（`thiserror` 是社区常用派生宏，减少样板。）
+
+## 4. panic! 与不可恢复错误
+
+```rust
+panic!("程序无法继续");   // 不可恢复，默认展开栈并中止
+```
+
+- `panic!` 用于"程序员 bug / 不可能发生"的情况；
+- 可恢复的业务错误用 `Result`，不要用 `panic!` 代替异常。
+
+## 5. unwrap 与 expect（谨慎）
+
+```rust
+let f = File::open("a.txt").unwrap();        // 失败直接 panic
+let f = File::open("a.txt").expect("打开失败");  // panic 带信息
+```
+
+仅用于原型/测试，生产代码用 `?` 传播错误。
+
+## 小结
+
+Rust 的错误处理哲学：**失败是类型的一部分**。`Result` + `?` 让错误无处遁形，又不影响性能——这是它"可靠"名声的来源。

@@ -1,0 +1,5 @@
+{
+  "label": "JVM",
+  "position": 2,
+  "description": "Java 虚拟机：内存模型、垃圾回收与类加载机制。"
+}

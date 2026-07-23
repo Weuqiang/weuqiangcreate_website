@@ -1,0 +1,85 @@
+---
+title: 模块与测试
+sidebar_position: 1
+---
+
+# 模块与测试
+
+Go 用 `go mod` 管理依赖，用内置 `testing` 包写测试，无需第三方框架。本篇讲工程化基础。
+
+## 1. 模块（module）
+
+```bash
+go mod init example.com/hello     # 生成 go.mod
+go get github.com/gin-gonic/gin   # 添加依赖
+go mod tidy                       # 清理未用依赖
+```
+
+`go.mod` 记录模块路径与依赖版本，`go.sum` 记录校验和。
+
+## 2. 包与导入
+
+```go
+package main
+
+import (
+    "fmt"
+    "example.com/hello/util"
+)
+
+func main() { fmt.Println(util.Add(1, 2)) }
+```
+
+- 包名即目录名；首字母大写导出（public），小写包内可见。
+- 导入路径相对模块根。
+
+## 3. 写测试
+
+测试文件以 `_test.go` 结尾，函数名 `TestXxx(t *testing.T)`：
+
+```go
+// add_test.go
+func TestAdd(t *testing.T) {
+    if got := Add(1, 2); got != 3 {
+        t.Errorf("Add(1,2)=%d, want 3", got)
+    }
+}
+```
+
+运行：
+
+```bash
+go test ./...            # 跑全部测试
+go test -v ./util        # 详细
+go test -cover          # 覆盖率
+go test -bench=.        # 基准测试
+```
+
+## 4. 表驱动测试
+
+Go 惯用表驱动，一个函数覆盖多用例：
+
+```go
+func TestAdd(t *testing.T) {
+    cases := []struct{ a, b, want int }{
+        {1, 2, 3}, {0, 0, 0}, {-1, 1, 0},
+    }
+    for _, c := range cases {
+        if got := Add(c.a, c.b); got != c.want {
+            t.Errorf("Add(%d,%d)=%d want %d", c.a, c.b, got, c.want)
+        }
+    }
+}
+```
+
+## 5. 基准测试
+
+```go
+func BenchmarkAdd(b *testing.B) {
+    for i := 0; i < b.N; i++ { Add(1, 2) }   // b.N 由框架自动调整
+}
+```
+
+## 小结
+
+Go 的工程化哲学是"标准库够用"：`go mod` 管依赖、`testing` 管测试、表驱动管用例。少依赖、强约定，是 Go 项目易维护的原因。

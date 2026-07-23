@@ -1,0 +1,92 @@
+---
+title: select 与 sync
+sidebar_position: 2
+---
+
+# select 与 sync
+
+当需要处理多个 channel 或需要传统锁时，Go 提供 `select` 与 `sync` 包。本篇是 [goroutine 与 channel](../goroutine与channel) 的补充。
+
+## 1. select：多路复用
+
+`select` 同时等待多个 channel 操作，哪个就绪走哪个分支：
+
+```go
+select {
+case v := <-ch1:
+    fmt.Println("来自 ch1:", v)
+case ch2 <- 10:
+    fmt.Println("发送到 ch2")
+case <-time.After(time.Second):
+    fmt.Println("超时")        // 避免永久阻塞
+default:
+    fmt.Println("非阻塞，立即走 default")
+}
+```
+
+- 多个就绪时**随机**选一个（公平）。
+- `time.After` 实现超时，`default` 实现非阻塞。
+
+## 2. WaitGroup：等待一组任务
+
+```go
+var wg sync.WaitGroup
+for i := 0; i < 3; i++ {
+    wg.Add(1)
+    go func(id int) {
+        defer wg.Done()       // 完成时计数 -1
+        doWork(id)
+    }(i)
+}
+wg.Wait()                     // 阻塞直到计数归零
+```
+
+## 3. Mutex：互斥锁
+
+当共享变量必须加锁时：
+
+```go
+var mu sync.Mutex
+var balance int
+func deposit(n int) {
+    mu.Lock()
+    defer mu.Unlock()         // 务必释放
+    balance += n
+}
+```
+
+- `sync.RWMutex`：读多写少用，允许多读并发。
+
+## 4. Once 与 Pool
+
+```go
+var once sync.Once
+once.Do(initConfig)           // 无论多少 goroutine 只执行一次
+
+var pool = sync.Pool{
+    New: func() any { return new(bytes.Buffer) },  // 复用对象，降 GC 压力
+}
+```
+
+## 5. 并发模式：worker pool
+
+```go
+jobs := make(chan int, 10)
+for w := 0; w < 3; w++ {       // 3 个常驻 worker
+    go func() {
+        for j := range jobs { process(j) }
+    }()
+}
+```
+
+## 如何选择
+
+| 需求 | 工具 |
+|------|------|
+| 传递数据 | channel |
+| 等待多事件 | `select` |
+| 等待任务组 | `WaitGroup` |
+| 保护共享变量 | `Mutex`/`RWMutex` |
+| 一次性初始化 | `Once` |
+
+> 优先用 channel；只有"保护一小段共享状态"才上锁。

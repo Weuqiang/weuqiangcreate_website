@@ -1,0 +1,5 @@
+{
+  "label": "类型系统",
+  "position": 2,
+  "description": "枚举、模式匹配、泛型与 Trait。"
+}

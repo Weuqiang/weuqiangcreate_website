@@ -1,0 +1,84 @@
+---
+title: 并发与 async
+sidebar_position: 2
+---
+
+# 并发与 async
+
+Rust 以"无畏并发（fearless concurrency）"著称：编译期保证无数据竞争。本篇覆盖线程与 `async/await` 两种并发。
+
+## 1. 操作系统线程
+
+```rust
+use std::thread;
+let h = thread::spawn(|| {
+    println!("新线程");
+});
+h.join().unwrap();              // 等待子线程结束
+```
+
+- 共享状态需 `Arc<Mutex<T>>`：
+
+```rust
+use std::sync::{Arc, Mutex};
+let counter = Arc::new(Mutex::new(0));
+let c2 = Arc::clone(&counter);
+thread::spawn(move || {
+    *c2.lock().unwrap() += 1;
+}).join().unwrap();
+```
+
+- `Arc`（原子引用计数）跨线程共享所有权，`Mutex` 保证互斥。
+
+## 2. 消息传递：channel
+
+```rust
+use std::sync::mpsc;
+let (tx, rx) = mpsc::channel();
+thread::spawn(move || { tx.send(42).unwrap(); });
+println!("收到 {}", rx.recv().unwrap());
+```
+
+- Rust 标准库也推崇"通过通信共享内存"。
+
+## 3. async/await（异步）
+
+`async` 适合大量 IO 并发，单线程事件循环驱动：
+
+```rust
+async fn fetch() -> Result<String, reqwest::Error> {
+    let body = reqwest::get("https://example.com").await?.text().await?;
+    Ok(body)
+}
+```
+
+- `await` 挂起而非阻塞线程，高并发下内存与切换成本远低于线程。
+- 需运行时（runtime）：`tokio` 或 `async-std`。
+
+```rust
+#[tokio::main]
+async fn main() {
+    let h1 = tokio::spawn(fetch());
+    let h2 = tokio::spawn(fetch());
+    let _ = tokio::join!(h1, h2);
+}
+```
+
+## 4. Send 与 Sync（编译期保障）
+
+- `Send`：类型可安全地转移到另一线程；
+- `Sync`：类型可安全地被多线程共享引用。
+
+只有满足这两个 trait 的类型才能在并发中使用——编译器据此**静态杜绝数据竞争**。这是 Rust 并发区别于其他语言的根本。
+
+## 5. 如何选择
+
+| 场景 | 方案 |
+|------|------|
+| CPU 密集、简单并行 | `thread` + `Arc<Mutex>` |
+| 大量 IO、高并发 | `async`/`tokio` |
+| 跨线程传数据 | `channel` |
+
+## 小结
+
+Rust 并发的杀手锏是**编译期安全**：`Send`/`Sync` 让数据竞争在编译期就被拒绝。线程适合计算，async 适合 IO，两者都"无畏"。

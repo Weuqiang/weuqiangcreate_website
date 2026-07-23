@@ -1,0 +1,76 @@
+---
+title: 并发容器与锁
+sidebar_position: 2
+---
+
+# 并发容器与锁
+
+多线程共享数据时，必须用锁或并发容器保证一致性。本篇覆盖 `synchronized`、显式锁与 `java.util.concurrent`（JUC）工具。
+
+## 1. 内置锁 synchronized
+
+```java
+class Counter {
+    private int n = 0;
+    public synchronized void inc() { n++; }   // 同一时刻只有一个线程进入
+}
+```
+
+- 锁对象是 `this`（实例方法）或 `Class`（静态方法）。
+- 简单但不够灵活（不可中断、非公平）。
+
+## 2. 显式锁 ReentrantLock
+
+```java
+ReentrantLock lock = new ReentrantLock();
+lock.lock();
+try {
+    // 临界区
+} finally {
+    lock.unlock();   // 务必在 finally 释放
+}
+```
+
+优势：`tryLock()` 可超时/可中断、`new ReentrantLock(true)` 公平锁。
+
+## 3. 原子类（无锁）
+
+```java
+AtomicInteger cnt = new AtomicInteger(0);
+cnt.incrementAndGet();          // CAS 实现，高效
+```
+
+`AtomicInteger`/`AtomicReference` 基于 CAS（比较并交换），适合简单计数，避免锁开销。
+
+## 4. 并发容器（JUC）
+
+`HashMap` 非线程安全，高并发请用：
+
+| 容器 | 说明 |
+|------|------|
+| `ConcurrentHashMap` | 分段/桶级锁，高并发读写 |
+| `CopyOnWriteArrayList` | 读多写少，写时复制 |
+| `BlockingQueue` | 生产者-消费者（`ArrayBlockingQueue` 等） |
+| `ConcurrentLinkedQueue` | 无锁队列 |
+
+```java
+Map<String, Integer> map = new ConcurrentHashMap<>();
+map.computeIfAbsent("k", k -> 0);   // 原子更新，无需额外锁
+```
+
+## 5. 线程协作
+
+```java
+CountDownLatch latch = new CountDownLatch(3);  // 等待 3 个任务完成
+ExecutorService pool = Executors.newFixedThreadPool(3);
+for (int i = 0; i < 3; i++) pool.submit(() -> { doWork(); latch.countDown(); });
+latch.await();   // 阻塞直到计数归零
+```
+
+其他常用：`CyclicBarrier`（ cyclic 等待）、`Semaphore`（限流）、`Future`/`CompletableFuture`（异步结果）。
+
+## 小结
+
+- 简单同步用 `synchronized`；
+- 要灵活/高性能用 `ReentrantLock`、原子类；
+- 集合选 `ConcurrentHashMap` 等并发容器，别自己加锁。

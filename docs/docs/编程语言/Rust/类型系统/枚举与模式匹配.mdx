@@ -1,0 +1,81 @@
+---
+title: 枚举与模式匹配
+sidebar_position: 1
+---
+
+# 枚举与模式匹配
+
+Rust 的 `enum` 比多数语言强大：枚举变体可携带数据，配合 `match` 模式匹配构成表达力极强的类型系统。
+
+## 1. 携带数据的枚举
+
+```rust
+enum Message {
+    Quit,                        // 无数据
+    Move { x: i32, y: i32 },     // 具名字段
+    Write(String),               // 元组数据
+}
+
+let m = Message::Write(String::from("hi"));
+```
+
+## 2. match 模式匹配
+
+```rust
+fn handle(m: Message) {
+    match m {
+        Message::Quit => println!("退出"),
+        Message::Move { x, y } => println!("移动到 {},{}", x, y),
+        Message::Write(text) => println!("写: {}", text),
+    }
+}
+```
+
+- `match` **必须穷尽**所有变体（否则编译错误），杜绝漏处理。
+- 比 `if/else` 链更安全、可读。
+
+## 3. 通配与绑定
+
+```rust
+match n {
+    1 => println!("一"),
+    2 | 3 => println!("二或三"),      // 多模式
+    x @ 10..=20 => println!("区间: {}", x),  // 绑定 + 范围
+    _ => println!("其他"),            // 通配兜底
+}
+```
+
+## 4. if let / while let（单分支简化）
+
+```rust
+if let Message::Write(t) = m {
+    println!("只关心 Write: {}", t);   // 不必写完整 match
+}
+```
+
+## 5. Option 与 Result
+
+Rust 没有 `null`，用 `Option` 表达"可能有值"：
+
+```rust
+let some = Some(5);
+match some {
+    Some(v) => println!("有值 {}", v),
+    None => println!("无值"),
+}
+// 常用 if let Some(v) = some { ... }
+```
+
+`Option`/`Result` + `match` 让"可能失败/可能为空"在类型上显式，编译期强制处理。
+
+## 6. 解构
+
+```rust
+struct Point { x: i32, y: i32 }
+let p = Point { x: 1, y: 2 };
+let Point { x, y } = p;                // 解构出字段
+```
+
+## 小结
+
+枚举 + 模式匹配是 Rust 的"表达力引擎"：把状态穷尽地编码进类型，编译器替你检查遗漏。结合 [泛型与 Trait](../泛型与Trait) 可实现高度复用的抽象。

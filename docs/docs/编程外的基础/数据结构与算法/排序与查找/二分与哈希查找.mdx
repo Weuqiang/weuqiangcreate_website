@@ -1,0 +1,73 @@
+---
+title: 二分与哈希查找
+sidebar_position: 2
+---
+
+# 二分与哈希查找
+
+查找是"在数据里定位目标"。本篇讲有序数组的二分查找与哈希表的 $O(1)$ 查找。
+
+## 1. 二分查找（Binary Search）
+
+前提：数据**有序**。每次折半， $O(\log n)$。
+
+```python
+def binary_search(a, key):
+    lo, hi = 0, len(a) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if a[mid] == key: return mid
+        elif a[mid] < key: lo = mid + 1
+        else: hi = mid - 1
+    return -1
+```
+
+常见变体：
+
+- 找**第一个/最后一个**等于 key 的位置；
+- 找**插入位置**（`bisect_left`）；
+- 在答案空间二分（"最大值最小化"类问题）。
+
+注意中点溢出：`mid = lo + (hi-lo)//2`。
+
+## 2. 哈希查找（Hash）
+
+哈希表用哈希函数把 key 映射到桶，平均 $O(1)$ 查找。
+
+```python
+d = {}
+d["apple"] = 5
+d["apple"]        # O(1) 平均
+```
+
+- 冲突处理：链地址法（桶挂链表/树）、开放寻址；
+- 负载因子过高时扩容 rehash。
+
+## 3. 对比
+
+| 方式 | 前提 | 复杂度 | 有序 |
+|------|------|--------|------|
+| 顺序 | 无 | $O(n)$ | — |
+| 二分 | 有序 | $O(\log n)$ | 需要 |
+| 哈希 | 可哈希 | $O(1)$ 平均 | 不需要 |
+
+## 4. 选型
+
+- 只需点查、允许无序 → 哈希（最快）；
+- 需要范围/前驱后继/有序 → 二分或 BST；
+- 哈希函数设计差会退化成 $O(n)$，故 key 分布要均匀。
+
+## 5. 实战例子：两数之和
+
+```python
+def two_sum(nums, target):
+    seen = {}
+    for i, x in enumerate(nums):
+        if target - x in seen:        # O(1) 查找
+            return [seen[target-x], i]
+        seen[x] = i
+```
+
+哈希把暴力 $O(n^2)$ 降到 $O(n)$。
+
+> 下一站：[递归回溯与分治](../../高级算法/递归回溯与分治)。

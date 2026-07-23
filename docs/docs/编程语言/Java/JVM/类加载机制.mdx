@@ -1,0 +1,61 @@
+---
+title: 类加载机制
+sidebar_position: 2
+---
+
+# 类加载机制
+
+Java 代码编译成 `.class` 字节码后，由 JVM 在运行时**按需加载**到内存。理解类加载有助于排查 `ClassNotFoundException`、`NoClassDefFoundError` 与热部署问题。
+
+## 1. 类加载过程
+
+一个类从磁盘到可用，经历三步：
+
+1. **加载（Loading）**：类加载器把 `.class` 读入内存，生成 `Class` 对象。
+2. **链接（Linking）**：
+   - 验证：字节码合法性；
+   - 准备：为静态变量分配内存并赋零值；
+   - 解析：把符号引用替换为直接引用。
+3. **初始化（Initialization）**：执行类构造器 `<clinit>()`，即静态变量赋值与静态块。
+
+## 2. 双亲委派模型
+
+JVM 有三层类加载器，加载时**先委托父加载器**，父找不到才自己加载：
+
+```
+Bootstrap  → 核心类库(rt.jar)
+  ↑
+Extension  → 扩展包
+  ↑
+Application → 用户 classpath（默认）
+```
+
+好处：
+
+- **避免重复加载**：父类加载过，子类不再加载。
+- **安全**：用户无法伪造 `java.lang.String` 等核心类。
+
+## 3. 示例：自定义类加载器
+
+```java
+class MyClassLoader extends ClassLoader {
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        byte[] bytes = loadBytesFromFile(name);   // 从文件/网络读取
+        return defineClass(name, bytes, 0, bytes.length);
+    }
+}
+```
+
+> 热部署、插件化、加密字节码常借助自定义加载器实现。
+
+## 4. 常见异常
+
+| 异常 | 含义 |
+|------|------|
+| `ClassNotFoundException` | 运行时显式加载（如 `Class.forName`）找不到类 |
+| `NoClassDefFoundError` | 编译在、运行不在（依赖缺失） |
+
+## 小结
+
+类加载是"懒加载 + 双亲委派"：用到才加载、父优先、保证核心类唯一。理解它，依赖冲突与 classpath 问题不再神秘。

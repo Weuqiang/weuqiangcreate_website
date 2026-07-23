@@ -1,0 +1,72 @@
+---
+title: 集合框架
+sidebar_position: 1
+---
+
+# 集合框架
+
+Java 集合框架（Java Collections Framework）统一了容器操作，几乎所有业务代码都在用它。
+
+## 1. 整体结构
+
+```
+Collection                Map
+├─ List (有序可重复)       ├─ HashMap (键值, 快)
+│   ├─ ArrayList           ├─ LinkedHashMap (保序)
+│   └─ LinkedList          ├─ TreeMap (按 key 排序)
+├─ Set (不可重复)          └─ Hashtable (线程安全, 老旧)
+│   ├─ HashSet
+│   └─ TreeSet
+└─ Queue
+    └─ PriorityQueue
+```
+
+## 2. List：ArrayList vs LinkedList
+
+```java
+List<String> a = new ArrayList<>();   // 底层数组，随机访问 O(1)，尾部增删快
+List<String> l = new LinkedList<>();  // 双向链表，头尾增删 O(1)，随机访问慢
+```
+
+| 操作 | ArrayList | LinkedList |
+|------|-----------|------------|
+| `get(i)` | O(1) | O(n) |
+| 头插 | O(n) | O(1) |
+| 尾插 | O(1)* | O(1) |
+
+\* ArrayList 扩容时偶发 O(n)。
+
+## 3. Map：HashMap 原理
+
+```java
+Map<String, Integer> m = new HashMap<>();
+m.put("a", 1);
+Integer v = m.get("a");     // O(1) 平均
+```
+
+- JDK 8 的 `HashMap`：数组 + 链表/红黑树；冲突超阈值（8）链表转红黑树。
+- key 的 `hashCode()` 决定桶位置，`equals()` 判断相等。
+
+## 4. Set 与 Queue
+
+```java
+Set<Integer> s = new HashSet<>();   // 基于 HashMap，自动去重
+s.add(1); s.add(1);                  // 只有一个 1
+
+Queue<Integer> q = new LinkedList<>();
+q.offer(1); int x = q.poll();        // 入队/出队（FIFO）
+```
+
+## 5. 工具类 Collections / Arrays
+
+```java
+Collections.sort(list);              // 排序
+Collections.unmodifiableList(list);  // 不可变视图
+Arrays.asList("a", "b");             // 数组转 List
+```
+
+## 小结
+
+- 查多改少 → `ArrayList` / `HashMap`；
+- 去重 → `HashSet`；保序去重 → `LinkedHashSet`；
+- 排序集合 → `TreeSet` / `TreeMap`。

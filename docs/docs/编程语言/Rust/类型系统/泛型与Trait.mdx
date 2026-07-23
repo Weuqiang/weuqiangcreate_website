@@ -1,0 +1,83 @@
+---
+title: 泛型与 Trait
+sidebar_position: 2
+---
+
+# 泛型与 Trait
+
+Rust 用**泛型**实现零成本抽象，用 **Trait** 定义共享行为（类似接口）。两者是代码复用的基石。
+
+## 1. 泛型
+
+```rust
+fn largest<T: PartialOrd>(list: &[T]) -> &T {   // T 为任意可比较类型
+    let mut max = &list[0];
+    for item in list {
+        if item > max { max = item; }
+    }
+    max
+}
+```
+
+- 单态化（monomorphization）：编译期为每种具体类型生成专用代码，**无运行时开销**。
+
+## 2. Trait：定义行为
+
+```rust
+trait Summary {
+    fn summarize(&self) -> String;     // 必须实现
+    fn author(&self) -> String {       // 默认实现
+        String::from("(匿名)")
+    }
+}
+
+struct Article { title: String }
+impl Summary for Article {
+    fn summarize(&self) -> String {
+        format!("文章: {}", self.title)
+    }
+}
+```
+
+## 3. Trait Bound 与泛型结合
+
+```rust
+fn notify<T: Summary>(item: &T) {
+    println!("提醒: {}", item.summarize());
+}
+```
+
+简写：`fn notify(item: &impl Summary)`。
+
+## 4. 常用标准 Trait
+
+| Trait | 作用 |
+|-------|------|
+| `Debug` | `{:?}` 格式化输出 |
+| `Clone` / `Copy` | 复制语义 |
+| `PartialEq` / `Eq` | 相等比较 |
+| `Ord` | 排序 |
+| `Default` | 默认值 |
+| `From` / `Into` | 类型转换 |
+
+可用派生宏自动实现：
+
+```rust
+#[derive(Debug, Clone, PartialEq)]
+struct Point { x: i32, y: i32 }
+```
+
+## 5. Trait 对象（动态分发）
+
+```rust
+fn report(items: &[&dyn Summary]) {   // dyn 动态分发，运行时决定
+    for i in items { println!("{}", i.summarize()); }
+}
+```
+
+- `dyn Trait` 用于异构集合，牺牲一点性能换灵活。
+- 默认泛型是静态分发（快），按需用 `dyn`。
+
+## 小结
+
+泛型负责"对多种类型复用"，Trait 负责"约束类型能做什么"。二者结合既灵活又零成本，是 Rust 抽象的核心工具。

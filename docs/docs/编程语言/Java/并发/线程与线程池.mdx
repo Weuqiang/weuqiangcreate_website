@@ -1,0 +1,68 @@
+---
+title: 线程与线程池
+sidebar_position: 1
+---
+
+# 线程与线程池
+
+并发是 Java 的强项。本篇讲线程的创建、状态，以及生产环境必备的**线程池**。
+
+## 1. 创建线程
+
+```java
+// 方式一：继承 Thread
+new Thread(() -> System.out.println("hi")).start();
+
+// 方式二：实现 Runnable（更推荐，便于组合）
+Runnable task = () -> System.out.println("running");
+new Thread(task).start();
+```
+
+## 2. 线程状态
+
+```
+NEW → RUNNABLE → BLOCKED/WAITING/TIMED_WAITING → TERMINATED
+```
+
+- `sleep()`：休眠，不释放锁。
+- `wait()/notify()`：在 `synchronized` 块内，释放锁等待/唤醒。
+
+## 3. 为什么需要线程池
+
+每来一个任务 `new Thread()` 代价高：线程创建/销毁开销、无节制创建会耗尽资源。线程池**复用线程、控制并发数**。
+
+```java
+ExecutorService pool = Executors.newFixedThreadPool(4);  // 4 个工作线程
+for (int i = 0; i < 10; i++) {
+    int id = i;
+    pool.submit(() -> System.out.println("任务 " + id));
+}
+pool.shutdown();   // 不再接收新任务，等待已提交完成
+```
+
+## 4. ThreadPoolExecutor 核心参数
+
+```java
+new ThreadPoolExecutor(
+    corePoolSize,        // 核心线程数（常驻）
+    maximumPoolSize,     // 最大线程数
+    keepAliveTime,       // 空闲线程存活时间
+    TimeUnit.SECONDS,
+    new LinkedBlockingQueue<>()  // 任务队列
+);
+```
+
+提交任务时的行为：
+
+1. 核心线程未满 → 创建新线程；
+2. 核心满 → 入队；
+3. 队列满 → 创建非核心线程至 maximum；
+4. 都满 → 触发**拒绝策略**（`AbortPolicy` 抛异常等）。
+
+## 5. 最佳实践
+
+- 不用 `Executors.newCachedThreadPool()`（可能无限线程），显式构造 `ThreadPoolExecutor`。
+- CPU 密集：线程数 ≈ 核数；IO 密集：可更大（如核数 × 2）。
+- 业务用 `submit()` 拿 `Future` 取结果/异常。
+
+> 更细的锁与并发容器见 [并发容器与锁](../并发容器与锁)。

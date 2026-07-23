@@ -1,0 +1,5 @@
+{
+  "label": "所有权",
+  "position": 1,
+  "description": "所有权、借用与生命周期——Rust 的内存安全基石。"
+}

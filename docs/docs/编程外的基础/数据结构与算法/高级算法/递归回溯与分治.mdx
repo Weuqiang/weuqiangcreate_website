@@ -1,0 +1,75 @@
+---
+title: 递归、回溯与分治
+sidebar_position: 1
+---
+
+# 递归、回溯与分治
+
+这三者常一起出现，是求解结构化问题的利器。本篇讲清区别与套路。
+
+## 1. 递归
+
+函数调用自身，需**基线条件**终止：
+
+```python
+def factorial(n):
+    if n <= 1: return 1        # 基线
+    return n * factorial(n-1)
+```
+
+注意：深度过大可能栈溢出；尾递归多数语言不优化，可改迭代。
+
+## 2. 分治（Divide & Conquer）
+
+"分而治之"：把问题拆成同类子问题，解后合并。
+
+- 归并排序、快排是典型；
+- 适合可独立求解的子问题。
+
+```python
+# 归并即分治：先分后合
+def merge_sort(a):
+    if len(a) <= 1: return a
+    mid = len(a)//2
+    return merge(merge_sort(a[:mid]), merge_sort(a[mid:]))
+```
+
+## 3. 回溯（Backtracking）
+
+"试探—失败—撤销"，本质是带剪枝的 DFS，常用于排列/组合/约束满足。
+
+全排列：
+
+```python
+def permute(nums, path, res):
+    if not nums:
+        res.append(path[:]); return
+    for i in range(len(nums)):
+        permute(nums[:i]+nums[i+1:], path+[nums[i]], res)
+```
+
+N 皇后（经典回溯）：
+
+```python
+def solve(row, cols, diag1, diag2, n, board, res):
+    if row == n:
+        res.append(["".join(r) for r in board]); return
+    for c in range(n):
+        if c in cols or (row-c) in diag1 or (row+c) in diag2:
+            continue                         # 剪枝
+        cols.add(c); diag1.add(row-c); diag2.add(row+c)
+        board[row][c] = 'Q'
+        solve(row+1, cols, diag1, diag2, n, board, res)
+        board[row][c] = '.'                  # 撤销
+        cols.discard(c); diag1.discard(row-c); diag2.discard(row+c)
+```
+
+## 4. 三者关系
+
+- 递归是**实现手段**；
+- 分治是递归求解**独立**子问题；
+- 回溯是递归**穷举+剪枝+撤销**，解约束问题。
+
+## 小结
+
+遇到"大问题=小问题组合"用分治；遇到"所有解/满足条件的解"用回溯。剪枝是回溯性能的关键。下一站：[动态规划](../动态规划)。

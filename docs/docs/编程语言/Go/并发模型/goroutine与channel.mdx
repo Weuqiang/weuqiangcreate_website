@@ -1,0 +1,72 @@
+---
+title: goroutine 与 channel
+sidebar_position: 1
+---
+
+# goroutine 与 channel
+
+Go 的并发模型是"CSP（通信顺序进程）"：用 `goroutine` 执行、用 `channel` 通信。本篇是 Go 并发的核心。
+
+## 1. goroutine：轻量协程
+
+```go
+go func() {
+    fmt.Println("异步执行")
+}()
+time.Sleep(10 * time.Millisecond)   // 主协程等待（实际应用用 WaitGroup）
+```
+
+- 启动成本极低（初始仅几 KB 栈），可轻松开数十万 goroutine。
+- `go f()` 立即返回，不等待 `f` 完成。
+
+## 2. channel：goroutine 间通信
+
+```go
+ch := make(chan int, 1)   // 带缓冲容量为 1
+ch <- 42                   // 发送
+v := <-ch                 // 接收（阻塞直至有值）
+```
+
+- 无缓冲 channel：发送与接收**同步握手**（一方就绪才通）。
+- 有缓冲 channel：缓冲未满/未空时不阻塞。
+
+## 3. 用 channel 做流水线
+
+```go
+func gen(nums ...int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for _, n := range nums { out <- n }
+        close(out)                 // 发送完关闭，避免泄漏
+    }()
+    return out
+}
+```
+
+> 准则："**不要通过共享内存来通信，而要通过通信来共享内存**"。
+
+## 4. for-range 与 close
+
+```go
+for v := range ch {     // 通道关闭后自动退出循环
+    fmt.Println(v)
+}
+```
+
+## 5. 方向限定（可选）
+
+```go
+func worker(in <-chan int, out chan<- int) {  // 只收 / 只发
+    for n := range in { out <- n * 2 }
+}
+```
+
+## 常见坑
+
+- 向已关闭的 channel 发送 → panic；
+- 忘记 `close` 导致接收方永久阻塞（死锁）；
+- 多个 goroutine 写同一 channel 须协调关闭（用 `sync.Once` 或专属关闭者）。
+
+## 小结
+
+goroutine 负责"并行做事"，channel 负责"安全传递数据"。两者组合能写出清晰、无锁竞争的并发程序。更细的控制见 [select 与 sync](../select与sync)。
