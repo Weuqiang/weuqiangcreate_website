@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: claude35-sonnet
 title: Claude 3.5 Sonnet：Anthropic在AI安全与性能上的双重突破
 authors: [weuqiang]

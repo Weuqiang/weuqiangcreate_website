@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: gemini25-deep-think
 title: Gemini 2.5 Deep Think：Google多智能体并行推理的新纪元
 authors: [weuqiang]

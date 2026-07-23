@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: llama4-multimodal-breakthrough
 title: Llama 4：Meta开源多模态AI的重大突破
 authors: [weuqiang]

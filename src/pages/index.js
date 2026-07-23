@@ -5,74 +5,65 @@ import Link from "@docusaurus/Link";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import styles from "./index.module.css";
 
+const sections = [
+  { icon: "📚", title: "开发文档", desc: "前端、后端、机器学习与编程语言的系统笔记。", to: "/docs" },
+  { icon: "📖", title: "书架", desc: "70+ 本读过的书，按体裁归类与随想。", to: "/read" },
+  { icon: "✍️", title: "博文", desc: "AI 前沿速递、技术史与偶尔的随笔。", to: "/blog" },
+  { icon: "🗂️", title: "个案", desc: "亲手做过的小项目与作品集。", to: "/case" },
+  { icon: "🖼️", title: "相簿", desc: "旅途与日常的影像记录。", to: "/gallery" },
+];
+
 function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
-
   return (
     <header className={clsx(styles.heroBanner)}>
-      {/* 飘逸粒子效果 */}
-      <div className={styles.particles}>
-        {[...Array(20)].map((_, i) => (
-          <div key={i} className={styles.particle} style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 10}s`,
-            animationDuration: `${8 + Math.random() * 4}s`
-          }} />
-        ))}
-      </div>
-      
-      <div className="container">
-        <div className={styles.heroContent}>
-          <div className={styles.heroText}>
-            <h1 className={clsx("hero__title", styles.heroTitle)}>Hello World!</h1>
-            <p className={clsx("hero__subtitle", styles.heroSubtitle)}>{siteConfig.tagline}</p>
-            <div className={styles.buttons}>
-              <Link className={clsx("button button--primary button--lg", styles.primaryButton)} to="/docs">
-                开始探索
-              </Link>
-              <Link className={clsx("button button--secondary button--lg", styles.secondaryButton)} to="/blog">
-                阅读博客
-              </Link>
-            </div>
-          </div>
-
+      <div className={styles.heroInner}>
+        <span className={styles.heroEyebrow}>魏强的知识花园</span>
+        <h1 className={clsx(styles.heroTitle)}>魏强的知识花园</h1>
+        <p className={clsx(styles.heroSubtitle)}>{siteConfig.tagline}</p>
+        <div className={styles.buttons}>
+          <Link className="button button--primary button--lg" to="/docs">
+            开始探索
+          </Link>
+          <Link className="button button--secondary button--lg" to="/blog">
+            阅读博客
+          </Link>
         </div>
+        <p className={styles.intro}>
+          这里是我用来存放学习与思考的地方——技术文档、读书笔记、文章与影像。
+          相信「终身学习，持续成长」，也相信好东西值得慢慢记下来。
+        </p>
       </div>
     </header>
   );
 }
 
 export default function Home() {
-  const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />"
+      title="首页"
+      description="魏强的个人知识博客：技术文档、读书笔记、文章与影像。"
     >
       <HomepageHeader />
       <main>
         <section className={styles.featuresSection}>
-          <div className="container">
-            <div className={styles.heroCards}>
-              <div className={styles.heroCard}>
+          <h2 className={styles.sectionTitle}>逛逛看</h2>
+          <p className={styles.sectionLead}>几个常去的地方</p>
+          <div className={styles.heroCards}>
+            {sections.map((s) => (
+              <Link
+                key={s.to}
+                to={s.to}
+                className={styles.heroCard}
+                style={{ textDecoration: "none" }}
+              >
+                <div className={styles.cardIcon}>{s.icon}</div>
                 <div className={styles.cardContent}>
-                  <h3>Support Me</h3>
-                  <p>Give me a star at <a href="https://github.com/Weuqiang/weuqiangcreate_website" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+                  <h3>{s.title}</h3>
+                  <p>{s.desc}</p>
                 </div>
-              </div>
-              <div className={styles.heroCard}>
-                <div className={styles.cardContent}>
-                  <h3>About Me</h3>
-                  <p>Lifelong Learning.</p>
-                </div>
-              </div>
-              <div className={styles.heroCard}>
-                <div className={styles.cardContent}>
-                  <h3>Contact Me</h3>
-                  <p>WeChat: wxai2411</p>
-                </div>
-              </div>
-            </div>
+              </Link>
+            ))}
           </div>
         </section>
       </main>

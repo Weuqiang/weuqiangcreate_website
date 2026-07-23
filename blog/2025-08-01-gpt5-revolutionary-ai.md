@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: gpt5-revolutionary-ai
 title: GPT-5：OpenAI 2025年的革命性突破，统一推理与生成的AI新纪元
 authors: [weuqiang]

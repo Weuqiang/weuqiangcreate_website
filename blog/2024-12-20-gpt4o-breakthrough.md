@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: gpt4o-breakthrough
 title: GPT-4o：OpenAI的多模态突破性进展
 authors: [weuqiang]

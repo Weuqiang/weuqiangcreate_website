@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: grok3-reasoning-revolution
 title: Grok 3：xAI推理能力的革命性突破
 authors: [weuqiang]

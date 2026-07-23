@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: claude4-programming-breakthrough
 title: Claude 4：Anthropic在编程领域的突破性进展
 authors: [weuqiang]

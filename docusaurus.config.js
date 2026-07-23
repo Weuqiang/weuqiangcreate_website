@@ -138,8 +138,8 @@ const config = {
     ],
     colorMode: {
       defaultMode: "light",
-      disableSwitch: false,
-      respectPrefersColorScheme: true,
+      disableSwitch: true,
+      respectPrefersColorScheme: false,
     },
     prism: {
       theme: lightCodeTheme,
@@ -187,7 +187,27 @@ const config = {
     },
     footer: {
       style: "light",
-      copyright: `<div style="font-size: 0.75rem;">Copyright ©  ${username} ${new Date().getFullYear()}<div/>`,
+      links: [
+        {
+          title: "内容",
+          items: [
+            { label: "开发文档", to: "/docs" },
+            { label: "书架", to: "/read" },
+            { label: "博文", to: "/blog" },
+            { label: "个案", to: "/case" },
+            { label: "相簿", to: "/gallery" },
+          ],
+        },
+        {
+          title: "联系",
+          items: [
+            { label: "GitHub", href: "https://github.com/Weuqiang" },
+            { label: "微信", href: "weixin://contacts/profile/wxai2411" },
+            { label: "邮箱", href: "mailto:weuqiang@example.com" },
+          ],
+        },
+      ],
+      copyright: `Copyright © ${username} ${new Date().getFullYear()} · 终身学习，持续成长`,
     },
   },
 };

@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: deepseek-chinese-ai
 title: DeepSeek：中国AI大模型的崛起与技术突破
 authors: [weuqiang]

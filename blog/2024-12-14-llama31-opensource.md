@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: llama31-opensource
 title: Llama 3.1：Meta引领开源大模型的新时代
 authors: [weuqiang]

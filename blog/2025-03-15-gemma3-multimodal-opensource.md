@@ -1,4 +1,5 @@
 ---
+category: AI资讯
 slug: gemma3-multimodal-opensource
 title: Gemma 3.0：Google开源多模态AI模型的新里程碑
 authors: [weuqiang]

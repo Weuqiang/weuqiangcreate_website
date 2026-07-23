@@ -1,4 +1,5 @@
 ---
+category: 随笔
 slug: long-blog-post
 title: 我的博客
 tags: [hello, docusaurus]

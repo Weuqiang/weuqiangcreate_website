@@ -57,3 +57,7 @@ temp/
 
 # parcel-bundler cache
 .parcel-cache
+
+# Local agent / editor settings (not project config)
+.workbuddy/
+.claude/
