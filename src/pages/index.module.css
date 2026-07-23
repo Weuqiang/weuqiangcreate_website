@@ -3,12 +3,12 @@
  */
 
 .heroBanner {
-  padding: 6rem 0 5rem;
+  padding: 4.5rem 0 3.5rem;
   text-align: center;
   position: relative;
   overflow: hidden;
   background: radial-gradient(120% 120% at 50% 0%, #fffdf8 0%, #faf6ef 55%, #f1e7d6 100%);
-  min-height: 52vh;
+  min-height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -24,30 +24,30 @@
 
 .heroEyebrow {
   display: inline-block;
-  font-size: 0.8rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.22em;
   color: var(--ifm-color-primary);
   background: var(--highlight-color);
-  padding: 0.35rem 0.9rem;
+  padding: 0.4rem 1rem;
   border-radius: 999px;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
 }
 
 .heroTitle {
   font-family: var(--font-serif);
-  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  font-size: clamp(2.4rem, 5vw, 3.8rem);
   font-weight: 700;
   color: var(--ink);
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.6rem;
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.12;
 }
 
 .heroSubtitle {
-  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
   color: var(--ink-soft);
-  margin: 0 auto 1.75rem;
+  margin: 0 auto 1.5rem;
   max-width: 36rem;
   line-height: 1.7;
 }
@@ -60,11 +60,11 @@
 }
 
 .intro {
-  margin: 2.5rem auto 0;
+  margin: 1.75rem auto 0;
   max-width: 40rem;
   color: var(--ink-soft);
-  line-height: 1.9;
-  font-size: 1rem;
+  line-height: 1.85;
+  font-size: 0.98rem;
 }
 
 .featuresSection {

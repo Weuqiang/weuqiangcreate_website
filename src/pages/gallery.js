@@ -26,6 +26,7 @@ import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "yet-another-react-lightbox/plugins/captions.css";
 import { createTheme, ThemeProvider, styled } from "@mui/material/styles";
 import { useColorMode } from "@docusaurus/theme-common";
+import styles from "./gallery.module.css";
 //定义图片路径
 const unsplashLink = (id, width, height) =>
   `/pages/gallery/${id}-${width}-${height}.webp`;
@@ -548,6 +549,13 @@ function GalleryContent() {
 
   return (
     <ThemeProvider theme={theme}>
+      <header className={styles.pageHeader}>
+        <span className={styles.pageEyebrow}>影像</span>
+        <h1 className={styles.pageTitle}>相册</h1>
+        <p className={styles.pageLead}>
+          旅途与日常的光影记录。按城市筛选，按行/按列/动态三种布局切换。
+        </p>
+      </header>
       <Settings>
         <Playground />
       </Settings>

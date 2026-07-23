@@ -18,8 +18,8 @@ function HomepageHeader() {
   return (
     <header className={clsx(styles.heroBanner)}>
       <div className={styles.heroInner}>
-        <span className={styles.heroEyebrow}>魏强的知识花园</span>
-        <h1 className={clsx(styles.heroTitle)}>魏强的知识花园</h1>
+        <span className={styles.heroEyebrow}>笔记 · 代码 · 思考 · 生活</span>
+        <h1 className={clsx(styles.heroTitle)}>{siteConfig.title}</h1>
         <p className={clsx(styles.heroSubtitle)}>{siteConfig.tagline}</p>
         <div className={styles.buttons}>
           <Link className="button button--primary button--lg" to="/docs">

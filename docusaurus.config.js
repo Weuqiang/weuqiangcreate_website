@@ -12,6 +12,7 @@ const darkCodeTheme = prismThemes.dracula;
 const username = "魏强";
 const websitename = "weuqiangcreate_website";
 const githubusername = "Weuqiang";
+const siteTitle = "魏强的知识花园";
 
 const websiteurl = `https://${githubusername}.github.io`;
 const githubuserRepository = `${githubusername}.github.io`;
@@ -19,7 +20,7 @@ const githuborgurl = `https://github.com/${githubusername}/${websitename}`;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: websitename,
+  title: siteTitle,
   tagline: "终身学习，持续成长",
   favicon: "favicon.ico",
   url: websiteurl,
@@ -147,6 +148,7 @@ const config = {
       defaultLanguage: "markdown",
     },
     navbar: {
+      title: siteTitle,
       hideOnScroll: false,
       items: [
         {
