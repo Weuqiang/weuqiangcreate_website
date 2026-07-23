@@ -1,4 +1,5 @@
 {
   "label": "编程语言",
-  "position": 3
+  "position": 3,
+  "description": "多语言横向对比与选型：Python、C、Web 前端、Java、Go、Rust。"
 }

@@ -1,0 +1,64 @@
+---
+title: Go 语言入门
+sidebar_position: 1
+---
+
+# Go 语言入门
+
+Go（Golang）由 Google 设计，以**简洁语法、原生并发、极快编译**著称，非常适合后端服务与云原生基础设施。
+
+## 1. Hello World
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, Go!")
+}
+```
+
+运行：`go run main.go`
+
+## 2. 并发：goroutine 与 channel
+
+Go 的杀手锏是轻量级协程 `goroutine` 与通信机制 `channel`。
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func worker(ch chan string) {
+    ch <- "done"          // 向 channel 发送
+}
+
+func main() {
+    ch := make(chan string)
+    go worker(ch)          // 启动一个 goroutine（极轻量）
+    msg := <-ch            // 从 channel 接收（阻塞等待）
+    fmt.Println(msg)
+    time.Sleep(10 * time.Millisecond)
+}
+```
+
+- `go func()` 立即异步执行，开销仅几 KB 栈。
+- `channel` 用于 goroutine 间通信，"不要通过共享内存来通信，而要通过通信来共享内存"。
+
+## 3. 核心特性
+
+- **静态类型 + 编译型**：单一二进制，无运行时依赖。
+- **垃圾回收**：兼顾易用与性能。
+- **标准库强大**：`net/http`、`context`、`testing` 开箱即用。
+
+## 4. 学习路线
+
+1. 语法基础：包、变量、控制流、切片（slice）、映射（map）。
+2. 并发模型：goroutine、channel、select、`sync` 包。
+3. 工程实践：模块（`go mod`）、错误处理、测试、HTTP 服务。
+
+> 本篇为种子文章，后续将扩展为「Go」子分类的完整内容。

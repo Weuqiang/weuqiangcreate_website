@@ -1,4 +1,5 @@
 {
   "label": "大模型（LLM）与应用",
-  "position": 3
+  "position": 3,
+  "description": "大模型（LLM）原理、微调、RAG 与 Agent 应用实践。"
 }

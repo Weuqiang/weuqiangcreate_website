@@ -1,4 +1,5 @@
 {
   "label": "Java",
-  "position": 4
+  "position": 4,
+  "description": "Java 语法、JVM、并发与生态框架。"
 }

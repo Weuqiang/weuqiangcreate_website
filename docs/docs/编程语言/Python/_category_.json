@@ -1,4 +1,5 @@
 {
   "label": "Python",
-  "position": 1
+  "position": 1,
+  "description": "Python 语法、面向对象与工程实践。"
 }

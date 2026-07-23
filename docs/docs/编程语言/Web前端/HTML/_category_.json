@@ -1,4 +1,5 @@
 {
   "label": "HTML",
-  "position": 1
+  "position": 1,
+  "description": "HTML 语义化标签、表单与页面结构。"
 }

@@ -1,4 +1,5 @@
 {
   "label": "JavaScript",
-  "position": 2
+  "position": 2,
+  "description": "JavaScript 语法、DOM、异步与前端工程。"
 }

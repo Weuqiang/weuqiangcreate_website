@@ -1,4 +1,5 @@
 {
   "label": "深度学习",
-  "position": 2
+  "position": 2,
+  "description": "神经网络、CNN、RNN/Transformer 等深度学习模型。"
 }

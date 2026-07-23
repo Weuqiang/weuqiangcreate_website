@@ -1,0 +1,61 @@
+---
+title: Java 语言入门
+sidebar_position: 1
+---
+
+# Java 语言入门
+
+Java 是一门**面向对象、跨平台**的语言，依托 JVM（Java 虚拟机）实现"一次编写，到处运行"。
+
+## 1. Hello World
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, Java!");
+    }
+}
+```
+
+编译运行：
+
+```bash
+javac Main.java   # 生成 Main.class 字节码
+java Main         # JVM 执行字节码
+```
+
+## 2. 核心特性
+
+- **JVM 跨平台**：源码编译成字节码，由各平台的 JVM 解释/JIT 执行。
+- **自动内存管理**：垃圾回收（GC）自动回收不再使用的对象。
+- **强类型 + 面向对象**：一切皆类，单继承 + 接口多实现。
+
+## 3. 面向对象三要素
+
+```java
+class Animal {
+    void speak() { System.out.println("..."); }
+}
+class Dog extends Animal {        // 继承
+    @Override
+    void speak() { System.out.println("Woof"); }  // 多态
+}
+```
+
+- **封装**：用 `private` 隐藏内部细节。
+- **继承**：`extends` 复用父类能力。
+- **多态**：同一接口不同实现。
+
+## 4. 并发与生态
+
+- 并发：`Thread`、`Runnable`、线程池 `ExecutorService`、` synchronized` 与 `java.util.concurrent`。
+- 生态：Spring（Web/企业级）、Maven/Gradle（构建）、JUnit（测试）。
+
+## 5. 学习路线
+
+1. 语法基础：类型、流程控制、数组、字符串。
+2. 面向对象：类、接口、继承、多态。
+3. JVM 与内存：堆/栈、GC 原理。
+4. 并发与生态：线程池、Spring Boot。
+
+> 本篇为种子文章，后续将扩展为「Java」子分类的完整内容。

@@ -1,4 +1,5 @@
 {
   "label": "计算机科学导论",
-  "position": 1
+  "position": 1,
+  "description": "组成原理、操作系统、网络与编译原理基础。"
 }

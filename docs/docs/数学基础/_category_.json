@@ -1,4 +1,5 @@
 {
   "label": "数学基础",
-  "position": 2
+  "position": 2,
+  "description": "编程所需的数学基础：线性代数、微积分、概率统计与离散数学。"
 }

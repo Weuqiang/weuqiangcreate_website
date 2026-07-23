@@ -1,4 +1,5 @@
 {
   "label": "开发工具链",
-  "position": 2
+  "position": 2,
+  "description": "Git、Linux、Docker、终端与编辑器等工作必备工具。"
 }

@@ -1,4 +1,5 @@
 {
   "label": "后端通识",
-  "position": 1
+  "position": 1,
+  "description": "网络、数据库、API 设计与服务端架构。"
 }

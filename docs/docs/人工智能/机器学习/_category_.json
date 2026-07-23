@@ -1,4 +1,5 @@
 {
   "label": "机器学习",
-  "position": 1
+  "position": 1,
+  "description": "监督/无监督学习、特征工程与传统机器学习算法。"
 }

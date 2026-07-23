@@ -1,4 +1,5 @@
 {
   "label": "数据结构与算法",
-  "position": 3
+  "position": 3,
+  "description": "线性结构、树与图、排序查找与高级算法。"
 }

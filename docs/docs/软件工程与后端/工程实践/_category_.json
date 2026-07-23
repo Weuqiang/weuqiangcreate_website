@@ -1,4 +1,5 @@
 {
   "label": "工程实践",
-  "position": 2
+  "position": 2,
+  "description": "CI/CD、自动化测试、代码质量与项目管理。"
 }

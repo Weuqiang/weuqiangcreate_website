@@ -1,4 +1,5 @@
 {
   "label": "Python 标准库",
-  "position": 2
+  "position": 2,
+  "description": "Python 标准库模块按主题分类的参考与示例。"
 }

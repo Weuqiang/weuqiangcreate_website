@@ -1,4 +1,5 @@
 {
   "label": "C",
-  "position": 2
+  "position": 2,
+  "description": "C 语言语法、指针、内存与系统级编程。"
 }
