@@ -126,7 +126,7 @@ const config = {
     },
   ],
   themeConfig: {
-    image: "/pages/case/weuqiangcreate_website.webp",
+    image: "/img/docusaurus-social-card.jpg",
     mermaid: {
       theme: { light: "neutral", dark: "forest" },
     },
