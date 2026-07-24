@@ -32,300 +32,202 @@ const unsplashLink = (id, width, height) =>
   `/pages/gallery/${id}-${width}-${height}.webp`;
 //定义相册图片
 const unsplashPhotos = [
-  {
-    id: 202412151,
-    width: 4624,
-    height: 2080,
-    title: "广东",
-    description: "仙湖植物园的绿地"
-  },
-  {
-    id: 202412152,
-    width: 2160,
-    height: 5044,
-    title: "上海",
-    description: "古猗园的莲花"
-  },
-  {
-    id: 202412153,
-    width: 2160,
-    height: 5044,
-    title: "浙江",
-    description: "端午节的天一阁"
-  },
-  {
-    id: 202412155,
-    width: 1706,
-    height: 1279,
-    title: "山东",
-    description: "趵突泉的正面"
-  },
-  {
-    id: 202412157,
-    width: 2160,
-    height: 5070,
-    title: "上海",
-    description: "青浦区的道路"
-  },
-  {
-    id: 202412158,
-    width: 2080,
-    height: 2080,
-    title: "广东",
-    description: "仙湖植物园的大树"
-  },
-  {
+{
     id: "2021072",
     width: 1080,
     height: 1077,
     title: "广东",
     description: "塘朗山的花",
   },
-  {
+{
     id: "2021073",
     width: 4032,
     height: 3024,
     title: "广东",
     description: "塘朗山的山顶",
   },
-  {
-    id: "2021074",
-    width: 4032,
-    height: 3024,
-    title: "广东",
-    description: "塘朗山的亭子",
-  },
-  {
-    id: "2021075",
-    width: 3464,
-    height: 3464,
-    title: "广东",
-    description: "塘朗山的栈道",
-  },
-  {
+{
     id: "2021076",
     width: 4524,
     height: 2112,
     title: "广东",
     description: "东宝大厦的双彩虹",
   },
-  {
+{
     id: "2021077",
     width: 1920,
     height: 923,
     title: "广东",
     description: "深圳的主干道",
   },
-  {
-    id: "2021078",
-    width: 5792,
-    height: 4344,
-    title: "上海",
-    description: "上海的鱼鳞云",
-  },
-  {
+{
     id: "2021079",
     width: 1440,
     height: 1080,
     title: "广东",
     description: "南山区的堡垒云",
   },
-  {
+{
     id: "2022081",
     width: 1422,
     height: 799,
     title: "上海",
     description: "上海白天的月亮",
   },
-  {
+{
     id: "2022082",
     width: 2738,
     height: 1280,
     title: "上海",
     description: "全景下红蓝分裂的天空",
   },
-  {
+{
     id: "2022083",
     width: 1664,
     height: 935,
     title: "上海",
     description: "上海的晚霞",
   },
-  {
+{
     id: "2022084",
     width: 1664,
     height: 935,
     title: "上海",
     description: "上海的公园",
   },
-  {
+{
     id: "20230705092938",
     width: 1920,
     height: 1080,
     title: "甘肃",
     description: "中山桥",
   },
-  {
+{
     id: "20230705092949",
     width: 3188,
     height: 1792,
     title: "上海",
     description: "上海金色的晚霞",
   },
-  {
+{
     id: "20230705093600",
     width: 2268,
     height: 1168,
     title: "浙江",
     description: "嵊泗岛的路牌",
   },
-  {
+{
     id: "20230705093711",
     width: 4032,
     height: 2268,
     title: "浙江",
     description: "嵊泗岛的晚霞",
   },
-  {
+{
     id: "20230705093721",
     width: 4032,
     height: 2268,
     title: "浙江",
     description: "嵊泗岛的渔场",
   },
-  {
+{
     id: "20230705094040",
     width: 3979,
     height: 2236,
     title: "浙江",
     description: "嵊泗岛的清晨",
   },
-  {
-    id: "20230705094046",
-    width: 2160,
-    height: 2430,
-    title: "浙江",
-    description: "嵊泗岛的民宿",
-  },
-  {
+{
     id: "20230705094050",
     width: 1080,
     height: 607,
     title: "浙江",
     description: "嵊泗岛的绿野仙踪",
   },
-  {
-    id: "2023071",
-    width: 2268,
-    height: 4032,
-    title: "上海",
-    description: "佘山的塔",
-  },
-  {
+{
     id: "202308171",
     width: 1664,
     height: 935,
     title: "江苏",
     description: "苏州金鸡湖",
   },
-  {
+{
     id: "ForestPark1",
     width: 1080,
     height: 1080,
     title: "上海",
     description: "共青公园",
   },
-  {
+{
     id: "ForestPark3",
     width: 1920,
     height: 1080,
     title: "上海",
     description: "共青公园",
   },
-  {
+{
     id: "ForestPark4",
     width: 1918,
     height: 1080,
     title: "上海",
     description: "共青公园",
   },
-  {
+{
     id: "ForestPark5",
     width: 1706,
     height: 960,
     title: "上海",
     description: "共青公园",
   },
-  {
+{
     id: "ForestPark6",
     width: 1920,
     height: 1080,
     title: "上海",
     description: "共青公园",
   },
-  {
+{
     id: "ForestPark7",
     width: 1920,
     height: 1080,
     title: "上海",
     description: "共青公园",
   },
-  {
-    id: "nanxiangtown1",
-    width: 4032,
-    height: 2268,
-    title: "上海",
-    description: "南翔古镇",
-  },
-  {
-    id: "nanxiangtown2",
-    width: 4032,
-    height: 2268,
-    title: "上海",
-    description: "南翔古镇",
-  },
-  {
+{
     id: "nanxiangtown3",
     width: 3676,
     height: 2070,
     title: "上海",
     description: "南翔古镇",
   },
-  {
-    id: "nanxiangtown4",
-    width: 4032,
-    height: 2268,
-    title: "上海",
-    description: "南翔古镇",
-  },
-  {
+{
     id: "20240531110829",
     width: 1664,
     height: 935,
     title: "山东",
     description: "青岛的夏天",
   },
-  {
+{
     id: "20240531110834",
     width: 1664,
     height: 935,
     title: "山东",
     description: "青岛的夏天",
   },
-  {
+{
     id: "20240531110910",
     width: 1664,
     height: 935,
     title: "山东",
     description: "青岛的夏天",
   },
-  {
+{
     id: "20240531111017",
     width: 1664,
     height: 935,
     title: "山东",
     description: "青岛的夏天",
-  },
+  }
 ];
 
 // 使用 Set 进行自动去重，自动添加一个全选选项
