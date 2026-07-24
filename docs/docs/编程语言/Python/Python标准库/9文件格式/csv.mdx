@@ -1,6 +1,87 @@
 ---
-title: "csv"
-description: "CSV (Comma Separated Values) 格式是电子表格和数据库中最常见的输入、输出"
+sidebar_position: 9
+title: csv
+description: "csv 模块读写逗号分隔值文件，支持 reader/writer、字典读写与自定义方言"
 ---
 
-CSV (Comma Separated Values) 格式是电子表格和数据库中最常见的输入、输出文件格式。在 RFC 4180 规范推出的很多年前，CSV 格式就已经被开始使用了
+# csv — 读写 CSV 文件
+
+CSV（Comma Separated Values）是电子表格与数据库之间最常见的交换格式。`csv` 模块提供了跨平台、正确处理引号与换行的读写器，避免你自己用 `split(',')` 带来的各种边界 bug（比如字段里本身含有逗号）。
+
+## 读取：`csv.reader`
+
+`reader` 把每行解析成一个**字符串列表**：
+
+```python showLineNumbers
+import csv
+
+with open("data.csv", newline="", encoding="utf-8") as f:
+    reader = csv.reader(f)
+    header = next(reader)          # 第一行通常是表头
+    for row in reader:
+        print(row)                 # ['Alice', '30', 'Beijing']
+```
+
+> 关键：`open` 时务必加 `newline=""`，否则在 Windows 上会出现空行错位——这是 `csv` 模块的官方建议。
+
+## 写入：`csv.writer`
+
+```python showLineNumbers
+import csv
+
+rows = [
+    ["name", "age", "city"],
+    ["Alice", "30", "Beijing"],
+    ["Bob", "25", "Shanghai"],
+]
+
+with open("out.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerows(rows)         # 一次性写多行
+```
+
+## 字典读写：`DictReader` / `DictWriter`
+
+按**列名**访问比按索引更稳健（列顺序变了也不会错）：
+
+```python showLineNumbers
+import csv
+
+# 读：每行变成一个 dict，键来自表头
+with open("data.csv", newline="", encoding="utf-8") as f:
+    for row in csv.DictReader(f):
+        print(row["name"], row["age"])
+
+# 写：指定字段顺序
+with open("out.csv", "w", newline="", encoding="utf-8") as f:
+    fieldnames = ["name", "age", "city"]
+    w = csv.DictWriter(f, fieldnames=fieldnames)
+    w.writeheader()
+    w.writerow({"name": "Alice", "age": 30, "city": "Beijing"})
+```
+
+## 引号与方言（dialect）
+
+CSV 没有全球统一标准：分隔符可能是逗号、分号或制表符，字符串可能用引号包裹。用 `delimiter` 与 `quoting` 控制：
+
+```python showLineNumbers
+import csv
+
+# 用分号分隔、且总是给字段加引号
+with open("eu.csv", "w", newline="", encoding="utf-8") as f:
+    w = csv.writer(f, delimiter=";", quoting=csv.QUOTE_ALL)
+    w.writerow(["a,b", "c"])
+```
+
+常用方言参数：
+- `delimiter`：字段分隔符，默认 `,`。
+- `quotechar`：引号字符，默认 `"`。
+- `quoting`：`QUOTE_MINIMAL`（默认，只在必要时加引号）/ `QUOTE_ALL` / `QUOTE_NONNUMERIC` 等。
+
+## 小结
+
+- 永远用 `csv` 模块而不是手搓 `split`，它正确处理了引号、换行与编码。
+- `open(..., newline="", encoding="utf-8")` 是标准搭配。
+- 需要按列名处理时优先用 `DictReader` / `DictWriter`。
+
+> 延伸：CSV 适合表格数据；若字段含嵌套结构，考虑用 `json` 模块表达层级关系。

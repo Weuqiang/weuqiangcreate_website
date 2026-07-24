@@ -1,30 +1,85 @@
 ---
-title: "glob"
-description: "glob 模块会按照 Unix shell 所使用的规则找出所有匹配特定模式的路径名称，但返回结果的"
+sidebar_position: 6
+title: glob
+description: "glob 按 Unix shell 风格的模式匹配文件路径，支持通配符与递归搜索"
 ---
 
+# glob — 文件路径模式匹配
 
-glob 模块会按照 Unix shell 所使用的规则找出所有匹配特定模式的路径名称，但返回结果的顺序是不确定的。
+`glob` 模块用 **Unix shell 风格的通配符**找出所有匹配特定模式的文件路径，比手动 `os.listdir` + 过滤更简洁。注意：返回结果的**顺序是不确定的**，需要有序请自行 `sorted()`。
 
-##  匹配规则
-glob 模块的语法和 Unix shell 所使用的规则类似，下面是一些例子：
+## 匹配规则
 
-- `*.py` 匹配所有以 `.py` 结尾的文件
-- `[abc]` 匹配 `a`、`b` 或 `c`
-- `[!abc]` 匹配除 `a`、`b` 和 `c` 以外的任何字符
+`glob` 的语法和 shell 类似：
 
-[glob 官方模块文档](https://docs.python.org/zh-cn/3/library/glob.html#module-glob)
+- `*` 匹配任意数量字符（不含路径分隔符 `/`）。
+- `?` 匹配单个字符。
+- `[abc]` 匹配 `a`、`b` 或 `c`；`[!abc]` 匹配除此之外的任意字符。
+- `**`（配合 `recursive=True`）递归匹配任意层级的目录。
+
+## `glob.glob`：返回列表
 
 ```python showLineNumbers
 import glob
 
-print(glob.glob('*.py'))
+# 当前目录下所有 .py 文件
+print(glob.glob("*.py"))
+
+# 某目录下所有 .md 文件
+print(glob.glob("docs/**/*.md", recursive=True))
 ```
 
-##  glob.glob
+`recursive=True` 时，`**` 会深入子目录递归匹配；不加则 `**` 只等价于 `*`。
 
-##  glob.iglob
+## `glob.iglob`：惰性迭代器
 
-##  glob.escape
+文件很多时，`iglob` 逐个产出匹配项，避免一次性把所有路径装进内存：
 
-##  glob.translate
+```python showLineNumbers
+import glob
+
+for path in glob.iglob("**/*.log", recursive=True):
+    print(path)
+```
+
+## 递归与目录：`**`
+
+`**` 是处理"整棵目录树"的利器：
+
+```python showLineNumbers
+import glob
+
+# 找出项目里所有图片
+images = glob.glob("assets/**/*.png", recursive=True)
+```
+
+## `glob.escape`：转义特殊字符
+
+当路径里本身含有 `*`、`?`、`[` 等字符（比如文件名就叫 `report[1].txt`）时，用 `escape` 把它们当普通字符处理，防止被当成通配符：
+
+```python showNumbers
+import glob
+
+pattern = glob.escape("report[1].txt")   # 变成字面量匹配
+print(glob.glob(pattern))
+```
+
+## `glob.translate`：转成正则
+
+`translate` 把通配符模式编译成正则表达式对象，方便你复用或做更精细的控制：
+
+```python showLineNumbers
+import glob, re
+
+rx = glob.translate("*.py")
+print(rx.pattern)            # 类似 '(?s:.*\\.py)\\Z'
+print(bool(rx.match("a.py")))
+```
+
+## 小结
+
+- 简单匹配用 `glob()`；大目录用 `iglob()` 省内存。
+- 跨层级搜索记得 `recursive=True` + `**`。
+- 文件名含通配符字样时先 `escape`。
+
+> 延伸：需要更底层的目录遍历（含文件属性、递归控制），可用标准库的 `os.walk`；本目录的 [`tempfile`](../tempfile) 则用于安全地创建临时文件。

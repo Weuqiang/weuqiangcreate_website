@@ -1,35 +1,71 @@
 ---
 sidebar_position: 1
 title: dis
+description: "dis 模块反汇编 Python 字节码，帮你看清代码在解释器层面到底怎么执行"
 ---
 
-dis模块用于反编译Python字节码，查看Python代码的执行过程。
+# dis — 字节码反汇编
+
+`dis` 是 Python 标准库自带的**字节码反汇编器**。它把编译后的 `.pyc` 字节码翻译回人类可读的指令序列，让你看清一行 Python 代码在 CPython 解释器里**实际是怎么一步步执行的**。
+
+## 为什么要用 dis
+
+Python 是解释执行的，源码先编译成字节码再由虚拟机（VM）逐条执行。`dis` 让你绕过"我以为它会这样跑"的直觉，直接看"它真的这样跑"：
+
+- 验证某个语法糖 / 优化是否生效（比如 `f-string`、`match`）。
+- 排查性能问题（数一数某段代码生成了多少条指令）。
+- 理解闭包、变量作用域、异常处理的底层机制。
+
+## 基本用法：`dis.dis`
+
+直接把一个函数、方法或代码对象传给 `dis.dis` 即可打印反汇编：
 
 ```python showLineNumbers
 import dis
-def m():
-    x = [123,456]
-    match x:
-        case y:
-            pass
-print(dis.dis(m))
-"""
-输出：
-  2           0 RESUME                   0
 
-  3           2 LOAD_CONST               1 (123)
-              4 LOAD_CONST               2 (456)
-              6 BUILD_LIST               2
-              8 STORE_FAST               0 (x)
+def add(a, b):
+    return a + b
 
-  4          10 LOAD_FAST                0 (x)
-
-  5          12 STORE_FAST               1 (y)
-
-  6          14 RETURN_CONST             0 (None)
-None
-
-"""
+dis.dis(add)
 ```
 
+输出会列出每一条指令的**行号、字节码偏移、指令名、参数**。`LOAD_FAST` 读取局部变量，`BINARY_OP` 做二元运算，`RETURN_VALUE` 返回。
 
+## 实战：看 `match` 语句怎么编译
+
+`match`（结构匹配）是新语法，用 `dis` 可以看清它背后就是一系列比较与跳转：
+
+```python showLineNumbers
+import dis
+
+def classify(x):
+    match x:
+        case [a, b]:
+            return "二元组"
+        case _:
+            return "其他"
+
+print(dis.dis(classify))
+```
+
+你会发现 `case [a, b]` 并没有真的"拆包魔法"，而是编译成对序列长度、元素取值的一连串判断指令。理解这一点，就不会对 `match` 的性能或行为产生错误预期。
+
+## 更细粒度：`dis.Bytecode`
+
+`dis.Bytecode` 把指令封装成可迭代对象，方便在程序里分析：
+
+```python showLineNumbers
+import dis
+
+bc = dis.Bytecode(lambda: [1, 2, 3])
+for instr in bc:
+    print(instr.opname, instr.argval)
+```
+
+## 注意事项
+
+- `dis` 展示的是 **CPython 的实现细节**，不同 Python 版本指令集会变化，不要写依赖具体指令的代码。
+- 它反汇编的是字节码，不是源码——变量名、常量值可见，但注释和控制流结构需要你自行推断。
+- 想看整个模块的字节码，可以直接 `dis.dis("模块名")` 或对 `.pyc` 文件使用 `dis.disco`。
+
+> 延伸：想理解字节码如何被真正执行，可以结合 `inspect` 模块查看函数的 `__code__` 对象（常量表、变量名表等）。

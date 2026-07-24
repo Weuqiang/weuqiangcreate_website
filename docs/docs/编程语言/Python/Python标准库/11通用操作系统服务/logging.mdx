@@ -1,10 +1,101 @@
 ---
 sidebar_position: 11
 title: logging
+description: "logging 是 Python 标准库里的日志系统，支持分级、输出到文件与控制台、多 Handler 组合"
 ---
 
-logging 模块是 Python 标准库中用于记录日志的模块。
+# logging — 日志系统
 
-## loguru
+`logging` 是 Python 标准库自带的**日志框架**。相比用 `print` 调试，它支持**日志级别、输出到多个目标（控制台 / 文件）、格式化与时间戳**，是生产代码记录运行状态的标准做法。
 
-loguru 是一个第三方日志库，比 logging 更简单、简化了很多操作。
+## 五级日志
+
+| 级别 | 数值 | 用途 |
+|------|------|------|
+| `DEBUG` | 10 | 调试细节，开发期才开 |
+| `INFO` | 20 | 正常运行的关键节点 |
+| `WARNING` | 30 | 不致命但值得注意 |
+| `ERROR` | 40 | 出错但程序还能跑 |
+| `CRITICAL` | 50 | 严重错误，可能中止 |
+
+## 快速上手：`basicConfig`
+
+最简单的用法，一行配置 + 直接打日志：
+
+```python showLineNumbers
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+logging.debug("这条不会显示，因为级别是 INFO")
+logging.info("服务启动完成")
+logging.warning("磁盘剩余空间偏低")
+logging.error("数据库连接失败")
+```
+
+`level=logging.INFO` 表示只输出 INFO 及以上级别的日志；`format` 里的 `%(asctime)s` 等是内置占位符，会自动填充时间、级别、logger 名与消息。
+
+## 输出到文件
+
+把日志同时写到文件，方便事后排查：
+
+```python showLineNumbers
+import logging
+
+logging.basicConfig(
+    filename="app.log",
+    filemode="a",            # a=追加，w=覆盖
+    level=logging.DEBUG,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
+
+logging.debug("写入文件的调试信息")
+```
+
+## 进阶结构：Logger / Handler / Formatter
+
+`basicConfig` 只够小脚本。正式项目用三层结构组合：
+
+- **Logger**：入口，决定记什么（按级别过滤）。
+- **Handler**：决定**写到哪**（控制台、文件、网络）。
+- **Formatter**：决定**长什么样**。
+
+```python showLineNumbers
+import logging
+
+logger = logging.getLogger("myapp")      # 1. 取一个具名 logger
+logger.setLevel(logging.DEBUG)
+
+console = logging.StreamHandler()        # 2a. 控制台 handler
+console.setLevel(logging.INFO)
+file = logging.FileHandler("app.log")    # 2b. 文件 handler
+file.setLevel(logging.DEBUG)
+
+fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+console.setFormatter(fmt)
+file.setFormatter(fmt)
+
+logger.addHandler(console)               # 3. 挂上 handler
+logger.addHandler(file)
+
+logger.info("这条同时出现在控制台和文件")
+logger.debug("这条只进文件（级别被 console 过滤掉）")
+```
+
+要点：过滤有两道关卡——**Logger 的 level** 和**每个 Handler 的 level**，二者取交集。最佳实践是在模块里用 `logger = logging.getLogger(__name__)`，让日志自动带上模块路径，便于定位。
+
+## loguru：更省心的第三方选择
+
+`loguru` 是社区流行的第三方日志库，用一行 `from loguru import logger` 就能获得彩色输出、自动轮转文件、异常追踪等能力，省去 `logging` 繁琐的 Handler 配置：
+
+```python
+from loguru import logger
+
+logger.add("app.log", rotation="10 MB")  # 文件超过 10MB 自动切分
+logger.info("比 logging 少写很多样板代码")
+```
+
+如果项目允许引入第三方依赖，`loguru` 通常是更顺手的选择；若必须只用标准库，则掌握上面的 `logging` 三层结构即可。
+
+> 延伸：日志常配合 [`os`](../os) 模块做路径与目录管理（例如把日志按日期放到独立文件夹）。

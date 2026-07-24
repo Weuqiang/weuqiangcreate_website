@@ -1,7 +1,65 @@
 ---
-title: "pickle"
-description: "pickle 模块是 Python 标准库中的一个模块，用于序列化和反序列化 Python 对象。它"
+sidebar_position: 7
+title: pickle
+description: "pickle 把任意 Python 对象序列化成字节流，便于存盘或网络传输，但存在安全风险"
 ---
 
-pickle 模块是 Python 标准库中的一个模块，用于序列化和反序列化 Python 对象。它可以将 Python 对象转换为字节流，并将其保存到文件中，或者从文件中读取字节流并转换回 Python 对象。
+# pickle — 对象序列化
 
+`pickle` 是 Python 标准库里负责**对象序列化**的模块：它能把几乎任何 Python 对象（列表、字典、类实例、函数……）转换成字节流，存到文件或通过网络发送；之后再用 `unpickle` 还原成原来的对象。
+
+## 基本用法：`dump` / `load`
+
+```python showLineNumbers
+import pickle
+
+data = {"name": "Alice", "scores": [95, 87, 91]}
+
+# 序列化到文件
+with open("data.pkl", "wb") as f:        # 注意是二进制模式 "wb"
+    pickle.dump(data, f)
+
+# 从文件反序列化
+with open("data.pkl", "rb") as f:        # 读也要二进制 "rb"
+    loaded = pickle.load(f)
+
+print(loaded == data)   # True
+```
+
+也可以用 `dumps` / `loads` 在内存里做字节串与对象的互转（不经过文件）。
+
+## 协议版本（protocol）
+
+`pickle` 有多个协议版本，数字越大越新、效率通常越高：
+
+```python showLineNumbers
+import pickle
+
+blob = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
+```
+
+默认协议随 Python 版本演进；用 `HIGHEST_PROTOCOL` 可拿到当前解释器支持的最佳版本。注意**高版本协议生成的字节流，低版本 Python 可能读不了**，跨版本传输时要约定协议号。
+
+## ⚠️ 严重安全风险
+
+**永远不要 `pickle.load` 来路不明的字节流。** `pickle` 在反序列化时可以执行任意代码——攻击者只需构造一个恶意 pickle，你一加载就可能运行木马。
+
+```text
+安全准则：
+- 只 unpickle 你自己（或完全可信来源）生成的字节流。
+- 绝不从网络、用户上传、未知文件中直接 load。
+- 需要跨系统交换数据，优先用 json / 签名后的格式。
+```
+
+## 与 `json` 的取舍
+
+| 维度 | pickle | json |
+|------|--------|------|
+| 支持的类型 | 几乎所有 Python 对象 | 仅基础类型（dict/list/str/num/bool/None） |
+| 可读性 | 二进制，不可读 | 文本，可读可调试 |
+| 跨语言 | 仅 Python | 几乎所有语言 |
+| 安全性 | 反序列化可执行代码，**危险** | 纯数据，安全 |
+
+经验法则：**内部缓存 / 临时存档用 pickle 图方便；对外交换数据用 json 保安全与兼容。**
+
+> 延伸：把 Python 对象转成跨语言的结构化数据，参见 `json` 模块；二进制高效存储大量数组则常用第三方 `numpy` / `pandas`。
