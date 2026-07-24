@@ -141,6 +141,14 @@ const config = {
   ],
   themeConfig: {
     image: "/img/og-image.png",
+    announcementBar: {
+      id: "kb-2026-q3",
+      content:
+        '🌱 知识花园持续生长中——欢迎在页脚或邮件纠错与建议。最近更新：<a href="/about">关于本站</a> · <a href="/blog/archive">最新博文</a>',
+      backgroundColor: "var(--highlight-color)",
+      textColor: "var(--ink)",
+      isCloseable: true,
+    },
     mermaid: {
       theme: { light: "neutral", dark: "forest" },
     },
