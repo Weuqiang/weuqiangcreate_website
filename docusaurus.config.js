@@ -147,8 +147,16 @@ const config = {
     metadata: [
       {
         name: "keywords",
-        content: "docusaurus,blog, python, 开源",
+        content:
+          "魏强, 知识博客, 编程, 数学基础, 机器学习, 软件工程, 嵌入式开发, 数据结构, 算法, 终身学习, 个人博客",
       },
+      {
+        name: "description",
+        content:
+          "魏强的个人知识花园：编程、数学、AI、软工、嵌入式与读书笔记的系统整理。",
+      },
+      { name: "author", content: "魏强" },
+      { name: "theme-color", content: "#9c5b3f" },
     ],
     colorMode: {
       defaultMode: "light",

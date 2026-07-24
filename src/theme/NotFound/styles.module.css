@@ -1,0 +1,67 @@
+/* 404 页：暖色纸感（与 case / about 一致的视觉锚点） */
+.page {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  background: var(--paper);
+}
+
+.card {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(80, 60, 30, 0.08);
+}
+
+.code {
+  font-family: var(--font-serif);
+  font-size: 5.5rem;
+  font-weight: 700;
+  color: var(--ifm-color-primary);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 0.85rem;
+  letter-spacing: 0.22em;
+  color: var(--ifm-color-primary);
+  background: var(--highlight-color);
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  margin-bottom: 1.25rem;
+  font-weight: 500;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  color: var(--ink);
+  margin: 0 0 0.75rem;
+}
+
+.lead {
+  color: var(--ink-soft);
+  line-height: 1.7;
+  margin: 0 0 2rem;
+  font-size: 0.98rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-size: 0.92rem !important;
+}
