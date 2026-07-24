@@ -426,3 +426,59 @@ div[class^="announcementBar_"] {
   background: var(--ifm-color-primary);
   color: #fff;
 }
+
+/* ---------- 夜间模式（夜间阅读，低对比陶土暗色） ---------- */
+[data-theme="dark"] {
+  --paper: #211b15;
+  --paper-2: #2a221a;
+  --ink: #f3e9da;
+  --ink-soft: #c3b3a0;
+  --line: #3a2f24;
+  --highlight-color: #322619;
+
+  --ifm-color-primary: #c08669;
+  --ifm-color-primary-dark: #a86d50;
+  --ifm-color-primary-darker: #8c593f;
+  --ifm-color-primary-darkest: #5a331f;
+  --ifm-color-primary-light: #d29e84;
+  --ifm-color-primary-lighter: #e3bfa9;
+
+  --ifm-background-color: var(--paper);
+  --ifm-background-surface-color: var(--paper-2);
+  --ifm-color-content: var(--ink);
+  --ifm-color-content-secondary: var(--ink-soft);
+  --ifm-border-color: var(--line);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .prism-code { background: #1c1712; }
+[data-theme="dark"] .markdown code { background: #2e2519; border-color: #3a2f24; }
+[data-theme="dark"] .navbar {
+  background: color-mix(in srgb, #211b15 88%, transparent);
+  border-bottom-color: var(--line);
+}
+[data-theme="dark"] .markdown blockquote { background: #2e2519; }
+[data-theme="dark"] .post-ai { background: var(--paper-2); }
+[data-theme="dark"] .mm-toolbar { background: var(--paper-2); }
+
+/* ---------- 纸纹理（极淡噪点，真正用上 noise.png） ---------- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("/img/noise.png");
+  background-repeat: repeat;
+}
+body > * { position: relative; z-index: 1; }
+
+/* ---------- 键盘焦点统一可见（a11y） ---------- */
+:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
