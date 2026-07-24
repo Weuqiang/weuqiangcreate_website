@@ -176,13 +176,6 @@ const config = {
       darkTheme: darkCodeTheme,
       defaultLanguage: "markdown",
     },
-    scripts: [
-      {
-        src: "https://gc.zgo.at/count.js",
-        async: true,
-        "data-goatcounter": "https://PLACEHOLDER_GOATCOUNTER_CODE.goatcounter.com/count",
-      },
-    ],
     navbar: {
       title: siteTitle,
       logo: {
