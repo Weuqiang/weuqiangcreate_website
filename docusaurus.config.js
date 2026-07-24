@@ -82,6 +82,7 @@ const config = {
         path: "docs/read",
         routeBasePath: "read",
         sidebarPath: require.resolve("./sidebars.js"),
+        editUrl: "https://github.com/Weuqiang/weuqiangcreate_website/edit/main/",
         remarkPlugins: [remarkMath],
         rehypePlugins: [rehypeKatex],
       },
@@ -93,6 +94,7 @@ const config = {
         path: "docs/docs",
         routeBasePath: "docs",
         sidebarPath: require.resolve("./sidebars.js"),
+        editUrl: "https://github.com/Weuqiang/weuqiangcreate_website/edit/main/",
         remarkPlugins: [remarkMath],
         rehypePlugins: [rehypeKatex],
       },
@@ -197,6 +199,11 @@ const config = {
           to: "/gallery",
           position: "left",
           label: "相簿",
+        },
+        {
+          to: "/about",
+          position: "left",
+          label: "关于",
         },
         {
           type: "search",

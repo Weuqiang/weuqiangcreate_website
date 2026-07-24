@@ -427,6 +427,20 @@ div[class^="announcementBar_"] {
   color: #fff;
 }
 
+/* 阅读进度条（仅文档/博文正文页显示） */
+.reading-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, var(--ifm-color-primary), var(--ifm-color-primary-light));
+  z-index: 1001;
+  transition: width 0.12s ease-out;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(80, 60, 30, 0.25);
+}
+
 /* ---------- 夜间模式（夜间阅读，低对比陶土暗色） ---------- */
 [data-theme="dark"] {
   --paper: #211b15;

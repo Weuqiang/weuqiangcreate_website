@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Gemini 2.5 Deep Think：Google多智能体并行推理的新纪元",
+    "permalink": "/blog/gemini25-deep-think",
+    "date": "2025-08-01"
+  },
+  {
+    "title": "GPT-5：OpenAI 2025年的革命性突破，统一推理与生成的AI新纪元",
+    "permalink": "/blog/gpt5-revolutionary-ai",
+    "date": "2025-08-01"
+  },
+  {
+    "title": "Claude 4：Anthropic在编程领域的突破性进展",
+    "permalink": "/blog/claude4-programming-breakthrough",
+    "date": "2025-05-23"
+  },
+  {
+    "title": "Llama 4：Meta开源多模态AI的重大突破",
+    "permalink": "/blog/llama4-multimodal-breakthrough",
+    "date": "2025-04-05"
+  },
+  {
+    "title": "Gemma 3.0：Google开源多模态AI模型的新里程碑",
+    "permalink": "/blog/gemma3-multimodal-opensource",
+    "date": "2025-03-15"
+  }
+]

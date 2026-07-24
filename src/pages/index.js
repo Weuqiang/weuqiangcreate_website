@@ -3,6 +3,7 @@ import clsx from "clsx";
 import Layout from "@theme/Layout";
 import Link from "@docusaurus/Link";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import recentPosts from "@site/src/data/recent-posts.json";
 import styles from "./index.module.css";
 
 const sections = [
@@ -38,6 +39,31 @@ function HomepageHeader() {
   );
 }
 
+function RecentUpdates() {
+  const recent = recentPosts.slice(0, 5);
+  return (
+    <section className={styles.recentSection}>
+      <h2 className={styles.sectionTitle}>最近更新</h2>
+      <p className={styles.sectionLead}>最新发布的文章与笔记</p>
+      <ul className={styles.recentList}>
+        {recent.map((post) => (
+          <li key={post.permalink} className={styles.recentItem}>
+            <Link to={post.permalink} className={styles.recentTitle}>
+              {post.title}
+            </Link>
+            <span className={styles.recentDate}>{post.date}</span>
+          </li>
+        ))}
+      </ul>
+      <div className={styles.recentMore}>
+        <Link className="button button--secondary button--md" to="/blog/archive">
+          查看全部博文
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   return (
     <Layout
@@ -66,6 +92,7 @@ export default function Home() {
             ))}
           </div>
         </section>
+        <RecentUpdates />
       </main>
     </Layout>
   );
