@@ -1,3 +1,8 @@
+---
+title: "错误处理机制"
+description: "JavaScript 解析或运行时，一旦发生错误，引擎就会抛出一个错误对象。JavaScript 原"
+---
+
 # 错误处理机制
 
 ## Error 实例对象

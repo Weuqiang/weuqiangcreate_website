@@ -1,3 +1,8 @@
+---
+title: "video audio"
+description: "<video元素用来加载视频，是HTMLVideoElement对象的实例。<audio元素用来加载"
+---
+
 # video audio
 
 ## 概述

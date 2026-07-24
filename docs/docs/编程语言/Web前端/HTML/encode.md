@@ -1,4 +1,6 @@
 ---
+title: "HTML 字符编码"
+description: "网页包含了大量的文字，浏览器必须知道这些文字的编码方法，才能把文字还原出来。"
 sidebar_position: 7
 ---
 # HTML 字符编码

@@ -1,3 +1,8 @@
+---
+title: "Text 节点和 DocumentFragment 节点"
+description: "文本节点（Text）代表元素节点（Element）和属性节点（Attribute）的文本内容。如果一"
+---
+
 # Text 节点和 DocumentFragment 节点
 
 ## Text 节点的概念

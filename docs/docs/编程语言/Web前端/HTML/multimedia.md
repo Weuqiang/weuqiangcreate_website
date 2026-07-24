@@ -1,4 +1,6 @@
 ---
+title: "多媒体标签"
+description: "除了图像，网页还可以放置视频和音频。"
 sidebar_position: 14
 ---
 # 多媒体标签

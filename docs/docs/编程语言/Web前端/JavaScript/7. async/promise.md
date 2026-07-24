@@ -1,3 +1,8 @@
+---
+title: "Promise 对象"
+description: "Promise 对象是 JavaScript 的异步操作解决方案，为异步操作提供统一接口。它起到代理"
+---
+
 # Promise 对象
 
 ## 概述

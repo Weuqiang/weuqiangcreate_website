@@ -1,3 +1,8 @@
+---
+title: "Document 节点"
+description: "document节点对象代表整个文档，每张网页都有自己的document对象。window.docu"
+---
+
 # Document 节点
 
 ## 概述

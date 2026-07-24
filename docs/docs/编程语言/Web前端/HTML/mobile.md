@@ -1,4 +1,6 @@
 ---
+title: "移动设备网页设计"
+description: "<meta的 viewport 设置用来控制网页的视觉大小。"
 sidebar_position: 19
 ---
 # 移动设备网页设计

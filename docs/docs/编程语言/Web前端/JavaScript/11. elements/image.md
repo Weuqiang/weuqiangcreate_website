@@ -1,3 +1,8 @@
+---
+title: "img 元素"
+description: "<img元素用于插入图片，主要继承了 HTMLImageElement 接口。"
+---
+
 # img 元素
 
 ## 概述

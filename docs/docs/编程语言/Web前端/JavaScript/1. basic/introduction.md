@@ -1,3 +1,8 @@
+---
+title: "导论"
+description: "JavaScript 是一种轻量级的脚本语言。所谓“脚本语言”（script language），指"
+---
+
 # 导论
 
 ## 什么是 JavaScript 语言？

@@ -1,3 +1,8 @@
+---
+title: "CORS 通信"
+description: "CORS 是一个 W3C 标准，全称是“跨源资源共享”（Crossorigin resource s"
+---
+
 # CORS 通信
 
 CORS 是一个 W3C 标准，全称是“跨源资源共享”（Cross-origin resource sharing），或者通俗地称为“跨域资源共享”。它允许浏览器向跨源的服务器，发出`XMLHttpRequest`请求，从而克服了 AJAX 只能同源使用的限制。

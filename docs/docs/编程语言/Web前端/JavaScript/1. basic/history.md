@@ -1,3 +1,8 @@
+---
+title: "JavaScript 语言的历史"
+description: "JavaScript 因为互联网而生，紧跟着浏览器的出现而问世。回顾它的历史，就要从浏览器的历史讲起"
+---
+
 # JavaScript 语言的历史
 
 ## 诞生

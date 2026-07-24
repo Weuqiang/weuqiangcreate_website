@@ -1,3 +1,8 @@
+---
+title: "IndexedDB API"
+description: "随着浏览器的功能不断增强，越来越多的网站开始考虑，将大量数据储存在客户端，这样可以减少从服务器获取数"
+---
+
 # IndexedDB API
 
 ## 概述

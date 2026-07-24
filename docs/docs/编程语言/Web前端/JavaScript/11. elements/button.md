@@ -1,3 +1,8 @@
+---
+title: "button 元素"
+description: "<button元素继承了HTMLButtonElement接口。它有以下的实例属性。"
+---
+
 # button 元素
 
 `<button>`元素继承了`HTMLButtonElement`接口。它有以下的实例属性。

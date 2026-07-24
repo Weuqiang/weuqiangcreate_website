@@ -1,4 +1,6 @@
 ---
+title: "文本标签"
+description: "历史上，网页的主要功能是文本展示。所以，HTML 提供了大量的文本处理标签。"
 sidebar_position: 8
 ---
 # 文本标签

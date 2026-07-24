@@ -1,3 +1,8 @@
+---
+title: "ArrayBuffer 对象，Blob 对象"
+description: "ArrayBuffer 对象表示一段二进制数据，用来模拟内存里面的数据。通过这个对象，JavaScr"
+---
+
 # ArrayBuffer 对象，Blob 对象
 
 ## ArrayBuffer 对象

@@ -1,3 +1,8 @@
+---
+title: "File 对象，FileList 对象，FileReader 对象"
+description: "File 对象代表一个文件，用来读写文件信息。它继承了 Blob 对象，或者说是一种特殊的 Blob"
+---
+
 # File 对象，FileList 对象，FileReader 对象
 
 ## File 对象

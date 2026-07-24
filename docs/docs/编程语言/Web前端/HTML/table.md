@@ -1,4 +1,6 @@
 ---
+title: "表格标签"
+description: "表格（table）以行（row）和列（column）的形式展示数据。"
 sidebar_position: 16
 ---
 # 表格标签

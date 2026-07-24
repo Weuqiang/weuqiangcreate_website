@@ -1,3 +1,8 @@
+---
+title: "进度事件"
+description: "进度事件用来描述资源加载的进度，主要由 AJAX 请求、<img、<audio、<video、<st"
+---
+
 # 进度事件
 
 ## 进度事件的种类

@@ -1,3 +1,8 @@
+---
+title: "DOM 概述"
+description: "DOM 是 JavaScript 操作网页的接口，全称为“文档对象模型”（Document Obje"
+---
+
 # DOM 概述
 
 ## DOM

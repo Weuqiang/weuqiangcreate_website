@@ -1,3 +1,8 @@
+---
+title: "键盘事件"
+description: "键盘事件由用户击打键盘触发，主要有keydown、keypress、keyup三个事件，它们都继承了"
+---
+
 # 键盘事件
 
 ## 键盘事件的种类

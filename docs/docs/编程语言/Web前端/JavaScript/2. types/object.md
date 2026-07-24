@@ -1,3 +1,8 @@
+---
+title: "对象"
+description: "对象（object）是 JavaScript 语言的核心概念，也是最重要的数据类型。"
+---
+
 # 对象
 
 ## 概述

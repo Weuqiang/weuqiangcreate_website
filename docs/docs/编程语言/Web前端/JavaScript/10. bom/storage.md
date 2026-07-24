@@ -1,3 +1,8 @@
+---
+title: "Storage 接口"
+description: "Storage 接口用于脚本在浏览器保存数据。两个对象部署了这个接口：window.sessionS"
+---
+
 # Storage 接口
 
 ## 概述

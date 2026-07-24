@@ -1,3 +1,8 @@
+---
+title: "数据类型概述"
+description: "JavaScript 语言的每一个值，都属于某一种数据类型。JavaScript 的数据类型，共有六"
+---
+
 # 数据类型概述
 
 ## 简介

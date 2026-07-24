@@ -1,3 +1,8 @@
+---
+title: "表单事件"
+description: "input事件当<input、<select、<textarea的值发生变化时触发。对于复选框（<i"
+---
+
 # 表单事件
 
 ## 表单事件的种类

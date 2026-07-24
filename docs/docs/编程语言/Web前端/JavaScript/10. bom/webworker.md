@@ -1,3 +1,8 @@
+---
+title: "Web Worker"
+description: "JavaScript 语言采用的是单线程模型，也就是说，所有任务只能在一个线程上完成，一次只能做一件"
+---
+
 # Web Worker
 
 ## 概述

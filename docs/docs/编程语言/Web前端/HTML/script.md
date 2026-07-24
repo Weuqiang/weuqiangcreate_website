@@ -1,4 +1,6 @@
 ---
+title: "script noscript"
+description: "<script标签用于在网页插入脚本，<noscript标签用于指定浏览器不支持脚本时的显示内容。"
 sidebar_position: 13
 ---
 # script noscript

@@ -1,3 +1,8 @@
+---
+title: "input 元素"
+description: "<input元素主要用于表单组件，它继承了 HTMLInputElement 接口。"
+---
+
 # input 元素
 
 `<input>`元素主要用于表单组件，它继承了 HTMLInputElement 接口。

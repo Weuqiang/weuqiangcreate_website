@@ -1,4 +1,6 @@
 ---
+title: "网页的语义结构"
+description: "HTML 标签的名称都带有语义（semantic），使用时应该尽量符合标签的语义，不要用错误语义的标"
 sidebar_position: 7
 ---
 # 网页的语义结构

@@ -1,3 +1,8 @@
+---
+title: "History 对象"
+description: "window.history属性指向 History 对象，它表示当前窗口的浏览历史。"
+---
+
 # History 对象
 
 ## 概述

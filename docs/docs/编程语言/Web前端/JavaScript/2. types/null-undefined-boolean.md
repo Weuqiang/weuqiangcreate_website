@@ -1,3 +1,8 @@
+---
+title: "null, undefined 和布尔值"
+description: "null与undefined都可以表示“没有”，含义非常相似。将一个变量赋值为undefined或n"
+---
+
 # null, undefined 和布尔值
 
 ## null 和 undefined

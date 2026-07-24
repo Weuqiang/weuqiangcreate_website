@@ -1,3 +1,8 @@
+---
+title: "String 对象"
+description: "String对象是 JavaScript 原生提供的三个包装对象之一，用来生成字符串对象。"
+---
+
 # String 对象
 
 ## 概述

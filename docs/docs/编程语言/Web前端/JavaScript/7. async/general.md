@@ -1,3 +1,8 @@
+---
+title: "异步操作概述"
+description: "单线程模型指的是，JavaScript 只在一个线程上运行。也就是说，JavaScript 同时只能"
+---
+
 # 异步操作概述
 
 ## 单线程模型

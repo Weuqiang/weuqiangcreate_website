@@ -1,3 +1,8 @@
+---
+title: "GlobalEventHandlers 接口"
+description: "指定事件的回调函数，推荐使用的方法是元素的addEventListener方法。"
+---
+
 # GlobalEventHandlers 接口
 
 指定事件的回调函数，推荐使用的方法是元素的`addEventListener`方法。

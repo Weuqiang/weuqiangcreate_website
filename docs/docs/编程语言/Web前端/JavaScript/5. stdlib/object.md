@@ -1,3 +1,8 @@
+---
+title: "Object 对象"
+description: "JavaScript 原生提供Object对象（注意起首的O是大写），本章介绍该对象原生的各种方法。"
+---
+
 # Object 对象
 
 ## 概述

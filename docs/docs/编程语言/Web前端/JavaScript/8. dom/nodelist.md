@@ -1,3 +1,8 @@
+---
+title: "NodeList 接口，HTMLCollection 接口"
+description: "节点都是单个对象，有时需要一种数据结构，能够容纳多个节点。DOM 提供两种节点集合，用于容纳多个节点"
+---
+
 # NodeList 接口，HTMLCollection 接口
 
 节点都是单个对象，有时需要一种数据结构，能够容纳多个节点。DOM 提供两种节点集合，用于容纳多个节点：`NodeList`和`HTMLCollection`。

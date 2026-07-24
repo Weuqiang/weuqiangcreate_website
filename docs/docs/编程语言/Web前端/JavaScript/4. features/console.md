@@ -1,3 +1,8 @@
+---
+title: "console 对象与控制台"
+description: "console对象是 JavaScript 的原生对象，它有点像 Unix 系统的标准输出stdou"
+---
+
 # console 对象与控制台
 
 ## console 对象

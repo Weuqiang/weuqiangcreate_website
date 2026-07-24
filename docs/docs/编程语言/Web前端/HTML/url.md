@@ -1,4 +1,6 @@
 ---
+title: "URL 简介"
+description: "URL 是“统一资源定位符”（Uniform Resource Locator）的首字母缩写，中文译"
 sidebar_position: 5
 ---
 # URL 简介

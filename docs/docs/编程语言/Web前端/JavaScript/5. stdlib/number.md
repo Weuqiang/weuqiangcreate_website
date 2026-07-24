@@ -1,3 +1,8 @@
+---
+title: "Number 对象"
+description: "Number对象是数值对应的包装对象，可以作为构造函数使用，也可以作为工具函数使用。"
+---
+
 # Number 对象
 
 ## 概述

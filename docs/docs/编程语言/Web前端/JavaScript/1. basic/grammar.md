@@ -1,3 +1,8 @@
+---
+title: "JavaScript 的基本语法"
+description: "JavaScript 程序的执行单位为行（line），也就是一行一行地执行。一般情况下，每一行就是一"
+---
+
 # JavaScript 的基本语法
 
 ## 语句

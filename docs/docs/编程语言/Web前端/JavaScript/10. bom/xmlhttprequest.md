@@ -1,3 +1,8 @@
+---
+title: "XMLHttpRequest 对象"
+description: "浏览器与服务器之间，采用 HTTP 协议通信。用户在浏览器地址栏键入一个网址，或者通过网页表单向服务"
+---
+
 # XMLHttpRequest 对象
 
 ## 简介

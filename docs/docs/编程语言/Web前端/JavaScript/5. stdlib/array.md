@@ -1,3 +1,8 @@
+---
+title: "Array 对象"
+description: "Array是 JavaScript 的原生对象，同时也是一个构造函数，可以用它生成新的数组。"
+---
+
 # Array 对象
 
 ## 构造函数
