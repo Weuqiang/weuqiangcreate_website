@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkweuqiangcreate_website=globalThis.webpackChunkweuqiangcreate_website||[]).push([[19704],{5790:e=>{e.exports=JSON.parse('{"name":"docusaurus-plugin-content-docs","id":"read"}')}}]);

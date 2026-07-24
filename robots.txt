@@ -9,9 +9,11 @@ Disallow: /.git/
 
 # 允许访问重要页面
 Allow: /docs/
+Allow: /read/
 Allow: /blog/
-Allow: /bookshelf/
-Allow: /cases/
+Allow: /case/
+Allow: /gallery/
+Allow: /about/
 
 # 网站地图
 Sitemap: https://weuqiang.github.io/weuqiangcreate_website/sitemap.xml
