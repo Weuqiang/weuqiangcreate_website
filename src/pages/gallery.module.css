@@ -32,3 +32,76 @@
   line-height: 1.7;
   font-size: 1.02rem;
 }
+
+/* 筛选面板（替代 MUI Paper/Grid） */
+.panel {
+  margin: 0 auto 2rem;
+  max-width: 1100px;
+  padding: 1.25rem 1.5rem;
+  background: var(--paper, #fffdf9);
+  border: 1px solid var(--line, #e7ddd0);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.filterItem {
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.filterLabel {
+  display: block;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft, #6f6358);
+  margin-bottom: 0.35rem;
+}
+
+/* 原生下拉（替代 MUI TextField/Select/MenuItem） */
+.select {
+  width: 100%;
+  padding: 0.5rem 2rem 0.5rem 0.7rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: var(--ink, #3b342c);
+  background-color: var(--paper-2, #fff);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239c5b3f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1rem;
+  border: 1px solid var(--line, #e7ddd0);
+  border-radius: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--ifm-color-primary, #9c5b3f);
+  box-shadow: 0 0 0 3px var(--highlight-color, rgba(156, 91, 63, 0.18));
+}
+
+.albumWrap {
+  margin: 0 auto;
+}
+
+/* 暗色模式适配 */
+[data-theme="dark"] .panel {
+  background: var(--paper, #221f1b);
+  border-color: var(--line, #4a423a);
+}
+
+[data-theme="dark"] .select {
+  background-color: var(--paper-2, #2a2622);
+  color: var(--ink, #f3ece2);
+  border-color: var(--line, #4a423a);
+}
