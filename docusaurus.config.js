@@ -22,7 +22,7 @@ const githuborgurl = `https://github.com/${githubusername}/${websitename}`;
 const config = {
   title: siteTitle,
   tagline: "终身学习，持续成长",
-  favicon: "favicon.ico",
+  favicon: "img/logo.svg",
   url: websiteurl,
   baseUrl: process.env.NODE_ENV === 'development' ? '/' : '/weuqiangcreate_website/',
   organizationName: githubusername,
@@ -89,7 +89,7 @@ const config = {
     [
       "@docusaurus/plugin-content-docs",
       {
-        id: "docs",
+        id: "default",
         path: "docs/docs",
         routeBasePath: "docs",
         sidebarPath: require.resolve("./sidebars.js"),
@@ -118,6 +118,17 @@ const config = {
         },
       },
     ],
+    [
+      "@easyops-cn/docusaurus-search-local",
+      {
+        indexBlog: true,
+        indexDocs: true,
+        docsRouteBasePath: ["docs", "read"],
+        language: ["zh"],
+        highlightSearchTermsOnTargetPage: true,
+        searchBarPosition: "right",
+      },
+    ],
   ],
   themes: ["@docusaurus/theme-mermaid", "@docusaurus/theme-live-codeblock"],
   stylesheets: [
@@ -127,7 +138,7 @@ const config = {
     },
   ],
   themeConfig: {
-    image: "/img/docusaurus-social-card.jpg",
+    image: "/img/og-image.png",
     mermaid: {
       theme: { light: "neutral", dark: "forest" },
     },
@@ -149,6 +160,12 @@ const config = {
     },
     navbar: {
       title: siteTitle,
+      logo: {
+        alt: "魏强的知识花园",
+        src: "img/logo.svg",
+        width: 32,
+        height: 32,
+      },
       hideOnScroll: false,
       items: [
         {
@@ -204,8 +221,7 @@ const config = {
           title: "联系",
           items: [
             { label: "GitHub", href: "https://github.com/Weuqiang" },
-            { label: "微信", href: "weixin://contacts/profile/wxai2411" },
-            { label: "邮箱", href: "mailto:weuqiang@example.com" },
+            { label: "邮箱", href: "mailto:wxai2411@example.com" },
           ],
         },
       ],
