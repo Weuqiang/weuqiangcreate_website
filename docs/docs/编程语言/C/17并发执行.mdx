@@ -1,0 +1,106 @@
+---
+sidebar_position: 17
+title: C 并发执行（pthread）
+description: 标准 C 没有内建线程，类 Unix / 嵌入式里并发靠 POSIX 线程（pthread）库。本篇讲线程创建与等待、竞态条件与互斥锁、条件变量，并给出常见误区与练习。
+---
+
+# C 并发执行（pthread）
+
+标准 C 语言本身没有线程原语；在类 Unix / 嵌入式里，并发靠 **POSIX 线程（pthread）** 库实现，Windows 则用 `<process.h>` 的 `_beginthread` 或 Win32 API。本篇以 pthread 为主。
+
+## 1. 创建与等待线程
+
+```c
+#include <pthread.h>
+#include <stdio.h>
+
+void *print_msg(void *arg) {
+    char *s = (char *)arg;
+    printf("%s\n", s);
+    return NULL;
+}
+
+int main(void) {
+    pthread_t t1, t2;
+    pthread_create(&t1, NULL, print_msg, "hello");
+    pthread_create(&t2, NULL, print_msg, "world");
+    pthread_join(t1, NULL);   // 等 t1 结束
+    pthread_join(t2, NULL);   // 等 t2 结束
+    return 0;
+}
+```
+
+编译需链接 pthread：`gcc t.c -lpthread`（Linux）。
+
+- `pthread_create` 第四个参数是传给线程函数的 `void*`；
+- `pthread_join` 阻塞等待并回收线程资源，否则主线程退出会带走整个进程。
+
+## 2. 竞态条件与互斥锁
+
+多个线程改同一全局变量会**竞态**：
+
+```c
+int counter = 0;
+void *inc(void *arg) {
+    for (int i = 0; i < 100000; i++) counter++;  // 非原子！
+    return NULL;
+}
+```
+
+两个线程各加 10 万次，结果往往**不到 20 万**——因为 `counter++` 是"读-改-写"三步，会交错。
+
+用互斥锁保护：
+
+```c
+pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+void *inc_safe(void *arg) {
+    for (int i = 0; i < 100000; i++) {
+        pthread_mutex_lock(&m);
+        counter++;
+        pthread_mutex_unlock(&m);
+    }
+    return NULL;
+}
+```
+
+## 3. 条件变量（线程间通知）
+
+互斥锁管"互斥"，条件变量管"等待 / 通知"（典型如生产者-消费者）：
+
+```c
+pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  c = PTHREAD_COND_INITIALIZER;
+int ready = 0;
+
+// 消费者
+pthread_mutex_lock(&m);
+while (!ready) pthread_cond_wait(&c, &m);  // 原子地释放锁并等待
+pthread_mutex_unlock(&m);
+
+// 生产者
+pthread_mutex_lock(&m);
+ready = 1;
+pthread_cond_signal(&c);
+pthread_mutex_unlock(&m);
+```
+
+> 必须用 `while` 而非 `if` 检查条件——防止"虚假唤醒"导致逻辑出错。
+
+## 易错点
+
+- **忘记 `pthread_join`**：主线程 `return` 会终止整个进程，子线程来不及跑完。
+- **锁粒度太大 = 串行**：把整段逻辑都锁住，多线程退化成单线程；锁太小又漏保护。
+- **死锁**：两线程各持一把锁去申请对方持有的锁，按固定顺序加锁可避免（同操作系统死锁四条件）。
+- **`counter++` 不是原子的**：任何时候多线程共享写都要加锁，或用原子类型（`<stdatomic.h>`）。
+
+## 练习
+
+1. 用两个线程把 `counter` 各加 100 万次，对比"无锁"与"加锁"的结果差异并解释。
+2. 写一个生产者-消费者：一个线程往队列塞数据、一个线程取，用条件变量同步。
+
+## 延伸阅读
+
+- 同章前后：[C 结构与其他数据形式](../12结构和其他数据形式) / [Python 与 C 互操作](../19Python与C互交互)
+- 理论对照：[进程、线程与调度](../../../编程外的基础/计算机科学导论/操作系统/进程线程与调度)
+- 硬件落点：[FreeRTOS 任务与调度](../../../嵌入式开发/RTOS与固件/FreeRTOS任务与调度)（嵌入式里的"线程"）
+- 语言准备：[C 0 基础语法](../0基础语法)

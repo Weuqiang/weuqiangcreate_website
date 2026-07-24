@@ -1,0 +1,93 @@
+---
+sidebar_position: 18
+title: C 网络编程（socket）
+description: C 做网络编程直接调用 BSD socket API，这是 TCP/IP 协议栈在应用层的接口。本篇用最小 TCP 服务端/客户端示例串起 socket/bind/listen/accept/connect，并讲清字节序等必踩的坑。
+---
+
+# C 网络编程（socket）
+
+C 做网络编程直接调用 **BSD socket** API（`<sys/socket.h>`、`<netinet/in.h>`、`<arpa/inet.h>`），这是 TCP/IP 协议栈在应用层的接口，几乎所有语言的高层网络库都建立在它之上。
+
+## 1. TCP 通信模型
+
+```
+服务端：socket → bind → listen → accept → recv/send → close
+客户端：socket → connect → send/recv → close
+```
+
+## 2. 最小 TCP 服务端
+
+```c
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+
+int main(void) {
+    int srv = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in addr = {0};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(8080);            // 端口要转网络字节序
+
+    bind(srv, (struct sockaddr *)&addr, sizeof(addr));
+    listen(srv, 5);
+    printf("listening on 8080...\n");
+
+    int cli = accept(srv, NULL, NULL);      // 阻塞等客户端
+    char buf[128];
+    int n = read(cli, buf, sizeof(buf) - 1);
+    buf[n] = '\0';
+    printf("recv: %s\n", buf);
+    write(cli, "ok", 2);
+    close(cli);
+    close(srv);
+    return 0;
+}
+```
+
+## 3. 最小 TCP 客户端
+
+```c
+int sock = socket(AF_INET, SOCK_STREAM, 0);
+struct sockaddr_in srv = {0};
+srv.sin_family = AF_INET;
+srv.sin_port = htons(8080);
+inet_pton(AF_INET, "127.0.0.1", &srv.sin_addr);
+
+connect(sock, (struct sockaddr *)&srv, sizeof(srv));
+write(sock, "hi", 2);
+char buf[128];
+int n = read(sock, buf, sizeof(buf) - 1);
+buf[n] = '\0';
+printf("reply: %s\n", buf);
+close(sock);
+```
+
+## 4. 必须注意的字节序
+
+网络协议统一用**大端（网络字节序）**，而 x86 是小端。所以：
+
+- 端口、IP 等要用 `htons` / `htonl` 转成网络序；
+- 多字节数据（如自定义协议的长度字段），收发双方要约定一致，否则跨机乱码。
+
+## 易错点
+
+- **`htons` 漏写**：端口没转网络字节序，`bind` 到错误端口，`connect` 连不上。
+- **`read`/`recv` 可能只收一部分**：TCP 是字节流，一次 `read` 不一定收全；循环读取 + 缓冲才是正确姿势。
+- **忘了 `close` 套接字**：文件描述符泄漏，高并发下很快耗尽。
+- **`INADDR_ANY` vs 具体 IP**：服务端监听 `INADDR_ANY` 才能接受任意网卡连接；客户端必须填对端 IP。
+
+## 练习
+
+1. 把服务端改成"回显"：收到什么就原样发回，用循环 `read` 处理多次收发。
+2. 写个客户端连续发 5 条消息，观察 TCP 字节流如何被服务端分多次 `read` 收齐。
+
+## 延伸阅读
+
+- 同章前后：[C 并发执行](../17并发执行) / [C 文件输入输出](../11文件输入输出)
+- 理论对照：[网络分层与 TCP/IP](../../../编程外的基础/计算机科学导论/计算机网络/网络分层与TCP与IP)
+- 应用层：[HTTP 与网络安全](../../../编程外的基础/计算机科学导论/计算机网络/HTTP与网络安全)
+- 对比板级：[UART/SPI/I2C 详解](../../../嵌入式开发/通信协议/UART_SPI_I2C详解)
