@@ -90,3 +90,22 @@ for w := 0; w < 3; w++ {       // 3 个常驻 worker
 | 一次性初始化 | `Once` |
 
 > 优先用 channel；只有"保护一小段共享状态"才上锁。
+
+## 易错点
+
+- `WaitGroup.Add` 必须在启动 goroutine **之前**调用；在 goroutine 内 `defer wg.Add(1)` 易引发竞态。
+- `Mutex` 务必 `defer Unlock`，否则 panic 或死锁。
+- `sync.Pool` 的对象可能被 GC 随时清掉，不要存放需要持久的状态。
+- `select` 没有 `default` 会阻塞；多个分支就绪时**随机**择一，勿假设顺序。
+
+## 练习
+
+1. 用 `WaitGroup` + worker pool 并发处理 100 个任务并打印汇总。
+2. 用 `Mutex` 写线程安全计数器并 benchmark 加锁开销。
+3. 用 `select` + `time.After` 实现带超时的请求。
+
+## 延伸阅读
+
+- 上篇：[goroutine 与 channel](../goroutine与channel)
+- 跨语言：[C 并发执行](../../../C/17并发执行) · [Java 并发容器与锁](../../../Java/并发/并发容器与锁)
+- 工程基础：[模块与测试](../../工程实践/模块与测试)

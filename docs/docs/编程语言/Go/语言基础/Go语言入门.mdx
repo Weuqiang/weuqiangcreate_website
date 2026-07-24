@@ -5,9 +5,9 @@ sidebar_position: 1
 
 # Go 语言入门
 
-Go（Golang）由 Google 设计，以**简洁语法、原生并发、极快编译**著称，非常适合后端服务与云原生基础设施。
+Go（Golang）由 Google 设计，以**简洁语法、原生并发、极快编译**著称，非常适合后端服务与云原生基础设施（Docker、Kubernetes 皆用 Go 编写）。
 
-## 1. Hello World
+## 1. 第一个程序
 
 ```go
 package main
@@ -19,46 +19,103 @@ func main() {
 }
 ```
 
-运行：`go run main.go`
+运行：`go run main.go`。`package main` 表示这是一个可执行程序，`main` 函数是入口。
 
-## 2. 并发：goroutine 与 channel
-
-Go 的杀手锏是轻量级协程 `goroutine` 与通信机制 `channel`。
+## 2. 变量与基础类型
 
 ```go
-package main
+var x int = 10          // 显式声明
+y := 20                 // 短声明（仅函数内可用）
+const Pi = 3.14         // 常量
 
-import (
-    "fmt"
-    "time"
-)
+name := "Go"
+ok := true              // bool
+```
 
-func worker(ch chan string) {
-    ch <- "done"          // 向 channel 发送
+- 类型写在与变量名**之后**（与 C/Java 相反）。
+- `:=` 自动推断类型，但只限函数内部；包级变量必须用 `var`。
+- 零值：未初始化的变量有默认值（`int`→0，`string`→`""`，指针/接口→`nil`）。
+
+## 3. 控制流
+
+```go
+if n > 0 {
+    fmt.Println("正数")
 }
 
-func main() {
-    ch := make(chan string)
-    go worker(ch)          // 启动一个 goroutine（极轻量）
-    msg := <-ch            // 从 channel 接收（阻塞等待）
-    fmt.Println(msg)
-    time.Sleep(10 * time.Millisecond)
+for i := 0; i < 3; i++ {        // Go 只有 for，没有 while
+    fmt.Println(i)
+}
+
+switch x {
+case 1:
+    fmt.Println("一")
+default:
+    fmt.Println("其它")
 }
 ```
 
-- `go func()` 立即异步执行，开销仅几 KB 栈。
-- `channel` 用于 goroutine 间通信，"不要通过共享内存来通信，而要通过通信来共享内存"。
+- `if` / `for` 条件**不加括号**。
+- `switch` 默认自动 `break`，且 `case` 可为任意表达式（不限于常量）。
 
-## 3. 核心特性
+## 4. 函数与多返回值
 
-- **静态类型 + 编译型**：单一二进制，无运行时依赖。
-- **垃圾回收**：兼顾易用与性能。
-- **标准库强大**：`net/http`、`context`、`testing` 开箱即用。
+```go
+func div(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("除零")
+    }
+    return a / b, nil
+}
+r, err := div(4, 2)
+if err != nil { log.Fatal(err) }
+```
 
-## 4. 学习路线
+Go 惯用 `(结果, error)` 双返回值表达失败，而非抛异常。
+
+## 5. 结构体、方法与接口
+
+```go
+type Dog struct{ name string }
+func (d Dog) Speak() string { return d.name + ": wang" }  // 值接收者
+
+type Speaker interface { Speak() string }   // 接口定义方法集
+var s Speaker = Dog{"旺财"}                  // 方法集匹配即满足，无需 implements
+```
+
+Go 的接口是**隐式实现**：类型只要拥有接口要求的方法集，就自动满足接口。
+
+## 6. 并发预览
+
+Go 的杀手锏是轻量级协程 `goroutine` 与通信机制 `channel`（详见 [goroutine 与 channel](../../并发模型/goroutine与channel)）：
+
+```go
+ch := make(chan string)
+go func() { ch <- "done" }()   // 启动一个 goroutine
+msg := <-ch                    // 阻塞接收
+```
+
+## 7. 学习路线
 
 1. 语法基础：包、变量、控制流、切片（slice）、映射（map）。
-2. 并发模型：goroutine、channel、select、`sync` 包。
+2. 并发模型：goroutine、channel、select、`sync`。
 3. 工程实践：模块（`go mod`）、错误处理、测试、HTTP 服务。
 
-> 本篇为种子文章，后续将扩展为「Go」子分类的完整内容。
+## 易错点
+
+- 短声明 `:=` 仅函数内可用；包级变量必须用 `var`。
+- 未使用的变量 / 导入会**编译报错**（Go 强制代码整洁）。
+- 循环变量在 `go func()` 闭包中被捕获为同一变量（Go 1.22 之前需传参 `go func(i int){...}(i)`）。
+- 接口值为 `(类型, 值)` 二元组，`(*T)(nil)` 不等于 `interface{}(nil)`，判空要小心。
+
+## 练习
+
+1. 写一个函数返回斐波那契前 n 项（用 slice 存储）。
+2. 用 `(int, error)` 实现安全除法，并在 `main` 中处理错误打印结果。
+3. 定义 `Shape` 接口与 `Circle` / `Rect` 实现，分别打印面积。
+
+## 延伸阅读
+
+- 下一篇：[切片、映射与函数](../切片映射与函数)
+- 并发核心：[goroutine 与 channel](../../并发模型/goroutine与channel)
+- 同系语言：[C 语言入门](../../../C/0基础语法) · [Python 0 基础语法](../../../Python/0基础语法)

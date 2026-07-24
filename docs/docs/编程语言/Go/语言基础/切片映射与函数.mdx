@@ -86,3 +86,22 @@ Go 的接口是**隐式实现**：类型只要拥有接口要求的方法集，�
 | 闭包 | 捕获外部变量 |
 
 下一站：[goroutine 与 channel](../../并发模型/goroutine与channel)。
+
+## 易错点
+
+- 切片共享底层数组：`append` 触发扩容后会指向**新数组**，不扩容则仍共享，导致"改 b 误伤 a"。
+- `nil` slice 可 `append`、可 `range`；但向 `nil` map 写入会 **panic**。
+- map 遍历顺序随机（语言有意），切勿依赖顺序。
+- `for k, v := range` 中 `v` 是值拷贝（struct 尤甚），改 `v` 不影响原元素，要改请用索引 `&s[i]`。
+
+## 练习
+
+1. 实现函数对 `[]int` 去重并返回新切片（用 map 辅助）。
+2. 用 slice + `append` 实现一个栈（push / pop / top）。
+3. 写一个闭包计数器并验证多次调用的捕获语义。
+
+## 延伸阅读
+
+- 上篇：[Go 语言入门](../Go语言入门)
+- 并发注意点：map 并发读写需 `sync.Map` → [goroutine 与 channel](../../并发模型/goroutine与channel) / [select 与 sync](../../并发模型/select与sync)
+- 对照：[Python 基础语法](../../../Python/0基础语法) · [Java 集合框架](../../../Java/生态/集合框架)

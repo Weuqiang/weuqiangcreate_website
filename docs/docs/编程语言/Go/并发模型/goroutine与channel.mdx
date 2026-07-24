@@ -70,3 +70,22 @@ func worker(in <-chan int, out chan<- int) {  // 只收 / 只发
 ## 小结
 
 goroutine 负责"并行做事"，channel 负责"安全传递数据"。两者组合能写出清晰、无锁竞争的并发程序。更细的控制见 [select 与 sync](../select与sync)。
+
+## 易错点
+
+- `go func()` 捕获循环变量在 Go 1.22 之前是**同一变量**，需在参数里传入 `go func(i int){...}(i)`。
+- 向 `nil` channel 发送 / 接收会**永久阻塞**；向已关闭的 channel 发送会 **panic**。
+- 忘记 `close` 会让接收方永久阻塞（死锁）；多个发送者关闭 channel 须协调（`sync.Once` 或专属关闭者）。
+- `time.Sleep` 仅用于演示，生产环境用 `WaitGroup` / `context` 同步。
+
+## 练习
+
+1. 用 goroutine + channel 并发求 1..N 的平方和（分块后汇总）。
+2. 写一个 `fanIn` 函数，把多个 channel 合并为一个。
+3. 用 `context` 实现可取消的 worker（取消信号广播）。
+
+## 延伸阅读
+
+- 下一篇：[select 与 sync](../select与sync)
+- 跨语言对照：[C 并发执行](../../../C/17并发执行) · [Python 并发 threading](../../../Python/Python标准库/12并发执行/threading)
+- 工程落地：[HTTP 服务与 Web 开发](../../工程实践/HTTP服务与Web开发)
