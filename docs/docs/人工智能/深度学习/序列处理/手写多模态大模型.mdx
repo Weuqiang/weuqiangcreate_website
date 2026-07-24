@@ -1,13 +1,64 @@
 ---
 sidebar_position: 4
 title: 手写多模态大模型
+description: 从零搭一个能“看图说话”的多模态大模型（VLM）：视觉编码器 + 投影层 + 语言模型的最小配方。
 ---
 
-开源仓库地址：
+多模态大模型（Vision-Language Model, VLM）能同时理解**图像**和**文本**，做图文问答、图像描述、视觉推理。本篇用最小配方讲清它的骨架，并给出可动手的从零实现思路（参考开源项目 [MiniMind](https://github.com/jingyaogong/minimind) 与 [MiniMind-V](https://github.com/jingyaogong/minimind-v)、李沐的[动手学深度学习](https://github.com/d2l-ai/d2l-zh)）。
 
-https://github.com/jingyaogong/minimind-v
+## 核心架构
 
-https://github.com/jingyaogong/minimind
+VLM = **视觉编码器** + **投影层（Projector）** + **语言模型（LLM）**：
 
+```
+图像 ──► ViT 视觉编码器 ──► 视觉 token (B, N, D_v)
+                                      │
+                                      ▼ 投影层 Linear(D_v → D_llm)
+                                      │
+文本 ──► Tokenizer ──► 文本 token (B, M, D_llm)
+                                      │
+                                      ▼ 拼接
+              [视觉 token | 文本 token] ──► LLM ──► 生成回答
+```
 
-李沐的[动手学深度学习](https://github.com/d2l-ai/d2l-zh)
+- **视觉编码器**：冻结的 ViT，把一张图压成 N 个视觉向量（如 196 个 patch 特征）。
+- **投影层**：一个小小的 MLP，把视觉向量“翻译”进 LLM 的词向量空间，让 LLM 能读懂图像。
+- **语言模型**：沿用你已有的自回归 LLM，负责把“图 + 问题”续写成答案。
+
+## 训练两阶段
+
+1. **对齐预训练**：冻结 ViT 和 LLM，只训投影层。用大量“图-文”对，让投影层学会把视觉特征映射到 LLM 空间。这一步最便宜。
+2. **指令微调**：解冻（或全部）参数，用多模态对话数据（问题 + 图 → 答案）端到端微调，让模型学会按指令回答。
+
+## 最小可运行示例（PyTorch 草图）
+
+```python
+import torch
+import torch.nn as nn
+
+class TinyVLM(nn.Module):
+    def __init__(self, vision, llm, dim_v, dim_llm):
+        super().__init__()
+        self.vision = vision                        # 冻结的 ViT
+        self.projector = nn.Linear(dim_v, dim_llm)  # 视觉→语言空间对齐
+        self.llm = llm                              # 语言模型
+
+    def forward(self, image, input_ids):
+        v = self.vision(image)                      # (B, N, dim_v)
+        v = self.projector(v)                       # (B, N, dim_llm)
+        t = self.llm.get_input_embeddings()(input_ids)  # (B, M, dim_llm)
+        x = torch.cat([v, t], dim=1)                # 拼接视觉与文本
+        return self.llm(inputs_embeds=x).logits
+```
+
+## 常见误区
+
+- **直接拼接不训投影层 = 模型看不懂图**：视觉特征和文本词向量量纲不同，必须先对齐。
+- **分辨率越高越好？** 更高分辨率 = 更多视觉 token = 更贵；常用动态分辨率或固定 224 / 336。
+- **以为“多模态 = 把图塞进 prompt”**：真正的 VLM 是视觉特征进入模型内部，而非简单拼接字符串。
+
+## 延伸阅读
+
+- [Vision Transformer](../Vision Transformer) — 这里的视觉编码器。
+- [Transformer](../Transformer) — LLM 的骨架。
+- [模型微调](<../../../大模型(LLM)与应用/模型微调>) — 第二阶段指令微调怎么做的。

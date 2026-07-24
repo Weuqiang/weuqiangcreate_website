@@ -1,14 +1,64 @@
 ---
 sidebar_position: 3
 title: ResNet
+description: 用残差连接让网络“想深就深”——解决深层网络的退化问题，现代 CNN 的基石。
 ---
 
-ResNet引入了“残差连接”（Residual Connection），解决了深度神经网络中梯度消失和网络退化的问题，使得可以训练非常深的网络（例如152层）。
+ResNet 引入了“残差连接”（Residual Connection），解决了深度神经网络中梯度消失和网络退化的问题，使得可以训练非常深的网络（例如 152 层）。
 
 是深度学习领域最重要的突破之一，使得训练超深网络成为可能，极大地提升了图像识别的准确率。
 
 :::info
-《Deep Residual Learning for Image Recognition》截止2025年，机器视觉标签下，谷歌学术总引用次数排名第1。
+《Deep Residual Learning for Image Recognition》截止 2025 年，机器视觉标签下，谷歌学术总引用次数排名第 1。
 :::
 
+## 为什么需要残差
+
+单纯堆层数会遇到**退化（degradation）**：训练误差不降反升——这不是过拟合，而是深层网络**难以优化**。梯度在反向传播时一路乘小权重，越往前越接近 0（梯度消失），前面层几乎学不动。
+
 ## 残差连接
+
+核心公式：**y = F(x) + x**。
+
+- `F(x)` 是残差映射（残差块要学的“增量”），`x` 是输入经捷径（shortcut）直接跳过。
+- 当 `F(x) ≈ 0` 时，输出 ≈ 输入，网络退化为**恒等映射**——保证加深后“至少不比浅层差”。
+- 梯度可沿 shortcut 直接回传到浅层，缓解梯度消失。
+
+## 两种残差块
+
+- **BasicBlock**（两层 3×3）：用于 ResNet-18 / 34。
+- **Bottleneck**（1×1→3×3→1×1）：先降维再升维，省算力；用于 ResNet-50 / 101 / 152。
+
+## 最小可运行示例（PyTorch）
+
+```python
+import torch.nn as nn
+
+class BasicBlock(nn.Module):
+    def __init__(self, ch):
+        super().__init__()
+        self.conv1 = nn.Conv2d(ch, ch, 3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(ch)
+        self.conv2 = nn.Conv2d(ch, ch, 3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(ch)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        identity = x
+        out = self.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out = out + identity      # 残差捷径
+        return self.relu(out)
+```
+
+## 常见误区
+
+- **维度不匹配时 shortcut 要变换**：当通道数或分辨率变化（如 stride=2 下采样），shortcut 需用 1×1 卷积对齐，否则张量加不起来。
+- **BN 在推理时要切 `eval()`**：否则用 batch 统计而非全局统计，结果错乱。
+- **残差块不是越多越好到无脑**：极深网络仍需配合良好初始化与学习率策略。
+
+## 延伸阅读
+
+- [AlexNet](../../网格数据/AlexNet) — 引爆深度学习的开山之作。
+- [LeNet-5](../../网格数据/LeNet-5) — 卷积网络的鼻祖。
+- [Vision Transformer](../../序列处理/Vision Transformer) — 跳过卷积、直接上注意力的后起之秀。

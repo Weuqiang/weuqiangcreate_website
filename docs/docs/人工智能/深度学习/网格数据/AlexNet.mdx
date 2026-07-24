@@ -1,17 +1,60 @@
 ---
 sidebar_position: 2
 title: AlexNet
+description: 2012 年引爆深度学习的卷积网络——ReLU、Dropout、GPU 训练三件套的开端。
 ---
 
-在2012年ImageNet图像识别挑战赛中取得了巨大突破，是深度学习在计算机视觉领域爆发的标志。它比LeNet-5更深、更宽，使用了ReLU激活函数、Dropout等技术。
+在 2012 年 ImageNet 图像识别挑战赛（ILSVRC）中取得了巨大突破，是深度学习在计算机视觉领域爆发的标志。它比 LeNet-5 更深、更宽，使用了 ReLU 激活函数、Dropout 等技术。
 
-证明了GPU可以大幅提升神经网络的训练速度,证明了深度学习在计算机视觉领域的有效性。
+证明了 GPU 可以大幅提升神经网络的训练速度，证明了深度学习在计算机视觉领域的有效性。
 
 :::info
-《ImageNet Classification with Deep Convolutional Neural Networks》截止2025年，谷歌学术总引用次数排名第3。
+《ImageNet Classification with Deep Convolutional Neural Networks》截止 2025 年，谷歌学术总引用次数排名第 3。
 :::
 
-## ReLU激活函数
+## 网络结构要点
+
+5 层卷积 + 3 层全连接，关键创新：
+
+- **ReLU 激活**：用 `max(0, x)` 代替 sigmoid / tanh，缓解梯度消失、计算更快。
+- **Dropout**：在全连接层以 p=0.5 随机“关掉”一半神经元，强迫网络不依赖特定节点，强力防过拟合。
+- **数据增强 + 局部响应归一化（LRN）**：LRN 现已被 BatchNorm 取代，了解即可。
+- **双 GPU 训练**：当年显存有限，把网络拆到两张 GPU 上。
+
+## ReLU 激活函数
+
+`sigmoid` 在两端梯度趋近 0，深层网络梯度消失；ReLU 在正区间梯度恒为 1，信号能顺畅回传，且计算只需一次比较，极快。代价是“死神经元”（负区间梯度为 0，可能再也不激活），可用 LeakyReLU 缓解。
 
 ## Dropout
 
+训练时每个样本随机丢弃部分神经元，等价于训练一堆“子网络”并做近似集成；推理时**关闭 Dropout**（或训练时按保留概率缩放、推理用原值）。注意：Dropout 通常只放在全连接层，卷积层一般靠其他正则。
+
+## 最小可运行示例（PyTorch）
+
+```python
+import torch.nn as nn
+
+alexnet = nn.Sequential(
+    nn.Conv2d(3, 96, 11, stride=4, padding=2), nn.ReLU(), nn.MaxPool2d(3, 2),
+    nn.Conv2d(96, 256, 5, padding=2), nn.ReLU(), nn.MaxPool2d(3, 2),
+    nn.Conv2d(256, 384, 3, padding=1), nn.ReLU(),
+    nn.Conv2d(384, 384, 3, padding=1), nn.ReLU(),
+    nn.Conv2d(384, 256, 3, padding=1), nn.ReLU(), nn.MaxPool2d(3, 2),
+    nn.Flatten(),
+    nn.Linear(256 * 6 * 6, 4096), nn.ReLU(), nn.Dropout(0.5),
+    nn.Linear(4096, 4096), nn.ReLU(), nn.Dropout(0.5),
+    nn.Linear(4096, 1000),
+)
+```
+
+## 常见误区
+
+- **把 LRN 当标配**：现代网络用 BatchNorm，LRN 基本消失。
+- **推理时还开着 Dropout**：会导致输出随机、精度骤降，务必 `model.eval()`。
+- **以为更深就更强**：AlexNet 的成功在于“数据 + GPU + 正则 + 激活”的组合，而非单纯深度。
+
+## 延伸阅读
+
+- [ResNet](../../网格数据/ResNet) — 真正把“深”做到极致的后续工作。
+- [LeNet-5](../../网格数据/LeNet-5) — 卷积网络的起点。
+- [Adam 与 BatchNorm](../../网格数据/Adam与BatchNorm) — 训练提速的两大引擎。

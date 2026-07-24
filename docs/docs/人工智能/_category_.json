@@ -1,9 +1,5 @@
 {
   "label": "人工智能",
   "position": 4,
-  "link": {
-    "type": "generated-index",
-    "slug": "/人工智能",
-    "description": "从机器学习、深度学习到大模型（LLM）与应用的人工智能知识体系。"
-  }
+  "description": "从机器学习、深度学习到大模型（LLM）与应用的人工智能知识体系。"
 }

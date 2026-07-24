@@ -99,23 +99,28 @@ description: 一句话说明本文解决什么、学完能做什么
 
 ### Phase 0 — 结构体检与清理（破窗清零）
 - [✅] 0.1 删除 70 个空/占位文件（commit 2f08a77；保留 Python标准库 有内容文件）
-- [⏳] 0.2 为 Web前端（HTML/JS ~127 篇）补全 frontmatter title（脚本批量，按文件名/H1 推断）
-- [⏳] 0.3 重建或保留 `Python标准库` 有内容文件（已保留 re/json/pprint 等，待补 index）
-- [⏳] 0.4 统一目录命名与层级（如 `JavaScript\1. basic` → 语义化目录名）
-- [⏳] 0.5 跑 `npm run build` + 体检脚本，确认零新增破窗
+- [✅] 0.2 全站 333 文件 100% 含 frontmatter title/description（commit 81c8969）
+- [✅] 0.3 保留 `Python标准库` 有内容文件（re/json/pprint/tempfile/pickle/csv/glob/typing 等）
+- [⏳] 0.4 统一目录命名与层级（如 `JavaScript\1. basic` → 语义化目录名；待做）
+- [✅] 0.5 每次提交 `npm run build` 验证，当前零 broken link（content-audit 接 CI 仍待做）
 
 ### Phase 1 — 立骨架（每个分类/子目录的路线图 index）
-- [⏳] 1.1 软件工程与后端（最大缺口，从 8 字起步）
-- [⏳] 1.2 数学基础（4 子目录 index）
-- [⏳] 1.3 编程外的基础（3 子目录 index）
-- [⏳] 1.4 人工智能（总览 + 3 子目录 index）
-- [⏳] 1.5 编程语言各子目录 index（C/Python/JS 等薄 index 重写）
+- [✅] 1.0 开发总览 hub（docs/docs/index.mdx 落地页 + 修站点级 /docs/ 断链，commit de66521）
+- [⏳] 1.1 软件工程与后端 index 重写路线图（内容已充实，仅 index 偏薄；待做）
+- [✅] 1.2 数学基础（4 子目录 index 路线图，commit de66521）
+- [✅] 1.3 编程外的基础（3 子目录 index 路线图，commit de66521）
+- [✅] 1.4 人工智能（总览 + 3 子目录 index 路线图，commit de66521）
+- [⏳] 1.5 编程语言各子目录 index（C/Python/JS 等薄 index 重写；待做）
 
 ### Phase 2 — 补核心 stub（高优先级短篇补全到教程级）
-- [⏳] 2.1 人工智能极短篇（Vision Transformer / 手写多模态 / AlexNet / ResNet / 降维）
-- [⏳] 2.2 C 空篇（并发/网络）+ 字符串
-- [⏳] 2.3 Java 集合框架 等偏薄篇
-- [⏳] 2.4 Web前端 JS/HTML 索引与关键 API 篇
+- [✅] 2.0 数据结构与算法（编程外的基础）：9 篇教程 + index 重写路线图（commit 231265e）
+- [⏳] 2.1 计算机科学导论（编程外的基础，当前仅 1 篇 391 字，待建课程）
+- [⏳] 2.2 人工智能极短篇（Vision Transformer / 手写多模态 / AlexNet / ResNet / 降维）
+- [⏳] 2.3 C 空篇（并发/网络）+ 字符串
+- [⏳] 2.4 Java 集合框架 等偏薄篇
+- [⏳] 2.5 Web前端 JS/HTML 索引与关键 API 篇
+- [⏳] 2.6 数学基础各子目录教程级扩写（当前每子目录仅 ~2 篇 450 字）
+- [⏳] 2.7 嵌入式各子目录教程级扩写（当前每子目录仅 ~2 篇 450 字）
 
 ### Phase 3 — 增量完善（按学习路径逐篇打磨到“完美教程级”）
 - [⏳] 3.x 每个分类按路线图顺序逐篇升级为统一模板（长期、可多轮）
@@ -136,6 +141,9 @@ description: 一句话说明本文解决什么、学完能做什么
 |---|---|---|---|
 | 2026-07-24 | 启动 | 体检脚本扫描 333 文件，定位破窗与缺口 | 产出本计划 |
 | 2026-07-24 | Phase 0.1 | 删除 70 个空/占位文件 + build 验证 | ✅ commit 2f08a77；本地领先 origin/main 3 |
+| 2026-07-24 | Phase 0.2 | 全站 333 文件 100% 补全 frontmatter title/description | ✅ commit 81c8969；本地领先 4 |
+| 2026-07-24 | Phase 1 | 4 分类「学习路线图」index + 开发总览 hub（修 /docs/ 站点断链） | ✅ commit de66521；本地领先 5 |
+| 2026-07-24 | Phase 2.0 | 数据结构与算法 9 篇教程化 + index 重写 | ✅ commit 231265e；本地领先 6 |
 
 ---
 

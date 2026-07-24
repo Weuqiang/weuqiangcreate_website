@@ -1,8 +1,8 @@
 ---
 sidebar_position: 4
 title: Adam与BatchNorm
+description: 深度学习训练的两大引擎——自适应优化器 Adam 与批归一化 BatchNorm，怎么用、坑在哪。
 ---
-
 
 ## Adam
 
@@ -13,10 +13,12 @@ title: Adam与BatchNorm
 成为深度学习，特别是自然语言处理（NLP）和 Transformer 架构的默认优化器之一。
 
 :::info
-《Adam: A Method for Stochastic Optimization》截止2025年，谷歌学术总引用次数排名第6。
+《Adam: A Method for Stochastic Optimization》截止 2025 年，谷歌学术总引用次数排名第 6。
 :::
 
-## Batch Normalizations
+**原理**：维护梯度的指数滑动平均 `m`（一阶矩，类似动量）和梯度平方的指数滑动平均 `v`（二阶矩，衡量“最近梯度多大”）；用 `m / (√v + ε)` 缩放每一步更新，并对 `m、v` 做偏差校正（训练初期估计不准）。默认学习率约 `3e-4`。
+
+## Batch Normalization
 
 提出了一种规范化网络层输入的方法，解决了训练深度网络时“内部协变量偏移”（Internal Covariate Shift）的问题，即中间层输入的分布在训练过程中不断变化的现象。
 
@@ -25,5 +27,39 @@ title: Adam与BatchNorm
 有效充当正则化器，减少了对 Dropout 等其他正则化技术的依赖。
 
 :::info
-《Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift》截止2025年，谷歌学术总引用次数排名第8。
+《Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift》截止 2025 年，谷歌学术总引用次数排名第 8。
 :::
+
+**原理**：对每个 mini-batch 在通道维做标准化 `(x - mean) / (std + ε)`，再乘可学习缩放 `γ`、加偏移 `β`。让每层输入分布稳定，允许更大学习率、加速收敛，并轻微正则。
+
+## 最小可运行示例（PyTorch）
+
+```python
+import torch
+import torch.nn as nn
+
+model = nn.Sequential(
+    nn.Conv2d(3, 64, 3, padding=1),
+    nn.BatchNorm2d(64),     # CNN 在通道维归一化
+    nn.ReLU(),
+    nn.AdaptiveAvgPool2d(1),
+    nn.Flatten(),
+    nn.Linear(64, 10),
+)
+
+opt = torch.optim.Adam(model.parameters(), lr=3e-4)  # 默认优化器
+# 训练时：
+#   model.train()  → BN 用当前 batch 统计
+#   model.eval()   → BN 用训练累计的 running_mean / running_var
+```
+
+## 常见误区
+
+- **BN 训练 / 推理行为不同**：训练用 batch 统计，推理用全局 running 统计；忘记 `model.eval()` 会严重掉点。
+- **Adam 的权重衰减要写 AdamW**：朴素 Adam 把衰减加在梯度上，等价于 L2 正则偏移；AdamW 把衰减直接作用在参数上，更标准。
+- **小 batch 时 BN 不稳**：batch 太小，均值 / 方差估计噪声大；可改用 GroupNorm / LayerNorm。
+
+## 延伸阅读
+
+- [AlexNet](../../网格数据/AlexNet) — 首次大规模使用 ReLU 与 Dropout。
+- [ResNet](../../网格数据/ResNet) — 残差块里 BN 是标配。
