@@ -103,7 +103,7 @@ description: 一句话说明本文解决什么、学完能做什么
 - [✅] 0.1 删除 70 个空/占位文件（commit 2f08a77；保留 Python标准库 有内容文件）
 - [✅] 0.2 全站 333 文件 100% 含 frontmatter title/description（commit 81c8969）
 - [✅] 0.3 保留 `Python标准库` 有内容文件（re/json/pprint/tempfile/pickle/csv/glob/typing 等）
-- [⏳] 0.4 统一目录命名与层级（如 `JavaScript\1. basic` → 语义化目录名；待做）
+- [✅] 0.4 统一目录命名与层级（12 个含空格目录重命名为 kebab-case，零断链 + 修复 JS 侧栏字母序，commit 4c0d69e）
 - [✅] 0.5 每次提交 `npm run build` 验证，当前零 broken link（content-audit 接 CI 仍待做）
 
 ### Phase 1 — 立骨架（每个分类/子目录的路线图 index）
@@ -162,6 +162,7 @@ description: 一句话说明本文解决什么、学完能做什么
 | 2026-07-25 | Phase 3.2 | Rust 7 篇升级教程级 + 与 Go/C/Java 对照互链（正文均 ≥430 中文字） | ✅ commit 7bb3c08；本地领先 16 |
 | 2026-07-25 | Phase 3.x | Java 9 篇升级教程级（统一模板 + 互链闭环 + 修 index 页 /index 断链、跨子目录层级） | ✅ commit 32f2120；本地领先 17 |
 | 2026-07-25 | Phase 3.x | Python标准库 5 篇（tempfile 大幅扩写 + json/typing/pprint/csv 补三段）+ HTML 2 篇（index 补学习目标 + mobile 大幅扩写）升级教程级；修 json 跨分类链接深度与 mobile 内容页同级链接 | ✅ commit 123da42；本地领先 19 |
+| 2026-07-25 | Phase 0.4 | 12 个含空格目录重命名为 kebab-case（JS 11 个 + Python标准库 1 个），零断链 + 修复 JS 侧栏字母序 | ✅ commit 4c0d69e；本地领先 21 |
 
 ---
 
