@@ -1,11 +1,23 @@
 ---
-title: "print输出：单行显示，难以阅读"
-description: "pprint 模块用于美化打印复杂的Python数据结构，让嵌套的字典、列表等以层次清晰的格式输出。"
+title: "pprint 美化打印"
+description: "pprint 模块层次化打印嵌套数据结构，让字典、列表以清晰格式输出，适合调试与日志"
+sidebar_position: 3
 ---
+
+## 学习目标
+
+- 掌握 `pp` / `pprint` / `pformat` 的区别与参数（`width` / `indent` / `depth` / `sort_dicts`）
+- 理解递归引用的处理
+- 在调试与日志中正确使用 pprint，避免生产环境性能问题
+
+## 前置知识
+
+- [Python 数据结构（序列与字典）](../../../3序列)
+- [Python 文件读写](../../../29文件操作)
 
 ## pprint 模块
 
-`pprint` 模块用于美化打印复杂的Python数据结构，让嵌套的字典、列表等以层次清晰的格式输出。
+`pprint` 模块用于美化打印复杂的 Python 数据结构，让嵌套的字典、列表等以层次清晰的格式输出。
 
 ### 基本使用
 
@@ -144,8 +156,8 @@ pp.pprint(data2)
 ### 性能与最佳实践
 
 :::warning 性能考虑
-- ✅ 适合：调试、开发环境、日志记录
-- ❌ 避免：生产环境高频打印、超大数据结构
+- 适合：调试、开发环境、日志记录
+- 避免：生产环境高频打印、超大数据结构
 :::
 
 ```python showLineNumbers
@@ -159,6 +171,23 @@ else:
     logging.info(str(data))
 ```
 
-### 参考资料
+## 易错点
 
-- [Python官方文档 - pprint](https://docs.python.org/zh-cn/3/library/pprint.html)
+- **`pp` 与 `pprint` 默认行为不同**：`pprint.pp()` 默认 `sort_dicts=False`（保持插入顺序），`pprint.pprint()` 默认 `sort_dicts=True`（按字母排序键）。需要稳定顺序时显式传参。
+- **`pformat` 返回字符串**：要落盘或拼接日志用 `pformat`，不要 `pp` 之后再 `str()`。
+- **超大结构用 `depth` 限制**：不设 `depth` 时深层嵌套会输出成"瀑布"，既慢又难读。
+- **生产环境有成本**：pprint 要递归遍历并格式化，高频调用（如每条日志）会有性能开销；生产建议用 `str` 或采样。
+- **它只美化、不改变数据**：`pp` 的返回值是 `None`，拿返回值当数据用会得到 `None`。
+
+## 练习
+
+1. 构造一个三层嵌套的 dict，分别用 `pprint.pp`（默认）和 `pprint.pprint` 打印，对比字典键顺序差异。
+2. 用 `pformat` 把一个配置 dict 格式化后写入 `out.txt`，再读回来验证内容。
+3. 故意制造一个自引用列表，用 `pprint.pp` 打印，观察递归标记；再用 `isrecursive` 判断。
+
+## 延伸阅读
+
+- [json 输出与格式化](../../14互联网数据处理/json)
+- [logging 日志模块](../../11通用操作系统服务/logging)
+- [Python 文件读写](../../../29文件操作)
+- [Python 数据结构](../../../3序列)

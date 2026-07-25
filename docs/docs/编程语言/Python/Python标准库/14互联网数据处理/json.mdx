@@ -1,35 +1,46 @@
 ---
-title: "JSON string:"
-description: "json 模块提供了 pythonjson 以及 jsonpython 两种格式，转换规则如下"
+title: "json 序列化与反序列化"
+description: "json 模块在 Python 对象与 JSON 文本之间互转，适合配置文件、接口数据交换"
+sidebar_position: 14
 ---
 
+## 学习目标
+
+- 掌握 `dumps` / `loads`（字符串）与 `dump` / `load`（文件）四件套
+- 理解 Python 类型与 JSON 类型的映射规则
+- 规避中文转义、键类型、循环引用等常见坑
+
+## 前置知识
+
+- [Python 文件读写](../../../29文件操作)（`open` 与 `with`）
+- [字符串](../../../2字符串)
+- [dict 与序列](../../../3序列)
 
 ## json 模块
 
-json 模块提供了 python->json 以及 json->python 两种格式，转换规则如下
+`json` 模块提供了 `python -> json` 以及 `json -> python` 两种转换，规则如下：
 
-| JSON ->        | Python -> | JSON           |
-| -------------- | --------- | -------------- |
-| object -- 对象  | dict      | object -- 对象 |
-| array          | list      | array          |
-| string         | str       | string         |
+| JSON      | Python -> | JSON           |
+| --------- | --------- | -------------- |
+| object    | dict      | object -- 对象 |
+| array     | list      | array          |
+| string    | str       | string         |
 | number (int)   | int       | number         |
 | number (real)  | float     | number         |
-| true           | True      | true           |
-| false          | False     | false          |
-| null           | None      | null           |
-|                | tuple     | array          |
+| true      | True      | true           |
+| false     | False     | false          |
+| null      | None      | null           |
+|           | tuple     | array          |
 
-注意：JSON 中的键-值对中的键永远是 str 类型的。当一个对象被转化为
-JSON 时，字典中所有的键都会被强制转换为字符串。这所造成的结果是字典被转换为 JSON 然后转换回字典时可能和原来的不相等。换句话说，如果 x 具有非字符串的键，则有 loads(dumps(x)) != x。
+注意：JSON 中的键永远是 `str` 类型。当一个对象被转化为 JSON 时，字典里所有键都会被强制转为字符串。这造成的结果是字典被转换为 JSON 再转换回来时可能和原来不相等——如果 `x` 具有非字符串的键，则 `loads(dumps(x)) != x`。
 
-json 模块还有一些其他参数可以控制：编码形式、格式化输出等，不过很少用到
+`json` 模块还有一些其他参数可以控制编码形式、格式化输出等，不过很少用到。
 
 [json 官方模块文档](https://docs.python.org/zh-cn/3/library/json.html#module-json)
 
 ### json.load 与 json.dump
 
-json.load 与 json.dump 是基于文件的转换。
+`json.load` 与 `json.dump` 是基于文件的转换。
 
 ```python showLineNumbers
 import json
@@ -48,22 +59,21 @@ data = {
         "Python Data Science"
     ]
 }
-with open("data_file.json", "w") as write:
-    json.dump(data, write)
+with open("data_file.json", "w", encoding="utf-8") as write:
+    json.dump(data, write, ensure_ascii=False, indent=2)
 
-with open("data_file.json", "r") as read_content:
+with open("data_file.json", "r", encoding="utf-8") as read_content:
     print(json.load(read_content))
 ```
 
 ### json.loads 与 json.dumps
 
-`json.loads` 与 `json.dumps` 是直接基于数据的转换，这里的`s`表示`string`(字符串)。
+`json.loads` 与 `json.dumps` 是直接基于数据的转换，这里的 `s` 表示 `string`（字符串）。
 
 ```python showLineNumbers
 import json
 
-# JSON string:
-# Multi-line string
+# JSON string（多行字符串）
 data = """{
     "Name": "Jennifer Smith",
     "Contact Number": 7867567898,
@@ -75,6 +85,28 @@ data = """{
 res_p = json.loads(data)
 print(type(res_p)) # <class 'dict'>
 
-res_j = json.dumps(res_p)
+res_j = json.dumps(res_p, ensure_ascii=False, indent=2)
 print(type(res_j)) # <class 'str'>
 ```
+
+## 易错点（重点）
+
+- **中文被转义**：`dumps` 默认 `ensure_ascii=True`，会把中文变成 `\uXXXX`。要原样输出中文，设 `ensure_ascii=False`（并配合 `open(..., encoding="utf-8")`）。
+- **非字符串键会被强转**：`dumps({1: "a"})` 得到 `{"1": "a"}`，再 `loads` 回来键变成字符串 `"1"`，与原 dict 不相等。
+- **循环引用直接报错**：默认不检测循环引用，`dumps` 循环嵌套对象会抛 `RecursionError` / `ValueError`；可用 `default=` 自定义序列化函数处理未知类型。
+- **数字界限模糊**：JSON 只有一种 number，Python 的 `int` 与 `float` 界限可能丢失（如 `1` 与 `1.0`），超大整数也可能被解析成 float 丢失精度。
+- **自定义对象不能直接序列化**：`dumps(datetime.now())` 会报 `TypeError`；需 `default=` 或继承 `JSONEncoder` 处理。
+- **缩进与可读性**：调试时用 `indent=2` 更易读；生产接口里通常不要 `indent` 以减小体积。
+
+## 练习
+
+1. 把一段中文 dict 用 `dumps(..., ensure_ascii=False, indent=2)` 输出，对比加与不加 `ensure_ascii` 的差异。
+2. 用 `dump` 把一个配置 dict 写入 `config.json`，再 `load` 读回来，验证往返一致。
+3. 写一个 `default=` 函数，让 `datetime` 对象能被 `dumps` 成 ISO 字符串。
+
+## 延伸阅读
+
+- [csv 表格数据](../../9文件格式/csv)（另一种交换格式，适合纯表格）
+- [pickle 二进制序列化](../../7数据持久化/pickle)（Python 专有、更快但不可跨语言）
+- [Python 文件读写](../../../29文件操作)
+- [字符串](../../../2字符串)

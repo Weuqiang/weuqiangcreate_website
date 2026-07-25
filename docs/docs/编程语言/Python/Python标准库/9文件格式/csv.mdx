@@ -1,8 +1,19 @@
 ---
 sidebar_position: 9
-title: csv
-description: "csv 模块读写逗号分隔值文件，支持 reader/writer、字典读写与自定义方言"
+title: "csv 读写 CSV 文件"
+description: "csv 模块读写逗号分隔值文件，支持 reader/writer、字典读写与自定义方言，避免手搓 split 的边界 bug"
 ---
+
+## 学习目标
+
+- 掌握 `reader` / `writer` 与 `DictReader` / `DictWriter` 的用法
+- 理解为什么必须 `open(..., newline="", encoding="utf-8")`
+- 能用 `delimiter` / `quoting` 处理非标准 CSV
+
+## 前置知识
+
+- [Python 文件读写](../../../29文件操作)
+- [序列与字符串](../../../3序列)
 
 # csv — 读写 CSV 文件
 
@@ -84,4 +95,22 @@ with open("eu.csv", "w", newline="", encoding="utf-8") as f:
 - `open(..., newline="", encoding="utf-8")` 是标准搭配。
 - 需要按列名处理时优先用 `DictReader` / `DictWriter`。
 
-> 延伸：CSV 适合表格数据；若字段含嵌套结构，考虑用 `json` 模块表达层级关系。
+## 易错点
+
+- **忘记 `newline=""`**：在 Windows 上每行之间会出现空行（因为 `csv` 自己管理换行，而文本模式又额外加一个 `\r`）。
+- **自己用 `split(',')`**：字段内若包含逗号（如 `"New York, NY"`）会被错误拆开；`csv` 模块能正确识别引号包裹的字段。
+- **编码不设 `utf-8`**：含中文的 CSV 在 Windows 记事本里容易乱码；写文件时统一 `encoding="utf-8"`（必要时加 `encoding="utf-8-sig"` 让 Excel 正确识别）。
+- **`DictReader` 的列名带空格/特殊字符**：`row["Name "]` 与 `row["Name"]` 不一样，访问前要确认表头真实内容。
+- **读写的列顺序不一致**：`DictWriter` 会按 `fieldnames` 顺序写，与输入 dict 的键顺序无关，但漏写 `writeheader()` 会丢表头。
+
+## 练习
+
+1. 用 `csv.DictReader` 读一个含中文的 CSV，统计某一列的平均值，体会 `newline=""` 与 `encoding` 的作用。
+2. 用 `csv.writer` 写一份以分号 `;` 分隔、且所有字段加引号的 CSV，用记事本打开验证。
+3. 写一个函数：把两个结构相同的 CSV 按某一列（如 `id`）做左连接，输出合并后的新 CSV。
+
+## 延伸阅读
+
+- [json 表达层级数据](../../14互联网数据处理/json)（字段含嵌套结构时比 CSV 更合适）
+- [Python 文件读写](../../../29文件操作)
+- [glob 批量定位 csv 文件](../../6文件和目录访问/glob)

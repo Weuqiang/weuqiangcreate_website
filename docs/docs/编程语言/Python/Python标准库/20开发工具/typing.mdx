@@ -1,11 +1,24 @@
 ---
-title: "容器类型"
-description: "typing 模块提供高级类型支持："
+title: "typing 类型标注"
+description: "typing 提供 List/Dict/Optional/Generic 等类型提示，配合 mypy 做静态检查，不影响运行时"
+sidebar_position: 20
 ---
+
+## 学习目标
+
+- 掌握常用泛型标注 `List` / `Dict` / `Tuple` / `Optional` / `Union`
+- 理解 `TypeVar` / `Generic` 写泛型容器
+- 了解 `Literal` / `TypedDict` 等进阶用法与 Python 版本差异
+
+## 前置知识
+
+- [函数与参数](../../../10函数)
+- [类与对象](../../../20类与对象)
+- [模块与导入](../../../39模块)
 
 ## typing 模块
 
-`typing` 模块提供高级类型支持：
+`typing` 模块提供高级类型支持，**注意：类型提示只在静态检查阶段有意义，运行时不做任何强制**。
 
 ```python
 from typing import List, Dict, Tuple, Optional, Union
@@ -67,5 +80,24 @@ def process_flag(flag: Literal[True, False, 0, 1]) -> None:
     pass
 ```
 
+## 易错点
 
+- **Python 3.9+ 推荐内置写法**：`list[str]` / `dict[str, int]` 已经可用，`typing.List` 仍兼容但偏旧；新项目优先用内置泛型。
+- **类型提示不检查运行时**：`x: int = "abc"` 运行时不会报错，只有 `mypy` / `pyright` 才会提示；它不改变程序行为。
+- **`Optional[X]` ≠ "可省略的参数"**：它等价于 `Union[X, None]`，表示"可能是 X 也可能是 None"，通常用于返回值或允许为空的变量。
+- **嵌套泛型要写全**：`list[dict[str, int]]` 不要漏内层，否则检查器推断不出真实类型。
+- **循环引用/前向引用**：标注尚未定义的类时，用字符串 `"ClassName"` 作前向引用，或在文件顶部 `from __future__ import annotations`。
+- **`TypedDict` 描述固定结构的 dict**：键固定、值有类型，比裸 `Dict[str, Any]` 表达力更强。
 
+## 练习
+
+1. 用 `Optional[int]` 改写一个"按名字查年龄"的函数签名，让它对查不到的情况返回 `None`。
+2. 用 `TypeVar` + `Generic` 写一个 `Box[T]`，支持 `get` / `set`。
+3. 给一个配置函数加 `Literal["dev", "prod"]` 参数，分别用 `mypy`（若已安装）检查正确值与错误值。
+
+## 延伸阅读
+
+- [类与对象](../../../20类与对象)
+- [函数与参数](../../../10函数)
+- [模块与导入](../../../39模块)
+- `collections.abc` 里的 `Iterable` / `Mapping` 等更精确的抽象类型
