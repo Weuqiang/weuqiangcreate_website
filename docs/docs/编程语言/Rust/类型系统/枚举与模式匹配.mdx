@@ -1,13 +1,25 @@
 ---
 title: 枚举与模式匹配
 sidebar_position: 1
+description: Rust 的 enum 可携带数据，配合 match 模式匹配构成表达力极强的类型系统——把状态穷尽地编码进类型，编译器替你检查遗漏。
 ---
 
 # 枚举与模式匹配
 
 Rust 的 `enum` 比多数语言强大：枚举变体可携带数据，配合 `match` 模式匹配构成表达力极强的类型系统。
 
-## 1. 携带数据的枚举
+## 学习目标
+- 定义携带数据的 `enum` 变体（元组 / 具名字段 / 无数据）；
+- 用 `match` 穷尽地处理所有变体；
+- 用 `if let` / `while let` 简化单分支；
+- 用 `Option`/`Result` 表达"可能为空 / 可能失败"。
+
+## 前置知识
+- 先读 [借用与生命周期](../../所有权/借用与生命周期) 理解引用与所有权。
+
+## 核心概念
+
+### 1. 携带数据的枚举
 
 ```rust
 enum Message {
@@ -19,7 +31,7 @@ enum Message {
 let m = Message::Write(String::from("hi"));
 ```
 
-## 2. match 模式匹配
+### 2. match 模式匹配
 
 ```rust
 fn handle(m: Message) {
@@ -34,7 +46,7 @@ fn handle(m: Message) {
 - `match` **必须穷尽**所有变体（否则编译错误），杜绝漏处理。
 - 比 `if/else` 链更安全、可读。
 
-## 3. 通配与绑定
+### 3. 通配与绑定
 
 ```rust
 match n {
@@ -45,7 +57,7 @@ match n {
 }
 ```
 
-## 4. if let / while let（单分支简化）
+### 4. if let / while let（单分支简化）
 
 ```rust
 if let Message::Write(t) = m {
@@ -53,7 +65,7 @@ if let Message::Write(t) = m {
 }
 ```
 
-## 5. Option 与 Result
+### 5. Option 与 Result
 
 Rust 没有 `null`，用 `Option` 表达"可能有值"：
 
@@ -68,7 +80,7 @@ match some {
 
 `Option`/`Result` + `match` 让"可能失败/可能为空"在类型上显式，编译期强制处理。
 
-## 6. 解构
+### 6. 解构
 
 ```rust
 struct Point { x: i32, y: i32 }
@@ -76,6 +88,19 @@ let p = Point { x: 1, y: 2 };
 let Point { x, y } = p;                // 解构出字段
 ```
 
-## 小结
+## 常见误区 / 易错点
+- **match 必须穷尽**：漏掉变体（尤其没写 `_` 兜底）会编译错误——这恰是安全来源，别嫌烦。
+- **`_` 通配会吞掉新变体**：将来给 `enum` 加新变体时，若已有 `_` 兜底，编译器不会提醒你补处理；关键业务慎用 `_`。
+- **`if let` 只处理一种情况**：其余分支被静默忽略，别用它替代需要穷尽的 `match`。
 
+## 练习
+1. 给 `enum Message` 增加 `ChangeColor(u8, u8, u8)` 变体，并补全 `handle` 的 `match` 分支。
+2. 用 `match` 写一个分数评级函数（>=90 优秀 / >=60 及格 / 其他 不及格），体会范围模式 `x @ 60..=89`。
+
+## 小结
 枚举 + 模式匹配是 Rust 的"表达力引擎"：把状态穷尽地编码进类型，编译器替你检查遗漏。结合 [泛型与 Trait](../泛型与Trait) 可实现高度复用的抽象。
+
+## 延伸阅读
+- 下一篇：[泛型与 Trait](../泛型与Trait)
+- 上篇：[借用与生命周期](../../所有权/借用与生命周期)
+- 错误处理：[错误处理与 Result](../../系统编程/错误处理与Result)（Result 本质也是 enum）

@@ -1,13 +1,25 @@
 ---
 title: 泛型与 Trait
 sidebar_position: 2
+description: Rust 用泛型实现零成本抽象，用 Trait 定义共享行为（类似接口）。两者是代码复用与抽象的核心基石。
 ---
 
 # 泛型与 Trait
 
 Rust 用**泛型**实现零成本抽象，用 **Trait** 定义共享行为（类似接口）。两者是代码复用的基石。
 
-## 1. 泛型
+## 学习目标
+- 用泛型写出对多种类型复用的函数 / 结构体；
+- 用 Trait 定义行为并 `impl` 给具体类型；
+- 理解 Trait bound 与 `impl Trait` 简写；
+- 区分静态分发（泛型）与动态分发（`dyn Trait`）。
+
+## 前置知识
+- 先读 [枚举与模式匹配](../枚举与模式匹配) 理解 `enum` 与模式。
+
+## 核心概念
+
+### 1. 泛型
 
 ```rust
 fn largest<T: PartialOrd>(list: &[T]) -> &T {   // T 为任意可比较类型
@@ -21,7 +33,7 @@ fn largest<T: PartialOrd>(list: &[T]) -> &T {   // T 为任意可比较类型
 
 - 单态化（monomorphization）：编译期为每种具体类型生成专用代码，**无运行时开销**。
 
-## 2. Trait：定义行为
+### 2. Trait：定义行为
 
 ```rust
 trait Summary {
@@ -39,7 +51,7 @@ impl Summary for Article {
 }
 ```
 
-## 3. Trait Bound 与泛型结合
+### 3. Trait Bound 与泛型结合
 
 ```rust
 fn notify<T: Summary>(item: &T) {
@@ -49,7 +61,7 @@ fn notify<T: Summary>(item: &T) {
 
 简写：`fn notify(item: &impl Summary)`。
 
-## 4. 常用标准 Trait
+### 4. 常用标准 Trait
 
 | Trait | 作用 |
 |-------|------|
@@ -67,7 +79,7 @@ fn notify<T: Summary>(item: &T) {
 struct Point { x: i32, y: i32 }
 ```
 
-## 5. Trait 对象（动态分发）
+### 5. Trait 对象（动态分发）
 
 ```rust
 fn report(items: &[&dyn Summary]) {   // dyn 动态分发，运行时决定
@@ -78,6 +90,19 @@ fn report(items: &[&dyn Summary]) {   // dyn 动态分发，运行时决定
 - `dyn Trait` 用于异构集合，牺牲一点性能换灵活。
 - 默认泛型是静态分发（快），按需用 `dyn`。
 
-## 小结
+## 常见误区 / 易错点
+- **泛型默认静态分发（单态化）**：`fn f<T: Summary>` 会为每种类型生成一份代码，性能好但二进制体积会增大（code bloat），别在超多类型场景滥用。
+- **`dyn Trait` 有运行时开销**：动态分发通过虚表调用，灵活但慢一点；只在需要异构集合时用。
+- **Trait bound 写错位置**：`fn f<T: Clone>(x: T)` 约束的是"类型 T 能 Clone"，不是返回值；多约束用 `+`，如 `T: Clone + Debug`。
 
+## 练习
+1. 定义 `trait Area { fn area(&self) -> f64; }`，为 `struct Circle { r: f64 }` 与 `struct Rect { w: f64, h: f64 }` 实现它，再写一个 `fn print_area<T: Area>(s: &T)`。
+2. 用 `#[derive(Debug, PartialEq, Clone)]` 给一个结构体自动实现常用 trait，体会零样板。
+
+## 小结
 泛型负责"对多种类型复用"，Trait 负责"约束类型能做什么"。二者结合既灵活又零成本，是 Rust 抽象的核心工具。
+
+## 延伸阅读
+- 上篇：[枚举与模式匹配](../枚举与模式匹配)
+- 错误处理：[错误处理与 Result](../../系统编程/错误处理与Result)（Result 常配合 `?` 与 trait）
+- 对照：[Java 面向对象与核心语法](../../../Java/语言基础/面向对象与核心语法)（Java 用 interface，Rust 用 Trait）

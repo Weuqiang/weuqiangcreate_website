@@ -1,13 +1,25 @@
 ---
 title: 错误处理与 Result
 sidebar_position: 1
+description: Rust 没有异常，用 Result<T, E> 在类型上显式表达"可能失败"，强制调用者处理——这是它"可靠"名声的来源。
 ---
 
 # 错误处理与 Result
 
 Rust 没有异常，用 `Result<T, E>` 在类型上显式表达"可能失败"，强制调用者处理。本篇讲错误处理范式。
 
-## 1. Result 枚举
+## 学习目标
+- 用 `Result` 表达可恢复错误；
+- 用 `?` 运算符优雅传播错误；
+- 用 `thiserror` 派生自定义错误枚举；
+- 分清 `panic!` / `unwrap` / `?` 各自的使用边界。
+
+## 前置知识
+- 先读 [泛型与 Trait](../../类型系统/泛型与Trait)（错误类型常配合 trait 与 `?`）。
+
+## 核心概念
+
+### 1. Result 枚举
 
 ```rust
 enum Result<T, E> {
@@ -25,7 +37,7 @@ match f {
 }
 ```
 
-## 2. ? 运算符：错误传播
+### 2. ? 运算符：错误传播
 
 `?` 简化"有错就返回、没错就解包"：
 
@@ -44,7 +56,7 @@ fn read_text(path: &str) -> Result<String, io::Error> {
 - `?` 在 `Err` 时提前返回，在 `Ok` 时取出内部值。
 - 比层层 `match` 清爽得多。
 
-## 3. 自定义错误与 thiserror
+### 3. 自定义错误与 thiserror
 
 ```rust
 use thiserror::Error;
@@ -59,7 +71,7 @@ pub enum MyError {
 
 （`thiserror` 是社区常用派生宏，减少样板。）
 
-## 4. panic! 与不可恢复错误
+### 4. panic! 与不可恢复错误
 
 ```rust
 panic!("程序无法继续");   // 不可恢复，默认展开栈并中止
@@ -68,7 +80,7 @@ panic!("程序无法继续");   // 不可恢复，默认展开栈并中止
 - `panic!` 用于"程序员 bug / 不可能发生"的情况；
 - 可恢复的业务错误用 `Result`，不要用 `panic!` 代替异常。
 
-## 5. unwrap 与 expect（谨慎）
+### 5. unwrap 与 expect（谨慎）
 
 ```rust
 let f = File::open("a.txt").unwrap();        // 失败直接 panic
@@ -77,6 +89,19 @@ let f = File::open("a.txt").expect("打开失败");  // panic 带信息
 
 仅用于原型/测试，生产代码用 `?` 传播错误。
 
-## 小结
+## 常见误区 / 易错点
+- **`unwrap()`/`expect()` 失败即 panic**：只在原型/测试用，生产代码用 `?` 把错误向上传播。
+- **`?` 要求函数返回 `Result`**：在返回 `()` 的函数里用 `?` 会编译错误；要么改返回类型，要么用 `match` 处理。
+- **别用 `panic!` 代替业务错误**：`panic!` 是不可恢复的 bug 信号；可预期失败（文件不存在、网络超时）用 `Result`。
 
+## 练习
+1. 写 `fn read_first_line(path: &str) -> Result<String, io::Error>`，用 `?` 打开文件并读第一行返回。
+2. 用 `thiserror` 定义 `enum AppError { Io(#[from] io::Error), Parse(String) }`，体会 `#[from]` 自动转换。
+
+## 小结
 Rust 的错误处理哲学：**失败是类型的一部分**。`Result` + `?` 让错误无处遁形，又不影响性能——这是它"可靠"名声的来源。
+
+## 延伸阅读
+- 下一篇：[并发与 async](../并发与async)（并发 IO 错误大量用 `Result` 传播）
+- 上篇：[泛型与 Trait](../../类型系统/泛型与Trait)
+- 对照：[Go 语言入门](../../../Go/语言基础/Go语言入门)（Go 用多返回值 `(T, error)` 表达失败，Rust 用 `Result` 类型）

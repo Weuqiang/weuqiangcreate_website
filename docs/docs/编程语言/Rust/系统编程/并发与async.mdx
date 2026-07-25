@@ -1,13 +1,25 @@
 ---
 title: 并发与 async
 sidebar_position: 2
+description: Rust 以"无畏并发（fearless concurrency）"著称——编译期保证无数据竞争。本篇覆盖线程与 async/await 两种并发模型。
 ---
 
 # 并发与 async
 
 Rust 以"无畏并发（fearless concurrency）"著称：编译期保证无数据竞争。本篇覆盖线程与 `async/await` 两种并发。
 
-## 1. 操作系统线程
+## 学习目标
+- 用 `thread::spawn` 起操作系统线程；
+- 用 `Arc<Mutex<T>>` / `channel` 在线程间共享或传递数据；
+- 用 `async`/`await` 写高并发 IO 程序（`tokio` 运行时）；
+- 理解 `Send` / `Sync` 如何静态杜绝数据竞争。
+
+## 前置知识
+- 先读 [错误处理与 Result](../错误处理与Result)（并发代码大量用 `Result` 传播 IO 错误）。
+
+## 核心概念
+
+### 1. 操作系统线程
 
 ```rust
 use std::thread;
@@ -30,7 +42,7 @@ thread::spawn(move || {
 
 - `Arc`（原子引用计数）跨线程共享所有权，`Mutex` 保证互斥。
 
-## 2. 消息传递：channel
+### 2. 消息传递：channel
 
 ```rust
 use std::sync::mpsc;
@@ -41,7 +53,7 @@ println!("收到 {}", rx.recv().unwrap());
 
 - Rust 标准库也推崇"通过通信共享内存"。
 
-## 3. async/await（异步）
+### 3. async/await（异步）
 
 `async` 适合大量 IO 并发，单线程事件循环驱动：
 
@@ -64,14 +76,14 @@ async fn main() {
 }
 ```
 
-## 4. Send 与 Sync（编译期保障）
+### 4. Send 与 Sync（编译期保障）
 
 - `Send`：类型可安全地转移到另一线程；
 - `Sync`：类型可安全地被多线程共享引用。
 
 只有满足这两个 trait 的类型才能在并发中使用——编译器据此**静态杜绝数据竞争**。这是 Rust 并发区别于其他语言的根本。
 
-## 5. 如何选择
+### 5. 如何选择
 
 | 场景 | 方案 |
 |------|------|
@@ -79,6 +91,19 @@ async fn main() {
 | 大量 IO、高并发 | `async`/`tokio` |
 | 跨线程传数据 | `channel` |
 
-## 小结
+## 常见误区 / 易错点
+- **`Send`/`Sync` 是编译期门槛**：不满足这两个 trait 的类型（如裸 `Rc`）不能在多线程间共享，编译器直接拒绝——这是"无畏并发"的来源，不是运行时检查。
+- **`async` 不自动并发**：`async fn` 只是个惰性状态机，必须交给运行时（`tokio`/`async-std`）并 `spawn` 才会真正并发执行。
+- **`Mutex::lock().unwrap()` 在多线程里可能 panic**：持有锁时 panic 会"毒化"锁；生产代码用 `lock()` 返回的 `Result` 妥善处理。
 
+## 练习
+1. 用 `thread::spawn` + `Arc<Mutex<i32>>` 起 4 个线程各让计数器 +1，最后 `join` 并打印结果（体会共享可变状态的正确加锁）。
+2. 用 `tokio` 写两个 `async fn fetch()`，在 `#[tokio::main]` 里 `tokio::join!` 并发等待，对比与线程写法的差异。
+
+## 小结
 Rust 并发的杀手锏是**编译期安全**：`Send`/`Sync` 让数据竞争在编译期就被拒绝。线程适合计算，async 适合 IO，两者都"无畏"。
+
+## 延伸阅读
+- 上篇：[错误处理与 Result](../错误处理与Result)（并发 IO 错误用 `Result` 传播）
+- 对照：[Go goroutine 与 channel](../../../Go/并发模型/goroutine与channel)（Go 用 CSP，Rust 用 `Send`/`Sync` + `async`）
+- 对照：[C 并发执行](../../../C/17并发执行)（C 用 pthread，手动加锁，无编译期保证）
