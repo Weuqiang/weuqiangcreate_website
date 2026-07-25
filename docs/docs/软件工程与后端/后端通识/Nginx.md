@@ -996,3 +996,10 @@ server {
 - [Nginx变量索引](http://nginx.org/en/docs/varindex.html)
 - [使用Nginx作为HTTP负载均衡器](http://nginx.org/en/docs/http/load_balancing.html)
 - [配置HTTPS服务器](http://nginx.org/en/docs/http/configuring_https_servers.html)
+
+## 延伸阅读
+
+- 下一篇：[接口开发](../接口开发)
+- 返回 [后端通识总览](../)
+- 相关领域：[工程实践](../../工程实践/)
+- 跨语言对照：[Go](../../../编程语言/Go/) · [Python](../../../编程语言/Python/)
