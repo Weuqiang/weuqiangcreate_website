@@ -5,7 +5,18 @@ sidebar_position: 2
 
 # 面向对象与核心语法
 
-在 [Java 语言入门](../Java语言入门) 之后，本篇梳理 Java 面向对象（OOP）的核心语法：类、接口、继承、多态、泛型与异常。
+在 [Java 语言入门](../Java语言入门) 之后，本篇梳理 Java 面向对象（OOP）的核心语法：类、接口、继承、多态、泛型与异常。它们是你读懂 90% 业务代码的基础。
+
+## 学习目标
+
+- 用 `private`/构造器/getter 实现封装；
+- 用 `extends`/`implements` 与 `@Override` 实现继承与多态；
+- 用泛型获得编译期类型安全，用 `try/catch` 处理异常。
+
+## 前置知识
+
+- 已完成 [Java 语言入门](../Java语言入门)；
+- 想对比"所有权 vs 引用"可看 [Rust 语言入门](../../../Rust/所有权/Rust语言入门)。
 
 ## 1. 类与对象
 
@@ -15,17 +26,17 @@ public class User {
     public User(String name) { this.name = name; }
     public String getName() { return name; }
 }
-User u = new User("Ada");         // 实例化
+User u = new User("Ada");         // 实例化，u 持有堆上对象的引用
 ```
 
 - `private` 隐藏内部细节，`getter/setter` 暴露受控访问。
-- `new` 在堆上创建对象，变量持有的是引用。
+- `new` 在堆上创建对象，变量持有的是**引用**（类似指针，但 JVM 管理生命周期）。
 
 ## 2. 继承与多态
 
 ```java
 abstract class Shape {
-    abstract double area();       // 抽象方法
+    abstract double area();       // 抽象方法，无实现
 }
 class Circle extends Shape {
     double r;
@@ -35,7 +46,7 @@ class Circle extends Shape {
 ```
 
 - 单继承：`extends` 复用父类；`implements` 可实现多个接口。
-- 多态：父类引用指向子类对象，运行时调用实际类型的方法。
+- 多态：父类引用指向子类对象，运行时调用实际类型的方法（动态绑定）。
 
 ## 3. 接口与默认方法
 
@@ -45,6 +56,8 @@ interface Comparable<T> {
     default boolean eq(T o) { return compareTo(o) == 0; }  // Java 8+ 默认方法
 }
 ```
+
+接口只定义契约；`default` 方法让接口演进时不用破坏已有实现。
 
 ## 4. 泛型
 
@@ -68,16 +81,20 @@ try {
 }
 ```
 
-- 受检异常（`IOException`）必须 `try/catch` 或声明 `throws`；运行时异常（`RuntimeException`）可不捕获。
+- 受检异常（`IOException`）必须 `try/catch` 或声明 `throws`；运行时异常（`RuntimeException`）可不捕获，但最好处理。
 
-## 小结
+## 易错点
 
-| 概念 | 关键字 | 作用 |
-|------|--------|------|
-| 封装 | `private` | 隐藏实现 |
-| 继承 | `extends` | 复用 |
-| 多态 | `@Override` | 同一接口不同行为 |
-| 泛型 | `<T>` | 类型安全 |
-| 异常 | `try/catch` | 容错 |
+- `Integer` 等包装类型用 `==` 比引用、`equals` 比值；集合中判等务必用 `equals`。
+- 重写（`@Override`）方法时，访问修饰符不能比父类更严格（否则编译报错）。
+- 泛型不支持基本类型：`List<int>` 非法，要用 `List<Integer>`。
 
-掌握这些，Java 的大部分业务代码都能读懂与编写。
+## 练习
+
+1. 定义 `Animal` 抽象类（含 `eat()`），让 `Cat`/`Bird` 各自实现；
+2. 写一个 `Box<T>` 泛型类，存一个值并提供 `get/set`。
+
+## 延伸阅读
+
+- 高频容器用法见 [集合框架](../../生态/集合框架)；
+- 跨语言对照：[Rust 所有权与借用](../../../Rust/所有权/借用与生命周期)。

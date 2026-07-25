@@ -7,6 +7,17 @@ sidebar_position: 2
 
 多线程共享数据时，必须用锁或并发容器保证一致性。本篇覆盖 `synchronized`、显式锁与 `java.util.concurrent`（JUC）工具。
 
+## 学习目标
+
+- 区分内置锁 `synchronized` 与显式锁 `ReentrantLock` 的取舍；
+- 用原子类（CAS）做无锁计数；
+- 选对并发容器与线程协作工具（Latch/Semaphore/Future）。
+
+## 前置知识
+
+- 已读完 [线程与线程池](../线程与线程池)；
+- 集合选型基础见 [集合框架](../../生态/集合框架)。
+
 ## 1. 内置锁 synchronized
 
 ```java
@@ -17,7 +28,7 @@ class Counter {
 ```
 
 - 锁对象是 `this`（实例方法）或 `Class`（静态方法）。
-- 简单但不够灵活（不可中断、非公平）。
+- 简单但不够灵活（不可中断、非公平、锁粒度粗）。
 
 ## 2. 显式锁 ReentrantLock
 
@@ -48,7 +59,7 @@ cnt.incrementAndGet();          // CAS 实现，高效
 
 | 容器 | 说明 |
 |------|------|
-| `ConcurrentHashMap` | 分段/桶级锁，高并发读写 |
+| `ConcurrentHashMap` | 桶级锁 / CAS，高并发读写 |
 | `CopyOnWriteArrayList` | 读多写少，写时复制 |
 | `BlockingQueue` | 生产者-消费者（`ArrayBlockingQueue` 等） |
 | `ConcurrentLinkedQueue` | 无锁队列 |
@@ -67,10 +78,21 @@ for (int i = 0; i < 3; i++) pool.submit(() -> { doWork(); latch.countDown(); });
 latch.await();   // 阻塞直到计数归零
 ```
 
-其他常用：`CyclicBarrier`（ cyclic 等待）、`Semaphore`（限流）、`Future`/`CompletableFuture`（异步结果）。
+其他常用：`CyclicBarrier`（循环等待）、`Semaphore`（限流）、`Future`/`CompletableFuture`（异步结果）。
 
-## 小结
+## 易错点
 
-- 简单同步用 `synchronized`；
-- 要灵活/高性能用 `ReentrantLock`、原子类；
-- 集合选 `ConcurrentHashMap` 等并发容器，别自己加锁。
+- `ReentrantLock` 忘记在 `finally` 里 `unlock()`，异常时会死锁。
+- `synchronized` 锁的是对象而非代码块；用不同对象当锁会失效。
+- `ConcurrentHashMap` 的 `compute` 内不要做耗时/递归操作，会长时间占桶。
+- `volatile` 只保证可见性不保证原子性，`i++` 仍需 `AtomicInteger` 或锁。
+
+## 练习
+
+1. 用 `ReentrantLock` 实现一个线程安全的 `BankAccount` 存取款；
+2. 用 `Semaphore(3)` 限制同时只有 3 个线程访问某资源。
+
+## 延伸阅读
+
+- Web 实战串起这些知识见栏目内的 Spring Boot 文档（见 [Java 学习路线图](../../)）；
+- 回到 [线程与线程池](../线程与线程池)。

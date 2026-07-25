@@ -5,7 +5,18 @@ sidebar_position: 2
 
 # Spring Boot 入门
 
-Spring Boot 让 Java 后端开发"开箱即用"：自动配置、内嵌服务器、起步依赖，几行代码起一个 Web 服务。
+Spring Boot 让 Java 后端开发"开箱即用"：自动配置、内嵌服务器、起步依赖，几行代码起一个 Web 服务。它是把前面学的语法、集合、并发落到真实工程的入口。
+
+## 学习目标
+
+- 用 Spring Boot 起一个返回 JSON 的最小 Web 服务；
+- 理解起步依赖、自动配置与分层架构；
+- 用常用注解与 `application.yml` 完成基础配置。
+
+## 前置知识
+
+- 已学完 [并发容器与锁](../../并发/并发容器与锁)（Controller/Service 常运行在线程池中）；
+- 后端工程通识见 [软件工程与后端 / 后端通识](../../../../软件工程与后端/后端通识/)。
 
 ## 1. 一个最小应用
 
@@ -80,6 +91,18 @@ spring:
 
 运行：`mvn spring-boot:run` 或打包 `java -jar demo.jar`。
 
-## 小结
+## 易错点
 
-Spring Boot 的核心价值是"约定优于配置"：合理的默认让你专注业务。下一步可学 `Spring Data JPA`（ORM）、`Spring Security`（安全）与 `MyBatis`。
+- 组件扫描默认只扫 `@SpringBootApplication` 所在包及其子包；把类放错包会 `@Autowired` 失败。
+- 构造注入优于字段注入（`@Autowired` 字段），后者不利于测试与不可变。
+- `application.yml` 用空格缩进，Tab 与缩进错误会导致配置不生效且无提示。
+
+## 练习
+
+1. 起一个 `/users` 接口，内存 List 模拟 CRUD；
+2. 用 `@ConfigurationProperties` 把自定义配置项绑定到一个 Bean。
+
+## 延伸阅读
+
+- 并发基础回顾：[并发容器与锁](../../并发/并发容器与锁)；
+- 后端工程实践：[软件工程与后端 / 后端通识](../../../../软件工程与后端/后端通识/)。

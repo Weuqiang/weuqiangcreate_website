@@ -7,6 +7,17 @@ sidebar_position: 1
 
 并发是 Java 的强项。本篇讲线程的创建、状态，以及生产环境必备的**线程池**。
 
+## 学习目标
+
+- 用 `Thread` / `Runnable` 创建线程，说清 6 种线程状态；
+- 解释为什么生产环境要用线程池而非 `new Thread()`；
+- 讲清 `ThreadPoolExecutor` 的提交行为与拒绝策略。
+
+## 前置知识
+
+- 已了解 [类加载机制](../../JVM/类加载机制)（类初始化是线程安全的）；
+- 想对比并发模型可看 [Go 的 goroutine 与 channel](../../../Go/并发模型/goroutine与channel)。
+
 ## 1. 创建线程
 
 ```java
@@ -18,6 +29,8 @@ Runnable task = () -> System.out.println("running");
 new Thread(task).start();
 ```
 
+Java 21+ 还提供**虚拟线程（Virtual Thread）**：`Thread.startVirtualThread(() -> {...})`，由 JVM 调度、开销极低，适合海量 IO 并发。
+
 ## 2. 线程状态
 
 ```
@@ -26,6 +39,7 @@ NEW → RUNNABLE → BLOCKED/WAITING/TIMED_WAITING → TERMINATED
 
 - `sleep()`：休眠，不释放锁。
 - `wait()/notify()`：在 `synchronized` 块内，释放锁等待/唤醒。
+- `join()`：等待目标线程结束。
 
 ## 3. 为什么需要线程池
 
@@ -65,4 +79,18 @@ new ThreadPoolExecutor(
 - CPU 密集：线程数 ≈ 核数；IO 密集：可更大（如核数 × 2）。
 - 业务用 `submit()` 拿 `Future` 取结果/异常。
 
-> 更细的锁与并发容器见 [并发容器与锁](../并发容器与锁)。
+## 易错点
+
+- `submit()` 的任务若抛异常，不会立刻抛出，而是藏在 `Future.get()` 里——不调用 `get()` 可能吞掉错误。
+- `shutdown()` 不等任务结束、`shutdownNow()` 尝试中断；要等完成用 `awaitTermination`。
+- 在 `synchronized` 块内调用 `Thread.sleep()` 不会释放锁，容易拖慢并发。
+
+## 练习
+
+1. 用固定线程池并发下载/计算 100 个任务，统计总耗时；
+2. 自定义 `RejectedExecutionHandler`，观察队列满时的拒绝行为。
+
+## 延伸阅读
+
+- 更细的锁与并发容器见 [并发容器与锁](../并发容器与锁)；
+- 跨语言对照：[Go goroutine 与 channel](../../../Go/并发模型/goroutine与channel)。

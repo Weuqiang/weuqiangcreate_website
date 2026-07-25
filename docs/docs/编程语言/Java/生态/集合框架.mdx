@@ -5,7 +5,18 @@ sidebar_position: 1
 
 # 集合框架
 
-Java 集合框架（Java Collections Framework）统一了容器操作，几乎所有业务代码都在用它。
+Java 集合框架（Java Collections Framework）统一了容器操作，几乎所有业务代码都在用它。本篇从整体结构讲到 `HashMap` 原理与并发集合。
+
+## 学习目标
+
+- 说清 `List`/`Set`/`Queue`/`Map` 的分工与常见实现；
+- 理解 `ArrayList` vs `LinkedList`、`HashMap` 的取舍；
+- 知道单线程与多线程下分别该用什么容器。
+
+## 前置知识
+
+- 已掌握 [面向对象与核心语法](../../语言基础/面向对象与核心语法) 的泛型；
+- 下文涉及的内存回收背景见 [JVM 内存模型与 GC](../../JVM/JVM内存模型与GC)。
 
 ## 1. 整体结构
 
@@ -65,12 +76,6 @@ Collections.unmodifiableList(list);  // 不可变视图
 Arrays.asList("a", "b");             // 数组转 List
 ```
 
-## 小结
-
-- 查多改少 → `ArrayList` / `HashMap`；
-- 去重 → `HashSet`；保序去重 → `LinkedHashSet`；
-- 排序集合 → `TreeSet` / `TreeMap`。
-
 ## 6. 线程安全与并发集合
 
 单线程用 `HashMap`/`ArrayList` 即可；多线程共享时它们**非线程安全**，需换并发容器或加锁：
@@ -78,7 +83,7 @@ Arrays.asList("a", "b");             // 数组转 List
 ```java
 import java.util.concurrent.*;
 
-// 高并发 Map：分段锁 / CAS，读多写少场景远快于 synchronizedMap
+// 高并发 Map：桶级锁 / CAS，读多写少场景远快于 synchronizedMap
 ConcurrentHashMap<String, Integer> cmap = new ConcurrentHashMap<>();
 cmap.put("a", 1);
 cmap.compute("a", (k, v) -> v + 1);   // 原子更新
@@ -102,9 +107,14 @@ Map<String, Integer> m2 = Map.of("x", 1, "y", 2);
 ## 易错点
 
 - `HashMap` 的 key 必须正确覆写 `hashCode()` 与 `equals()`；用可变对象做 key 会导致后续查不到。
-- 遍历集合时**不能直接增删**原集合（抛 `ConcurrentModificationException`）；要删除请用 `Iterator.remove()` 或 Java 8+ 的 `removeIf`。
+- 遍历集合时**不能直接增删**原集合（抛 `ConcurrentModificationException`）；要删除请用 `Iterator.remove()` 或 `removeIf`。
 - `Integer` 等包装类型做 `==` 比较的是引用而非值，集合里判等要用 `equals`。
 - `TreeMap`/`TreeSet` 要求元素可比较（实现 `Comparable` 或提供 `Comparator`），否则插入即抛 `ClassCastException`。
+
+## 练习
+
+1. 用 `HashMap` 统计一段文本中每个词的出现次数；
+2. 用 `PriorityQueue` 实现一个简单的"任务调度器"（按优先级出队）。
 
 ## 延伸阅读
 

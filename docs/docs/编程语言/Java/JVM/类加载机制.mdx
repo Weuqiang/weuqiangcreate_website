@@ -7,6 +7,17 @@ sidebar_position: 2
 
 Java 代码编译成 `.class` 字节码后，由 JVM 在运行时**按需加载**到内存。理解类加载有助于排查 `ClassNotFoundException`、`NoClassDefFoundError` 与热部署问题。
 
+## 学习目标
+
+- 说清"加载—链接—初始化"三步各自做什么；
+- 解释双亲委派模型为何能保证核心类唯一；
+- 知道何时会出现 `ClassNotFoundException` / `NoClassDefFoundError`。
+
+## 前置知识
+
+- 已读完 [JVM 内存模型与 GC](../JVM内存模型与GC)；
+- 了解 [线程与线程池](../../并发/线程与线程池) 有助于理解"类初始化线程安全"。
+
 ## 1. 类加载过程
 
 一个类从磁盘到可用，经历三步：
@@ -14,7 +25,7 @@ Java 代码编译成 `.class` 字节码后，由 JVM 在运行时**按需加载*
 1. **加载（Loading）**：类加载器把 `.class` 读入内存，生成 `Class` 对象。
 2. **链接（Linking）**：
    - 验证：字节码合法性；
-   - 准备：为静态变量分配内存并赋零值；
+   - 准备：为静态变量分配内存并赋零值（不是你写的初始值）；
    - 解析：把符号引用替换为直接引用。
 3. **初始化（Initialization）**：执行类构造器 `<clinit>()`，即静态变量赋值与静态块。
 
@@ -23,7 +34,7 @@ Java 代码编译成 `.class` 字节码后，由 JVM 在运行时**按需加载*
 JVM 有三层类加载器，加载时**先委托父加载器**，父找不到才自己加载：
 
 ```
-Bootstrap  → 核心类库(rt.jar)
+Bootstrap  → 核心类库(rt.jar / modules)
   ↑
 Extension  → 扩展包
   ↑
@@ -54,8 +65,20 @@ class MyClassLoader extends ClassLoader {
 | 异常 | 含义 |
 |------|------|
 | `ClassNotFoundException` | 运行时显式加载（如 `Class.forName`）找不到类 |
-| `NoClassDefFoundError` | 编译在、运行不在（依赖缺失） |
+| `NoClassDefFoundError` | 编译在、运行不在（依赖缺失/类初始化失败） |
 
-## 小结
+## 易错点
 
-类加载是"懒加载 + 双亲委派"：用到才加载、父优先、保证核心类唯一。理解它，依赖冲突与 classpath 问题不再神秘。
+- 静态变量赋值在"初始化"阶段才执行，准备阶段只是零值——依赖静态字段默认值的代码要当心。
+- 同一个类被不同加载器加载，JVM 视为不同类型，`instanceof` 会返回 `false`。
+- `NoClassDefFoundError` 常因某类的静态块抛异常导致初始化失败，而非单纯找不到 `.class`。
+
+## 练习
+
+1. 故意让某个类的静态块抛异常，观察首次使用时抛出 `NoClassDefFoundError`；
+2. 用 `java -verbose:class` 启动，观察类的加载顺序。
+
+## 延伸阅读
+
+- 线程与并发工具见 [线程与线程池](../../并发/线程与线程池)；
+- 回到 [Java 学习路线图](../../)。
