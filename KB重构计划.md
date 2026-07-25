@@ -129,7 +129,7 @@ description: 一句话说明本文解决什么、学完能做什么
 - [✅] 3.1 Go 语言 7 篇升级到教程级（重写 index + 入门，5 篇补【易错点/练习/延伸阅读】+ 站内互链闭环，commit 6379620）
 - [✅] 3.2 Rust 7 篇（index + 6 内容页）升级到教程级（commit 7bb3c08）
 - [✅] 3.x Java 9 篇升级到教程级（index + 8 内容页，统一模板 + 与 Go/Rust/C 对照，commit 32f2120）
-- [⏳] 3.x 其余薄页：Python标准库参考页（tempfile·pprint·json·csv·typing）/ HTML 2 篇等，按路线图顺序逐篇升级（长期、可多轮）
+- [✅] 3.x 薄页批次：Python标准库参考页（tempfile·pprint·json·csv·typing）+ HTML（index/mobile）升级到教程级（统一模板 + 互链闭环 + 修链接层级，commit 123da42）
 
 ### Phase 4 — 交叉链接与导航网
 - [⏳] 4.1 每篇补“延伸阅读/前置知识”互链
@@ -161,6 +161,7 @@ description: 一句话说明本文解决什么、学完能做什么
 | 2026-07-25 | Phase 3.1 | Go 语言 7 篇升级教程级 + 修跨一级分类链接深度（depth-4 页需 ../../../../ 回 docs 根） | ✅ commit 6379620；本地领先 15 |
 | 2026-07-25 | Phase 3.2 | Rust 7 篇升级教程级 + 与 Go/C/Java 对照互链（正文均 ≥430 中文字） | ✅ commit 7bb3c08；本地领先 16 |
 | 2026-07-25 | Phase 3.x | Java 9 篇升级教程级（统一模板 + 互链闭环 + 修 index 页 /index 断链、跨子目录层级） | ✅ commit 32f2120；本地领先 17 |
+| 2026-07-25 | Phase 3.x | Python标准库 5 篇（tempfile 大幅扩写 + json/typing/pprint/csv 补三段）+ HTML 2 篇（index 补学习目标 + mobile 大幅扩写）升级教程级；修 json 跨分类链接深度与 mobile 内容页同级链接 | ✅ commit 123da42；本地领先 19 |
 
 ---
 
