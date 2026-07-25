@@ -137,7 +137,7 @@ description: 一句话说明本文解决什么、学完能做什么
   - **参考手册型页**（JS API / HTML 标签 / Python标准库模块）：靠各 index 的 `<DocCardList />` + Docusaurus 底部分页即可达，不强加"延伸阅读/练习"三段。
   - **可达性三层保障**：sidebar 顺序 + 底部分页 + index 卡片，已保证"路径成网"；4.1 只补"语义相关"互链。
 - [✅] 4.1a C 语言 13 篇补语义互链（相邻链接 + 跨兄弟分类对照，commit 6a5cd42）
-- [⏳] 4.1b Python 基础系列（~20 篇）互链
+- [✅] 4.1b Python 基础系列 15 篇补语义互链（按数字前缀排序相邻链接 + 跨兄弟分类对照，commit ad9710d）
 - [⏳] 4.1c 后端通识（7）+ 工程实践（9）互链
 - [⏳] 4.1d AI（大模型/机器学习/深度学习 ~15 篇）互链
 - [⏳] 4.1e 开发工具链（Git/Docker/Terminal/Markdown/YAML）互链
@@ -174,6 +174,8 @@ description: 一句话说明本文解决什么、学完能做什么
 | 2026-07-25 | Phase 3.x | Python标准库 5 篇（tempfile 大幅扩写 + json/typing/pprint/csv 补三段）+ HTML 2 篇（index 补学习目标 + mobile 大幅扩写）升级教程级；修 json 跨分类链接深度与 mobile 内容页同级链接 | ✅ commit 123da42；本地领先 19 |
 | 2026-07-25 | Phase 0.4 | 12 个含空格目录重命名为 kebab-case（JS 11 个 + Python标准库 1 个），零断链 + 修复 JS 侧栏字母序 | ✅ commit 4c0d69e；本地领先 21 |
 | 2026-07-26 | Phase 4.1a | C 语言 13 篇补语义互链（审计发现 169 孤岛/180 缺互链，纠正"互链已完成"误判，重定义 4.1 为系统化补链工程） | ✅ commit 6a5cd42；本地领先 23 |
+| 2026-07-26 | Phase 4.1a | 重定义 Phase 4.1 为系统化补链工程 + 列子批次 4.1a~4.1g（标记 4.1a ✅） | ✅ commit b0e0682；本地领先 24 |
+| 2026-07-26 | Phase 4.1b | Python 基础 15 篇补语义互链（按数字前缀排序相邻链接 + 跨兄弟分类对照 Go/Rust/C） | ✅ commit ad9710d；本地领先 25 |
 
 ---
 
