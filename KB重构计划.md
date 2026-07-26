@@ -146,7 +146,7 @@ description: 一句话说明本文解决什么、学完能做什么
 - [✅] 4.2 落地页与各 index 的"学习路径"可视化收尾（补「软件工程与后端」顶层 index.mdx 消除破窗 + 删 _category_ link 块消 duplicate routes；落地页「六大方向」表格升级为卡片网格）
 
 ### Phase 5 — 质量门禁与发布
-- [⏳] 5.1 体检脚本常态化（CI 中加 content-audit）
+- [✅] 5.1 体检脚本常态化（CI 中加 content-audit）
 - [⏳] 5.2 分阶段提交 + 用户确认后推送
 
 ---
@@ -182,6 +182,7 @@ description: 一句话说明本文解决什么、学完能做什么
 | 2026-07-26 | Phase 4.1f | 数据结构与算法去重（删 4 子目录 12 stub）+ 修正 5 处旧链接 + 8 篇补跨分类互链；9 篇均 ≥2 内链 | ✅ commit accc5dc；本地领先 33 |
 | 2026-07-26 | Phase 4.1g | JS/HTML 参考手册页：确认两 index 均有 DocCardList + 底部分页；为两 index 补「延伸阅读」轻量互链（JS↔HTML 互指 + 数据结构与算法/计算机科学导论） | ✅ commit（本地领先 35） |
 | 2026-07-26 | Phase 4.2 | 补「软件工程与后端」顶层 index.mdx（消除破窗）+ 删 _category_ link 块消 duplicate routes + 工程实践 sidebar_position 0→1；落地页「六大方向」升级为卡片网格（kb-card-grid + @docusaurus/Link，@theme/Card 未注册改用 Link） | ✅ commit 27d839d；本地领先 36 |
+| 2026-07-26 | Phase 5.1 | content-audit 接 CI 固化零破窗门禁：脚本加 CI/--gate 门禁（仅 docs/docs 的 TODO/占位/待完善/未完成 标记阻断流水线，blog/docs/read 短文不计入）；updata.yml build job 注入审计 step（PR 与 main 均执行） | ✅ commit 1808fb3；本地领先 38 |
 
 ---
 
