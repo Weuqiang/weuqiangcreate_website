@@ -2,6 +2,7 @@
 tags: [科技]
 sidebar_position: 4
 title: 白帽子讲Web安全
+douban: https://book.douban.com/subject/36502703/
 ---
 
 :::tip
@@ -45,3 +46,11 @@ title: 白帽子讲Web安全
 
 对于网络安全专业人士来说，本书是一本不可多得的参考书；对于普通读者来说，本书也是一本很好的入门书籍，能够帮助他们建立起对Web安全的基本认识。
 :::
+
+## 📖 去哪读这本书
+
+> 本页为书评与摘要，书籍全文请阅读原书，尊重版权。
+
+- [豆瓣读书（精确页）](https://book.douban.com/subject/36502703/)
+- [微信读书搜索](https://weread.qq.com/search?keyword=白帽子讲Web安全)
+- [国家图书馆 OPAC 检索](https://opac.nlc.cn/search?q=白帽子讲Web安全)

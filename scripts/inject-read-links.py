@@ -48,7 +48,7 @@ def get_field(fm: str, key: str):
     return m.group(1).strip().strip('"').strip("'")
 
 
-def build_block(douban, isbn, clean_title):
+def build_block(douban, isbn, official, clean_title):
     lines = [
         "",
         MARKER,
@@ -56,6 +56,8 @@ def build_block(douban, isbn, clean_title):
         "> 本页为书评与摘要，书籍全文请阅读原书，尊重版权。",
         "",
     ]
+    if official:
+        lines.append(f"- [官方网站（免费在线阅读）]({official})")
     if douban:
         lines.append(f"- [豆瓣读书（精确页）]({douban})")
     elif isbn:
@@ -80,14 +82,15 @@ def main():
             continue
         douban = get_field(fm, "douban")
         isbn = get_field(fm, "isbn")
+        official = get_field(fm, "official")
         title = get_field(fm, "title") or os.path.splitext(os.path.basename(fp))[0]
         clean_title = strip_emoji(title)
-        if not douban and not isbn:
+        if not douban and not isbn and not official:
             if DRY:
-                print(f"[SKIP] {fp}  (frontmatter 无 douban/isbn)")
+                print(f"[SKIP] {fp}  (frontmatter 无 douban/isbn/official)")
             skipped += 1
             continue
-        block = build_block(douban, isbn, clean_title)
+        block = build_block(douban, isbn, official, clean_title)
         # 去掉旧区块（MARKER 起至文件末尾，因区块恒在最后）
         new_body = re.split(r"\n" + re.escape(MARKER) + r"\b", body)[0].rstrip() + "\n"
         new_raw = "---\n" + fm + "\n---\n" + new_body + block
