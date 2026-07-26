@@ -48,7 +48,7 @@ const stats = { roots: [], total: 0, stubMarkers: [], short: [], noAlt: [] };
 
 for (const r of ROOTS) {
   const files = walk(r.root);
-  const summary = { label: r.label, total: files.length, byDir: {} };
+  const summary = { label: r.label, total: files.length, byDir: {}, stubMarkers: [], short: [] };
   for (const f of files) {
     const raw = fs.readFileSync(f, "utf8");
     const { body } = parseFrontmatter(raw);
@@ -56,8 +56,8 @@ for (const r of ROOTS) {
     const rel = path.relative(path.join(__dirname, ".."), f).replace(/\\/g, "/");
     summary.byDir[rel.split("/")[0]] = (summary.byDir[rel.split("/")[0]] || 0) + 1;
     stats.total += 1;
-    if (words < 200) stats.short.push({ file: rel, words });
-    if (/(^|\s)(TODO|TBD|待完善|占位|未完成)(?=\s|$|，|。)/m.test(body)) stats.stubMarkers.push(rel);
+    if (words < 200) { stats.short.push({ file: rel, words }); summary.short.push({ file: rel, words }); }
+    if (/(^|\s)(TODO|TBD|待完善|占位|未完成)(?=\s|$|，|。)/m.test(body)) { stats.stubMarkers.push(rel); summary.stubMarkers.push(rel); }
     const imgs = [...body.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)];
     for (const im of imgs) {
       const alt = im[0].match(/!\[(.*?)\]/)[1].trim();
@@ -74,6 +74,8 @@ const fmt = (n, total) => (total ? `${n}（${((n / total) * 100).toFixed(1)}%）
 console.log("\n=== 内容健康度审计 ===");
 for (const s of stats.roots) console.log(`· ${s.label}: ${s.total} 篇  ${s.byDir ? "— " + s.byDir : ""}`);
 console.log(`\n总文章数：${stats.total}`);
+const kbSummary = stats.roots.find((r) => r.label === "docs/docs");
+if (kbSummary) console.log(`知识库 docs/docs → 未完成标记：${kbSummary.stubMarkers.length}  |  短文(<200字)：${kbSummary.short.length}`);
 console.log(`潜在占位（正文<200字）：${stats.short.length}  ${fmt(stats.short.length, stats.total)}`);
 console.log(`含 TODO/占位/待完善 标记：${stats.stubMarkers.length}  ${fmt(stats.stubMarkers.length, stats.total)}`);
 console.log(`图片无 alt 文本：${stats.noAlt.length}  ${fmt(stats.noAlt.length, stats.total)}`);
@@ -91,3 +93,18 @@ if (stats.noAlt.length) {
   stats.noAlt.slice(0, 10).forEach((x) => console.log(`  ${x.file}  ${x.src}`));
 }
 console.log("");
+
+// ---- 质量门禁（CI 或 --gate 模式）----
+// CI 环境变量由 GitHub Actions 默认注入；本地可用 `node scripts/content-audit.js --gate` 验证。
+const GATE = process.argv.includes("--gate") || process.env.CI === "true";
+if (GATE) {
+  const kb = stats.roots.find((r) => r.label === "docs/docs");
+  const kbStubs = kb ? kb.stubMarkers : [];
+  if (kbStubs.length > 0) {
+    console.error(`\n❌ CONTENT GATE FAILED: docs/docs 含 ${kbStubs.length} 个未完成标记（TODO/占位/待完善/未完成）：`);
+    kbStubs.forEach((f) => console.error("   - " + f));
+    process.exit(1);
+  }
+  console.log("✅ CONTENT GATE PASSED: docs/docs 零未完成标记（零破窗），审计通过。");
+  process.exit(0);
+}
