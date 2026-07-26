@@ -142,7 +142,7 @@ description: 一句话说明本文解决什么、学完能做什么
 - [✅] 4.1d AI 18 篇互链（大模型 index+7内容 / 机器学习 4内容 / 经典神经网络 / 序列处理 index+2内容 / 网格数据 index+LeNet-5；规避特殊目录名"大模型(LLM)与应用"仅内部向外链，commit 7fe4fdc）
 - [✅] 4.1e 开发工具链 5 篇互链（Markdown→YAML→Git→Terminal→Docker 相邻闭环 + 跨一级分类对照 ../../../编程语言/C，commit 9faa47a）
 - [✅] 4.1f 数据结构与算法：先删 4 个遗留子目录 stub（与 Phase 2.0 的 9 篇 flat 教程重复，破窗）+ 修正 5 处跨文件旧链接 + 为 8 篇补跨分类延伸阅读（Python 入门/数学图论/AI 分类算法），9 篇均 ≥2 内链（commit accc5dc）
-- [⏳] 4.1g JS/HTML 参考手册页（依赖 DocCardList，可选轻量"相关"）
+- [✅] 4.1g JS/HTML 参考手册页：确认 JS/HTML index 均有 `<DocCardList />`（可达性层 1）+ Docusaurus 底部分页（层 3）；为两 index 补「延伸阅读」轻量互链（JS↔HTML 互指 + 各链 数据结构与算法 / 计算机科学导论）。参考 leaf 页按设计不强制 延伸阅读，靠卡片+分页可达（commit 见下）
 - [⏳] 4.2 落地页与各 index 的"学习路径"可视化收尾
 
 ### Phase 5 — 质量门禁与发布
@@ -180,6 +180,7 @@ description: 一句话说明本文解决什么、学完能做什么
 | 2026-07-26 | Phase 4.1d | AI 18 篇补语义互链（规避特殊目录名"大模型(LLM)与应用"仅内部向外链；修正"返回AI总览"多写段名的 bug） | ✅ commit 7fe4fdc；本地领先 29 |
 | 2026-07-26 | Phase 4.1e | 开发工具链 5 篇补语义互链（相邻闭环 + 跨一级分类对照；修复兄弟链接漏 ../ 与返回目录无 index 不可链两坑） | ✅ commit 9faa47a；本地领先 31 |
 | 2026-07-26 | Phase 4.1f | 数据结构与算法去重（删 4 子目录 12 stub）+ 修正 5 处旧链接 + 8 篇补跨分类互链；9 篇均 ≥2 内链 | ✅ commit accc5dc；本地领先 33 |
+| 2026-07-26 | Phase 4.1g | JS/HTML 参考手册页：确认两 index 均有 DocCardList + 底部分页；为两 index 补「延伸阅读」轻量互链（JS↔HTML 互指 + 数据结构与算法/计算机科学导论） | ✅ commit（本地领先 35） |
 
 ---
 
