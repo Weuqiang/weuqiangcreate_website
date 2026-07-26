@@ -29,11 +29,11 @@ const config = {
   projectName: websitename,
   deploymentBranch: "gh-pages",
   trailingSlash: true,
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'throw',
   markdown: {
     mermaid: true,
     hooks: {
-      onBrokenMarkdownLinks: 'warn',
+      onBrokenMarkdownLinks: 'throw',
     },
   },
   i18n: {
