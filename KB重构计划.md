@@ -185,6 +185,7 @@ description: 一句话说明本文解决什么、学完能做什么
 | 2026-07-26 | Phase 5.1 | content-audit 接 CI 固化零破窗门禁：脚本加 CI/--gate 门禁（仅 docs/docs 的 TODO/占位/待完善/未完成 标记阻断流水线，blog/docs/read 短文不计入）；updata.yml build job 注入审计 step（PR 与 main 均执行） | ✅ commit 1808fb3；本地领先 38 |
 | 2026-07-26 | 杂项 | 清理根目录旧计划(1cf67f6)；onBrokenLinks/onBrokenMarkdownLinks 改 throw 硬化门禁，根治 4.2 静默断链回归(0387aa3) | 本地领先 41 |
 | 2026-07-26 | 书架·去哪读 | 逐篇精准「去哪读这本书」入口：自我成长12(cd85f6e)/社科历史14(c76cd21)/科学技术8(5d0ca6d，inject 脚本加 official 字段支持官网即原书的免费在线书如《弹性网页设计》)；累计 34/70 | 本地领先 44 |
+| 2026-07-26 | 书架·去哪读 | 文学小说 35 本补入口（agent 批量查豆瓣精确页 + 防黏行脚本注入；修正 2 本 `---` 尾随空格致 frontmatter 解析失败）；书架去哪读入口 69/69 书评全部完成 | ✅ commit 138c167；本地领先 46 |
 
 ---
 
