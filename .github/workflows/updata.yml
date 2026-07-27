@@ -37,6 +37,9 @@ jobs:
       - name: Build website
         run: npm run build
 
+      - name: Verify internal links (catch onBrokenLinks-missed dead links)
+        run: node scripts/check-internal-links.js
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

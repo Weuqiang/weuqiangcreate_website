@@ -26,6 +26,7 @@
     "build": "docusaurus build",
     "prebuild": "node scripts/gen-recent.js",
     "postbuild": "node scripts/strip-null-bytes.js",
+    "check:links": "node scripts/check-internal-links.js",
     "build:analyze": "npm run build -- --bundle-analyzer",
     "swizzle": "docusaurus swizzle",
     "deploy": "GIT_USER=Weuqiang docusaurus deploy",
