@@ -12,7 +12,7 @@ const darkCodeTheme = prismThemes.dracula;
 const username = "魏强";
 const websitename = "weuqiangcreate_website";
 const githubusername = "Weuqiang";
-const siteTitle = "魏强的知识花园";
+const siteTitle = "知识花园";
 
 const websiteurl = `https://${githubusername}.github.io`;
 const githubuserRepository = `${githubusername}.github.io`;
@@ -179,7 +179,7 @@ const config = {
     navbar: {
       title: "",
       logo: {
-        alt: "魏强的知识花园",
+        alt: "知识花园",
         src: "img/logo.svg",
         width: 32,
         height: 32,
