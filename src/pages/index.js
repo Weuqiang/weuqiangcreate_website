@@ -8,33 +8,6 @@ import recentPosts from "@site/src/data/recent-posts.json";
 import recentBooks from "@site/src/data/recent-books.json";
 import styles from "./index.module.css";
 
-/* ---------- 内联线性图标（随主题色 currentColor） ---------- */
-function Icon({ name }) {
-  const common = {
-    width: 20, height: 20, viewBox: "0 0 24 24",
-    fill: "none", stroke: "currentColor",
-    strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round",
-  };
-  switch (name) {
-    case "docs": return (<svg {...common}><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13 5l-2 14" /></svg>);
-    case "books": return (<svg {...common}><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H11v15H5.5A2.5 2.5 0 0 0 3 20.5zM21 5.5A2.5 2.5 0 0 0 18.5 3H13v15h5.5a2.5 2.5 0 0 1 2.5 2.5z" /></svg>);
-    case "pen": return (<svg {...common}><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>);
-    case "case": return (<svg {...common}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /></svg>);
-    case "image": return (<svg {...common}><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9.5" r="1.6" /><path d="M21 16l-5-5-7 7" /></svg>);
-    case "user": return (<svg {...common}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>);
-    default: return null;
-  }
-}
-
-const quickLinks = [
-  { icon: "docs", label: "开发知识库", to: "/docs" },
-  { icon: "books", label: "书架", to: "/read" },
-  { icon: "pen", label: "博文", to: "/blog/archive" },
-  { icon: "case", label: "个案", to: "/case" },
-  { icon: "image", label: "相簿", to: "/gallery" },
-  { icon: "user", label: "关于", to: "/about" },
-];
-
 const domains = [
   { title: "编程外的基础", desc: "计算机科学导论、数据结构与算法、开发工具链——先建立全局地图。", to: "/docs/编程外的基础/" },
   { title: "数学基础", desc: "线性代数、微积分、概率统计、离散数学——AI 与算法的底层语言。", to: "/docs/数学基础/" },
@@ -124,22 +97,6 @@ function Hero() {
         </aside>
       </div>
     </header>
-  );
-}
-
-function QuickNav() {
-  return (
-    <nav className={styles.quickNav} aria-label="快速导航">
-      <div className={styles.quickNavInner}>
-        <span className={styles.quickHint}>现在想去——</span>
-        {quickLinks.map((q) => (
-          <Link key={q.to} to={q.to} className={styles.quickPill}>
-            <span className={styles.quickIcon}><Icon name={q.icon} /></span>
-            {q.label}
-          </Link>
-        ))}
-      </div>
-    </nav>
   );
 }
 
@@ -264,7 +221,6 @@ export default function Home() {
       description="魏强的个人知识花园：编程、数学、AI、软工、嵌入式与读书笔记的系统整理。"
     >
       <Hero />
-      <QuickNav />
       <main>
         <KnowledgeMap />
         <NowSection />

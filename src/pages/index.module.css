@@ -194,52 +194,6 @@
   50% { transform: rotate(2.4deg); }
 }
 
-/* ============ 快速导航 ============ */
-.quickNav {
-  background: var(--paper-2);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-.quickNavInner {
-  max-width: 1140px;
-  margin: 0 auto;
-  padding: 0.95rem 1.6rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.65rem;
-}
-.quickHint {
-  font-family: var(--font-serif);
-  font-size: 0.95rem;
-  color: var(--ink-soft);
-  margin-right: 0.4rem;
-}
-.quickPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink);
-  font-weight: 500;
-  font-size: 0.94rem;
-  text-decoration: none;
-  transition: all 0.22s ease;
-}
-.quickPill:hover {
-  border-color: var(--ifm-color-primary);
-  color: var(--ifm-color-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-.quickIcon {
-  display: inline-flex;
-  color: var(--ifm-color-primary);
-}
-
 /* ============ 通用 section ============ */
 .section {
   padding: clamp(3.6rem, 7.5vw, 6rem) 0;
