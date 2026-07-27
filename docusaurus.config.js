@@ -177,7 +177,7 @@ const config = {
       defaultLanguage: "markdown",
     },
     navbar: {
-      title: siteTitle,
+      title: "",
       logo: {
         alt: "魏强的知识花园",
         src: "img/logo.svg",
@@ -186,6 +186,12 @@ const config = {
       },
       hideOnScroll: false,
       items: [
+        {
+          type: "html",
+          position: "left",
+          className: "navbar-hint",
+          value: "现在想去——",
+        },
         {
           to: "/",
           position: "left",

@@ -225,6 +225,19 @@ a:hover {
   color: #fff;
 }
 
+/* 导航栏左侧「现在想去——」提示词（与 pill 同排，作为全站统一导航前缀） */
+.navbar-hint {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.55rem;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  user-select: none;
+}
+
 /* ---------- 按钮 ---------- */
 .button--primary {
   background: var(--ifm-color-primary);
