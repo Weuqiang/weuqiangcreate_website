@@ -4,8 +4,10 @@
 //   1) 构建期注入的死链（如中文侧边栏 category 链接被插入 \x00 字节）；
 //   2) 源文件存在、但产物页根本没生成 / 路径被污染（如单个中文路径页在 CI 上
 //      因 null 字节导致路由缺失，而恰好没有别的页链接指向它 → 传统链接校验发现不了）；
-//   3) build 内任何目录或文件路径含 \x00（路由会被污染，Docusaurus 中文路径已知 bug）。
-// 退出码：发现坏链 / 空字节 / 源产物缺失 / 路径空字节 → 1；全通过 → 0。
+//   3) build 内任何目录或文件路径含 \x00（路由会被污染，Docusaurus 中文路径已知 bug）；
+//   4) 含 _category_.json 的分类目录缺落地页（无 index 文件且未声明 generated-index 链接）
+//      → 该分类裸 URL 及子页面面包屑链接线上 404（如「深度学习」曾集体 404）。
+// 退出码：发现坏链 / 空字节 / 源产物缺失 / 路径空字节 / 分类缺落地页 → 1；全通过 → 0。
 
 const fs = require("fs");
 const path = require("path");
@@ -110,6 +112,33 @@ function checkBuildPathNulls() {
   return bad;
 }
 
+// 分类索引完整性（源侧校验，无需 build）：任何含 _category_.json 的分类目录，
+// 必须自身有 index.md/index.mdx，或其 _category_.json 声明了 generated-index 链接；
+// 否则该分类的裸 URL（及子页面面包屑指向它的链接）线上会 404。
+// 这正是「深度学习」等分类曾集体 404 的根因——Docusaurus 不会为无落地页的分类生成页面。
+function checkCategoryIndexCompleteness() {
+  const gaps = [];
+  for (const cfg of SOURCE_CONFIG) {
+    const srcDir = cfg.src;
+    if (!fs.existsSync(srcDir)) continue;
+    for (const ent of walkAll(srcDir).dirs) {
+      const cat = path.join(ent, "_category_.json");
+      if (!fs.existsSync(cat)) continue;
+      const files = fs.readdirSync(ent);
+      const hasIndex = files.some((f) => /^index\.mdx?$/.test(f));
+      let hasGen = false;
+      try {
+        const d = JSON.parse(fs.readFileSync(cat, "utf8"));
+        hasGen = d.link && d.link.type === "generated-index";
+      } catch (_) {}
+      if (!hasIndex && !hasGen) {
+        gaps.push(path.relative(process.cwd(), ent));
+      }
+    }
+  }
+  return gaps;
+}
+
 // 统计源页面总数（用于报告）
 function countSourcePages() {
   let n = 0;
@@ -126,7 +155,17 @@ function countSourcePages() {
 }
 
 function main() {
+  // 源侧分类索引完整性校验（不依赖 build，先跑，能独立拦住「缺落地页」类回归）
+  const catGaps = checkCategoryIndexCompleteness();
+
   if (!fs.existsSync(ROOT)) {
+    if (catGaps.length > 0) {
+      console.error(
+        `[check-links] ❌ 分类缺落地页 ${catGaps.length} 个（无 index 文件且未声明 generated-index）：`
+      );
+      for (const g of catGaps) console.error(`  CATEGORY-NO-INDEX: ${g}`);
+      process.exit(1);
+    }
     console.error("[check-links] 找不到 build/ 目录，请先 npm run build");
     process.exit(1);
   }
@@ -192,18 +231,22 @@ function main() {
   const pathNulls = checkBuildPathNulls();
 
   const ok =
-    broken.size === 0 && nullHits === 0 && missing.length === 0 && pathNulls.length === 0;
+    broken.size === 0 &&
+    nullHits === 0 &&
+    missing.length === 0 &&
+    pathNulls.length === 0 &&
+    catGaps.length === 0;
 
   if (ok) {
     console.log(
       `[check-links] ✅ 通过：扫描 ${htmls.length} 个 HTML，内部链接全部有效，` +
-        `源→产物 ${countSourcePages()} 页齐全，无空字节残留`
+        `源→产物 ${countSourcePages()} 页齐全，分类落地页齐全，无空字节残留`
     );
     process.exit(0);
   }
 
   console.error(
-    `[check-links] ❌ 坏链 ${broken.size} 个 / 空字节 ${nullHits} 处 / 缺产物页 ${missing.length} 个 / 路径空字节 ${pathNulls.length} 处`
+    `[check-links] ❌ 坏链 ${broken.size} 个 / 空字节 ${nullHits} 处 / 缺产物页 ${missing.length} 个 / 路径空字节 ${pathNulls.length} 处 / 分类缺落地页 ${catGaps.length} 个`
   );
   for (const [url, files] of broken) {
     console.error(`  BROKEN: ${url}`);
@@ -214,6 +257,9 @@ function main() {
   }
   for (const p of pathNulls) {
     console.error(`  NULL-PATH: ${p}`);
+  }
+  for (const g of catGaps) {
+    console.error(`  CATEGORY-NO-INDEX: ${g}`);
   }
   process.exit(1);
 }
