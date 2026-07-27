@@ -508,3 +508,95 @@
     transition: none !important;
   }
 }
+
+/* ============ 知识图谱（SVG 交互网络） ============ */
+.kgStage {
+  max-width: 960px;
+  margin: 0.6rem auto 0;
+}
+.kgSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.kgEdge {
+  stroke: var(--ifm-color-emphasis-300);
+  stroke-width: 1.6;
+  fill: none;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: kgDraw 0.7s ease forwards;
+  transition: stroke 0.2s ease, opacity 0.2s ease;
+}
+.kgEdgeCross {
+  stroke: var(--ifm-color-emphasis-400);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 5;
+  stroke-dashoffset: 0;
+  opacity: 0;
+  animation: kgFade 0.7s ease forwards;
+  transition: stroke 0.2s ease, opacity 0.2s ease;
+}
+.kgEdgeDim {
+  opacity: 0.1 !important;
+  animation: none;
+  stroke-dashoffset: 0;
+}
+.kgNode {
+  cursor: pointer;
+  outline: none;
+  animation: kgFade 0.5s ease both;
+}
+.kgNode:focus-visible .kgDot {
+  stroke-width: 3.6;
+}
+.kgDot {
+  fill: var(--ifm-background-surface-color);
+  stroke-width: 2.4;
+  transition: fill 0.2s ease, stroke-width 0.2s ease;
+}
+.kgDotRoot {
+  fill: var(--ifm-color-primary);
+  stroke: var(--ifm-color-primary);
+}
+.kgLabel {
+  fill: var(--ifm-color-content);
+  font-family: var(--font-serif);
+  text-anchor: middle;
+  font-weight: 600;
+  pointer-events: none;
+  transition: fill 0.2s ease;
+}
+.kgLabelRoot {
+  fill: #fff;
+}
+.kgNodeHot .kgDot {
+  fill: var(--gc);
+  stroke-width: 3;
+}
+.kgNodeHot .kgLabel {
+  fill: #fff;
+}
+.kgNodeDim {
+  opacity: 0.32;
+}
+@keyframes kgDraw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes kgFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kgEdge,
+  .kgEdgeCross,
+  .kgNode {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+}
+@media (max-width: 560px) {
+  .kgLabel { font-size: 10px; }
+}

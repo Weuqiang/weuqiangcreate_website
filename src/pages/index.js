@@ -8,14 +8,91 @@ import recentPosts from "@site/src/data/recent-posts.json";
 import recentBooks from "@site/src/data/recent-books.json";
 import styles from "./index.module.css";
 
-const domains = [
-  { title: "编程外的基础", desc: "计算机科学导论、数据结构与算法、开发工具链——先建立全局地图。", to: "/docs/编程外的基础/" },
-  { title: "数学基础", desc: "线性代数、微积分、概率统计、离散数学——AI 与算法的底层语言。", to: "/docs/数学基础/" },
-  { title: "编程语言", desc: "Python / C / Web 前端 / Java / Go / Rust 多语言横向对比与选型。", to: "/docs/编程语言/" },
-  { title: "人工智能", desc: "机器学习、深度学习、大模型（LLM）与应用——从原理到落地。", to: "/docs/人工智能/" },
-  { title: "软件工程与后端", desc: "网络、数据库、API、架构、CI/CD、测试——做系统的通识。", to: "/docs/软件工程与后端/" },
-  { title: "嵌入式开发", desc: "硬件电路、单片机、RTOS 与固件——软硬结合的工程实践。", to: "/docs/嵌入式开发/" },
+/* ---------- 真实知识图谱：节点 + 连线（对应站点实际结构） ---------- */
+const GROUPS = {
+  root:  { color: "var(--ifm-color-primary)" },
+  ai:    { color: "#c1654b" },
+  lang:  { color: "#d99a4e" },
+  embed: { color: "#8a9a5b" },
+  math:  { color: "#5b9aa0" },
+  cs:    { color: "#9a6b8c" },
+  be:    { color: "#6b7faa" },
+};
+
+const NODES = [
+  { id: "root", label: "知识花园", to: "/", layer: 0, group: "root" },
+  // 六大领域（环一）
+  { id: "cs",    label: "编程外的基础", to: "/docs/编程外的基础/", layer: 1, group: "cs" },
+  { id: "math",  label: "数学基础",     to: "/docs/数学基础/",     layer: 1, group: "math" },
+  { id: "ai",    label: "人工智能",     to: "/docs/人工智能/",     layer: 1, group: "ai" },
+  { id: "lang",  label: "编程语言",     to: "/docs/编程语言/",     layer: 1, group: "lang" },
+  { id: "be",    label: "软件工程与后端", to: "/docs/软件工程与后端/", layer: 1, group: "be" },
+  { id: "embed", label: "嵌入式开发",   to: "/docs/嵌入式开发/",   layer: 1, group: "embed" },
+  // 子主题（环二）
+  { id: "cs-cs",    label: "计算机科学导论", to: "/docs/编程外的基础/计算机科学导论/", layer: 2, group: "cs", parent: "cs", side: -1 },
+  { id: "cs-tool",  label: "开发工具链",     to: "/docs/编程外的基础/开发工具链/",     layer: 2, group: "cs", parent: "cs", side: 1 },
+  { id: "math-la",  label: "线性代数",       to: "/docs/数学基础/线性代数/",   layer: 2, group: "math", parent: "math", side: -1 },
+  { id: "math-ps",  label: "概率与统计",     to: "/docs/数学基础/概率与统计/", layer: 2, group: "math", parent: "math", side: 1 },
+  { id: "ai-ml",    label: "机器学习",       to: "/docs/人工智能/机器学习/",   layer: 2, group: "ai", parent: "ai", side: -1 },
+  { id: "ai-llm",   label: "大模型",         to: "/docs/人工智能/大模型LLM与应用/", layer: 2, group: "ai", parent: "ai", side: 1 },
+  { id: "lang-py",  label: "Python",        to: "/docs/编程语言/Python/",   layer: 2, group: "lang", parent: "lang", side: -1 },
+  { id: "lang-rust",label: "Rust",          to: "/docs/编程语言/Rust/",     layer: 2, group: "lang", parent: "lang", side: 1 },
+  { id: "be-back",  label: "后端通识",       to: "/docs/软件工程与后端/后端通识/", layer: 2, group: "be", parent: "be", side: -1 },
+  { id: "be-arch",  label: "架构",           to: "/docs/软件工程与后端/",     layer: 2, group: "be", parent: "be", side: 1 },
+  { id: "embed-mcu",label: "单片机MCU",      to: "/docs/嵌入式开发/单片机MCU/", layer: 2, group: "embed", parent: "embed", side: -1 },
+  { id: "embed-net",label: "通信协议",       to: "/docs/嵌入式开发/通信协议/", layer: 2, group: "embed", parent: "embed", side: 1 },
 ];
+
+const EDGES = [
+  ["root", "cs"], ["root", "math"], ["root", "ai"], ["root", "lang"], ["root", "be"], ["root", "embed"],
+  ["cs", "cs-cs"], ["cs", "cs-tool"],
+  ["math", "math-la"], ["math", "math-ps"],
+  ["ai", "ai-ml"], ["ai", "ai-llm"],
+  ["lang", "lang-py"], ["lang", "lang-rust"],
+  ["be", "be-back"], ["be", "be-arch"],
+  ["embed", "embed-mcu"], ["embed", "embed-net"],
+  // 跨领域关联：让它成为「图」而非树
+  ["ai", "math"],   // 机器学习依赖数学
+  ["lang", "ai"],   // AI 多用 Python
+  ["lang", "be"],   // 后端用编程语言
+  ["embed", "lang"],// 嵌入式用 C/固件
+  ["cs", "be"],     // 计算机基础支撑后端
+];
+
+/* 布局：中心 + 两环（确定性，无需依赖） */
+const GW = 960, GH = 680, GCX = 480, GCY = 340, R1 = 158, R2 = 286;
+const domainIds = NODES.filter((n) => n.layer === 1).map((n) => n.id);
+const pos = {};
+NODES.forEach((n) => {
+  if (n.layer === 0) { pos[n.id] = { x: GCX, y: GCY }; return; }
+  if (n.layer === 1) {
+    const i = domainIds.indexOf(n.id);
+    const ang = ((-90 + i * 60) * Math.PI) / 180;
+    pos[n.id] = { x: GCX + R1 * Math.cos(ang), y: GCY + R1 * Math.sin(ang) };
+    return;
+  }
+  const p = pos[n.parent];
+  const base = Math.atan2(p.y - GCY, p.x - GCX);
+  const ang = base + (n.side || 0) * 0.32;
+  pos[n.id] = { x: GCX + R2 * Math.cos(ang), y: GCY + R2 * Math.sin(ang) };
+});
+
+const adj = {};
+NODES.forEach((n) => (adj[n.id] = new Set()));
+EDGES.forEach(([a, b]) => { adj[a].add(b); adj[b].add(a); });
+
+function edgePath(a, b) {
+  const p1 = pos[a], p2 = pos[b];
+  const isCross =
+    NODES.find((n) => n.id === a).layer === 1 && NODES.find((n) => n.id === b).layer === 1;
+  if (!isCross) return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
+  const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len, ny = dx / len;
+  const off = 52;
+  return `M${p1.x},${p1.y} Q${mx + nx * off},${my + ny * off} ${p2.x},${p2.y}`;
+}
 
 /* 近况：前两项取自真实数据；第三项「在想的事」可自由编辑 */
 const nowReading = recentBooks[0];
@@ -100,27 +177,82 @@ function Hero() {
   );
 }
 
-function KnowledgeMap() {
+function KnowledgeGraph() {
+  const [hover, setHover] = useState(null);
+  const active = hover ? new Set([hover, ...adj[hover]]) : null;
   return (
     <section className={clsx(styles.section)} data-reveal>
       <div className={styles.sectionHead}>
         <span className={styles.kicker}>知识图谱</span>
-        <h2 className={styles.sectionTitle}>六大知识领域</h2>
+        <h2 className={styles.sectionTitle}>知识的脉络</h2>
         <p className={styles.sectionLead}>
-          按「先打地基、再学语言、后做系统」的顺序生长，点进任意领域开始学习。
+          中心是这座花园，六条主干向外生长，叶节点是具体主题。悬停高亮关联，点击进入对应栏目。
         </p>
       </div>
-      <div className={styles.domainGrid}>
-        {domains.map((d, i) => (
-          <Link key={d.to} to={d.to} className={styles.domainCard} data-reveal>
-            <span className={styles.domainIndex}>{String(i + 1).padStart(2, "0")}</span>
-            <div className={styles.domainBody}>
-              <h3 className={styles.domainTitle}>{d.title}</h3>
-              <p className={styles.domainDesc}>{d.desc}</p>
-            </div>
-            <span className={styles.domainArrow} aria-hidden="true">→</span>
-          </Link>
-        ))}
+      <div className={styles.kgStage}>
+        <svg
+          className={styles.kgSvg}
+          viewBox={`0 0 ${GW} ${GH}`}
+          role="img"
+          aria-label="知识图谱：中心为知识花园，连接六大领域及其子主题"
+        >
+          <g className={styles.kgEdges}>
+            {EDGES.map(([a, b], i) => {
+              const isCross =
+                NODES.find((n) => n.id === a).layer === 1 &&
+                NODES.find((n) => n.id === b).layer === 1;
+              const on = !hover || a === hover || b === hover;
+              return (
+                <path
+                  key={i}
+                  d={edgePath(a, b)}
+                  className={clsx(styles.kgEdge, isCross && styles.kgEdgeCross, !on && styles.kgEdgeDim)}
+                  {...(isCross ? {} : { pathLength: 1 })}
+                  style={{ animationDelay: `${i * 35}ms` }}
+                />
+              );
+            })}
+          </g>
+          <g>
+            {NODES.map((n, i) => {
+              const p = pos[n.id];
+              const color = GROUPS[n.group].color;
+              const isActive = !hover || (active && active.has(n.id));
+              const r = n.layer === 0 ? 46 : n.layer === 1 ? 34 : 25;
+              const onRoot = n.layer === 0;
+              return (
+                <Link
+                  key={n.id}
+                  to={n.to}
+                  className={clsx(styles.kgNode, !isActive && styles.kgNodeDim, hover === n.id && styles.kgNodeHot)}
+                  aria-label={n.label}
+                  onMouseEnter={() => setHover(n.id)}
+                  onMouseLeave={() => setHover(null)}
+                  onFocus={() => setHover(n.id)}
+                  onBlur={() => setHover(null)}
+                  style={{ animationDelay: `${i * 28}ms`, ["--gc"]: color }}
+                >
+                  <circle cx={p.x} cy={p.y} r={r + 9} fill="transparent" />
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={r}
+                    className={clsx(styles.kgDot, onRoot && styles.kgDotRoot)}
+                    style={{ stroke: color }}
+                  />
+                  <text
+                    x={p.x}
+                    y={p.y + (onRoot ? 5 : n.layer === 1 ? 5 : 4)}
+                    className={clsx(styles.kgLabel, onRoot && styles.kgLabelRoot)}
+                    style={{ fontSize: onRoot ? 17 : n.layer === 1 ? 14 : 11.5 }}
+                  >
+                    {n.label}
+                  </text>
+                </Link>
+              );
+            })}
+          </g>
+        </svg>
       </div>
     </section>
   );
@@ -222,7 +354,7 @@ export default function Home() {
     >
       <Hero />
       <main>
-        <KnowledgeMap />
+        <KnowledgeGraph />
         <NowSection />
         <Latest />
         <Closing />
