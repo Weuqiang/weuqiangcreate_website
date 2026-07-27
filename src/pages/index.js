@@ -76,7 +76,7 @@ function Hero() {
             技术笔记、读书心得、文章与影像，按主题而非时间组织，方便随时回来续写。
           </p>
           <div className={styles.buttons}>
-            <Link className="button button--primary button--lg" to="/docs">逛逛知识地图</Link>
+            <Link className="button button--primary button--lg" to="/docs">逛逛知识图谱</Link>
             <Link className="button button--secondary button--lg" to="/about">关于我</Link>
           </div>
         </div>
@@ -104,7 +104,7 @@ function KnowledgeMap() {
   return (
     <section className={clsx(styles.section)} data-reveal>
       <div className={styles.sectionHead}>
-        <span className={styles.kicker}>知识地图</span>
+        <span className={styles.kicker}>知识图谱</span>
         <h2 className={styles.sectionTitle}>六大知识领域</h2>
         <p className={styles.sectionLead}>
           按「先打地基、再学语言、后做系统」的顺序生长，点进任意领域开始学习。
