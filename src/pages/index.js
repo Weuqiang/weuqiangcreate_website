@@ -22,15 +22,16 @@ const GROUPS = {
 const NODES = [
   { id: "root", label: "知识花园", to: "/", layer: 0, group: "root" },
   // 六大领域（环一）
-  { id: "cs",    label: "编程外的基础", to: "/docs/编程外的基础/", layer: 1, group: "cs" },
+  { id: "cs",    label: "计算机科学基础", to: "/docs/计算机科学基础/", layer: 1, group: "cs" },
   { id: "math",  label: "数学基础",     to: "/docs/数学基础/",     layer: 1, group: "math" },
   { id: "ai",    label: "人工智能",     to: "/docs/人工智能/",     layer: 1, group: "ai" },
   { id: "lang",  label: "编程语言",     to: "/docs/编程语言/",     layer: 1, group: "lang" },
   { id: "be",    label: "软件工程与后端", to: "/docs/软件工程与后端/", layer: 1, group: "be" },
   { id: "embed", label: "嵌入式开发",   to: "/docs/嵌入式开发/",   layer: 1, group: "embed" },
   // 子主题（环二）
-  { id: "cs-cs",    label: "计算机科学导论", to: "/docs/编程外的基础/计算机科学导论/", layer: 2, group: "cs", parent: "cs", side: -1 },
-  { id: "cs-tool",  label: "开发工具链",     to: "/docs/编程外的基础/开发工具链/",     layer: 2, group: "cs", parent: "cs", side: 1 },
+  { id: "cs-cs",    label: "计算机科学导论", to: "/docs/计算机科学基础/计算机科学导论/", layer: 2, group: "cs", parent: "cs", side: -1 },
+  { id: "cs-dsa",   label: "数据结构与算法", to: "/docs/计算机科学基础/数据结构与算法/", layer: 2, group: "cs", parent: "cs", side: 0 },
+  { id: "cs-tool",  label: "开发工具链",     to: "/docs/计算机科学基础/开发工具链/",     layer: 2, group: "cs", parent: "cs", side: 1 },
   { id: "math-la",  label: "线性代数",       to: "/docs/数学基础/线性代数/",   layer: 2, group: "math", parent: "math", side: -1 },
   { id: "math-ps",  label: "概率与统计",     to: "/docs/数学基础/概率与统计/", layer: 2, group: "math", parent: "math", side: 1 },
   { id: "ai-ml",    label: "机器学习",       to: "/docs/人工智能/机器学习/",   layer: 2, group: "ai", parent: "ai", side: -1 },
@@ -45,7 +46,7 @@ const NODES = [
 
 const EDGES = [
   ["root", "cs"], ["root", "math"], ["root", "ai"], ["root", "lang"], ["root", "be"], ["root", "embed"],
-  ["cs", "cs-cs"], ["cs", "cs-tool"],
+  ["cs", "cs-cs"], ["cs", "cs-dsa"], ["cs", "cs-tool"],
   ["math", "math-la"], ["math", "math-ps"],
   ["ai", "ai-ml"], ["ai", "ai-llm"],
   ["lang", "lang-py"], ["lang", "lang-rust"],
@@ -57,6 +58,8 @@ const EDGES = [
   ["lang", "be"],   // 后端用编程语言
   ["embed", "lang"],// 嵌入式用 C/固件
   ["cs", "be"],     // 计算机基础支撑后端
+  ["cs-dsa", "math"], // 算法依赖数学
+  ["cs-dsa", "lang"], // 算法用语言实现
 ];
 
 /* 布局：中心 + 两环（确定性，无需依赖） */
