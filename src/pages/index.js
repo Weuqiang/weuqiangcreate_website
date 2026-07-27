@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import clsx from "clsx";
 import Layout from "@theme/Layout";
 import Link from "@docusaurus/Link";
@@ -8,10 +8,10 @@ import recentPosts from "@site/src/data/recent-posts.json";
 import recentBooks from "@site/src/data/recent-books.json";
 import styles from "./index.module.css";
 
-/* ---------- 内联图标（随主题色 currentColor） ---------- */
+/* ---------- 内联线性图标（随主题色 currentColor） ---------- */
 function Icon({ name }) {
   const common = {
-    width: 22, height: 22, viewBox: "0 0 24 24",
+    width: 20, height: 20, viewBox: "0 0 24 24",
     fill: "none", stroke: "currentColor",
     strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round",
   };
@@ -44,38 +44,83 @@ const domains = [
   { title: "嵌入式开发", desc: "硬件电路、单片机、RTOS 与固件——软硬结合的工程实践。", to: "/docs/嵌入式开发/" },
 ];
 
+/* 近况：前两项取自真实数据；第三项「在想的事」可自由编辑 */
+const nowReading = recentBooks[0];
+const nowWriting = recentPosts[0];
+
+const rotating = ["笔记", "代码", "思考", "生活"];
+
+/* 滚动入场动画（无 JS / 减弱动效时直接显示） */
+function useReveal() {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("js");
+    const els = Array.from(document.querySelectorAll("[data-reveal]"));
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || !("IntersectionObserver" in window)) {
+      els.forEach((el) => el.classList.add(styles.revealIn));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add(styles.revealIn);
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
+
 function Hero() {
   const { siteConfig } = useDocusaurusContext();
+  const [wi, setWi] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setWi((v) => (v + 1) % rotating.length), 2300);
+    return () => clearInterval(t);
+  }, []);
   return (
     <header className={styles.hero}>
+      <div className={styles.heroGlow} aria-hidden="true" />
       <div className={styles.heroInner}>
         <div className={styles.heroText}>
-          <span className={styles.eyebrow}>笔记 · 代码 · 思考 · 生活</span>
-          <h1 className={styles.title}>
-            {siteConfig.title}
-          </h1>
-          <p className={styles.tagline}>{siteConfig.tagline}</p>
+          <span className={styles.eyebrow}>
+            <span className={styles.eyebrowFix}>一座关于</span>
+            <span className={styles.eyebrowRotate} key={wi}>{rotating[wi]}</span>
+            <span className={styles.eyebrowFix}>的花园</span>
+          </span>
+          <h1 className={styles.title}>{siteConfig.title}</h1>
+          <p className={styles.manifesto}>
+            把零散的念头，种成一座<em>慢慢生长</em>的花园。
+          </p>
           <p className={styles.lede}>
-            这里收集我把「学过的东西真正弄懂」的过程——技术笔记、读书心得、文章与影像，
-            按<em>主题</em>而非时间组织，方便随时回来查阅与续写。
+            我是魏强。这里收着我「把学过的东西真正弄懂」的过程——
+            技术笔记、读书心得、文章与影像，按主题而非时间组织，方便随时回来续写。
           </p>
           <div className={styles.buttons}>
-            <Link className="button button--primary button--lg" to="/docs">
-              开始探索
-            </Link>
-            <Link className="button button--secondary button--lg" to="/blog/archive">
-              阅读博客
-            </Link>
+            <Link className="button button--primary button--lg" to="/docs">逛逛知识地图</Link>
+            <Link className="button button--secondary button--lg" to="/about">关于我</Link>
           </div>
         </div>
         <aside className={styles.heroAside} aria-hidden="true">
-          <div className={styles.seal}>
-            <span className={styles.sealChar}>魏</span>
-            <span className={styles.sealRing} />
+          <div className={styles.emblem}>
+            <span className={styles.ringOuter} />
+            <span className={styles.seal}>
+              <span className={styles.sealChar}>魏</span>
+            </span>
+            <span className={styles.ringInner} />
           </div>
-          <p className={styles.sealQuote}>
-            「终身学习，<br />持续成长。」
-          </p>
+          <svg className={styles.sprout} viewBox="0 0 120 170" fill="none">
+            <path d="M60 168 V92" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+            <path d="M60 116 C60 92 36 86 22 92 C36 102 54 110 60 116Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+            <path d="M60 104 C60 80 86 74 102 82 C88 92 66 98 60 104Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+            <circle cx="60" cy="80" r="4.5" stroke="currentColor" strokeWidth="2.2" />
+          </svg>
         </aside>
       </div>
     </header>
@@ -86,6 +131,7 @@ function QuickNav() {
   return (
     <nav className={styles.quickNav} aria-label="快速导航">
       <div className={styles.quickNavInner}>
+        <span className={styles.quickHint}>现在想去——</span>
         {quickLinks.map((q) => (
           <Link key={q.to} to={q.to} className={styles.quickPill}>
             <span className={styles.quickIcon}><Icon name={q.icon} /></span>
@@ -99,17 +145,17 @@ function QuickNav() {
 
 function KnowledgeMap() {
   return (
-    <section className={styles.section}>
+    <section className={clsx(styles.section)} data-reveal>
       <div className={styles.sectionHead}>
         <span className={styles.kicker}>知识地图</span>
         <h2 className={styles.sectionTitle}>六大知识领域</h2>
         <p className={styles.sectionLead}>
-          按「先打地基、再学语言、后做系统」的顺序组织，点进任意领域开始学习。
+          按「先打地基、再学语言、后做系统」的顺序生长，点进任意领域开始学习。
         </p>
       </div>
       <div className={styles.domainGrid}>
         {domains.map((d, i) => (
-          <Link key={d.to} to={d.to} className={styles.domainCard}>
+          <Link key={d.to} to={d.to} className={styles.domainCard} data-reveal>
             <span className={styles.domainIndex}>{String(i + 1).padStart(2, "0")}</span>
             <div className={styles.domainBody}>
               <h3 className={styles.domainTitle}>{d.title}</h3>
@@ -123,17 +169,46 @@ function KnowledgeMap() {
   );
 }
 
+function NowSection() {
+  return (
+    <section className={clsx(styles.section, styles.nowSection)} data-reveal>
+      <div className={styles.sectionHead}>
+        <span className={styles.kicker}>近况</span>
+        <h2 className={styles.sectionTitle}>这座花园，现在长这样</h2>
+      </div>
+      <div className={styles.nowGrid}>
+        <div className={styles.nowCard} data-reveal>
+          <span className={styles.nowTag}>最近在读</span>
+          <Link to={nowReading.permalink} className={styles.nowTitle}>{nowReading.title}</Link>
+          <span className={styles.nowMeta}>{nowReading.genre}</span>
+        </div>
+        <div className={styles.nowCard} data-reveal>
+          <span className={styles.nowTag}>最近在写</span>
+          <Link to={nowWriting.permalink} className={styles.nowTitle}>{nowWriting.title}</Link>
+          <span className={styles.nowMeta}>{nowWriting.date}</span>
+        </div>
+        <div className={styles.nowCard} data-reveal>
+          <span className={styles.nowTag}>在想的事</span>
+          <p className={styles.nowThink}>
+            如何把「学过」真正变成「会用」——这座花园想回答的，就是这个问题。
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Latest() {
   const posts = recentPosts.slice(0, 5);
   const books = recentBooks.slice(0, 6);
   return (
-    <section className={clsx(styles.section, styles.sectionAlt)}>
+    <section className={clsx(styles.section, styles.sectionAlt)} data-reveal>
       <div className={styles.sectionHead}>
         <span className={styles.kicker}>最近更新</span>
         <h2 className={styles.sectionTitle}>新写的与新读的</h2>
       </div>
       <div className={styles.latestGrid}>
-        <div className={styles.latestCol}>
+        <div className={styles.latestCol} data-reveal>
           <h3 className={styles.colTitle}>最新文章</h3>
           <ul className={styles.postList}>
             {posts.map((p) => (
@@ -145,7 +220,7 @@ function Latest() {
           </ul>
           <Link className={styles.colMore} to="/blog/archive">查看全部博文 →</Link>
         </div>
-        <div className={styles.latestCol}>
+        <div className={styles.latestCol} data-reveal>
           <h3 className={styles.colTitle}>最近读过的书</h3>
           <ul className={styles.bookList}>
             {books.map((b) => (
@@ -165,12 +240,12 @@ function Latest() {
 function Closing() {
   const rss = useBaseUrl("/blog/rss.xml");
   return (
-    <section className={styles.closing}>
+    <section className={styles.closing} data-reveal>
       <div className={styles.closingInner}>
-        <p className={styles.closingKicker}>关于这座花园</p>
+        <span className={styles.closingKicker}>慢慢相遇</span>
         <p className={styles.closingText}>
-          我叫魏强，一名相信「持续积累」的开发者。技术、数学、阅读与生活，
-          都在这里慢慢生长。欢迎随意漫步，也欢迎纠错与建议。
+          知识不是囤积，而是一次次回来、续写与重逢。<br />
+          欢迎随意漫步这座花园，也欢迎纠错与建议。
         </p>
         <div className={styles.buttons}>
           <Link className="button button--primary button--lg" to="/about">了解更多</Link>
@@ -182,6 +257,7 @@ function Closing() {
 }
 
 export default function Home() {
+  useReveal();
   return (
     <Layout
       title="首页"
@@ -191,6 +267,7 @@ export default function Home() {
       <QuickNav />
       <main>
         <KnowledgeMap />
+        <NowSection />
         <Latest />
         <Closing />
       </main>
