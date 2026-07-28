@@ -14,21 +14,21 @@ import "yet-another-react-lightbox/plugins/captions.css";
 import styles from "./gallery.module.css";
 
 const unsplashPhotos = [
-  { id: "anime-1", width: 1536, height: 1024, title: "动漫", description: "梦幻天空城" },
-  { id: "anime-2", width: 1536, height: 1024, title: "动漫", description: "樱花神社" },
-  { id: "anime-3", width: 1536, height: 1024, title: "动漫", description: "海滨小镇黄昏" },
-  { id: "anime-4", width: 1536, height: 1024, title: "动漫", description: "霓虹梦幻港湾" },
-  { id: "anime-5", width: 1536, height: 1024, title: "动漫", description: "薰衣草田极光" },
-  { id: "guofeng-1", width: 1536, height: 1024, title: "国风", description: "水墨山水" },
-  { id: "guofeng-2", width: 1536, height: 1024, title: "国风", description: "秋枫水亭" },
-  { id: "guofeng-3", width: 1536, height: 1024, title: "国风", description: "雪峰寒月" },
-  { id: "guofeng-4", width: 1536, height: 1024, title: "国风", description: "竹溪白鹤" },
-  { id: "guofeng-5", width: 1536, height: 1024, title: "国风", description: "荷塘石桥" },
-  { id: "neon-1", width: 1536, height: 1024, title: "吸睛", description: "霓虹渐变" },
-  { id: "neon-2", width: 1536, height: 1024, title: "吸睛", description: "液态铬幻彩" },
-  { id: "neon-3", width: 1536, height: 1024, title: "吸睛", description: "波普几何" },
-  { id: "neon-4", width: 1536, height: 1024, title: "吸睛", description: "星云漩涡" },
-  { id: "neon-5", width: 1536, height: 1024, title: "吸睛", description: "极光山脉" },
+  { id: "guofeng-1", width: 1600, height: 1066, title: "国风", description: "青绿山水" },
+  { id: "guofeng-2", width: 1545, height: 1219, title: "国风", description: "任熊·拾得图（清）" },
+  { id: "guofeng-3", width: 1600, height: 1142, title: "国风", description: "云山千里" },
+  { id: "guofeng-4", width: 1600, height: 1066, title: "国风", description: "古刹秋色" },
+  { id: "guofeng-5", width: 1600, height: 1066, title: "国风", description: "烟雨楼台" },
+  { id: "cosmic-1", width: 1600, height: 775, title: "星空", description: "船底座星云（NASA/Hubble）" },
+  { id: "cosmic-2", width: 1600, height: 1600, title: "星空", description: "上帝之眼·螺旋星云" },
+  { id: "cosmic-3", width: 1600, height: 1600, title: "星空", description: "创生之柱（NASA/Hubble）" },
+  { id: "cosmic-4", width: 1600, height: 1389, title: "星空", description: "深空星系（NASA/JPL）" },
+  { id: "cosmic-5", width: 1600, height: 1600, title: "星空", description: "蟹状星云（Hubble）" },
+  { id: "nature-1", width: 1600, height: 1067, title: "风景", description: "极光之夜" },
+  { id: "nature-2", width: 1600, height: 1066, title: "风景", description: "山涧飞瀑" },
+  { id: "nature-3", width: 1600, height: 724, title: "风景", description: "湖岸极光" },
+  { id: "nature-4", width: 1600, height: 1064, title: "风景", description: "秋林光影" },
+  { id: "nature-5", width: 1600, height: 1015, title: "风景", description: "银河夜空" },
 ];
 
 const uniqueTitlesSet = new Set(unsplashPhotos.map((photo) => photo.title)).add("全选");
@@ -161,7 +161,7 @@ function GalleryContent() {
         <span className={styles.pageEyebrow}>影像</span>
         <h1 className={styles.pageTitle}>相册</h1>
         <p className={styles.pageLead}>
-          一组可用作桌面背景的 AI 壁纸——动漫、国风、吸睛三主题。按主题筛选，按行/按列/动态三种布局切换，点击放大全屏欣赏。
+          一组从全网搜集的真实壁纸——国风（中国画/古风摄影）、星空（Hubble 星云）、风景（极光/银河/山林），均来自 Wikimedia Commons 的自由授权图库（公共领域 / CC BY / CC BY-SA）。按主题筛选，按行/按列/动态三种布局切换，点击放大全屏欣赏。
         </p>
       </header>
       <Settings>
