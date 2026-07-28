@@ -17,6 +17,8 @@ const siteTitle = "知识花园";
 const websiteurl = `https://${githubusername}.github.io`;
 const githubuserRepository = `${githubusername}.github.io`;
 const githuborgurl = `https://github.com/${githubusername}/${websitename}`;
+// 与下方 baseUrl 字段保持一致：dev 为根路径，部署到 GitHub Pages 项目路径为 /weuqiangcreate_website/
+const baseUrl = process.env.NODE_ENV === 'development' ? '/' : '/weuqiangcreate_website/';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -24,7 +26,7 @@ const config = {
   tagline: "终身学习，持续成长",
   favicon: "img/logo.svg",
   url: websiteurl,
-  baseUrl: process.env.NODE_ENV === 'development' ? '/' : '/weuqiangcreate_website/',
+  baseUrl: baseUrl,
   organizationName: githubusername,
   projectName: websitename,
   deploymentBranch: "gh-pages",
@@ -144,7 +146,7 @@ const config = {
     announcementBar: {
       id: "kb-2026-q3",
       content:
-        '🌱 知识花园持续生长中——欢迎在页脚或邮件纠错与建议。最近更新：<a href="/about">关于本站</a> · <a href="/blog/archive">最新博文</a>',
+        `🌱 知识花园持续生长中——欢迎在页脚或邮件纠错与建议。最近更新：<a href="${baseUrl}about">关于本站</a> · <a href="${baseUrl}blog/archive">最新博文</a>`,
       backgroundColor: "var(--highlight-color)",
       textColor: "var(--ink)",
       isCloseable: true,
@@ -235,7 +237,7 @@ const config = {
           type: "html",
           position: "right",
           className: "navbar-rss-link",
-          value: '<a href="/blog/rss.xml" target="_blank" rel="noopener noreferrer" title="RSS 订阅">RSS</a>',
+          value: `<a href="${baseUrl}blog/rss.xml" target="_blank" rel="noopener noreferrer" title="RSS 订阅">RSS</a>`,
         },
       ],
     },
