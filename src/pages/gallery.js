@@ -14,34 +14,18 @@ import "yet-another-react-lightbox/plugins/captions.css";
 import styles from "./gallery.module.css";
 
 const unsplashPhotos = [
-  { id: "2021072", width: 1080, height: 1077, title: "广东", description: "塘朗山的花" },
-  { id: "2021073", width: 4032, height: 3024, title: "广东", description: "塘朗山的山顶" },
-  { id: "2021076", width: 4524, height: 2112, title: "广东", description: "东宝大厦的双彩虹" },
-  { id: "2021077", width: 1920, height: 923, title: "广东", description: "深圳的主干道" },
-  { id: "2021079", width: 1440, height: 1080, title: "广东", description: "南山区的堡垒云" },
-  { id: "2022081", width: 1422, height: 799, title: "上海", description: "上海白天的月亮" },
-  { id: "2022082", width: 2738, height: 1280, title: "上海", description: "全景下红蓝分裂的天空" },
-  { id: "2022083", width: 1664, height: 935, title: "上海", description: "上海的晚霞" },
-  { id: "2022084", width: 1664, height: 935, title: "上海", description: "上海的公园" },
-  { id: "20230705092938", width: 1920, height: 1080, title: "甘肃", description: "中山桥" },
-  { id: "20230705092949", width: 3188, height: 1792, title: "上海", description: "上海金色的晚霞" },
-  { id: "20230705093600", width: 2268, height: 1168, title: "浙江", description: "嵊泗岛的路牌" },
-  { id: "20230705093711", width: 4032, height: 2268, title: "浙江", description: "嵊泗岛的晚霞" },
-  { id: "20230705093721", width: 4032, height: 2268, title: "浙江", description: "嵊泗岛的渔场" },
-  { id: "20230705094040", width: 3979, height: 2236, title: "浙江", description: "嵊泗岛的清晨" },
-  { id: "20230705094050", width: 1080, height: 607, title: "浙江", description: "嵊泗岛的绿野仙踪" },
-  { id: "202308171", width: 1664, height: 935, title: "江苏", description: "苏州金鸡湖" },
-  { id: "ForestPark1", width: 1080, height: 1080, title: "上海", description: "共青公园" },
-  { id: "ForestPark3", width: 1920, height: 1080, title: "上海", description: "共青公园" },
-  { id: "ForestPark4", width: 1918, height: 1080, title: "上海", description: "共青公园" },
-  { id: "ForestPark5", width: 1706, height: 960, title: "上海", description: "共青公园" },
-  { id: "ForestPark6", width: 1920, height: 1080, title: "上海", description: "共青公园" },
-  { id: "ForestPark7", width: 1920, height: 1080, title: "上海", description: "共青公园" },
-  { id: "nanxiangtown3", width: 3676, height: 2070, title: "上海", description: "南翔古镇" },
-  { id: "20240531110829", width: 1664, height: 935, title: "山东", description: "青岛的夏天" },
-  { id: "20240531110834", width: 1664, height: 935, title: "山东", description: "青岛的夏天" },
-  { id: "20240531110910", width: 1664, height: 935, title: "山东", description: "青岛的夏天" },
-  { id: "20240531111017", width: 1664, height: 935, title: "山东", description: "青岛的夏天" },
+  { id: "warm-gradient", width: 1920, height: 1080, title: "渐变", description: "暖色对角渐变与柔光晕" },
+  { id: "sunset-glow", width: 1600, height: 900, title: "渐变", description: "日落辉光与暖色天际" },
+  { id: "geo-triangles", width: 1080, height: 1080, title: "几何", description: "低多边形三角拼贴" },
+  { id: "concentric", width: 1080, height: 1080, title: "几何", description: "同心圆层叠靶心" },
+  { id: "bauhaus", width: 1080, height: 1080, title: "几何", description: "包豪斯几何构成" },
+  { id: "grid-diagonal", width: 1200, height: 800, title: "几何", description: "对角网格线" },
+  { id: "mountains", width: 1920, height: 1080, title: "山水", description: "扁平矢量山峦剪影" },
+  { id: "sun-horizon", width: 1920, height: 1080, title: "山水", description: "日出地平线与水面倒影" },
+  { id: "waves", width: 1600, height: 900, title: "线条", description: "流动波纹分层" },
+  { id: "stripes", width: 1080, height: 1350, title: "线条", description: "柔和斜条纹" },
+  { id: "dots", width: 1080, height: 1350, title: "纹理", description: "点阵尺寸渐变" },
+  { id: "blobs", width: 1080, height: 1080, title: "纹理", description: "柔和有机色斑" },
 ];
 
 const uniqueTitlesSet = new Set(unsplashPhotos.map((photo) => photo.title)).add("全选");
@@ -99,7 +83,7 @@ function Settings({ children }) {
             </select>
           </div>
           <div className={styles.filterItem}>
-            <label className={styles.filterLabel} htmlFor="tag-select">城市</label>
+            <label className={styles.filterLabel} htmlFor="tag-select">主题</label>
             <select id="tag-select" className={styles.select} value={tag}
               onChange={(event) => settag(event.target.value)}>
               {extractedData.map(({ value, title }) => (
@@ -121,7 +105,7 @@ function Playground() {
   const baseUrl = useBaseUrl("/");
   const photos = useMemo(
     () => rawPhotos.map((photo) => ({
-      src: `${baseUrl}pages/gallery/${photo.id}-${photo.width}-${photo.height}.webp`,
+      src: `${baseUrl}pages/gallery/${photo.id}-${photo.width}-${photo.height}.svg`,
       width: photo.width,
       height: photo.height,
       title: photo.title,
@@ -174,7 +158,7 @@ function GalleryContent() {
         <span className={styles.pageEyebrow}>影像</span>
         <h1 className={styles.pageTitle}>相册</h1>
         <p className={styles.pageLead}>
-          旅途与日常的光影记录。按城市筛选，按行/按列/动态三种布局切换。
+          一组与站点暖色纸感协调的背景矢量图。按主题筛选，按行/按列/动态三种布局切换。
         </p>
       </header>
       <Settings>
