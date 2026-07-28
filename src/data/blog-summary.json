@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-28T03:16:20.639Z",
+  "generatedAt": "2026-07-28T03:41:25.230Z",
   "total": 35,
   "categories": [
     {
@@ -13,20 +13,20 @@
     {
       "name": "随笔",
       "count": 3
+    },
+    {
+      "name": "科技资讯",
+      "count": 1
     }
   ],
   "tags": [
-    {
-      "name": "2025年发布",
-      "count": 7
-    },
     {
       "name": "OpenAI",
       "count": 7
     },
     {
-      "name": "Google",
-      "count": 5
+      "name": "2025年发布",
+      "count": 6
     },
     {
       "name": "多模态",
@@ -45,28 +45,16 @@
       "count": 5
     },
     {
+      "name": "Google",
+      "count": 4
+    },
+    {
       "name": "Meta",
       "count": 4
     },
     {
       "name": "推理能力",
       "count": 3
-    },
-    {
-      "name": "Gemini 2.5",
-      "count": 2
-    },
-    {
-      "name": "多智能体",
-      "count": 2
-    },
-    {
-      "name": "并行推理",
-      "count": 2
-    },
-    {
-      "name": "Deep Think",
-      "count": 2
     },
     {
       "name": "人工智能",
@@ -111,6 +99,34 @@
     {
       "name": "DevOps",
       "count": 2
+    },
+    {
+      "name": "科技日报",
+      "count": 1
+    },
+    {
+      "name": "每日资讯",
+      "count": 1
+    },
+    {
+      "name": "科技要闻",
+      "count": 1
+    },
+    {
+      "name": "Gemini 2.5",
+      "count": 1
+    },
+    {
+      "name": "多智能体",
+      "count": 1
+    },
+    {
+      "name": "并行推理",
+      "count": 1
+    },
+    {
+      "name": "Deep Think",
+      "count": 1
     },
     {
       "name": "GPT-5",
@@ -286,20 +302,17 @@
       "year": "2026",
       "posts": [
         {
-          "title": "博客更新回顾 · 2026-07-28",
+          "title": "科技日报 · 2026-07-28",
           "date": "2026-07-28",
-          "url": "/blog/blog-digest-2026-07-28/",
-          "summary": "全站近期精选的 10 篇博文一览与摘要（自动生成）。",
-          "category": "",
+          "url": "/blog/2026/07/28/tech-daily/",
+          "summary": "> 本篇由自动化脚本每日汇总当日科技要闻：国际来源经机器翻译为中文，国内来源直接引用。内容来自公开 RSS / API，仅供参考。",
+          "category": "科技资讯",
           "tags": [
-            "Gemini 2.5",
-            "Google",
-            "多智能体",
-            "并行推理",
-            "Deep Think",
-            "2025年发布"
+            "科技日报",
+            "每日资讯",
+            "科技要闻"
           ],
-          "file": "2026-07-28-blog-digest.md"
+          "file": "2026-07-28-tech-daily.md"
         }
       ]
     },

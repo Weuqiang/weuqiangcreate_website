@@ -1,176 +1,276 @@
-// blog-digest.js
-// 每日自动生成一篇「博文回顾」新博文并发布到 /blog：
-//   - 基于「已总结博文集合」(scripts/.digested.json) 判断真正新增的博文并总结（增量）
-//   - 首次运行（集合为空）生成一篇「全站近期精选」种子回顾（最近 10 篇），并把全部博文标记为已处理
-//   - 若长期无新增且距上次发文超过 30 天，再生成一篇种子回顾，避免刷屏
-//   - 同日幂等：若今天已生成过回顾博文则跳过
-//
-// 设计要点：
-//   - 不依赖 git diff-filter（避免把「补摘要」等编辑误判为新增）
-//   - 纯 Node 内置，零依赖，确定性可复现
+#!/usr/bin/env node
+/**
+ * 每日科技日报生成器（免密钥、确定性）
+ * --------------------------------------------------
+ * 抓取「当日最新科技消息」，自动翻译为中文，组装成一篇当日博文：
+ *   - 国际：Hacker News 头条（EN→ZH，机器翻译，MyMemory 免密钥 API）
+ *   - 国内：36kr RSS（中文，直接引用）
+ * 输出：blog/YYYY-MM-DD-tech-daily.md
+ *
+ * 设计要点：
+ *   - 仅用 Node 内置模块，零依赖，可在 GitHub Actions 直接运行。
+ *   - 同日幂等：今天已生成则跳过，避免重复博文。
+ *   - 健壮性：任一来源失败不影响另一来源；两源皆空则跳过（不生成空博文）。
+ *   - 本地验证：设 DIGEST_MOCK=1 走内置样例数据，无需联网。
+ *
+ * 用法：node scripts/blog-digest.js
+ */
 
 const fs = require("fs");
 const path = require("path");
+const https = require("https");
 
-const REPO = process.cwd();
-const BLOG_DIR = path.join(REPO, "blog");
-const DATA = path.join(REPO, "src", "data", "blog-summary.json");
-const DIGESTED = path.join(REPO, "scripts", ".digested.json");
+const BLOG_DIR = path.join(__dirname, "..", "blog");
+const HN_COUNT = 10; // 国际头条条数
+const DOMESTIC_COUNT = 6; // 国内条数
+const DOMESTIC_RSS = process.env.DOMESTIC_RSS || "https://36kr.com/feed";
+const DESC_LEN = 90; // 描述截断长度
 
-const DIGEST_PREFIX = "blog-digest"; // 回顾博文文件名前缀，用于排除自身
-const SEED_GAP_DAYS = 30; // 距上次发文超过该天数才再生成种子回顾
-const SEED_COUNT = 10; // 种子回顾取最近 N 篇
-
-function todayStr(d = new Date()) {
-  return d.toISOString().slice(0, 10);
+// ---------- 日期 ----------
+function todayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
-function daysBetween(a, b) {
-  const ms = new Date(b + "T00:00:00Z") - new Date(a + "T00:00:00Z");
-  return Math.floor(ms / 86400000);
+
+// ---------- HTTP 工具 ----------
+function getJson(url) {
+  return getText(url).then((t) => JSON.parse(t));
+}
+function getText(url) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(
+      url,
+      { headers: { "User-Agent": "Mozilla/5.0 (tech-daily-bot)" } },
+      (res) => {
+        if (res.statusCode !== 200) {
+          res.resume();
+          return reject(new Error(`${url} -> HTTP ${res.statusCode}`));
+        }
+        let data = "";
+        res.setEncoding("utf8");
+        res.on("data", (c) => (data += c));
+        res.on("end", () => resolve(data));
+      }
+    );
+    req.on("error", reject);
+    req.setTimeout(15000, () => req.destroy(new Error(`${url} 超时`)));
+  });
 }
 
-function readSummary() {
+// ---------- 文本清洗 ----------
+function decodeEntities(s) {
+  if (!s) return "";
+  return s
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#0*39;/g, "'")
+    .replace(/&#0*34;/g, '"')
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) =>
+      String.fromCodePoint(parseInt(h, 16))
+    )
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&amp;/g, "&");
+}
+function stripHtml(s) {
+  if (!s) return "";
+  return decodeEntities(
+    s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+  );
+}
+// 去除 RSS 常见的 <![CDATA[ ... ]]> 包裹
+function stripCdata(s) {
+  if (!s) return "";
+  return s.replace(/^\s*<!\[CDATA\[/, "").replace(/\]\]>\s*$/, "");
+}
+
+// ---------- 翻译（MyMemory 免密钥） ----------
+async function translate(text) {
+  if (!text) return "";
   try {
-    return JSON.parse(fs.readFileSync(DATA, "utf8"));
-  } catch {
-    return null;
+    const q = text.slice(0, 500);
+    const url = `https://api.mymemory.translated.net/get?langpair=en|zh-CN&q=${encodeURIComponent(
+      q
+    )}`;
+    const r = await getJson(url);
+    const t = r && r.responseData && r.responseData.translatedText;
+    return t ? t.trim() : text;
+  } catch (e) {
+    return text; // 翻译失败降级为原文
   }
 }
-function loadDigested() {
+
+// ---------- 国际：Hacker News ----------
+async function fetchInternational() {
+  const ids = await getJson(
+    "https://hacker-news.firebaseio.com/v0/topstories.json"
+  );
+  const top = ids.slice(0, HN_COUNT);
+  const items = await Promise.all(
+    top.map((id) =>
+      getJson(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).catch(
+        () => null
+      )
+    )
+  );
+  const out = [];
+  for (const it of items) {
+    if (!it || !it.title) continue;
+    const url = it.url || `https://news.ycombinator.com/item?id=${it.id}`;
+    const desc = it.text ? stripHtml(it.text).slice(0, DESC_LEN) : "";
+    const zh = await translate(it.title);
+    out.push({ title: zh || it.title, url, desc });
+  }
+  return out;
+}
+
+// ---------- 国内：36kr RSS ----------
+async function fetchDomestic() {
   try {
-    return JSON.parse(fs.readFileSync(DIGESTED, "utf8"));
-  } catch {
-    return { posts: [], lastDate: "" };
+    const xml = await getText(DOMESTIC_RSS);
+    const out = [];
+    const re = /<item>([\s\S]*?)<\/item>/g;
+    let m;
+    while ((m = re.exec(xml)) && out.length < DOMESTIC_COUNT) {
+      const block = m[1];
+      const title = stripCdata(
+        decodeEntities(
+          (block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || ""
+        )
+      ).trim();
+      const link = stripCdata(
+        decodeEntities(
+          (block.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || ""
+        )
+      ).trim();
+      const descRaw = (block.match(/<description>([\s\S]*?)<\/description>/) ||
+        [])[1] || "";
+      const desc = stripHtml(descRaw).slice(0, DESC_LEN);
+      if (title && link) out.push({ title, url: link, desc });
+    }
+    return out;
+  } catch (e) {
+    console.error("[domestic] 抓取失败，跳过国内源：", e.message);
+    return [];
   }
 }
-function saveDigested(o) {
-  fs.writeFileSync(DIGESTED, JSON.stringify(o) + "\n", "utf8");
-}
 
-// 当前全部博文（排除回顾博文自身，避免自我总结）
-function allPosts(data) {
-  return data.years
-    .flatMap((y) => y.posts)
-    .filter((p) => p.file && !p.file.startsWith(DIGEST_PREFIX));
-}
-
-function recentN(posts, n) {
-  return [...posts]
-    .filter((p) => p.date)
-    .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
-    .slice(0, n);
-}
-
-// 构造回顾博文正文
-function buildPost(picks, dateStr, isSeed) {
-  const title = isSeed
-    ? `博客更新回顾 · ${dateStr}`
-    : `博文回顾 · ${dateStr}`;
-  const desc = isSeed
-    ? `全站近期精选的 ${picks.length} 篇博文一览与摘要（自动生成）。`
-    : `近期更新的 ${picks.length} 篇博文一览与摘要（自动生成）。`;
-
-  const tagSet = new Map();
-  for (const p of picks) for (const t of p.tags || []) if (t) tagSet.set(t, true);
-  const tags = [...tagSet.keys()].slice(0, 6);
-  const fmTags = tags.length
-    ? "tags:\n" + tags.map((t) => `  - ${JSON.stringify(t)}`).join("\n")
-    : "tags: []";
-
+// ---------- 组装 Markdown ----------
+function renderMarkdown(date, intl, dom) {
   const lines = [];
   lines.push("---");
-  lines.push(`title: ${JSON.stringify(title)}`);
-  lines.push(`date: ${dateStr}`);
-  lines.push(`slug: ${DIGEST_PREFIX}-${dateStr}`);
-  lines.push(`description: ${JSON.stringify(desc)}`);
-  lines.push(fmTags);
+  lines.push(`title: 科技日报 · ${date}`);
+  lines.push(`date: ${date}`);
+  lines.push("tags: [科技日报, 每日资讯, 科技要闻]");
+  lines.push("category: 科技资讯");
   lines.push("---");
   lines.push("");
   lines.push(
-    "> 本篇由「每日博文总结」工具自动生成，汇总近期更新或发布的博文，便于快速回顾。"
+    "> 本篇由自动化脚本每日汇总当日科技要闻：国际来源经机器翻译为中文，国内来源直接引用。内容来自公开 RSS / API，仅供参考。"
   );
   lines.push("");
-  lines.push(isSeed ? "## 全站近期精选" : "## 近期更新");
+
+  lines.push("## 🌐 国际科技");
   lines.push("");
-
-  for (const p of picks) {
-    const meta = [p.date, p.category].filter(Boolean).join(" · ");
-    lines.push(`### [${p.title}](${p.url})`);
-    if (meta) lines.push(`*${meta}*`);
-    lines.push("");
-    lines.push(p.summary || "（暂无摘要）");
-    lines.push("");
-    lines.push("---");
-    lines.push("");
-  }
-
-  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n";
-}
-
-function main() {
-  const data = readSummary();
-  if (!data) {
-    console.log("[blog-digest] 未找到 blog-summary.json，请先运行 blog-summary.js");
-    return;
-  }
-
-  const dateStr = todayStr();
-  const outFile = path.join(BLOG_DIR, `${dateStr}-${DIGEST_PREFIX}.md`);
-  if (fs.existsSync(outFile)) {
-    console.log("[blog-digest] 今日回顾已存在，跳过：", path.basename(outFile));
-    return;
-  }
-
-  const posts = allPosts(data);
-  const st = loadDigested();
-  let picks = [];
-  let isSeed = false;
-
-  if (st.posts.length === 0) {
-    // 首次：种子精选（最近 N 篇），并把全部博文标记为已处理
-    picks = recentN(posts, SEED_COUNT);
-    isSeed = true;
-    st.posts = posts.map((p) => p.file);
-    st.lastDate = dateStr;
-    saveDigested(st);
+  if (intl.length === 0) {
+    lines.push("_（今日国际源暂未抓取到内容）_");
   } else {
-    const set = new Set(st.posts);
-    const candidates = posts.filter((p) => !set.has(p.file));
-    if (candidates.length) {
-      // 增量：仅总结真正新增的博文
-      picks = candidates;
-      isSeed = false;
-      st.posts.push(...candidates.map((p) => p.file));
-      st.lastDate = dateStr;
-      saveDigested(st);
-    } else {
-      const gap = st.lastDate ? daysBetween(st.lastDate, dateStr) : SEED_GAP_DAYS + 1;
-      if (gap > SEED_GAP_DAYS) {
-        picks = recentN(posts, SEED_COUNT);
-        isSeed = true;
-        st.lastDate = dateStr;
-        saveDigested(st);
-      } else {
-        console.log(
-          `[blog-digest] 无新增博文，距上次发文 ${gap} 天（<${SEED_GAP_DAYS}），跳过`
-        );
-        return;
-      }
+    for (const it of intl) {
+      const extra = it.desc ? ` — ${it.desc}` : "";
+      lines.push(`- [${it.title}](${it.url})${extra}`);
     }
   }
+  lines.push("");
 
-  if (!picks.length) {
-    console.log("[blog-digest] 无可用博文，跳过");
+  lines.push("## 🇨🇳 国内科技");
+  lines.push("");
+  if (dom.length === 0) {
+    lines.push("_（今日国内源暂未抓取到内容）_");
+  } else {
+    for (const it of dom) {
+      const extra = it.desc ? ` — ${it.desc}` : "";
+      lines.push(`- [${it.title}](${it.url})${extra}`);
+    }
+  }
+  lines.push("");
+  lines.push("---");
+  lines.push(
+    `*由每日自动化脚本于 ${date} 生成 · 共 ${intl.length + dom.length} 条*`
+  );
+  lines.push("");
+  return lines.join("\n");
+}
+
+// ---------- 本地验证用样例 ----------
+function mockData() {
+  return {
+    intl: [
+      {
+        title: "大型语言模型推理成本一年下降约 280 倍",
+        url: "https://example.com/a",
+        desc: "新一代推理优化使单位 token 成本大幅降低。",
+      },
+      {
+        title: "开源向量数据库发布 2.0，查询延迟减半",
+        url: "https://example.com/b",
+        desc: "",
+      },
+    ],
+    dom: [
+      {
+        title: "国内某厂商发布新一代智能体开发框架",
+        url: "https://36kr.com/p/example",
+        desc: "面向多模态任务的可视化编排能力成为亮点。",
+      },
+    ],
+  };
+}
+
+// ---------- 主流程 ----------
+async function main() {
+  const date = todayStr();
+  const outFile = path.join(BLOG_DIR, `${date}-tech-daily.md`);
+
+  // 同日幂等：已存在则跳过
+  if (fs.existsSync(outFile)) {
+    console.log(`[digest] 今日(${date})科技日报已存在，跳过：${outFile}`);
     return;
   }
 
-  const content = buildPost(picks, dateStr, isSeed);
-  fs.writeFileSync(outFile, content, "utf8");
-  console.log(
-    `[blog-digest] 已生成${isSeed ? "种子" : "增量"}回顾博文：${path.basename(
-      outFile
-    )}（${picks.length} 篇）`
-  );
+  let intl = [];
+  let dom = [];
+  if (process.env.DIGEST_MOCK) {
+    const mock = mockData();
+    intl = mock.intl;
+    dom = mock.dom;
+    console.log("[digest] DIGEST_MOCK=1，使用内置样例数据");
+  } else {
+    console.log("[digest] 抓取国际科技（Hacker News）…");
+    intl = await fetchInternational().catch((e) => {
+      console.error("[intl] 失败：", e.message);
+      return [];
+    });
+    console.log(`[digest] 国际 ${intl.length} 条；抓取国内科技（${DOMESTIC_RSS}）…`);
+    dom = await fetchDomestic();
+    console.log(`[digest] 国内 ${dom.length} 条`);
+  }
+
+  if (intl.length === 0 && dom.length === 0) {
+    console.log("[digest] 两源皆为空，今天不生成博文（避免空文）");
+    return;
+  }
+
+  const md = renderMarkdown(date, intl, dom);
+  fs.writeFileSync(outFile, md, "utf8");
+  console.log(`[digest] 已生成科技日报：${outFile}（${intl.length + dom.length} 条）`);
 }
 
-main();
+main().catch((e) => {
+  console.error("[digest] 运行出错：", e);
+  process.exit(1);
+});

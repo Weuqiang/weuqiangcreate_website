@@ -160,7 +160,8 @@ function processPost(file) {
       const [, y, m, d, rest] = dm;
       if (rest) {
         slug = rest;
-        url = `/blog/${slug}/`;
+        // 无显式 slug：Docusaurus 默认路由含日期路径 /blog/YYYY/MM/DD/slug/
+        url = `/blog/${y}/${m}/${d}/${slug}/`;
       } else {
         url = `/blog/${y}/${m}/${d}/`;
       }

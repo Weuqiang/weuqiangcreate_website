@@ -1,10 +1,5 @@
 [
   {
-    "title": "\"博客更新回顾 · 2026-07-28\"",
-    "permalink": "/blog/blog-digest-2026-07-28",
-    "date": "2026-07-28"
-  },
-  {
     "title": "Gemini 2.5 Deep Think：Google多智能体并行推理的新纪元",
     "permalink": "/blog/gemini25-deep-think",
     "date": "2025-08-01"
@@ -23,5 +18,10 @@
     "title": "Llama 4：Meta开源多模态AI的重大突破",
     "permalink": "/blog/llama4-multimodal-breakthrough",
     "date": "2025-04-05"
+  },
+  {
+    "title": "Gemma 3.0：Google开源多模态AI模型的新里程碑",
+    "permalink": "/blog/gemma3-multimodal-opensource",
+    "date": "2025-03-15"
   }
 ]

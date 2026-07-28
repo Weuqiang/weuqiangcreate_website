@@ -1,11 +1,12 @@
-name: Daily Blog Summary
+name: Daily Tech News Post
 
-# 每日自动总结更新历史博文：补齐缺失的 description 并刷新总览 JSON，再提交回仓库。
+# 每日自动抓取当日最新科技消息（国际 Hacker News + 国内 36kr），翻译并组装成一篇
+# 中文「科技日报」博文，补齐缺失的 description 并刷新总览 JSON，再提交回仓库。
 # 仅由定时/手动触发，不在 push 时运行，避免与部署流水线互相触发形成循环。
 on:
   schedule:
-    # UTC 16:17 ≈ 北京时间次日 00:17；GitHub Actions 准时有抖动属正常
-    - cron: "17 16 * * *"
+    # UTC 13:00 ≈ 北京时间 21:00，覆盖当日科技要闻后再生成
+    - cron: "0 13 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -29,7 +30,7 @@ jobs:
       - name: Generate blog summary & fill descriptions
         run: node scripts/blog-summary.js --fill
 
-      - name: Generate daily blog digest post
+      - name: Generate daily tech-news post (科技日报)
         run: node scripts/blog-digest.js
 
       - name: Commit & push if changed
@@ -40,6 +41,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "无变更，跳过提交"
           else
-            git commit -m "chore(blog): 每日自动更新博文摘要与总览"
+            git commit -m "chore(blog): 每日自动生成科技日报与刷新总览"
             git push
           fi
