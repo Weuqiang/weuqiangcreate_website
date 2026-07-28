@@ -2,6 +2,7 @@
 category: AI资讯
 slug: openai-o3-breakthrough
 title: OpenAI o3 
+description: "OpenAI o3"
 authors: [weuqiang]
 tags: [OpenAI, o3]
 date: 2024-12-20

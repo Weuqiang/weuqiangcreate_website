@@ -2,6 +2,7 @@
 category: 技术史
 slug: transformer-paper
 title: Transformer  NLP
+description: "Google Attention is All You Need Transformer NLP"
 authors: [weuqiang]
 tags: [Transformer, NLP]
 date: 2017-06-12

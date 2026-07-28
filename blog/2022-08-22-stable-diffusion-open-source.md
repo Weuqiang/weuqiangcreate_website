@@ -2,6 +2,7 @@
 category: 技术史
 slug: stable-diffusion-open-source
 title: Stable Diffusion AI 
+description: "Stable Diffusion AI"
 authors: [weuqiang]
 tags: [Stable Diffusion, AI]
 date: 2022-08-22

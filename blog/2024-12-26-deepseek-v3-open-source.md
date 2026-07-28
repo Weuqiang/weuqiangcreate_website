@@ -2,6 +2,7 @@
 category: AI资讯
 slug: deepseek-v3-open-source
 title: DeepSeek-V3 
+description: "DeepSeek DeepSeek-V3"
 authors: [weuqiang]
 tags: [DeepSeek]
 date: 2024-12-26

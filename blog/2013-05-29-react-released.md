@@ -2,6 +2,7 @@
 category: 技术史
 slug: react-released
 title: React 
+description: "Facebook React DOM"
 authors: [weuqiang]
 tags: [React, Facebook]
 date: 2013-05-29

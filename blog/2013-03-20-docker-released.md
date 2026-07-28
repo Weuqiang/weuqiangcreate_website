@@ -2,6 +2,7 @@
 category: 技术史
 slug: docker-released
 title: Docker 
+description: "Docker"
 authors: [weuqiang]
 tags: [Docker, DevOps]
 date: 2013-03-20

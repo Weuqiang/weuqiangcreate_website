@@ -2,6 +2,7 @@
 category: 技术史
 slug: tensorflow-released
 title: Google  TensorFlow
+description: "Google TensorFlow PyTorch"
 authors: [weuqiang]
 tags: [Google, TensorFlow]
 date: 2015-11-09

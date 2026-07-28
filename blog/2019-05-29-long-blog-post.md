@@ -2,6 +2,7 @@
 category: 随笔
 slug: long-blog-post
 title: 我的博客
+description: "This is the summary of a very long blog post, Use a comment to limit blog post size in the list view."
 tags: [hello, docusaurus]
 ---
 

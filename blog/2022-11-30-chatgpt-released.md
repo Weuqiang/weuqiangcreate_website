@@ -2,6 +2,7 @@
 category: 技术史
 slug: chatgpt-released
 title: ChatGPT AI 
+description: "OpenAI ChatGPT AI"
 authors: [weuqiang]
 tags: [OpenAI, ChatGPT]
 date: 2022-11-30

@@ -2,6 +2,7 @@
 category: AI资讯
 slug: meta-llama-4-coming
 title: Meta  Llama 4 
+description: "Meta Llama 4 2025"
 authors: [weuqiang]
 tags: [Meta, Llama]
 date: 2025-01-15

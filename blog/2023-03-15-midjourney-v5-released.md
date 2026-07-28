@@ -2,6 +2,7 @@
 category: 技术史
 slug: midjourney-v5-released
 title: Midjourney V5 AI 
+description: "Midjourney V5"
 authors: [weuqiang]
 tags: [Midjourney, AI]
 date: 2023-03-15

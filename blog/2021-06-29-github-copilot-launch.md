@@ -2,6 +2,7 @@
 category: 技术史
 slug: github-copilot-launch
 title: GitHub  CopilotAI 
+description: "GitHub OpenAI Copilot"
 authors: [weuqiang]
 tags: [GitHub, Copilot, AI]
 date: 2021-06-29

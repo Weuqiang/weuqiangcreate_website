@@ -2,6 +2,7 @@
 category: AI资讯
 slug: ai-coding-tools-2025
 title: 2025  AI 
+description: "2025 AI"
 authors: [weuqiang]
 tags: [AI]
 date: 2025-01-28

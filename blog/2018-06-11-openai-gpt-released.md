@@ -2,6 +2,7 @@
 category: 技术史
 slug: openai-gpt-released
 title: OpenAI  GPT
+description: "OpenAI GPTGenerative Pre-trained Transformer"
 authors: [weuqiang]
 tags: [OpenAI, GPT]
 date: 2018-06-11

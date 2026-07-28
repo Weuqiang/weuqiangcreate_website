@@ -2,6 +2,7 @@
 category: AI资讯
 slug: github-copilot-free
 title: GitHub Copilot 
+description: "GitHub Copilot"
 authors: [weuqiang]
 tags: [GitHub, Copilot, AI]
 date: 2024-12-18

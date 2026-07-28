@@ -213,6 +213,11 @@ const config = {
           label: "博文",
         },
         {
+          to: "/blog-history",
+          position: "left",
+          label: "博文历史",
+        },
+        {
           to: "/case",
           position: "left",
           label: "个案",

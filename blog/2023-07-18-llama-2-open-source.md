@@ -2,6 +2,7 @@
 category: 技术史
 slug: llama-2-open-source
 title: Meta  Llama 2
+description: "Meta Llama 2 OpenAI"
 authors: [weuqiang]
 tags: [Meta, Llama]
 date: 2023-07-18

@@ -2,6 +2,7 @@
 category: 技术史
 slug: kubernetes-released
 title: Kubernetes 
+description: "Google Kubernetes"
 authors: [weuqiang]
 tags: [Kubernetes, DevOps]
 date: 2014-06-07

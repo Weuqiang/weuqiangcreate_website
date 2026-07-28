@@ -2,6 +2,7 @@
 category: 技术史
 slug: vue-released
 title: Vue.js 
+description: "Vue.js React Angular"
 authors: [weuqiang]
 tags: [Vue]
 date: 2014-02-07

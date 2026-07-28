@@ -2,6 +2,7 @@
 category: 技术史
 slug: gpt4-released
 title: GPT-4 
+description: "OpenAI GPT-4 GPT-3.5"
 authors: [weuqiang]
 tags: [OpenAI, GPT-4]
 date: 2023-03-14

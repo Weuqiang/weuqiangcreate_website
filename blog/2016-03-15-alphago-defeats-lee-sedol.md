@@ -2,6 +2,7 @@
 category: 技术史
 slug: alphago-defeats-lee-sedol
 title: AlphaGo AI 
+description: "AlphaGo 4:1 AI"
 authors: [weuqiang]
 tags: [AlphaGo, DeepMind]
 date: 2016-03-15

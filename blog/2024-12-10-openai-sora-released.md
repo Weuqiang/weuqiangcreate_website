@@ -2,6 +2,7 @@
 category: AI资讯
 slug: openai-sora-released
 title: Sora 
+description: "OpenAI Sora"
 authors: [weuqiang]
 tags: [OpenAI, Sora]
 date: 2024-12-10

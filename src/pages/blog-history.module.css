@@ -1,0 +1,135 @@
+/* 博文历史总览页样式 —— 沿用站点陶土棕 + 米色纸感设计令牌 */
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 3rem 1.25rem 4rem;
+}
+
+.header {
+  margin-bottom: 2.5rem;
+  text-align: center;
+}
+
+.h1 {
+  font-family: var(--font-serif, serif);
+  font-size: 2.4rem;
+  color: var(--ifm-color-primary);
+  margin: 0 0 0.6rem;
+  letter-spacing: 0.02em;
+}
+
+.sub {
+  color: var(--ink, #5b534a);
+  font-size: 1rem;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tag {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 14%, transparent);
+  color: var(--ifm-color-primary);
+  border: 1px solid color-mix(in srgb, var(--ifm-color-primary) 30%, transparent);
+}
+
+.yearBlock {
+  margin-bottom: 2.5rem;
+}
+
+.yearBar {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  border-bottom: 2px solid var(--line, #e7ddd0);
+  padding-bottom: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.year {
+  font-family: var(--font-serif, serif);
+  font-size: 1.6rem;
+  color: var(--ifm-color-primary);
+  margin: 0;
+}
+
+.yearCount {
+  font-size: 0.85rem;
+  color: var(--ink, #5b534a);
+  opacity: 0.8;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.item {
+  background: var(--paper, #fbf7f0);
+  border: 1px solid var(--line, #e7ddd0);
+  border-radius: 12px;
+  padding: 0.95rem 1.15rem;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.itemHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.itemTitle {
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+
+.itemTitle:hover {
+  text-decoration: underline;
+}
+
+.date {
+  font-size: 0.8rem;
+  color: var(--ink, #5b534a);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.summary {
+  margin: 0.5rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--ink, #5b534a);
+}
+
+.foot {
+  margin-top: 2rem;
+  padding-top: 1.2rem;
+  border-top: 1px dashed var(--line, #e7ddd0);
+  font-size: 0.88rem;
+  color: var(--ink, #5b534a);
+  opacity: 0.85;
+  text-align: center;
+}
+
+.foot a {
+  color: var(--ifm-color-primary);
+}
