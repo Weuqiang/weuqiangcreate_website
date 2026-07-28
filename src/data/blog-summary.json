@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-28T02:22:24.628Z",
-  "total": 34,
+  "generatedAt": "2026-07-28T03:16:20.639Z",
+  "total": 35,
   "categories": [
     {
       "name": "AI资讯",
@@ -17,12 +17,16 @@
   ],
   "tags": [
     {
+      "name": "2025年发布",
+      "count": 7
+    },
+    {
       "name": "OpenAI",
       "count": 7
     },
     {
-      "name": "2025年发布",
-      "count": 6
+      "name": "Google",
+      "count": 5
     },
     {
       "name": "多模态",
@@ -41,16 +45,28 @@
       "count": 5
     },
     {
-      "name": "Google",
-      "count": 4
-    },
-    {
       "name": "Meta",
       "count": 4
     },
     {
       "name": "推理能力",
       "count": 3
+    },
+    {
+      "name": "Gemini 2.5",
+      "count": 2
+    },
+    {
+      "name": "多智能体",
+      "count": 2
+    },
+    {
+      "name": "并行推理",
+      "count": 2
+    },
+    {
+      "name": "Deep Think",
+      "count": 2
     },
     {
       "name": "人工智能",
@@ -95,22 +111,6 @@
     {
       "name": "DevOps",
       "count": 2
-    },
-    {
-      "name": "Gemini 2.5",
-      "count": 1
-    },
-    {
-      "name": "多智能体",
-      "count": 1
-    },
-    {
-      "name": "并行推理",
-      "count": 1
-    },
-    {
-      "name": "Deep Think",
-      "count": 1
     },
     {
       "name": "GPT-5",
@@ -283,6 +283,27 @@
   ],
   "years": [
     {
+      "year": "2026",
+      "posts": [
+        {
+          "title": "博客更新回顾 · 2026-07-28",
+          "date": "2026-07-28",
+          "url": "/blog/blog-digest-2026-07-28/",
+          "summary": "全站近期精选的 10 篇博文一览与摘要（自动生成）。",
+          "category": "",
+          "tags": [
+            "Gemini 2.5",
+            "Google",
+            "多智能体",
+            "并行推理",
+            "Deep Think",
+            "2025年发布"
+          ],
+          "file": "2026-07-28-blog-digest.md"
+        }
+      ]
+    },
+    {
       "year": "2025",
       "posts": [
         {
@@ -298,7 +319,8 @@
             "并行推理",
             "Deep Think",
             "2025年发布"
-          ]
+          ],
+          "file": "2025-08-01-gemini25-deep-think.md"
         },
         {
           "title": "GPT-5：OpenAI 2025年的革命性突破，统一推理与生成的AI新纪元",
@@ -314,7 +336,8 @@
             "推理能力",
             "多模态",
             "2025年发布"
-          ]
+          ],
+          "file": "2025-08-01-gpt5-revolutionary-ai.md"
         },
         {
           "title": "Claude 4：Anthropic在编程领域的突破性进展",
@@ -329,7 +352,8 @@
             "代码生成",
             "推理模型",
             "2025年发布"
-          ]
+          ],
+          "file": "2025-05-23-claude4-programming-breakthrough.md"
         },
         {
           "title": "Llama 4：Meta开源多模态AI的重大突破",
@@ -344,7 +368,8 @@
             "多模态",
             "MoE架构",
             "2025年发布"
-          ]
+          ],
+          "file": "2025-04-05-llama4-multimodal-breakthrough.md"
         },
         {
           "title": "Gemma 3.0：Google开源多模态AI模型的新里程碑",
@@ -359,7 +384,8 @@
             "多模态",
             "单GPU优化",
             "2025年发布"
-          ]
+          ],
+          "file": "2025-03-15-gemma3-multimodal-opensource.md"
         },
         {
           "title": "Grok 3：xAI推理能力的革命性突破",
@@ -374,7 +400,8 @@
             "实时信息",
             "幽默对话",
             "2025年发布"
-          ]
+          ],
+          "file": "2025-02-18-grok3-reasoning-revolution.md"
         },
         {
           "title": "2025  AI",
@@ -384,7 +411,8 @@
           "category": "AI资讯",
           "tags": [
             "AI"
-          ]
+          ],
+          "file": "2025-01-28-ai-coding-tools-2025.md"
         },
         {
           "title": "Meta  Llama 4",
@@ -395,7 +423,8 @@
           "tags": [
             "Meta",
             "Llama"
-          ]
+          ],
+          "file": "2025-01-15-meta-llama-4-coming.md"
         }
       ]
     },
@@ -410,7 +439,8 @@
           "category": "AI资讯",
           "tags": [
             "DeepSeek"
-          ]
+          ],
+          "file": "2024-12-26-deepseek-v3-open-source.md"
         },
         {
           "title": "GPT-4o：OpenAI的多模态突破性进展",
@@ -425,7 +455,8 @@
             "人工智能",
             "大模型",
             "2024年发布"
-          ]
+          ],
+          "file": "2024-12-20-gpt4o-breakthrough.md"
         },
         {
           "title": "OpenAI o3",
@@ -436,7 +467,8 @@
           "tags": [
             "OpenAI",
             "o3"
-          ]
+          ],
+          "file": "2024-12-20-openai-o3-breakthrough.md"
         },
         {
           "title": "Claude 3.5 Sonnet：Anthropic在AI安全与性能上的双重突破",
@@ -451,7 +483,8 @@
             "推理能力",
             "大模型",
             "2024年发布"
-          ]
+          ],
+          "file": "2024-12-18-claude35-sonnet.md"
         },
         {
           "title": "GitHub Copilot",
@@ -463,7 +496,8 @@
             "GitHub",
             "Copilot",
             "AI"
-          ]
+          ],
+          "file": "2024-12-18-github-copilot-free.md"
         },
         {
           "title": "Gemini 1.5 Pro：Google在长上下文处理上的技术革命",
@@ -478,7 +512,8 @@
             "多模态",
             "大模型",
             "2024年发布"
-          ]
+          ],
+          "file": "2024-12-16-gemini15-pro.md"
         },
         {
           "title": "Llama 3.1：Meta引领开源大模型的新时代",
@@ -493,7 +528,8 @@
             "AI民主化",
             "大模型",
             "2024年发布"
-          ]
+          ],
+          "file": "2024-12-14-llama31-opensource.md"
         },
         {
           "title": "DeepSeek：中国AI大模型的崛起与技术突破",
@@ -508,7 +544,8 @@
             "数学推理",
             "大模型",
             "2024年发布"
-          ]
+          ],
+          "file": "2024-12-12-deepseek-chinese-ai.md"
         },
         {
           "title": "Sora",
@@ -519,7 +556,8 @@
           "tags": [
             "OpenAI",
             "Sora"
-          ]
+          ],
+          "file": "2024-12-10-openai-sora-released.md"
         },
         {
           "title": "生成式AI提取博客精华",
@@ -530,7 +568,8 @@
           "tags": [
             "blog",
             "tutorial"
-          ]
+          ],
+          "file": "2024-1-31.md"
         }
       ]
     },
@@ -546,7 +585,8 @@
           "tags": [
             "blog",
             "tutorial"
-          ]
+          ],
+          "file": "2023-12-30.md"
         },
         {
           "title": "Meta  Llama 2",
@@ -557,7 +597,8 @@
           "tags": [
             "Meta",
             "Llama"
-          ]
+          ],
+          "file": "2023-07-18-llama-2-open-source.md"
         },
         {
           "title": "Midjourney V5 AI",
@@ -568,7 +609,8 @@
           "tags": [
             "Midjourney",
             "AI"
-          ]
+          ],
+          "file": "2023-03-15-midjourney-v5-released.md"
         },
         {
           "title": "GPT-4",
@@ -579,7 +621,8 @@
           "tags": [
             "OpenAI",
             "GPT-4"
-          ]
+          ],
+          "file": "2023-03-14-gpt4-released.md"
         }
       ]
     },
@@ -595,7 +638,8 @@
           "tags": [
             "OpenAI",
             "ChatGPT"
-          ]
+          ],
+          "file": "2022-11-30-chatgpt-released.md"
         },
         {
           "title": "Stable Diffusion AI",
@@ -606,7 +650,8 @@
           "tags": [
             "Stable Diffusion",
             "AI"
-          ]
+          ],
+          "file": "2022-08-22-stable-diffusion-open-source.md"
         }
       ]
     },
@@ -623,7 +668,8 @@
             "GitHub",
             "Copilot",
             "AI"
-          ]
+          ],
+          "file": "2021-06-29-github-copilot-launch.md"
         }
       ]
     },
@@ -639,7 +685,8 @@
           "tags": [
             "hello",
             "docusaurus"
-          ]
+          ],
+          "file": "2019-05-29-long-blog-post.md"
         }
       ]
     },
@@ -655,7 +702,8 @@
           "tags": [
             "OpenAI",
             "GPT"
-          ]
+          ],
+          "file": "2018-06-11-openai-gpt-released.md"
         }
       ]
     },
@@ -671,7 +719,8 @@
           "tags": [
             "Transformer",
             "NLP"
-          ]
+          ],
+          "file": "2017-06-12-transformer-paper.md"
         }
       ]
     },
@@ -687,7 +736,8 @@
           "tags": [
             "AlphaGo",
             "DeepMind"
-          ]
+          ],
+          "file": "2016-03-15-alphago-defeats-lee-sedol.md"
         }
       ]
     },
@@ -703,7 +753,8 @@
           "tags": [
             "Google",
             "TensorFlow"
-          ]
+          ],
+          "file": "2015-11-09-tensorflow-released.md"
         }
       ]
     },
@@ -719,7 +770,8 @@
           "tags": [
             "Kubernetes",
             "DevOps"
-          ]
+          ],
+          "file": "2014-06-07-kubernetes-released.md"
         },
         {
           "title": "Vue.js",
@@ -729,7 +781,8 @@
           "category": "技术史",
           "tags": [
             "Vue"
-          ]
+          ],
+          "file": "2014-02-07-vue-released.md"
         }
       ]
     },
@@ -745,7 +798,8 @@
           "tags": [
             "React",
             "Facebook"
-          ]
+          ],
+          "file": "2013-05-29-react-released.md"
         },
         {
           "title": "Docker",
@@ -756,7 +810,8 @@
           "tags": [
             "Docker",
             "DevOps"
-          ]
+          ],
+          "file": "2013-03-20-docker-released.md"
         }
       ]
     }

@@ -127,6 +127,7 @@ function processPost(file) {
       summary,
       category: "",
       tags: [],
+      file: path.basename(file),
       _fm: "",
       _body: raw,
       _eol: eol,
@@ -188,6 +189,7 @@ function processPost(file) {
     summary,
     category,
     tags,
+    file: path.basename(file),
     _fm: fm,
     _body: body,
     _eol: eol,
@@ -241,6 +243,7 @@ function main() {
       summary: p.summary,
       category: p.category,
       tags: p.tags,
+      file: p.file,
     });
   }
   const years = [...byYear.entries()]
