@@ -37,6 +37,30 @@ function fmGet(fm, key) {
   return m ? unquote(m[1].trim()) : "";
 }
 
+// 解析 frontmatter 的 tags：兼容内联数组 tags: [a, b] 与 block 列表（- a）
+function parseTags(fm) {
+  const ti = fm.search(/^tags:/m);
+  if (ti < 0) return [];
+  let rest = fm.slice(ti);
+  // 找到 block 列表的结束：下一个不是以 "-"/"*" 开头的行
+  const end = rest.search(/\n(?![ \t]*[-*])/m);
+  if (end > 0) rest = rest.slice(0, end);
+  const inline = rest.match(/^tags:\s*\[([\s\S]*)\]\s*$/m);
+  let list = [];
+  if (inline) {
+    list = inline[1]
+      .split(",")
+      .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+      .filter(Boolean);
+  } else {
+    rest.split(/\n/).slice(1).forEach((l) => {
+      const t = l.match(/^\s*-\s*(.*)/);
+      if (t) list.push(t[1].trim().replace(/^["']|["']$/g, ""));
+    });
+  }
+  return list.filter(Boolean);
+}
+
 // 从正文提取摘要
 function extractSummary(body) {
   let intro = body;
@@ -101,6 +125,8 @@ function processPost(file) {
       year: "",
       url: `/blog/${slugFallback}/`,
       summary,
+      category: "",
+      tags: [],
       _fm: "",
       _body: raw,
       _eol: eol,
@@ -151,12 +177,17 @@ function processPost(file) {
     needsFill = true;
   }
 
+  const category = fmGet(fm, "category") || "";
+  const tags = parseTags(fm);
+
   return {
     title,
     date,
     year,
     url,
     summary,
+    category,
+    tags,
     _fm: fm,
     _body: body,
     _eol: eol,
@@ -208,15 +239,33 @@ function main() {
       date: p.date,
       url: p.url,
       summary: p.summary,
+      category: p.category,
+      tags: p.tags,
     });
   }
   const years = [...byYear.entries()]
     .sort((a, b) => b[0].localeCompare(a[0]))
     .map(([year, items]) => ({ year, posts: items }));
 
+  // 聚合分类与标签（含计数，按频次倒序）
+  const catCount = new Map();
+  const tagCount = new Map();
+  for (const p of posts) {
+    if (p.category) catCount.set(p.category, (catCount.get(p.category) || 0) + 1);
+    for (const t of p.tags) tagCount.set(t, (tagCount.get(t) || 0) + 1);
+  }
+  const categories = [...catCount.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
+  const tags = [...tagCount.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
+
   const out = {
     generatedAt: new Date().toISOString(),
     total: posts.length,
+    categories,
+    tags,
     years,
   };
 

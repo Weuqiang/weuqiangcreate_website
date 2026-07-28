@@ -1,6 +1,286 @@
 {
-  "generatedAt": "2026-07-28T01:43:31.802Z",
+  "generatedAt": "2026-07-28T02:14:40.045Z",
   "total": 34,
+  "categories": [
+    {
+      "name": "AI资讯",
+      "count": 17
+    },
+    {
+      "name": "技术史",
+      "count": 14
+    },
+    {
+      "name": "随笔",
+      "count": 3
+    }
+  ],
+  "tags": [
+    {
+      "name": "OpenAI",
+      "count": 7
+    },
+    {
+      "name": "2025年发布",
+      "count": 6
+    },
+    {
+      "name": "多模态",
+      "count": 5
+    },
+    {
+      "name": "AI",
+      "count": 5
+    },
+    {
+      "name": "大模型",
+      "count": 5
+    },
+    {
+      "name": "2024年发布",
+      "count": 5
+    },
+    {
+      "name": "Google",
+      "count": 4
+    },
+    {
+      "name": "Meta",
+      "count": 4
+    },
+    {
+      "name": "推理能力",
+      "count": 3
+    },
+    {
+      "name": "人工智能",
+      "count": 2
+    },
+    {
+      "name": "Anthropic",
+      "count": 2
+    },
+    {
+      "name": "代码生成",
+      "count": 2
+    },
+    {
+      "name": "开源AI",
+      "count": 2
+    },
+    {
+      "name": "Llama",
+      "count": 2
+    },
+    {
+      "name": "DeepSeek",
+      "count": 2
+    },
+    {
+      "name": "GitHub",
+      "count": 2
+    },
+    {
+      "name": "Copilot",
+      "count": 2
+    },
+    {
+      "name": "blog",
+      "count": 2
+    },
+    {
+      "name": "tutorial",
+      "count": 2
+    },
+    {
+      "name": "DevOps",
+      "count": 2
+    },
+    {
+      "name": "Gemini 2.5",
+      "count": 1
+    },
+    {
+      "name": "多智能体",
+      "count": 1
+    },
+    {
+      "name": "并行推理",
+      "count": 1
+    },
+    {
+      "name": "Deep Think",
+      "count": 1
+    },
+    {
+      "name": "GPT-5",
+      "count": 1
+    },
+    {
+      "name": "大语言模型",
+      "count": 1
+    },
+    {
+      "name": "Claude 4",
+      "count": 1
+    },
+    {
+      "name": "AI编程",
+      "count": 1
+    },
+    {
+      "name": "推理模型",
+      "count": 1
+    },
+    {
+      "name": "Llama 4",
+      "count": 1
+    },
+    {
+      "name": "MoE架构",
+      "count": 1
+    },
+    {
+      "name": "Gemma 3.0",
+      "count": 1
+    },
+    {
+      "name": "单GPU优化",
+      "count": 1
+    },
+    {
+      "name": "Grok 3",
+      "count": 1
+    },
+    {
+      "name": "xAI",
+      "count": 1
+    },
+    {
+      "name": "实时信息",
+      "count": 1
+    },
+    {
+      "name": "幽默对话",
+      "count": 1
+    },
+    {
+      "name": "GPT-4o",
+      "count": 1
+    },
+    {
+      "name": "o3",
+      "count": 1
+    },
+    {
+      "name": "Claude 3.5",
+      "count": 1
+    },
+    {
+      "name": "AI安全",
+      "count": 1
+    },
+    {
+      "name": "Gemini 1.5",
+      "count": 1
+    },
+    {
+      "name": "长上下文",
+      "count": 1
+    },
+    {
+      "name": "Llama 3.1",
+      "count": 1
+    },
+    {
+      "name": "开源",
+      "count": 1
+    },
+    {
+      "name": "AI民主化",
+      "count": 1
+    },
+    {
+      "name": "中国AI",
+      "count": 1
+    },
+    {
+      "name": "数学推理",
+      "count": 1
+    },
+    {
+      "name": "Sora",
+      "count": 1
+    },
+    {
+      "name": "Midjourney",
+      "count": 1
+    },
+    {
+      "name": "GPT-4",
+      "count": 1
+    },
+    {
+      "name": "ChatGPT",
+      "count": 1
+    },
+    {
+      "name": "Stable Diffusion",
+      "count": 1
+    },
+    {
+      "name": "hello",
+      "count": 1
+    },
+    {
+      "name": "docusaurus",
+      "count": 1
+    },
+    {
+      "name": "GPT",
+      "count": 1
+    },
+    {
+      "name": "Transformer",
+      "count": 1
+    },
+    {
+      "name": "NLP",
+      "count": 1
+    },
+    {
+      "name": "AlphaGo",
+      "count": 1
+    },
+    {
+      "name": "DeepMind",
+      "count": 1
+    },
+    {
+      "name": "TensorFlow",
+      "count": 1
+    },
+    {
+      "name": "Kubernetes",
+      "count": 1
+    },
+    {
+      "name": "Vue",
+      "count": 1
+    },
+    {
+      "name": "React",
+      "count": 1
+    },
+    {
+      "name": "Facebook",
+      "count": 1
+    },
+    {
+      "name": "Docker",
+      "count": 1
+    }
+  ],
   "years": [
     {
       "year": "2025",
@@ -9,49 +289,113 @@
           "title": "Gemini 2.5 Deep Think：Google多智能体并行推理的新纪元",
           "date": "2025-08-01",
           "url": "/blog/gemini25-deep-think/",
-          "summary": "探索Google Gemini 2.5 Deep Think的多智能体并行推理架构，以及在数学奥林匹克等复杂任务中的突破性表现"
+          "summary": "探索Google Gemini 2.5 Deep Think的多智能体并行推理架构，以及在数学奥林匹克等复杂任务中的突破性表现",
+          "category": "AI资讯",
+          "tags": [
+            "Gemini 2.5",
+            "Google",
+            "多智能体",
+            "并行推理",
+            "Deep Think",
+            "2025年发布"
+          ]
         },
         {
           "title": "GPT-5：OpenAI 2025年的革命性突破，统一推理与生成的AI新纪元",
           "date": "2025-08-01",
           "url": "/blog/gpt5-revolutionary-ai/",
-          "summary": "深度解析OpenAI GPT-5的技术突破，包括统一推理架构、52万亿参数规模、多模态集成能力等革命性特性"
+          "summary": "深度解析OpenAI GPT-5的技术突破，包括统一推理架构、52万亿参数规模、多模态集成能力等革命性特性",
+          "category": "AI资讯",
+          "tags": [
+            "GPT-5",
+            "OpenAI",
+            "人工智能",
+            "大语言模型",
+            "推理能力",
+            "多模态",
+            "2025年发布"
+          ]
         },
         {
           "title": "Claude 4：Anthropic在编程领域的突破性进展",
           "date": "2025-05-23",
           "url": "/blog/claude4-programming-breakthrough/",
-          "summary": "详细分析Anthropic Claude 4系列模型在编程领域的突破，包括混合推理架构、扩展思考模式等创新特性"
+          "summary": "详细分析Anthropic Claude 4系列模型在编程领域的突破，包括混合推理架构、扩展思考模式等创新特性",
+          "category": "AI资讯",
+          "tags": [
+            "Claude 4",
+            "Anthropic",
+            "AI编程",
+            "代码生成",
+            "推理模型",
+            "2025年发布"
+          ]
         },
         {
           "title": "Llama 4：Meta开源多模态AI的重大突破",
           "date": "2025-04-05",
           "url": "/blog/llama4-multimodal-breakthrough/",
-          "summary": "深入分析Meta Llama 4系列模型的技术创新，包括MoE混合专家架构、原生多模态能力和超长上下文处理"
+          "summary": "深入分析Meta Llama 4系列模型的技术创新，包括MoE混合专家架构、原生多模态能力和超长上下文处理",
+          "category": "AI资讯",
+          "tags": [
+            "Llama 4",
+            "Meta",
+            "开源AI",
+            "多模态",
+            "MoE架构",
+            "2025年发布"
+          ]
         },
         {
           "title": "Gemma 3.0：Google开源多模态AI模型的新里程碑",
           "date": "2025-03-15",
           "url": "/blog/gemma3-multimodal-opensource/",
-          "summary": "全面解析Google Gemma 3.0开源多模态AI模型，包括四种规模配置、单GPU优化技术和ShieldGemma 2安全机制"
+          "summary": "全面解析Google Gemma 3.0开源多模态AI模型，包括四种规模配置、单GPU优化技术和ShieldGemma 2安全机制",
+          "category": "AI资讯",
+          "tags": [
+            "Gemma 3.0",
+            "Google",
+            "开源AI",
+            "多模态",
+            "单GPU优化",
+            "2025年发布"
+          ]
         },
         {
           "title": "Grok 3：xAI推理能力的革命性突破",
           "date": "2025-02-18",
           "url": "/blog/grok3-reasoning-revolution/",
-          "summary": "深度分析xAI Grok 3的推理能力革命，包括10倍性能提升、实时信息获取和独特的幽默对话风格"
+          "summary": "深度分析xAI Grok 3的推理能力革命，包括10倍性能提升、实时信息获取和独特的幽默对话风格",
+          "category": "AI资讯",
+          "tags": [
+            "Grok 3",
+            "xAI",
+            "推理能力",
+            "实时信息",
+            "幽默对话",
+            "2025年发布"
+          ]
         },
         {
           "title": "2025  AI",
           "date": "2025-01-28",
           "url": "/blog/ai-coding-tools-2025/",
-          "summary": "2025 AI"
+          "summary": "2025 AI",
+          "category": "AI资讯",
+          "tags": [
+            "AI"
+          ]
         },
         {
           "title": "Meta  Llama 4",
           "date": "2025-01-15",
           "url": "/blog/meta-llama-4-coming/",
-          "summary": "Meta Llama 4 2025"
+          "summary": "Meta Llama 4 2025",
+          "category": "AI资讯",
+          "tags": [
+            "Meta",
+            "Llama"
+          ]
         }
       ]
     },
@@ -62,61 +406,131 @@
           "title": "DeepSeek-V3",
           "date": "2024-12-26",
           "url": "/blog/deepseek-v3-open-source/",
-          "summary": "DeepSeek DeepSeek-V3"
+          "summary": "DeepSeek DeepSeek-V3",
+          "category": "AI资讯",
+          "tags": [
+            "DeepSeek"
+          ]
         },
         {
           "title": "GPT-4o：OpenAI的多模态突破性进展",
           "date": "2024-12-20",
           "url": "/blog/gpt4o-breakthrough/",
-          "summary": "深入解析OpenAI GPT-4o的多模态突破，包括实时处理能力、性能提升和技术创新"
+          "summary": "深入解析OpenAI GPT-4o的多模态突破，包括实时处理能力、性能提升和技术创新",
+          "category": "AI资讯",
+          "tags": [
+            "GPT-4o",
+            "OpenAI",
+            "多模态",
+            "人工智能",
+            "大模型",
+            "2024年发布"
+          ]
         },
         {
           "title": "OpenAI o3",
           "date": "2024-12-20",
           "url": "/blog/openai-o3-breakthrough/",
-          "summary": "OpenAI o3"
+          "summary": "OpenAI o3",
+          "category": "AI资讯",
+          "tags": [
+            "OpenAI",
+            "o3"
+          ]
         },
         {
           "title": "Claude 3.5 Sonnet：Anthropic在AI安全与性能上的双重突破",
           "date": "2024-12-18",
           "url": "/blog/claude35-sonnet/",
-          "summary": "深入分析Anthropic Claude 3.5 Sonnet在AI安全与性能方面的突破，包括基准测试表现和技术优势"
+          "summary": "深入分析Anthropic Claude 3.5 Sonnet在AI安全与性能方面的突破，包括基准测试表现和技术优势",
+          "category": "AI资讯",
+          "tags": [
+            "Claude 3.5",
+            "Anthropic",
+            "AI安全",
+            "推理能力",
+            "大模型",
+            "2024年发布"
+          ]
         },
         {
           "title": "GitHub Copilot",
           "date": "2024-12-18",
           "url": "/blog/github-copilot-free/",
-          "summary": "GitHub Copilot"
+          "summary": "GitHub Copilot",
+          "category": "AI资讯",
+          "tags": [
+            "GitHub",
+            "Copilot",
+            "AI"
+          ]
         },
         {
           "title": "Gemini 1.5 Pro：Google在长上下文处理上的技术革命",
           "date": "2024-12-16",
           "url": "/blog/gemini15-pro/",
-          "summary": "深度分析Google Gemini 1.5 Pro在长上下文处理方面的技术革命，包括超长上下文窗口和多模态能力"
+          "summary": "深度分析Google Gemini 1.5 Pro在长上下文处理方面的技术革命，包括超长上下文窗口和多模态能力",
+          "category": "AI资讯",
+          "tags": [
+            "Gemini 1.5",
+            "Google",
+            "长上下文",
+            "多模态",
+            "大模型",
+            "2024年发布"
+          ]
         },
         {
           "title": "Llama 3.1：Meta引领开源大模型的新时代",
           "date": "2024-12-14",
           "url": "/blog/llama31-opensource/",
-          "summary": "全面解析Meta Llama 3.1系列开源大模型，包括多规模架构、性能突破和AI民主化贡献"
+          "summary": "全面解析Meta Llama 3.1系列开源大模型，包括多规模架构、性能突破和AI民主化贡献",
+          "category": "AI资讯",
+          "tags": [
+            "Llama 3.1",
+            "Meta",
+            "开源",
+            "AI民主化",
+            "大模型",
+            "2024年发布"
+          ]
         },
         {
           "title": "DeepSeek：中国AI大模型的崛起与技术突破",
           "date": "2024-12-12",
           "url": "/blog/deepseek-chinese-ai/",
-          "summary": "深入分析DeepSeek中国AI大模型的技术突破，包括代码生成、数学推理能力和模型架构创新"
+          "summary": "深入分析DeepSeek中国AI大模型的技术突破，包括代码生成、数学推理能力和模型架构创新",
+          "category": "AI资讯",
+          "tags": [
+            "DeepSeek",
+            "中国AI",
+            "代码生成",
+            "数学推理",
+            "大模型",
+            "2024年发布"
+          ]
         },
         {
           "title": "Sora",
           "date": "2024-12-10",
           "url": "/blog/openai-sora-released/",
-          "summary": "OpenAI Sora"
+          "summary": "OpenAI Sora",
+          "category": "AI资讯",
+          "tags": [
+            "OpenAI",
+            "Sora"
+          ]
         },
         {
           "title": "生成式AI提取博客精华",
           "date": "2024-1-31",
           "url": "/blog/2024/1/31/",
-          "summary": "记录自己博客如何实现生成式AI文本摘要"
+          "summary": "记录自己博客如何实现生成式AI文本摘要",
+          "category": "随笔",
+          "tags": [
+            "blog",
+            "tutorial"
+          ]
         }
       ]
     },
@@ -127,25 +541,45 @@
           "title": "博客写作回顾",
           "date": "2023-12-30",
           "url": "/blog/2023/12/30/",
-          "summary": "记录自己是如何写博客的"
+          "summary": "记录自己是如何写博客的",
+          "category": "随笔",
+          "tags": [
+            "blog",
+            "tutorial"
+          ]
         },
         {
           "title": "Meta  Llama 2",
           "date": "2023-07-18",
           "url": "/blog/llama-2-open-source/",
-          "summary": "Meta Llama 2 OpenAI"
+          "summary": "Meta Llama 2 OpenAI",
+          "category": "技术史",
+          "tags": [
+            "Meta",
+            "Llama"
+          ]
         },
         {
           "title": "Midjourney V5 AI",
           "date": "2023-03-15",
           "url": "/blog/midjourney-v5-released/",
-          "summary": "Midjourney V5"
+          "summary": "Midjourney V5",
+          "category": "技术史",
+          "tags": [
+            "Midjourney",
+            "AI"
+          ]
         },
         {
           "title": "GPT-4",
           "date": "2023-03-14",
           "url": "/blog/gpt4-released/",
-          "summary": "OpenAI GPT-4 GPT-3.5"
+          "summary": "OpenAI GPT-4 GPT-3.5",
+          "category": "技术史",
+          "tags": [
+            "OpenAI",
+            "GPT-4"
+          ]
         }
       ]
     },
@@ -156,13 +590,23 @@
           "title": "ChatGPT AI",
           "date": "2022-11-30",
           "url": "/blog/chatgpt-released/",
-          "summary": "OpenAI ChatGPT AI"
+          "summary": "OpenAI ChatGPT AI",
+          "category": "技术史",
+          "tags": [
+            "OpenAI",
+            "ChatGPT"
+          ]
         },
         {
           "title": "Stable Diffusion AI",
           "date": "2022-08-22",
           "url": "/blog/stable-diffusion-open-source/",
-          "summary": "Stable Diffusion AI"
+          "summary": "Stable Diffusion AI",
+          "category": "技术史",
+          "tags": [
+            "Stable Diffusion",
+            "AI"
+          ]
         }
       ]
     },
@@ -173,7 +617,13 @@
           "title": "GitHub  CopilotAI",
           "date": "2021-06-29",
           "url": "/blog/github-copilot-launch/",
-          "summary": "GitHub OpenAI Copilot"
+          "summary": "GitHub OpenAI Copilot",
+          "category": "技术史",
+          "tags": [
+            "GitHub",
+            "Copilot",
+            "AI"
+          ]
         }
       ]
     },
@@ -184,7 +634,12 @@
           "title": "我的博客",
           "date": "2019-05-29",
           "url": "/blog/long-blog-post/",
-          "summary": "This is the summary of a very long blog post, Use a comment to limit blog post size in the list view."
+          "summary": "This is the summary of a very long blog post, Use a comment to limit blog post size in the list view.",
+          "category": "随笔",
+          "tags": [
+            "hello",
+            "docusaurus"
+          ]
         }
       ]
     },
@@ -195,7 +650,12 @@
           "title": "OpenAI  GPT",
           "date": "2018-06-11",
           "url": "/blog/openai-gpt-released/",
-          "summary": "OpenAI GPTGenerative Pre-trained Transformer"
+          "summary": "OpenAI GPTGenerative Pre-trained Transformer",
+          "category": "技术史",
+          "tags": [
+            "OpenAI",
+            "GPT"
+          ]
         }
       ]
     },
@@ -206,7 +666,12 @@
           "title": "Transformer  NLP",
           "date": "2017-06-12",
           "url": "/blog/transformer-paper/",
-          "summary": "Google Attention is All You Need Transformer NLP"
+          "summary": "Google Attention is All You Need Transformer NLP",
+          "category": "技术史",
+          "tags": [
+            "Transformer",
+            "NLP"
+          ]
         }
       ]
     },
@@ -217,7 +682,12 @@
           "title": "AlphaGo AI",
           "date": "2016-03-15",
           "url": "/blog/alphago-defeats-lee-sedol/",
-          "summary": "AlphaGo 4:1 AI"
+          "summary": "AlphaGo 4:1 AI",
+          "category": "技术史",
+          "tags": [
+            "AlphaGo",
+            "DeepMind"
+          ]
         }
       ]
     },
@@ -228,7 +698,12 @@
           "title": "Google  TensorFlow",
           "date": "2015-11-09",
           "url": "/blog/tensorflow-released/",
-          "summary": "Google TensorFlow PyTorch"
+          "summary": "Google TensorFlow PyTorch",
+          "category": "技术史",
+          "tags": [
+            "Google",
+            "TensorFlow"
+          ]
         }
       ]
     },
@@ -239,13 +714,22 @@
           "title": "Kubernetes",
           "date": "2014-06-07",
           "url": "/blog/kubernetes-released/",
-          "summary": "Google Kubernetes"
+          "summary": "Google Kubernetes",
+          "category": "技术史",
+          "tags": [
+            "Kubernetes",
+            "DevOps"
+          ]
         },
         {
           "title": "Vue.js",
           "date": "2014-02-07",
           "url": "/blog/vue-released/",
-          "summary": "Vue.js React Angular"
+          "summary": "Vue.js React Angular",
+          "category": "技术史",
+          "tags": [
+            "Vue"
+          ]
         }
       ]
     },
@@ -256,13 +740,23 @@
           "title": "React",
           "date": "2013-05-29",
           "url": "/blog/react-released/",
-          "summary": "Facebook React DOM"
+          "summary": "Facebook React DOM",
+          "category": "技术史",
+          "tags": [
+            "React",
+            "Facebook"
+          ]
         },
         {
           "title": "Docker",
           "date": "2013-03-20",
           "url": "/blog/docker-released/",
-          "summary": "Docker"
+          "summary": "Docker",
+          "category": "技术史",
+          "tags": [
+            "Docker",
+            "DevOps"
+          ]
         }
       ]
     }

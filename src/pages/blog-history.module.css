@@ -133,3 +133,176 @@
 .foot a {
   color: var(--ifm-color-primary);
 }
+
+/* ---------- 筛选栏 ---------- */
+.filterBar {
+  background: var(--paper, #fbf7f0);
+  border: 1px solid var(--line, #e7ddd0);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 2.2rem;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+}
+
+.filterRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin-bottom: 0.7rem;
+}
+
+.filterRow:last-child {
+  margin-bottom: 0;
+}
+
+.filterLabel {
+  flex: 0 0 2.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink, #5b534a);
+  opacity: 0.75;
+  padding-top: 0.35rem;
+  letter-spacing: 0.05em;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line, #e7ddd0);
+  background: transparent;
+  color: var(--ink, #5b534a);
+  transition: all 0.16s ease;
+}
+
+.chip:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+  transform: translateY(-1px);
+}
+
+.chipActive {
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: #fff;
+}
+
+.chipActive:hover {
+  color: #fff;
+}
+
+.chipCount {
+  font-size: 0.68rem;
+  padding: 0.02rem 0.34rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 14%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.chipActive .chipCount {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.chipMore {
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  border: none;
+  background: none;
+  color: var(--ifm-color-primary);
+  text-decoration: underline;
+}
+
+.filterStatus {
+  margin-top: 0.2rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--line, #e7ddd0);
+  font-size: 0.85rem;
+  color: var(--ink, #5b534a);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.clearBtn {
+  font-family: inherit;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line, #e7ddd0);
+  background: transparent;
+  color: var(--ifm-color-primary);
+  transition: all 0.16s ease;
+}
+
+.clearBtn:hover {
+  background: color-mix(in srgb, var(--ifm-color-primary) 12%, transparent);
+}
+
+/* ---------- 列表项内的分类/标签 ---------- */
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.catPill {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 16%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.tagPill {
+  font-size: 0.72rem;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line, #e7ddd0);
+  color: var(--ink, #5b534a);
+  opacity: 0.85;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.tagPill:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.tagPillActive {
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: #fff;
+  opacity: 1;
+}
+
+.empty {
+  text-align: center;
+  color: var(--ink, #5b534a);
+  opacity: 0.7;
+  padding: 3rem 0;
+}
