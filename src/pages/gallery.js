@@ -14,21 +14,21 @@ import "yet-another-react-lightbox/plugins/captions.css";
 import styles from "./gallery.module.css";
 
 const unsplashPhotos = [
-  { id: "circuit", width: 1200, height: 800, title: "线条", description: "电路纹理" },
-  { id: "bamboo", width: 1080, height: 1080, title: "线条", description: "竹节纹" },
-  { id: "topography", width: 1600, height: 900, title: "线条", description: "等高线" },
-  { id: "signal", width: 1920, height: 1080, title: "线条", description: "信号纹" },
-  { id: "hexagons", width: 1200, height: 800, title: "几何", description: "叠六边形" },
-  { id: "circles-sq", width: 1080, height: 1080, title: "几何", description: "圆方纹" },
-  { id: "aztec", width: 1600, height: 900, title: "几何", description: "阿兹特克纹" },
-  { id: "diamonds", width: 1080, height: 1350, title: "几何", description: "变形菱形" },
-  { id: "charlie", width: 1920, height: 1080, title: "几何", description: "查理布朗纹" },
-  { id: "jigsaw", width: 1200, height: 800, title: "几何", description: "拼图块" },
-  { id: "leaf", width: 1080, height: 1080, title: "线条", description: "叶脉纹" },
-  { id: "polkadots", width: 1600, height: 900, title: "纹理", description: "波点纹" },
-  { id: "pixeldots", width: 1080, height: 1350, title: "纹理", description: "像素点阵" },
-  { id: "moroccan", width: 1200, height: 800, title: "纹理", description: "摩洛哥纹" },
-  { id: "bubbles", width: 1920, height: 1080, title: "纹理", description: "气泡纹" },
+  { id: "anime-1", width: 1536, height: 1024, title: "动漫", description: "梦幻天空城" },
+  { id: "anime-2", width: 1536, height: 1024, title: "动漫", description: "樱花神社" },
+  { id: "anime-3", width: 1536, height: 1024, title: "动漫", description: "海滨小镇黄昏" },
+  { id: "anime-4", width: 1536, height: 1024, title: "动漫", description: "霓虹梦幻港湾" },
+  { id: "anime-5", width: 1536, height: 1024, title: "动漫", description: "薰衣草田极光" },
+  { id: "guofeng-1", width: 1536, height: 1024, title: "国风", description: "水墨山水" },
+  { id: "guofeng-2", width: 1536, height: 1024, title: "国风", description: "秋枫水亭" },
+  { id: "guofeng-3", width: 1536, height: 1024, title: "国风", description: "雪峰寒月" },
+  { id: "guofeng-4", width: 1536, height: 1024, title: "国风", description: "竹溪白鹤" },
+  { id: "guofeng-5", width: 1536, height: 1024, title: "国风", description: "荷塘石桥" },
+  { id: "neon-1", width: 1536, height: 1024, title: "吸睛", description: "霓虹渐变" },
+  { id: "neon-2", width: 1536, height: 1024, title: "吸睛", description: "液态铬幻彩" },
+  { id: "neon-3", width: 1536, height: 1024, title: "吸睛", description: "波普几何" },
+  { id: "neon-4", width: 1536, height: 1024, title: "吸睛", description: "星云漩涡" },
+  { id: "neon-5", width: 1536, height: 1024, title: "吸睛", description: "极光山脉" },
 ];
 
 const uniqueTitlesSet = new Set(unsplashPhotos.map((photo) => photo.title)).add("全选");
@@ -108,7 +108,7 @@ function Playground() {
   const baseUrl = useBaseUrl("/");
   const photos = useMemo(
     () => rawPhotos.map((photo) => ({
-      src: `${baseUrl}pages/gallery/${photo.id}-${photo.width}-${photo.height}.svg`,
+      src: `${baseUrl}pages/gallery/${photo.id}-${photo.width}-${photo.height}.webp`,
       width: photo.width,
       height: photo.height,
       title: photo.title,
@@ -161,7 +161,7 @@ function GalleryContent() {
         <span className={styles.pageEyebrow}>影像</span>
         <h1 className={styles.pageTitle}>相册</h1>
         <p className={styles.pageLead}>
-          一组与站点暖色纸感协调的背景矢量图。按主题筛选，按行/按列/动态三种布局切换。
+          一组可用作桌面背景的 AI 壁纸——动漫、国风、吸睛三主题。按主题筛选，按行/按列/动态三种布局切换，点击放大全屏欣赏。
         </p>
       </header>
       <Settings>
