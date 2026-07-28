@@ -14,18 +14,21 @@ import "yet-another-react-lightbox/plugins/captions.css";
 import styles from "./gallery.module.css";
 
 const unsplashPhotos = [
-  { id: "warm-gradient", width: 1920, height: 1080, title: "渐变", description: "暖色对角渐变与柔光晕" },
-  { id: "sunset-glow", width: 1600, height: 900, title: "渐变", description: "日落辉光与暖色天际" },
-  { id: "geo-triangles", width: 1080, height: 1080, title: "几何", description: "低多边形三角拼贴" },
-  { id: "concentric", width: 1080, height: 1080, title: "几何", description: "同心圆层叠靶心" },
-  { id: "bauhaus", width: 1080, height: 1080, title: "几何", description: "包豪斯几何构成" },
-  { id: "grid-diagonal", width: 1200, height: 800, title: "几何", description: "对角网格线" },
-  { id: "mountains", width: 1920, height: 1080, title: "山水", description: "扁平矢量山峦剪影" },
-  { id: "sun-horizon", width: 1920, height: 1080, title: "山水", description: "日出地平线与水面倒影" },
-  { id: "waves", width: 1600, height: 900, title: "线条", description: "流动波纹分层" },
-  { id: "stripes", width: 1080, height: 1350, title: "线条", description: "柔和斜条纹" },
-  { id: "dots", width: 1080, height: 1350, title: "纹理", description: "点阵尺寸渐变" },
-  { id: "blobs", width: 1080, height: 1080, title: "纹理", description: "柔和有机色斑" },
+  { id: "circuit", width: 1200, height: 800, title: "线条", description: "电路纹理" },
+  { id: "bamboo", width: 1080, height: 1080, title: "线条", description: "竹节纹" },
+  { id: "topography", width: 1600, height: 900, title: "线条", description: "等高线" },
+  { id: "signal", width: 1920, height: 1080, title: "线条", description: "信号纹" },
+  { id: "hexagons", width: 1200, height: 800, title: "几何", description: "叠六边形" },
+  { id: "circles-sq", width: 1080, height: 1080, title: "几何", description: "圆方纹" },
+  { id: "aztec", width: 1600, height: 900, title: "几何", description: "阿兹特克纹" },
+  { id: "diamonds", width: 1080, height: 1350, title: "几何", description: "变形菱形" },
+  { id: "charlie", width: 1920, height: 1080, title: "几何", description: "查理布朗纹" },
+  { id: "jigsaw", width: 1200, height: 800, title: "几何", description: "拼图块" },
+  { id: "leaf", width: 1080, height: 1080, title: "线条", description: "叶脉纹" },
+  { id: "polkadots", width: 1600, height: 900, title: "纹理", description: "波点纹" },
+  { id: "pixeldots", width: 1080, height: 1350, title: "纹理", description: "像素点阵" },
+  { id: "moroccan", width: 1200, height: 800, title: "纹理", description: "摩洛哥纹" },
+  { id: "bubbles", width: 1920, height: 1080, title: "纹理", description: "气泡纹" },
 ];
 
 const uniqueTitlesSet = new Set(unsplashPhotos.map((photo) => photo.title)).add("全选");
