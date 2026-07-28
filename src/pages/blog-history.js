@@ -55,12 +55,12 @@ export default function BlogHistory() {
 
   return (
     <Layout
-      title="博文历史总览"
+      title="博文总览"
       description="按年份、标签与分类筛选的全部博文与自动摘要，每日自动更新"
     >
       <main className={styles.page}>
         <header className={styles.header}>
-          <h1 className={styles.h1}>博文历史总览</h1>
+          <h1 className={styles.h1}>博文总览</h1>
           <p className={styles.sub}>
             共 <strong>{total}</strong> 篇 · 按年份归档，每篇附自动摘要
             <span className={styles.tag}>每日自动更新</span>

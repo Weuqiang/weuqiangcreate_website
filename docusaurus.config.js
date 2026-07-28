@@ -208,14 +208,9 @@ const config = {
           label: "书架",
         },
         {
-          to: "/blog/archive",
-          position: "left",
-          label: "博文",
-        },
-        {
           to: "/blog-history",
           position: "left",
-          label: "博文历史",
+          label: "博文",
         },
         {
           to: "/case",
@@ -252,7 +247,7 @@ const config = {
           items: [
             { label: "开发文档", to: "/docs" },
             { label: "书架", to: "/read" },
-            { label: "博文", to: "/blog" },
+            { label: "博文", to: "/blog-history" },
             { label: "个案", to: "/case" },
             { label: "相簿", to: "/gallery" },
           ],
