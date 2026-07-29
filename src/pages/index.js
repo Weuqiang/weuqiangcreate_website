@@ -152,8 +152,7 @@ function Hero() {
             把零散的念头，种成一座<em>慢慢生长</em>的花园。
           </p>
           <p className={styles.lede}>
-            我是魏强。这里收着我「把学过的东西真正弄懂」的过程——
-            技术笔记、读书心得、文章与影像，按主题而非时间组织，方便随时回来续写。
+            我是魏强：这里收着「把学的东西真正弄懂」的过程——方便随时续写。
           </p>
           <div className={styles.buttons}>
             <Link className="button button--primary button--lg" to="/docs">逛逛知识图谱</Link>
@@ -189,7 +188,7 @@ function KnowledgeGraph() {
         <span className={styles.kicker}>知识图谱</span>
         <h2 className={styles.sectionTitle}>知识的脉络</h2>
         <p className={styles.sectionLead}>
-          中心是这座花园，六条主干向外生长，叶节点是具体主题。悬停高亮关联，点击进入对应栏目。
+          这座花园，向阳而生，主干坚实脉络繁茂，点击进入。
         </p>
       </div>
       <div className={styles.kgStage}>

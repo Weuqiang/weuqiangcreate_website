@@ -19,8 +19,7 @@ export default function About() {
           <span className={styles.eyebrow}>关于我</span>
           <h1 className={styles.title}>{siteConfig.title}</h1>
           <p className={styles.lead}>
-            你好，我是魏强。这里是一处安放学习与思考的「知识花园」——
-            技术文档、读书笔记、文章与影像，慢慢记下来，也慢慢生长。
+            我是魏强：这里收着「把学的东西真正弄懂」的过程——方便随时续写。
           </p>
         </header>
 
