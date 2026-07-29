@@ -1,101 +1,19 @@
 ---
 category: 技术史
 slug: midjourney-v5-released
-title: Midjourney V5 AI 
-description: "Midjourney V5"
+title: Midjourney V5 出来后，我盯着图里那只手看了半天——它终于长对地方了
+description: 2023 年 Midjourney V5 发布，把 AI 生图的真实感推到新高度。回顾那一代「手终于像手」的质变，以及 AI 绘画的审美军备竞赛。
 authors: [weuqiang]
-tags: [Midjourney, AI]
+tags: [Midjourney, AI绘画, 图像生成]
 date: 2023-03-15
 ---
 
-Midjourney  V5
+2023 年 3 月，Midjourney 放出 V5。那阵子圈里流传一个梗：考验 AI 画图水平，就看它画的人手——早几代模型，十个里有八个画出六根手指、或者手指黏成一团。V5 最让我服气的一点，恰恰就是：手，终于长对地方了。
 
 <!-- truncate -->
 
-## 
+这听起来像个笑话，其实是个很硬的指标。手是人体最复杂、细节最多的部位，一旦模型能把手指的走向、关节的弯折处理得自然，说明它对「结构」的理解已经跨过了一个坎。那天我翻着生成的图，盯着一只手看了半天，心里想的是：这下「AI 图一眼假」的便宜吐槽，快用不上了。
 
-**1. **
+V5 带来的还有另一种真实感——不是照片级的锐利，而是一种「像被认真构图过的画面」。这让它很受概念设计、氛围图这类场景的欢迎。当然，越真实，关于「这是不是盗用了谁的风格」的争论也越尖锐。
 
-- 
-- 
-- 
-
-**2. **
-
-- 
-- 
-- 
-
-**3. **
-
- AI V5 
-
-## 
-
-
-
-****
-```
-a photo of a cat sitting on a windowsill, golden hour lighting
-```
-
-
-
-****
-```
-a painting of a mountain landscape, oil painting style
-```
-
-
-
-##  V4
-
-- ****V5 
-- ****V5 
-- ****
-
-## 
-
-**1. **
-
-Midjourney 
-
-**2. **
-
-AI 
-
-**3. **
-
-
-
-## 
-
-Midjourney V5 
-
-- 
-- 
-- 
-
- AI 
-
-## 
-
-****
-- 
-- 
-- 
-
-****
-- 
-- 
-
-## 
-
-Midjourney V5  AI 
-
-- 
-- 
-- 
-
-AI 
-
+我个人的体会是，Midjourney 这类产品把「画面的想象力」从专业画师的专属技能，变成了所有人输入框里的咒语。好事还是坏事另说，但「人人都能先看到自己脑子里的画面」这件事，确实是 V5 那一波真正交付的东西。

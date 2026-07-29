@@ -1,86 +1,19 @@
 ---
 category: AI资讯
 slug: github-copilot-free
-title: GitHub Copilot 
-description: "GitHub Copilot"
+title: Copilot 宣布免费那天，我意识到「AI 结对编程」已经成了基础设施
+description: GitHub 把 Copilot 的免费额度向个人开发者敞开。回顾这件小事背后，AI 编码助手从「尝鲜」走向「默认配置」的转折。
 authors: [weuqiang]
-tags: [GitHub, Copilot, AI]
+tags: [GitHub, Copilot, AI编程]
 date: 2024-12-18
 ---
 
-GitHub  Copilot 
+GitHub 给 Copilot 开了免费额度那天，我朋友圈里好几个平时不聊 AI 的朋友，都顺手打开了试用。这件事本身不大，但挺能说明问题：**AI 编码助手已经从「酷玩意」变成了「默认就该有」的东西**。
 
 <!-- truncate -->
 
-## 
+回想 2021 年 Copilot 刚出来时，大家还当它是个会补全代码的噱头；三年过去，它免费了，意味着厂商已经不再需要靠「收不收费」来筛选用户，而是要抢「你写代码时第一反应打开谁」的入口。这跟当年浏览器、搜索引擎争入口是一个逻辑。
 
- 2024  12 GitHub Copilot 
+我自己的使用习惯也早就固化了：写重复逻辑、起样板、查个不熟 API 的写法，第一反应就是让它先给一版。它给的不一定对，但「先有个起点」省下的心力是真金白银。
 
-- ** 2000 **
-- ** 50 **
--  VS CodeVisual StudioNeovim 
-
-$10/
-
-## 
-
-
-
-**1. **
-
-- Cursor  $20 
-- 
-- 
-
-**2. **
-
-
-
-**3. **
-
-
-
-## 
-
-
-
-****
-- 
-- 
--  GitHub 
-
-****
-- 2000 
--  Cursor 
-- 
-
-##  Cursor
-
-Cursor $20/
-
-- 
-- 
-- 
-
-Cursor 
-
-## 
-
-AI 
-
--  30-50%
-- 
-- 
-
- AI 
-
-## 
-
-GitHub Copilot 
-
-- 
--  Cursor
-- 
-
- AI 
-
+免费当然不是做慈善——入口一旦占住，后面的企业版、高级模型、工作流集成有的是变现空间。但站在用的人来说，能白嫖一个确实好用的搭档，怎么都不亏。只是别忘了：免费的东西，代价往往写在别处。

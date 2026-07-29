@@ -89,22 +89,6 @@ function stripCdata(s) {
   return s.replace(/^\s*<!\[CDATA\[/, "").replace(/\]\]>\s*$/, "");
 }
 
-// ---------- 翻译（MyMemory 免密钥） ----------
-async function translate(text) {
-  if (!text) return "";
-  try {
-    const q = text.slice(0, 500);
-    const url = `https://api.mymemory.translated.net/get?langpair=en|zh-CN&q=${encodeURIComponent(
-      q
-    )}`;
-    const r = await getJson(url);
-    const t = r && r.responseData && r.responseData.translatedText;
-    return t ? t.trim() : text;
-  } catch (e) {
-    return text; // 翻译失败降级为原文
-  }
-}
-
 // ---------- 国际：Hacker News ----------
 async function fetchInternational() {
   const ids = await getJson(
@@ -122,9 +106,8 @@ async function fetchInternational() {
   for (const it of items) {
     if (!it || !it.title) continue;
     const url = it.url || `https://news.ycombinator.com/item?id=${it.id}`;
-    const desc = it.text ? stripHtml(it.text).slice(0, DESC_LEN) : "";
-    const zh = await translate(it.title);
-    out.push({ title: zh || it.title, url, desc });
+    // 保留英文原标题：机器翻译容易翻车（如把标题译成乱码），直接读原文更干净
+    out.push({ title: it.title, url, desc: "" });
   }
   return out;
 }
@@ -160,6 +143,36 @@ async function fetchDomestic() {
   }
 }
 
+// ---------- 拟人化文案 ----------
+function hashStr(s) {
+  let h = 0;
+  for (const c of s) h = (h + c.charCodeAt(0)) % 100000;
+  return h;
+}
+function weekdayCN(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][d.getDay()];
+}
+const INTROS = [
+  (wd) => `今天（${wd}）照例刷了一圈国内外科技动态，挑几件我觉得值得记一笔的聊聊。`,
+  (wd) => `${wd}好。例行扫了一眼今天的科技新闻，有几条想顺手记下来。`,
+  (wd) => `又到${wd}，把今天刷到的科技动态里值得一看的，挑出来摆这儿。`,
+  (wd) =>
+    `又是平常一日。照旧把国内外科技圈今天冒出来的动静，筛一遍记在这儿。`,
+];
+const MUSINGS = [
+  "做日报久了有个体会：真正改变行业的，往往不是当天最热闹的那条，而是某篇安静讲「我们换了个思路」的文章。",
+  "信息越来越多，判断力反而越来越贵。挑着看，比全看强。",
+  "技术新闻看多了会发现，很多「突破」过两周就没人提了；能留下来的，都是解决了真问题的。",
+  "今天这几条里，我最感兴趣的往往不是大厂发的，而是某个小团队折腾出来的怪东西。",
+];
+function introLine(dateStr) {
+  return INTROS[hashStr(dateStr) % INTROS.length](weekdayCN(dateStr));
+}
+function musingLine(dateStr) {
+  return MUSINGS[hashStr(dateStr) % MUSINGS.length];
+}
+
 // ---------- 组装 Markdown ----------
 function renderMarkdown(date, intl, dom) {
   const lines = [];
@@ -170,23 +183,20 @@ function renderMarkdown(date, intl, dom) {
   lines.push("category: 科技资讯");
   lines.push("---");
   lines.push("");
-  lines.push(
-    "> 本篇由自动化脚本每日汇总当日科技要闻：国际来源经机器翻译为中文，国内来源直接引用。内容来自公开 RSS / API，仅供参考。"
-  );
+  lines.push(introLine(date));
   lines.push("");
-
+  lines.push("> 国际源标题保留英文原文——机器翻译容易翻车，不如直接读。");
+  lines.push("");
   lines.push("## 🌐 国际科技");
   lines.push("");
   if (intl.length === 0) {
     lines.push("_（今日国际源暂未抓取到内容）_");
   } else {
     for (const it of intl) {
-      const extra = it.desc ? ` — ${it.desc}` : "";
-      lines.push(`- [${it.title}](${it.url})${extra}`);
+      lines.push(`- [${it.title}](${it.url})`);
     }
   }
   lines.push("");
-
   lines.push("## 🇨🇳 国内科技");
   lines.push("");
   if (dom.length === 0) {
@@ -198,9 +208,13 @@ function renderMarkdown(date, intl, dom) {
     }
   }
   lines.push("");
+  lines.push("## 今日碎念");
+  lines.push("");
+  lines.push(musingLine(date));
+  lines.push("");
   lines.push("---");
   lines.push(
-    `*由每日自动化脚本于 ${date} 生成 · 共 ${intl.length + dom.length} 条*`
+    "*以上由脚本自动汇总公开来源（Hacker News / 36氪 RSS），链接与内容请自行甄别。*"
   );
   lines.push("");
   return lines.join("\n");

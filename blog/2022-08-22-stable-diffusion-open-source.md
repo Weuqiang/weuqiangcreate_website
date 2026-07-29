@@ -1,99 +1,19 @@
 ---
 category: 技术史
 slug: stable-diffusion-open-source
-title: Stable Diffusion AI 
-description: "Stable Diffusion AI"
+title: Stable Diffusion 开源那天，AI 画画从「云端特权」变成了「我电脑里的事」
+description: 2022 年 Stable Diffusion 开源，让普通人第一次能在自己显卡上跑图像生成。回顾它如何引爆平民创作，也如何搅动了版权的浑水。
 authors: [weuqiang]
-tags: [Stable Diffusion, AI]
+tags: [Stable Diffusion, AI绘画, 开源]
 date: 2022-08-22
 ---
 
-Stable Diffusion  AI 
+2022 年 8 月，Stable Diffusion 开源。这件事的分量，得对比着看：同一时期 Midjourney 很惊艳，但它是个关起门来的云服务，你只能在别人的规则里玩；而 Stable Diffusion 直接把权重甩出来，你下载到自己显卡上就能跑。
 
 <!-- truncate -->
 
-##  Stable Diffusion
+我当时的感觉是「闸门开了」。一旦模型能在本地跑，社区的力量就疯长：五花八门的微调模型、插件、controlnet 控制姿态……短短几个月，能玩出的花样比闭源产品一年多都多。这种「发给所有人、然后看他们能折腾出什么」的开放，恰恰是开源最迷人的地方。
 
-Stable Diffusion  AI 
+但它也顺手搅浑了一池水。训练数据里有多少是未经授权的画作？生成的内容算谁的？艺术家们的愤怒不是没道理。技术圈习惯先欢呼「太酷了」，再慢慢补上伦理和法律的那一课——这次也没例外，而且补得格外艰难。
 
-- 
-- 
--  Midjourney
-
-## 
-
-**1. **
-
- AI DALL-EMidjourney
-
-Stable Diffusion 
-
-**2. **
-
- API
-
-**3. **
-
-
-
-## 
-
-
-
-- 8GB  RTX 3060
-- 16GB
-- 10GB
-
-
-
-## 
-
- RTX 3090 Ti 
-
-- 5-10 
--  Midjourney 
-- 
-
-## 
-
-
-
-- **WebUI**
-- **LoRA**
-- **ControlNet**
-- ****
-
-## 
-
-**1. **
-
-
-
-**2. **
-
-AI 
-
-**3. **
-
-
-
-## 
-
-Stable Diffusion 
-
--  AI 
-- 
-- 
-
-Midjourney  DALL-E 
-
-## 
-
-Stable Diffusion  AI 
-
-- 
-- 
-- 
-
-2022 AI 
-
+回头看，Stable Diffusion 不只是一次技术发布，更像是把「人人都能生成图像」的按钮，按给了全世界。代价和红利，至今都还在算。

@@ -1,76 +1,19 @@
 ---
 category: AI资讯
 slug: deepseek-v3-open-source
-title: DeepSeek-V3 
-description: "DeepSeek DeepSeek-V3"
+title: DeepSeek-V3 开源时，最吓人的不是它强，而是它「这么便宜就训出来了」
+description: DeepSeek 开源 V3，一个顶尖水平的 MoE 大模型，训练成本却低得反常。回顾它如何把「效率和开放」同时摆到桌面上。
 authors: [weuqiang]
-tags: [DeepSeek]
+tags: [DeepSeek, 开源大模型, MoE]
 date: 2024-12-26
 ---
 
-DeepSeek  DeepSeek-V3
+DeepSeek-V3 开源那天，圈里最常被转的一句话是：它效果好到离谱，训练账单却便宜到离谱。一个能跟顶级闭源模型掰手腕的庞然大物，据披露的训练开销远小于同级别的同行——这比「又出了个强模型」要耐人寻味得多。
 
 <!-- truncate -->
 
-## 
+我个人的关注点就在这「省」字上。过去两年有个隐隐的焦虑：大模型越来越强，但也越来越烧钱，烧到只有巨头玩得起，开源阵营只能跟在后面捡漏。DeepSeek 这波相当于证明：在架构和工程上抠得够细，**效率和效果可以兼得**，不一定非得靠堆卡堆钱。
 
-DeepSeek-V3  GPT-4o  Claude 3.5
+而且它是真开源——权重放出来，许可也友好，社区马上就能拿去微调、部署、研究。这种「既强又开放还便宜」的组合，对任何被 API 价格和锁定的事困扰过的人，都很提气。
 
-- ****HumanEval  90.2%
-- ****MATH  90.2%
-- ****C-Eval  86.5%
-
-****
-
-## 
-
- 557 
-
-- GPT-4
-- Llama 3
-- DeepSeek-V3557 
-
- MoE
-
-## 
-
-MIT  AI 
-
-## 
-
-### 1. 
-
- OpenAIGoogle DeepSeek 
-
-### 2. 
-
- + 
-
-### 3. 
-
-
-
-## 
-
-
-
-- 
-- 
-- 
-
-
-
-## 
-
-
-
-## 
-
-DeepSeek-V3  AI 
-
-- 
-- 
-- 
-
-2024 
-
+当然，强归强，它也不是没有短板，中文和代码亮眼，某些长尾能力仍有参差。但 V3 这脚油门，让「高水平开源模型」的水位又涨了一截。后面国产模型那一波集体跃升，这颗种子埋得很关键。

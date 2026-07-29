@@ -1,70 +1,19 @@
 ---
 category: 技术史
 slug: github-copilot-launch
-title: GitHub  CopilotAI 
-description: "GitHub OpenAI Copilot"
+title: 第一次有 AI 在我敲代码时「接话」，我后背有点发凉
+description: 2021 年 GitHub Copilot 亮相，把「AI 结对编程」从概念变成日常。回顾它如何悄悄改写了程序员写代码的手感。
 authors: [weuqiang]
-tags: [GitHub, Copilot, AI]
+tags: [GitHub, Copilot, AI编程]
 date: 2021-06-29
 ---
 
-GitHub  OpenAI  Copilot
+2021 年 6 月，GitHub Copilot 亮相。那年头「AI 写代码」还是个段子，大家都默认它最多生成点 `for` 循环演示。所以我第一次看它补全出一整段能跑的函数时，后背确实有点发凉——不是害怕，是那种「哦，原来已经到这一步了」的错愕。
 
 <!-- truncate -->
 
-##  Copilot
+我一开始是带刺的：故意写些刁钻的边界条件，看它会不会露怯。结果它最擅长的恰恰是那些我最烦的活——样板代码、重复的 CRUD、写测试桩。把这些从指尖挪走之后，写代码的感觉变了：更像是跟一个反应很快的搭档对话，而不是一个人闷头敲。
 
-Copilot  AI 
+当然它也会一本正经地编出不存在的 API，这点至今没完全治好，所以「它写的我得看一眼」这个习惯我一直留着。但 Copilot 真正的意义不在于它多聪明，而在于它把「AI 参与创作」这件事，变成了每天真实发生、而不是 PPT 里的 Demo。
 
--  OpenAI CodexGPT-3 
-- 
-- 
-- VS Code 
-
-## 
-
-
-
-```python
-# 
-def fibonacci(n):
-    # Copilot 
-    if n <= 1:
-        return n
-    return fibonacci(n-1) + fibonacci(n-2)
-```
-
-
-
-## 
-
-**1. **
-
-Copilot  GitHub 
-
-**2. **
-
- bug
-
-**3. **
-
-Copilot 
-
-## 
-
-Copilot 
-
-- AI 
-- 
-- 
-
-## 
-
-Copilot 
-
--  AI 
-- 
-- 
-
-AI 
-
+后来每次有人问「AI 会不会取代程序员」，我都会想起 2021 年那个夏天：它没取代谁，但它确实让「怎么写代码」这件事，再也回不到从前了。

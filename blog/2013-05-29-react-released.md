@@ -1,104 +1,19 @@
 ---
 category: 技术史
 slug: react-released
-title: React 
-description: "Facebook React DOM"
+title: React 刚开源时，所有人都觉得把 HTML 写进 JS 是疯了
+description: 2013 年 Facebook 开源 React，用 JSX 和声明式 UI 掀起争议。回顾它如何把「UI 是状态的函数」变成前端常识。
 authors: [weuqiang]
-tags: [React, Facebook]
+tags: [React, Facebook, 前端]
 date: 2013-05-29
 ---
 
-Facebook  React DOM 
+2013 年 5 月，Facebook 把 React 开源。我记得当时社区里一片质疑：把一个长得很像 HTML 的东西塞进 JavaScript（也就是后来人人喊的 JSX），这算什么设计？那时候大家刚从 jQuery 的泥潭里爬出来，正热衷于各种 MV* 框架，React 这种「反直觉」的写法，怎么看都像退步。
+
+我自己第一眼也是拒绝的。但真正写起来才发现，React 的核心理念其实特别朴素：**UI 是状态的函数**。你描述「给定这个状态，界面应该长什么样」，剩下的渲染、更新、复用交给框架。这比当时流行的「找到 DOM 节点、手动改它」要省心太多。
 
 <!-- truncate -->
 
-##  React
+Virtual DOM 是另一个被误解的点。它不是为了「快」而存在的（直接操作真实 DOM 在特定场景更快），而是为了让你**不必关心**什么时候该更新 DOM——你只管声明界面，React 自己算差异。对于一个被「为什么我的列表少了一行」折磨过的人来说，这种「声明式」的解放感很强。
 
-React 
-
-- 
--  DOM
-- 
-
-## 
-
-**1. **
-
- UI 
-
-```jsx
-function Button() {
-  return <button></button>;
-}
-```
-
-**2.  DOM**
-
- DOM DOMReact  DOM
-
-**3. JSX**
-
- JS  HTML
-
-```jsx
-const element = <h1>Hello, world!</h1>;
-```
-
-## 
-
-**1. **
-
- DOM  DOM 
-
-**2. **
-
-
-
-**3. **
-
-Facebook 
-
-##  jQuery
-
-|  | React | jQuery |
-|------|-------|--------|
-|  |  |  |
-|  |  |  |
-|  |  |  |
-
-React 
-
-## 
-
-**1. JSX **
-
- HTML  JS 
-
-**2. **
-
-
-
-**3.  View **
-
- Angular React  UI
-
-## 
-
-React 
-
-- 
-- 
--  React Native
-
-React 
-
-## 
-
-React 
-
-- 
--  DOM
-- 
-
-2013 
-
+十年过去，组件化已经成了前端的常识，但回头看，React 真正带来的，是一种思维方式的切换：从「怎么改界面」变成「界面是什么」。现在的孩子一上手就是组件，可能很难体会当年我们为了一个双向绑定在模板里写一堆指令时的纠结。

@@ -1,110 +1,19 @@
 ---
 category: 技术史
 slug: vue-released
-title: Vue.js 
-description: "Vue.js React Angular"
+title: Vue 出生那天，前端圈多了一个「讲人话」的框架
+description: 2014 年尤雨溪开源 Vue，主打渐进式与低门槛。回顾它如何用友好和中文文档，降低了无数人的前端入门成本。
 authors: [weuqiang]
-tags: [Vue]
+tags: [Vue, 前端, 渐进式框架]
 date: 2014-02-07
 ---
 
- Vue.js React  Angular 
+2014 年 2 月，尤雨溪（Evan You）把 Vue 放了出来。背景挺有意思：他之前在 Google 做 Angular，觉得自己想要的是 Angular 里「数据驱动视图」那部分能力，但不想要它整套沉重的东西。于是他自己写了一个——轻、好懂、能渐进地用。
+
+我挺吃这一套的。Vue 最打动我的地方在于它的**友好**：你甚至可以只在一个 HTML 文件里加一行 `<script>`，就能开始用，不需要先搞懂 webpack、babel、什么构建管线。等对组件、状态管理有需求了，再一步步加进来。这种「渐进式」不是营销词，是真的照顾到了不同水平的人。
 
 <!-- truncate -->
 
-##  Vue
+还有一点私心：Vue 的中文文档质量一直很高，这对国内开发者太重要了。很多人的前端启蒙，其实是从 Vue 那份把概念讲得很透的文档开始的。
 
-Vue 
-
-- 
-- 
-- 
-
-## 
-
-**1. **
-
-
-
-```js
-new Vue({
-  data: {
-    message: 'Hello'
-  }
-})
-```
-
-**2. **
-
- React 
-
-**3. **
-
- HTML  JSX
-
-```html
-<div>{{ message }}</div>
-```
-
-##  React  Angular
-
-|  | Vue | React | Angular |
-|------|-----|-------|---------|
-|  |  |  |  |
-|  |  |  |  |
-|  |  |  |  |
-
-Vue 
-
-## 
-
-**1. **
-
-
-
-**2. **
-
-
-
-**3. **
-
-
-
-## 
-
-Vue  React
-
-- 
-- 
-- 
-
-## 
-
-**1. **
-
-
-
-**2.  React**
-
- React 
-
-## 
-
-**Vue 2.0**
-
-2016 
-
-**Vue 3.0**
-
-2020  TypeScript 
-
-## 
-
-Vue 
-
-- 
-- 
-- 
-
-
-
+当然，Vue 和 React 的「站队」之争那几年挺热闹，我一般懒得掺和。框架嘛，顺手、能让你早点下班的就是好框架。但不得不说，Vue 的存在让「前端门槛太高」这件事，在很长时间里没那么吓人了。

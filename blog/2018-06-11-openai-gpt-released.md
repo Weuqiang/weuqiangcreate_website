@@ -1,93 +1,19 @@
 ---
 category: 技术史
 slug: openai-gpt-released
-title: OpenAI  GPT
-description: "OpenAI GPTGenerative Pre-trained Transformer"
+title: OpenAI 放出初代 GPT 时，大家还在纠结「无监督预训练」靠不靠谱
+description: 2018 年 OpenAI 发布 GPT-1，提出「先大规模无监督预训练、再微调」的思路。回顾这颗后来长成 LLM 时代的种子当时有多不起眼。
 authors: [weuqiang]
-tags: [OpenAI, GPT]
+tags: [OpenAI, GPT, 预训练]
 date: 2018-06-11
 ---
 
-OpenAI  GPTGenerative Pre-trained Transformer
+2018 年 6 月，OpenAI 放出了初代 GPT。现在回头看，这是个大事件；但当时，它在一堆 NLP 进展里并不起眼。它的核心想法其实一句话就能说清：先拿海量文本做**无监督预训练**，让模型自己摸清语言的脾气，再拿具体任务去**微调**。
+
+那时候学术圈更迷恋有监督的「任务专用模型」——翻译就训翻译、分类就训分类。GPT 这种「先随便读一大堆、再临阵学本事」的思路，听着有点取巧，甚至有人怀疑：你连任务标签都不给，能学到啥真东西？
 
 <!-- truncate -->
 
-##  GPT
+后来的故事大家都知道了：这个「取巧」的思路，恰恰是今天整个大模型范式的雏形。预训练越强、数据越杂、模型越大，下游表现越好，而且还能「举一反三」做没专门练过的事。
 
-GPT 
-
--  Transformer
-- 
-- 
-
-## 
-
-** + **
-
-1. 
-2. 
-3. 
-
-
-
-## 
-
-- ****1.17 
-- ****BooksCorpus7000 
-- ****12  Transformer
-
-
-
-## 
-
-GPT 
-
-- 
-- 
-- 
-
-
-
-## 
-
-GPT 
-
-- 
-- 
-- Transformer 
-
- GPT-2GPT-3 
-
-##  BERT
-
-Google  BERT
-
-- **GPT**
-- **BERT**
-
-
-
-## 
-
-**GPT-2**2019
-
- 15 
-
-**GPT-3**2020
-
- 1750 
-
-**ChatGPT**2022
-
- GPT-3.5 AI 
-
-## 
-
-GPT 
-
-- 
-- 
--  ChatGPT 
-
-2018 
-
+我个人的感慨是，很多改变世界的想法，刚冒头时都显得不够严肃。GPT-1 当时连个像样的 demo 都没炸场，参数量放今天看更是寒酸。但它赌对了一件事：**语言本身的规律，值得先花大力气去学一遍**。这一步赌注，后来被证明是整个时代的起点。

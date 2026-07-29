@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-28T15:17:28.090Z",
+  "generatedAt": "2026-07-29T02:05:58.984Z",
   "total": 35,
   "categories": [
     {
@@ -30,11 +30,7 @@
     },
     {
       "name": "多模态",
-      "count": 5
-    },
-    {
-      "name": "AI",
-      "count": 5
+      "count": 6
     },
     {
       "name": "大模型",
@@ -49,11 +45,23 @@
       "count": 4
     },
     {
+      "name": "AI编程",
+      "count": 4
+    },
+    {
       "name": "Meta",
       "count": 4
     },
     {
       "name": "推理能力",
+      "count": 3
+    },
+    {
+      "name": "Copilot",
+      "count": 3
+    },
+    {
+      "name": "开源大模型",
       "count": 3
     },
     {
@@ -66,6 +74,10 @@
     },
     {
       "name": "代码生成",
+      "count": 2
+    },
+    {
+      "name": "推理模型",
       "count": 2
     },
     {
@@ -85,7 +97,7 @@
       "count": 2
     },
     {
-      "name": "Copilot",
+      "name": "开源",
       "count": 2
     },
     {
@@ -97,7 +109,15 @@
       "count": 2
     },
     {
+      "name": "AI绘画",
+      "count": 2
+    },
+    {
       "name": "DevOps",
+      "count": 2
+    },
+    {
+      "name": "前端",
       "count": 2
     },
     {
@@ -141,14 +161,6 @@
       "count": 1
     },
     {
-      "name": "AI编程",
-      "count": 1
-    },
-    {
-      "name": "推理模型",
-      "count": 1
-    },
-    {
       "name": "Llama 4",
       "count": 1
     },
@@ -181,6 +193,18 @@
       "count": 1
     },
     {
+      "name": "Cursor",
+      "count": 1
+    },
+    {
+      "name": "Claude",
+      "count": 1
+    },
+    {
+      "name": "MoE",
+      "count": 1
+    },
+    {
       "name": "GPT-4o",
       "count": 1
     },
@@ -209,10 +233,6 @@
       "count": 1
     },
     {
-      "name": "开源",
-      "count": 1
-    },
-    {
       "name": "AI民主化",
       "count": 1
     },
@@ -229,7 +249,15 @@
       "count": 1
     },
     {
+      "name": "视频生成",
+      "count": 1
+    },
+    {
       "name": "Midjourney",
+      "count": 1
+    },
+    {
+      "name": "图像生成",
       "count": 1
     },
     {
@@ -238,6 +266,10 @@
     },
     {
       "name": "ChatGPT",
+      "count": 1
+    },
+    {
+      "name": "对话AI",
       "count": 1
     },
     {
@@ -257,11 +289,19 @@
       "count": 1
     },
     {
+      "name": "预训练",
+      "count": 1
+    },
+    {
       "name": "Transformer",
       "count": 1
     },
     {
       "name": "NLP",
+      "count": 1
+    },
+    {
+      "name": "注意力机制",
       "count": 1
     },
     {
@@ -273,7 +313,15 @@
       "count": 1
     },
     {
+      "name": "围棋",
+      "count": 1
+    },
+    {
       "name": "TensorFlow",
+      "count": 1
+    },
+    {
+      "name": "深度学习",
       "count": 1
     },
     {
@@ -281,7 +329,15 @@
       "count": 1
     },
     {
+      "name": "容器编排",
+      "count": 1
+    },
+    {
       "name": "Vue",
+      "count": 1
+    },
+    {
+      "name": "渐进式框架",
       "count": 1
     },
     {
@@ -295,6 +351,10 @@
     {
       "name": "Docker",
       "count": 1
+    },
+    {
+      "name": "容器",
+      "count": 1
     }
   ],
   "years": [
@@ -305,7 +365,7 @@
           "title": "科技日报 · 2026-07-28",
           "date": "2026-07-28",
           "url": "/blog/2026/07/28/tech-daily/",
-          "summary": "> 本篇由自动化脚本每日汇总当日科技要闻：国际来源经机器翻译为中文，国内来源直接引用。内容来自公开 RSS / API，仅供参考。",
+          "summary": "周二好。今天照例刷了一圈国内外科技动态，挑几件我觉得值得记一笔的，顺手聊两句。国际源的标题我故意保留英文原文——机器翻译容易翻车，不如直接看。",
           "category": "科技资讯",
           "tags": [
             "科技日报",
@@ -323,7 +383,7 @@
           "title": "Gemini 2.5 Deep Think：Google多智能体并行推理的新纪元",
           "date": "2025-08-01",
           "url": "/blog/gemini25-deep-think/",
-          "summary": "探索Google Gemini 2.5 Deep Think的多智能体并行推理架构，以及在数学奥林匹克等复杂任务中的突破性表现",
+          "summary": "让好几个「分身」各自想、再汇总——这种花更多算力在推理时的路子，天花板在哪、又贵到什么程度才用得起。",
           "category": "AI资讯",
           "tags": [
             "Gemini 2.5",
@@ -339,7 +399,7 @@
           "title": "GPT-5：OpenAI 2025年的革命性突破，统一推理与生成的AI新纪元",
           "date": "2025-08-01",
           "url": "/blog/gpt5-revolutionary-ai/",
-          "summary": "深度解析OpenAI GPT-5的技术突破，包括统一推理架构、52万亿参数规模、多模态集成能力等革命性特性",
+          "summary": "「统一推理与生成」到底是真突破还是话术？聊聊把快慢模型揉成一个、把路由藏起来的产品体面，以及对「革命性」这个词的自保留。",
           "category": "AI资讯",
           "tags": [
             "GPT-5",
@@ -356,7 +416,7 @@
           "title": "Claude 4：Anthropic在编程领域的突破性进展",
           "date": "2025-05-23",
           "url": "/blog/claude4-programming-breakthrough/",
-          "summary": "详细分析Anthropic Claude 4系列模型在编程领域的突破，包括混合推理架构、扩展思考模式等创新特性",
+          "summary": "当模型从「补全插件」变成「能开终端跑测试的小队友」，编程这件事的交互被改写了。聊聊 Claude 4 卡位的这一站。",
           "category": "AI资讯",
           "tags": [
             "Claude 4",
@@ -372,7 +432,7 @@
           "title": "Llama 4：Meta开源多模态AI的重大突破",
           "date": "2025-04-05",
           "url": "/blog/llama4-multimodal-breakthrough/",
-          "summary": "深入分析Meta Llama 4系列模型的技术创新，包括MoE混合专家架构、原生多模态能力和超长上下文处理",
+          "summary": "MoE 把成本压下来、原生多模态把理解揉得更浑然，聊聊 Llama 4 这代把开源标杆又抬到了哪。",
           "category": "AI资讯",
           "tags": [
             "Llama 4",
@@ -388,7 +448,7 @@
           "title": "Gemma 3.0：Google开源多模态AI模型的新里程碑",
           "date": "2025-03-15",
           "url": "/blog/gemma3-multimodal-opensource/",
-          "summary": "全面解析Google Gemma 3.0开源多模态AI模型，包括四种规模配置、单GPU优化技术和ShieldGemma 2安全机制",
+          "summary": "一个能在笔记本上跑、还会看图的轻量开源模型，为什么比「更大」更让我兴奋——聊聊本地小模型的生命力。",
           "category": "AI资讯",
           "tags": [
             "Gemma 3.0",
@@ -404,7 +464,7 @@
           "title": "Grok 3：xAI推理能力的革命性突破",
           "date": "2025-02-18",
           "url": "/blog/grok3-reasoning-revolution/",
-          "summary": "深度分析xAI Grok 3的推理能力革命，包括10倍性能提升、实时信息获取和独特的幽默对话风格",
+          "summary": "马斯克家的模型凭什么差异化——直连 X 的实时信息流，加上一个敢抬杠、会接梗的人设，以及我对「快等于准吗」的疑问。",
           "category": "AI资讯",
           "tags": [
             "Grok 3",
@@ -417,25 +477,29 @@
           "file": "2025-02-18-grok3-reasoning-revolution.md"
         },
         {
-          "title": "2025  AI",
+          "title": "2025 年写代码，我桌上同时开着三四个 AI 工具，但还是没敢把手彻底交出去",
           "date": "2025-01-28",
           "url": "/blog/ai-coding-tools-2025/",
-          "summary": "2025 AI",
+          "summary": "盘点当下主流的 AI 编码工具（Copilot、Cursor、Claude 等），聊聊哪些是真省心、哪些只是换了种方式消耗你。",
           "category": "AI资讯",
           "tags": [
-            "AI"
+            "AI编程",
+            "Copilot",
+            "Cursor",
+            "Claude"
           ],
           "file": "2025-01-28-ai-coding-tools-2025.md"
         },
         {
-          "title": "Meta  Llama 4",
+          "title": "Llama 4 还没来，我已经先替开源阵营捏了把汗也怀了份期待",
           "date": "2025-01-15",
           "url": "/blog/meta-llama-4-coming/",
-          "summary": "Meta Llama 4 2025",
+          "summary": "在 Meta 放出 Llama 4 之前，聊聊开源大模型这一年的水位变化，以及它对「闭源 vs 开源」格局可能意味着什么。",
           "category": "AI资讯",
           "tags": [
             "Meta",
-            "Llama"
+            "Llama",
+            "开源大模型"
           ],
           "file": "2025-01-15-meta-llama-4-coming.md"
         }
@@ -445,13 +509,15 @@
       "year": "2024",
       "posts": [
         {
-          "title": "DeepSeek-V3",
+          "title": "DeepSeek-V3 开源时，最吓人的不是它强，而是它「这么便宜就训出来了」",
           "date": "2024-12-26",
           "url": "/blog/deepseek-v3-open-source/",
-          "summary": "DeepSeek DeepSeek-V3",
+          "summary": "DeepSeek 开源 V3，一个顶尖水平的 MoE 大模型，训练成本却低得反常。回顾它如何把「效率和开放」同时摆到桌面上。",
           "category": "AI资讯",
           "tags": [
-            "DeepSeek"
+            "DeepSeek",
+            "开源大模型",
+            "MoE"
           ],
           "file": "2024-12-26-deepseek-v3-open-source.md"
         },
@@ -459,7 +525,7 @@
           "title": "GPT-4o：OpenAI的多模态突破性进展",
           "date": "2024-12-20",
           "url": "/blog/gpt4o-breakthrough/",
-          "summary": "深入解析OpenAI GPT-4o的多模态突破，包括实时处理能力、性能提升和技术创新",
+          "summary": "实时语音对话的 demo 为什么让人起鸡皮疙瘩，以及「免费也能用上顶级多模态」如何重新定义了交互。",
           "category": "AI资讯",
           "tags": [
             "GPT-4o",
@@ -472,14 +538,15 @@
           "file": "2024-12-20-gpt4o-breakthrough.md"
         },
         {
-          "title": "OpenAI o3",
+          "title": "o3 把「让模型多想一会儿」这件事，从玄学变成了路线",
           "date": "2024-12-20",
           "url": "/blog/openai-o3-breakthrough/",
-          "summary": "OpenAI o3",
+          "summary": "OpenAI 的 o3 用「推理时多花算力」换来了跨越式的成绩。回顾「会慢思考的模型」如何接棒「越大越好」的旧范式。",
           "category": "AI资讯",
           "tags": [
             "OpenAI",
-            "o3"
+            "o3",
+            "推理模型"
           ],
           "file": "2024-12-20-openai-o3-breakthrough.md"
         },
@@ -487,7 +554,7 @@
           "title": "Claude 3.5 Sonnet：Anthropic在AI安全与性能上的双重突破",
           "date": "2024-12-18",
           "url": "/blog/claude35-sonnet/",
-          "summary": "深入分析Anthropic Claude 3.5 Sonnet在AI安全与性能方面的突破，包括基准测试表现和技术优势",
+          "summary": "一个让我用得最顺手、尤其懂代码的模型，加上 Artifacts 把聊天框变成工作台，聊聊它为什么「稳」得让人舍不得换。",
           "category": "AI资讯",
           "tags": [
             "Claude 3.5",
@@ -500,15 +567,15 @@
           "file": "2024-12-18-claude35-sonnet.md"
         },
         {
-          "title": "GitHub Copilot",
+          "title": "Copilot 宣布免费那天，我意识到「AI 结对编程」已经成了基础设施",
           "date": "2024-12-18",
           "url": "/blog/github-copilot-free/",
-          "summary": "GitHub Copilot",
+          "summary": "GitHub 把 Copilot 的免费额度向个人开发者敞开。回顾这件小事背后，AI 编码助手从「尝鲜」走向「默认配置」的转折。",
           "category": "AI资讯",
           "tags": [
             "GitHub",
             "Copilot",
-            "AI"
+            "AI编程"
           ],
           "file": "2024-12-18-github-copilot-free.md"
         },
@@ -516,7 +583,7 @@
           "title": "Gemini 1.5 Pro：Google在长上下文处理上的技术革命",
           "date": "2024-12-16",
           "url": "/blog/gemini15-pro/",
-          "summary": "深度分析Google Gemini 1.5 Pro在长上下文处理方面的技术革命，包括超长上下文窗口和多模态能力",
+          "summary": "百万 token 上下文窗口到底改变了什么，以及为什么「窗口长」不等于「真的读懂了那么长」。",
           "category": "AI资讯",
           "tags": [
             "Gemini 1.5",
@@ -532,7 +599,7 @@
           "title": "Llama 3.1：Meta引领开源大模型的新时代",
           "date": "2024-12-14",
           "url": "/blog/llama31-opensource/",
-          "summary": "全面解析Meta Llama 3.1系列开源大模型，包括多规模架构、性能突破和AI民主化贡献",
+          "summary": "405B 版本让开源权重第一次能跟顶级闭源正面刚，聊聊「开源够不够用」这件事是怎么被划上句号的。",
           "category": "AI资讯",
           "tags": [
             "Llama 3.1",
@@ -548,7 +615,7 @@
           "title": "DeepSeek：中国AI大模型的崛起与技术突破",
           "date": "2024-12-12",
           "url": "/blog/deepseek-chinese-ai/",
-          "summary": "深入分析DeepSeek中国AI大模型的技术突破，包括代码生成、数学推理能力和模型架构创新",
+          "summary": "从一家量化基金孵化出的 AI 实验室，如何靠工程上的「抠门」打出超预期的水平，以及它打破了哪条潜规则。",
           "category": "AI资讯",
           "tags": [
             "DeepSeek",
@@ -561,14 +628,15 @@
           "file": "2024-12-12-deepseek-chinese-ai.md"
         },
         {
-          "title": "Sora",
+          "title": "Sora 放出的那段视频，让我第一次分不清「生成」和「拍摄」",
           "date": "2024-12-10",
           "url": "/blog/openai-sora-released/",
-          "summary": "OpenAI Sora",
+          "summary": "OpenAI 的 Sora 把文生视频的真实感推到新高度。回顾它带来的震撼，以及「眼见不再为实」这件事对我们意味着什么。",
           "category": "AI资讯",
           "tags": [
             "OpenAI",
-            "Sora"
+            "Sora",
+            "视频生成"
           ],
           "file": "2024-12-10-openai-sora-released.md"
         },
@@ -602,38 +670,41 @@
           "file": "2023-12-30.md"
         },
         {
-          "title": "Meta  Llama 2",
+          "title": "Llama 2 开源时，我意识到「够用的开源大模型」这件事，真的成立了",
           "date": "2023-07-18",
           "url": "/blog/llama-2-open-source/",
-          "summary": "Meta Llama 2 OpenAI",
+          "summary": "2023 年 Meta 开源 Llama 2，并给出可商用的授权。回顾它如何把开源大模型从「玩具」推到「能上线」的临界点。",
           "category": "技术史",
           "tags": [
             "Meta",
-            "Llama"
+            "Llama",
+            "开源大模型"
           ],
           "file": "2023-07-18-llama-2-open-source.md"
         },
         {
-          "title": "Midjourney V5 AI",
+          "title": "Midjourney V5 出来后，我盯着图里那只手看了半天——它终于长对地方了",
           "date": "2023-03-15",
           "url": "/blog/midjourney-v5-released/",
-          "summary": "Midjourney V5",
+          "summary": "2023 年 Midjourney V5 发布，把 AI 生图的真实感推到新高度。回顾那一代「手终于像手」的质变，以及 AI 绘画的审美军备竞赛。",
           "category": "技术史",
           "tags": [
             "Midjourney",
-            "AI"
+            "AI绘画",
+            "图像生成"
           ],
           "file": "2023-03-15-midjourney-v5-released.md"
         },
         {
-          "title": "GPT-4",
+          "title": "GPT-4 发布时，我特意拿同一道题去考 3.5，差距大得有点不讲理",
           "date": "2023-03-14",
           "url": "/blog/gpt4-released/",
-          "summary": "OpenAI GPT-4 GPT-3.5",
+          "summary": "2023 年 OpenAI 发布 GPT-4，首次支持多模态。回顾它相对 3.5 的那道明显分水岭，以及「会推理」这件事带来的实感。",
           "category": "技术史",
           "tags": [
             "OpenAI",
-            "GPT-4"
+            "GPT-4",
+            "多模态"
           ],
           "file": "2023-03-14-gpt4-released.md"
         }
@@ -643,26 +714,28 @@
       "year": "2022",
       "posts": [
         {
-          "title": "ChatGPT AI",
+          "title": "ChatGPT 上线的那一周，我第一次对着一个聊天框说出「卧槽」",
           "date": "2022-11-30",
           "url": "/blog/chatgpt-released/",
-          "summary": "OpenAI ChatGPT AI",
+          "summary": "2022 年底 OpenAI 发布 ChatGPT，把对话式 AI 第一次送到普通人手里。回顾它为何比此前的所有聊天机器人都更「像人」，以及那股冲击波从何而来。",
           "category": "技术史",
           "tags": [
             "OpenAI",
-            "ChatGPT"
+            "ChatGPT",
+            "对话AI"
           ],
           "file": "2022-11-30-chatgpt-released.md"
         },
         {
-          "title": "Stable Diffusion AI",
+          "title": "Stable Diffusion 开源那天，AI 画画从「云端特权」变成了「我电脑里的事」",
           "date": "2022-08-22",
           "url": "/blog/stable-diffusion-open-source/",
-          "summary": "Stable Diffusion AI",
+          "summary": "2022 年 Stable Diffusion 开源，让普通人第一次能在自己显卡上跑图像生成。回顾它如何引爆平民创作，也如何搅动了版权的浑水。",
           "category": "技术史",
           "tags": [
             "Stable Diffusion",
-            "AI"
+            "AI绘画",
+            "开源"
           ],
           "file": "2022-08-22-stable-diffusion-open-source.md"
         }
@@ -672,15 +745,15 @@
       "year": "2021",
       "posts": [
         {
-          "title": "GitHub  CopilotAI",
+          "title": "第一次有 AI 在我敲代码时「接话」，我后背有点发凉",
           "date": "2021-06-29",
           "url": "/blog/github-copilot-launch/",
-          "summary": "GitHub OpenAI Copilot",
+          "summary": "2021 年 GitHub Copilot 亮相，把「AI 结对编程」从概念变成日常。回顾它如何悄悄改写了程序员写代码的手感。",
           "category": "技术史",
           "tags": [
             "GitHub",
             "Copilot",
-            "AI"
+            "AI编程"
           ],
           "file": "2021-06-29-github-copilot-launch.md"
         }
@@ -707,14 +780,15 @@
       "year": "2018",
       "posts": [
         {
-          "title": "OpenAI  GPT",
+          "title": "OpenAI 放出初代 GPT 时，大家还在纠结「无监督预训练」靠不靠谱",
           "date": "2018-06-11",
           "url": "/blog/openai-gpt-released/",
-          "summary": "OpenAI GPTGenerative Pre-trained Transformer",
+          "summary": "2018 年 OpenAI 发布 GPT-1，提出「先大规模无监督预训练、再微调」的思路。回顾这颗后来长成 LLM 时代的种子当时有多不起眼。",
           "category": "技术史",
           "tags": [
             "OpenAI",
-            "GPT"
+            "GPT",
+            "预训练"
           ],
           "file": "2018-06-11-openai-gpt-released.md"
         }
@@ -724,14 +798,15 @@
       "year": "2017",
       "posts": [
         {
-          "title": "Transformer  NLP",
+          "title": "那篇《Attention is All You Need》刚出时，没几个人意识到它改写了未来",
           "date": "2017-06-12",
           "url": "/blog/transformer-paper/",
-          "summary": "Google Attention is All You Need Transformer NLP",
+          "summary": "2017 年 Google 发表 Transformer，扔掉 RNN/LSTM，只用注意力。回顾它如何悄悄成为后来所有大模型的地基。",
           "category": "技术史",
           "tags": [
             "Transformer",
-            "NLP"
+            "NLP",
+            "注意力机制"
           ],
           "file": "2017-06-12-transformer-paper.md"
         }
@@ -741,14 +816,15 @@
       "year": "2016",
       "posts": [
         {
-          "title": "AlphaGo AI",
+          "title": "AlphaGo 赢下李世石那晚，我第一次觉得「人类专属」的领地塌了一角",
           "date": "2016-03-15",
           "url": "/blog/alphago-defeats-lee-sedol/",
-          "summary": "AlphaGo 4:1 AI",
+          "summary": "2016 年 AlphaGo 4:1 击败李世石，其中第 37 手至今被津津乐道。回顾这场对局为何不只是围棋的事，而是一记关于「直觉也能被学习」的信号。",
           "category": "技术史",
           "tags": [
             "AlphaGo",
-            "DeepMind"
+            "DeepMind",
+            "围棋"
           ],
           "file": "2016-03-15-alphago-defeats-lee-sedol.md"
         }
@@ -758,14 +834,15 @@
       "year": "2015",
       "posts": [
         {
-          "title": "Google  TensorFlow",
+          "title": "TensorFlow 开源那天，深度学习第一次「飞入寻常百姓家」",
           "date": "2015-11-09",
           "url": "/blog/tensorflow-released/",
-          "summary": "Google TensorFlow PyTorch",
+          "summary": "2015 年 Google 开源 TensorFlow，把大厂级深度学习能力摆到所有人面前。回顾它的普及、TF 2.0 的阵痛，以及 PyTorch 的逆袭。",
           "category": "技术史",
           "tags": [
+            "TensorFlow",
             "Google",
-            "TensorFlow"
+            "深度学习"
           ],
           "file": "2015-11-09-tensorflow-released.md"
         }
@@ -775,25 +852,28 @@
       "year": "2014",
       "posts": [
         {
-          "title": "Kubernetes",
+          "title": "Kubernetes 开源时，没人想到它会变成「云时代的操作系统」",
           "date": "2014-06-07",
           "url": "/blog/kubernetes-released/",
-          "summary": "Google Kubernetes",
+          "summary": "2014 年 Google 开源 Kubernetes，源自内部 Borg 系统。回顾它如何定义容器编排，以及为什么小团队往往用不上它。",
           "category": "技术史",
           "tags": [
             "Kubernetes",
-            "DevOps"
+            "DevOps",
+            "容器编排"
           ],
           "file": "2014-06-07-kubernetes-released.md"
         },
         {
-          "title": "Vue.js",
+          "title": "Vue 出生那天，前端圈多了一个「讲人话」的框架",
           "date": "2014-02-07",
           "url": "/blog/vue-released/",
-          "summary": "Vue.js React Angular",
+          "summary": "2014 年尤雨溪开源 Vue，主打渐进式与低门槛。回顾它如何用友好和中文文档，降低了无数人的前端入门成本。",
           "category": "技术史",
           "tags": [
-            "Vue"
+            "Vue",
+            "前端",
+            "渐进式框架"
           ],
           "file": "2014-02-07-vue-released.md"
         }
@@ -803,26 +883,28 @@
       "year": "2013",
       "posts": [
         {
-          "title": "React",
+          "title": "React 刚开源时，所有人都觉得把 HTML 写进 JS 是疯了",
           "date": "2013-05-29",
           "url": "/blog/react-released/",
-          "summary": "Facebook React DOM",
+          "summary": "2013 年 Facebook 开源 React，用 JSX 和声明式 UI 掀起争议。回顾它如何把「UI 是状态的函数」变成前端常识。",
           "category": "技术史",
           "tags": [
             "React",
-            "Facebook"
+            "Facebook",
+            "前端"
           ],
           "file": "2013-05-29-react-released.md"
         },
         {
-          "title": "Docker",
+          "title": "当 Docker 出现时，我以为「在我机器上能跑」的借口终于可以扔了",
           "date": "2013-03-20",
           "url": "/blog/docker-released/",
-          "summary": "Docker",
+          "summary": "2013 年 Docker 开源，把「构建一次、到处运行」变成现实。回顾它如何改变软件交付，以及容器与 Docker 到底是什么关系。",
           "category": "技术史",
           "tags": [
             "Docker",
-            "DevOps"
+            "DevOps",
+            "容器"
           ],
           "file": "2013-03-20-docker-released.md"
         }
