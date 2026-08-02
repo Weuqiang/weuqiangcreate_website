@@ -1,27 +1,26 @@
 ---
-title: 科技日报 · 2026-08-01
-description: "周六好。例行扫了一眼今天的科技新闻，有几条想顺手记下来。"
-date: 2026-08-01
+title: 科技日报 · 2026-08-02
+date: 2026-08-02
 tags: [科技日报, 每日资讯, 科技要闻]
 category: 科技资讯
 ---
 
-周六好。例行扫了一眼今天的科技新闻，有几条想顺手记下来。
+又到周日，把今天刷到的科技动态里值得一看的，挑出来摆这儿。
 
 > 国际源标题保留英文原文——机器翻译容易翻车，不如直接读。
 
 ## 🌐 国际科技
 
-- [RipGrep musl binaries occasionally segfault during very-large searches](https://github.com/BurntSushi/ripgrep/issues/3494)
-- [Elevators](https://john.fun/elevators)
-- [Manual: •.,:;?·](https://type.today/en/journal/dots)
-- [Flint: A Visualization Language for the AI Era](https://microsoft.github.io/flint-chart/)
-- [Solid Queue 1.6.0 now supports fiber workers](https://github.com/rails/solid_queue/releases/tag/v1.6.0)
-- [qm – Multiplayer agent harness for work](https://github.com/yc-software/qm)
-- [A tiny holdout building in the middle of Macy’s is back in view](https://ephemeralnewyork.wordpress.com/2026/07/27/hidden-by-billboards-for-over-100-years-the-tiny-holdout-building-in-the-middle-of-macys-is-back-in-view/)
-- [The development pipeline is a production system](https://sundry.jerryorr.com/2026/07/31/development-pipeline-is-a-production-system)
-- [How to Exist](https://www.raptitude.com/2026/07/how-to-exist/)
-- [Kontigo (YC S24) Is Hiring](https://www.ycombinator.com/companies/kontigo/jobs/xAo6tMt-founding-engineer)
+- [Twenty Years of RISC OS Open](https://www.riscosopen.org/news/articles/2026/06/20/twenty-years-of-risc-os-open)
+- [Meshdiff – visually compare two STL versions in the browser, client-side](https://meshdiff.com/)
+- [Show HN: Bor – Open-source policy management for Linux desktops](https://getbor.dev/blog/2026-08-02-bor-v080-release/)
+- [Artificial Intelligence: Ars Notoria and the Promise of Instant Knowledge](https://publicdomainreview.org/essay/ars-notoria/)
+- [F*: A general-purpose proof-oriented programming language](https://fstar-lang.org/)
+- [Show HN: Fuse – statically typed functional programming language](https://fuselang.org)
+- [Folding Paper Globes](https://foldingglobes.com/globes)
+- [Go 1.27 Interactive Tour](https://victoriametrics.com/blog/go-1-27/index.html)
+- [Show HN: Syncular – offline-first SQL sync with TypeScript and Rust cores](https://github.com/syncular/syncular)
+- [Great Question (YC W21) Is Hiring Senior Demand Gen Manager](https://www.ycombinator.com/companies/great-question/jobs/YutDxyf-senior-demand-generation-manager)
 
 ## 🇨🇳 国内科技
 
@@ -34,7 +33,7 @@ category: 科技资讯
 
 ## 今日碎念
 
-信息越来越多，判断力反而越来越贵。挑着看，比全看强。
+技术新闻看多了会发现，很多「突破」过两周就没人提了；能留下来的，都是解决了真问题的。
 
 ---
 *以上由脚本自动汇总公开来源（Hacker News / 36氪 RSS），链接与内容请自行甄别。*
