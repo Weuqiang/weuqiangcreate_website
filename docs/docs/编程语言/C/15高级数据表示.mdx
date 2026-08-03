@@ -6,11 +6,11 @@ title: （编写中）高级数据表示
 ## 链表
 
 - 链表实现了，内存零碎数据的有效组织。比如，当我们用 malloc 来进行内存申请的时候，当内存足够，但是由于碎片太多，没有连续内存时，只能以申请失败而告终，而用链表这种数据结构来组织数据，就可以解决上类问题。
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/eba20792779d9d9a99e7d4ff0d23ef13.png)
+  ![链表示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/eba20792779d9d9a99e7d4ff0d23ef13.png)
 
 ### 静态链表
 
-![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/44a5722c917071e937da435fe5695a26.png)
+![静态链表示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/44a5722c917071e937da435fe5695a26.png)
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -61,7 +61,7 @@ int main()
 - 空链表
 
 * 头指针带了一个空链表节点, 空链表节点中的 next 指向 NULL
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/21a038cfb75cce739e0f1d333126db74.png)
+  ![空链表示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/21a038cfb75cce739e0f1d333126db74.png)
 
 ```c showLineNumbers
 #include <stdio.h>
@@ -94,7 +94,7 @@ Node *createList(){
 - 非空链表
 
 * 头指针带了一个非空节点, 最后一个节点中的 next 指向 NULL
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/4f238221615ee2ef930526bd53cdc0ef.png)
+  ![非空链表示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/4f238221615ee2ef930526bd53cdc0ef.png)
 
 ### 动态链表头插法
 

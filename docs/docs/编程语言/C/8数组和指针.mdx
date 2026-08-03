@@ -556,9 +556,9 @@ void test(char cs[2][3])
 - 什么是地址
 
 * 生活中的地址:
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/9485373b7cb46f41f6c996303419ba4c.png)
+  ![什么是地址示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/9485373b7cb46f41f6c996303419ba4c.png)
 * 内存地址:
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/e46d975be9e95178136726209b2c237f.png)
+  ![内存地址示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/e46d975be9e95178136726209b2c237f.png)
 
 - 地址与内存单元中的数据是两个完全不同的概念
 
@@ -577,7 +577,7 @@ char c = 'a'; // 占用1个字节
 //那么变量c的地址为:0ff05
 ```
 
-![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/13eb965757dd130d813a953506335b89.png)
+![指针基本概念示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/13eb965757dd130d813a953506335b89.png)
 
 ---
 
@@ -587,12 +587,12 @@ char c = 'a'; // 占用1个字节
 - 由于通过地址能找到所需的变量单元，所以我们说该地址指向了该变量单元。将地址形象化的称为“指针”
 
 - 内存单元的指针(地址)和内存单元的内容是两个不同的概念。
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/540000371e0da0fb105248642ef9db24.png)
+  ![什么是指针示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/540000371e0da0fb105248642ef9db24.png)
 
 ## 什么是指针变量
 
 - 在 C 语言中,允许用一个变量来存放其它变量的地址, 这种专门用于存储其它变量地址的变量, 我们称之为指针变量
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/02442ae9685e56146470369e56ca18ab.png)
+  ![什么是指针变量示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/02442ae9685e56146470369e56ca18ab.png)
 - 示例:
 
 ```bash showLineNumbers
@@ -602,7 +602,7 @@ char c = 'a'; // 占用1个字节
     pnAge = &age;
 ```
 
-![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/8b7b4d0976ad6e192e3ad6e26282fa8a.png)
+![什么是指针变量示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/8b7b4d0976ad6e192e3ad6e26282fa8a.png)
 
 ## 定义指针变量的格式
 
@@ -610,7 +610,7 @@ char c = 'a'; // 占用1个字节
 
 * 指针类型说明,即定义变量为一个指针变量;
 * 指针变量名;
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/c051703dcae8535c264ef47c20881b53.png)
+  ![指针变量名示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/c051703dcae8535c264ef47c20881b53.png)
 
 - 示例:
 
@@ -674,7 +674,7 @@ int *p;
 - 注意点:
 
 * 多个指针变量可以指向同一个地址
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/d4c9b29d8ddb808d1a12252fdcdf538a.png)
+  ![多个指针变量指向同一地址示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/d4c9b29d8ddb808d1a12252fdcdf538a.png)
 
 - 指针的指向是可以改变的
 
@@ -690,7 +690,7 @@ p = &b; // 修改指针指向
 * 野指针可能会导致程序崩溃
 * 野指针访问你不该访问数据
 * 所以指针必须初始化才可以访问其所指向存储区域
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/e38cdad483acddca8cfcd85e7ac0be78.png)
+  ![野指针访问你不该访问数据示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/e38cdad483acddca8cfcd85e7ac0be78.png)
 
 ## 访问指针所指向的存储空间
 
@@ -717,14 +717,14 @@ printf("a = %d", *p); // 访问指针变量
 ## 指针类型
 
 - 在同一种编译器环境下,一个指针变量所占用的内存空间是固定的。
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/a95f575889111ad8d64cc2c1aa8ecb1e.png)
+  ![指针类型示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/a95f575889111ad8d64cc2c1aa8ecb1e.png)
 
 - 虽然在同一种编译器下, 所有指针占用的内存空间是一样的,但不同类型的变量却占不同的字节数
 
 * 一个 int 占用 4 个字节，一个 char 占用 1 个字节，而一个 double 占用 8 字节；
 * 现在只有一个地址，我怎么才能知道要从这个地址开始向后访问多少个字节的存储空间呢，是 4 个，是 1 个，还是 8 个。
 * 所以指针变量需要它所指向的数据类型告诉它要访问多少个字节存储空间
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/af1fd05a523d9ba4e196e326f537589b.png)
+  ![指针类型示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/af1fd05a523d9ba4e196e326f537589b.png)
 
 ---
 
@@ -741,7 +741,7 @@ printf("a = %d", *p); // 访问指针变量
     printf("c = %c", **cp2);
 ```
 
-![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/af331163ce03df7573810fc05ceb03c6.png)
+![二级指针示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/af331163ce03df7573810fc05ceb03c6.png)
 
 - 多级指针的取值规则
 
@@ -759,7 +759,7 @@ int *****m2; //取值*****m2
 
 * 一个变量有地址,一个数组包含若干元素,每个数组元素也有相应的地址, 指针变量也可以保存数组元素的地址
 * 只要一个指针变量保存了数组元素的地址, 我们就称之为数组元素指针
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/69b98c6401a04bf8fce52a78c80b9565.png)
+  ![数组元素指针示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/69b98c6401a04bf8fce52a78c80b9565.png)
 
 ```c showLineNumbers
     printf(“%p %p”, &(a[0]), a); //输出结果:0x1100, 0x1100
@@ -772,7 +772,7 @@ int *****m2; //取值*****m2
 
 ## 指针访问数组元素
 
-![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/13c0dd997ce619b1249220ce09610ad4.png)
+![指针访问数组元素示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/13c0dd997ce619b1249220ce09610ad4.png)
 
 ```c showLineNumbers
     int main (void)
@@ -793,7 +793,7 @@ int *****m2; //取值*****m2
 * 自加运算,如 p++,++p
 * 自减运算,如 p--,--p
 
-![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/6c563fff4c62724055337604c2d31623.png)
+![自减运算,如 p--,--p示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/6c563fff4c62724055337604c2d31623.png)
 
 > - 如果指针变量 p 已指向数组中的一个元素,则 p+1`指向`同一数组中的下一个元素,p-1`指向`同 一数组中的上一个元素。
 
@@ -802,7 +802,7 @@ int *****m2; //取值*****m2
 * 下标法, 如 a[i]形式
 * 指针法, \*(p+i)形式
 
-![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/e00312fbc775c04e2a449d7d8d473eb9.png)
+![指针法, \(p+i)形式示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/e00312fbc775c04e2a449d7d8d473eb9.png)
 
 - 注意:
 
@@ -835,7 +835,7 @@ printf("%s\n",string);
 char *str = "abc"
 ```
 
-![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/cb21fae540cb3290bbc41e7e223d3a41.png)
+![字符串指针指向字符串示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/cb21fae540cb3290bbc41e7e223d3a41.png)
 
 - 字符串指针使用注意事项
 
@@ -945,7 +945,7 @@ struct Student {
 
 - 定好好结构体类型之后, 我们就可以利用我们定义的结构体类型来定义结构体变量
 - 格式: `struct 结构体名 结构体变量名;`
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/a19ef99bede1b3b0d689959881390bd0.png)
+  ![定义结构体变量示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/a19ef99bede1b3b0d689959881390bd0.png)
 
 - 先定义结构体类型，再定义变量
 
@@ -1231,7 +1231,7 @@ struct  stu{
 ```
 
 - 在 stu 中嵌套存储 Date 结构体内容
-  ![](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/de4aedd768012888dc7b2e70a744c86d.png)
+  ![结构体嵌套定义示意图](https://images.weserv.nl/?url=https://img-blog.csdnimg.cn/img_convert/de4aedd768012888dc7b2e70a744c86d.png)
 
 > - 注意:
 > - 结构体不可以嵌套自己变量,可以嵌套指向自己这种类型的指针
