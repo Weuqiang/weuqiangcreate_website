@@ -577,3 +577,14 @@ document.body.firstChild.getRootNode() === document.body.firstChild.ownerDocumen
 document.getRootNode() // document
 document.ownerDocument // null
 ```
+
+## 延伸阅读
+
+- [属性的操作](../attributes)
+- [CSS 操作](../css)
+- [Document 节点](../document)
+- [Element 节点](../element)
+- [DOM 概述](../general)
+- [Mutation Observer API](../mutationobserver)
+- [NodeList 接口，HTMLCollection 接口](../nodelist)
+- [ParentNode 接口，ChildNode 接口](../parentnode)

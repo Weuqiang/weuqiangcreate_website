@@ -416,3 +416,14 @@ JSON.parse(JSON.stringify(obj))
 - Dr. Axel Rauschmayer, [JavaScript’s JSON API](http://www.2ality.com/2011/08/json-api.html)
 - Jim Cowart, [What You Might Not Know About JSON.stringify()](http://freshbrewedcode.com/jimcowart/2013/01/29/what-you-might-not-know-about-json-stringify/)
 - Marco Rogers, [What is JSON?](https://docs.nodejitsu.com/articles/javascript-conventions/what-is-json/)
+
+## 延伸阅读
+
+- [Array 对象](../array)
+- [属性描述对象](../attributes)
+- [Boolean 对象](../boolean)
+- [Date 对象](../date)
+- [Math 对象](../math)
+- [Number 对象](../number)
+- [Object 对象](../object)
+- [RegExp 对象](../regexp)

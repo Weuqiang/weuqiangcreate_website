@@ -495,3 +495,9 @@ for(var i = 0; i < 5; i++){
 - Axel Rauschmayer, [The JavaScript console API](http://www.2ality.com/2013/10/console-api.html)
 - Marius Schulz, [Advanced JavaScript Debugging with console.table()](http://blog.mariusschulz.com/2013/11/13/advanced-javascript-debugging-with-consoletable)
 - Google Developer, [Command Line API Reference](https://developers.google.com/chrome-developer-tools/docs/commandline-api)
+
+## 延伸阅读
+
+- [数据类型的转换](../conversion)
+- [错误处理机制](../error)
+- [编程风格](../style)

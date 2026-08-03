@@ -168,3 +168,14 @@ var currentState = history.state;
 ```
 
 注意，页面第一次加载的时候，浏览器不会触发`popstate`事件。
+
+## 延伸阅读
+
+- [ArrayBuffer 对象，Blob 对象](../arraybuffer)
+- [Cookie](../cookie)
+- [CORS 通信](../cors)
+- [浏览器环境概述](../engine)
+- [File 对象，FileList 对象，FileReader 对象](../file)
+- [表单，FormData 对象](../form)
+- [IndexedDB API](../indexeddb)
+- [Location 对象，URL 对象，URLSearchParams 对象](../location)

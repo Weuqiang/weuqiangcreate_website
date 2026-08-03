@@ -117,3 +117,12 @@ typeof null // "object"
 ## 参考链接
 
 - Axel Rauschmayer, [Improving the JavaScript typeof operator](http://www.2ality.com/2011/11/improving-typeof.html)
+
+## 延伸阅读
+
+- [数组](../array)
+- [函数](../function)
+- [null, undefined 和布尔值](../null-undefined-boolean)
+- [数值](../number)
+- [对象](../object)
+- [字符串](../string)

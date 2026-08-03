@@ -247,3 +247,14 @@ Math.asin(1) // 1.5707963267948966
 Math.acos(1) // 0
 Math.atan(1) // 0.7853981633974483
 ```
+
+## 延伸阅读
+
+- [Array 对象](../array)
+- [属性描述对象](../attributes)
+- [Boolean 对象](../boolean)
+- [Date 对象](../date)
+- [JSON 对象](../json)
+- [Number 对象](../number)
+- [Object 对象](../object)
+- [RegExp 对象](../regexp)

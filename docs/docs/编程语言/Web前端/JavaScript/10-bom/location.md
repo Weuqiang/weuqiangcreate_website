@@ -576,3 +576,14 @@ for (var p of params.entries()) {}
 - [URL](https://developer.mozilla.org/en-US/docs/Web/API/URL), by MDN
 - [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams), by MDN
 - [Easy URL Manipulation with URLSearchParams](https://developers.google.com/web/updates/2016/01/urlsearchparams?hl=en), by Eric Bidelman
+
+## 延伸阅读
+
+- [ArrayBuffer 对象，Blob 对象](../arraybuffer)
+- [Cookie](../cookie)
+- [CORS 通信](../cors)
+- [浏览器环境概述](../engine)
+- [File 对象，FileList 对象，FileReader 对象](../file)
+- [表单，FormData 对象](../form)
+- [History 对象](../history)
+- [IndexedDB API](../indexeddb)

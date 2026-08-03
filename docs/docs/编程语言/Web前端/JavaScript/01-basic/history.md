@@ -190,3 +190,8 @@ JavaScript 伴随着互联网的发展一起发展。互联网周边技术的快
 - John Dalziel, [The race for speed part 4: The future for JavaScript](http://creativejs.com/2013/06/the-race-for-speed-part-4-the-future-for-javascript/)
 - Axel Rauschmayer, [Basic JavaScript for the impatient programmer](https://www.2ality.com/2013/06/basic-javascript.html)
 - balena.io, [Happy 18th Birthday JavaScript! A look at an unlikely past and bright future](https://www.balena.io/blog/happy-18th-birthday-javascript/)
+
+## 延伸阅读
+
+- [JavaScript 的基本语法](../grammar)
+- [导论](../introduction)

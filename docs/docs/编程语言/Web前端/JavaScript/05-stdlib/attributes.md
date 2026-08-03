@@ -787,3 +787,14 @@ obj.bar // ["a", "b", "c"]
 ```
 
 上面代码中，`obj.bar`属性指向一个数组，`obj`对象被冻结以后，这个指向无法改变，即无法指向其他值，但是所指向的数组是可以改变的。
+
+## 延伸阅读
+
+- [Array 对象](../array)
+- [Boolean 对象](../boolean)
+- [Date 对象](../date)
+- [JSON 对象](../json)
+- [Math 对象](../math)
+- [Number 对象](../number)
+- [Object 对象](../object)
+- [RegExp 对象](../regexp)

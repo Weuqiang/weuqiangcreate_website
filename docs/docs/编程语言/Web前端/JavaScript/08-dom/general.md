@@ -49,3 +49,14 @@ document
 - 同级节点关系（sibling）：拥有同一个父节点的节点
 
 DOM 提供操作接口，用来获取这三种关系的节点。比如，子节点接口包括`firstChild`（第一个子节点）和`lastChild`（最后一个子节点）等属性，同级节点接口包括`nextSibling`（紧邻在后的那个同级节点）和`previousSibling`（紧邻在前的那个同级节点）属性。
+
+## 延伸阅读
+
+- [属性的操作](../attributes)
+- [CSS 操作](../css)
+- [Document 节点](../document)
+- [Element 节点](../element)
+- [Mutation Observer API](../mutationobserver)
+- [Node 接口](../node)
+- [NodeList 接口，HTMLCollection 接口](../nodelist)
+- [ParentNode 接口，ChildNode 接口](../parentnode)

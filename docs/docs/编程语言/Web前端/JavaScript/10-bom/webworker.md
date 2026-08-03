@@ -390,3 +390,14 @@ Worker 线程有一些自己的全局属性和方法。
 - self.importScripts()：加载 JS 脚本。
 
 （完）
+
+## 延伸阅读
+
+- [ArrayBuffer 对象，Blob 对象](../arraybuffer)
+- [Cookie](../cookie)
+- [CORS 通信](../cors)
+- [浏览器环境概述](../engine)
+- [File 对象，FileList 对象，FileReader 对象](../file)
+- [表单，FormData 对象](../form)
+- [History 对象](../history)
+- [IndexedDB API](../indexeddb)

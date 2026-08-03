@@ -167,3 +167,8 @@ function greetMe(yourName) {
 greetMe('World')
 // Hello World
 ```
+
+## 延伸阅读
+
+- [JavaScript 的基本语法](../grammar)
+- [JavaScript 语言的历史](../history)

@@ -552,3 +552,14 @@ d // Sun Jan 06 2013 06:00:00 GMT+0800 (CST)
 
 - Rakhitha Nimesh，[Getting Started with the Date Object](https://www.sitepoint.com/beginners-guide-to-javascript-date-and-time/)
 - Ilya Kantor, [Date/Time functions](https://javascript.info/date)
+
+## 延伸阅读
+
+- [Array 对象](../array)
+- [属性描述对象](../attributes)
+- [Boolean 对象](../boolean)
+- [JSON 对象](../json)
+- [Math 对象](../math)
+- [Number 对象](../number)
+- [Object 对象](../object)
+- [RegExp 对象](../regexp)

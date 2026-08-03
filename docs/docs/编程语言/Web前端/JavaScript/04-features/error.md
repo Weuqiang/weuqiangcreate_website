@@ -458,3 +458,9 @@ try {
 ## 参考连接
 
 - Jani Hartikainen, [JavaScript Errors and How to Fix Them](http://davidwalsh.name/fix-javascript-errors)
+
+## 延伸阅读
+
+- [console 对象与控制台](../console)
+- [数据类型的转换](../conversion)
+- [编程风格](../style)

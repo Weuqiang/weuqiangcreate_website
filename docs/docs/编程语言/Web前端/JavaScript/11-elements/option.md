@@ -45,3 +45,12 @@ newOption.selected // false
 ```
 
 上面代码中，`newOption`的`defaultSelected`属性为`true`，但是它没有被选中（即`selected`属性为`false`）。
+
+## 延伸阅读
+
+- [a 元素](../a)
+- [button 元素](../button)
+- [form 元素](../form)
+- [img 元素](../image)
+- [input 元素](../input)
+- [video audio](../video)

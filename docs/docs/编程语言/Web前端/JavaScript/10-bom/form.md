@@ -629,3 +629,14 @@ xhr.send(file);
 ## 参考链接
 
 - [HTML5 Form Validation With the “pattern” Attribute](https://webdesign.tutsplus.com/tutorials/html5-form-validation-with-the-pattern-attribute--cms-25145), Thoriq Firdaus
+
+## 延伸阅读
+
+- [ArrayBuffer 对象，Blob 对象](../arraybuffer)
+- [Cookie](../cookie)
+- [CORS 通信](../cors)
+- [浏览器环境概述](../engine)
+- [File 对象，FileList 对象，FileReader 对象](../file)
+- [History 对象](../history)
+- [IndexedDB API](../indexeddb)
+- [Location 对象，URL 对象，URLSearchParams 对象](../location)

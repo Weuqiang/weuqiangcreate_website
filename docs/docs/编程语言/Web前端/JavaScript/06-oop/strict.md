@@ -450,3 +450,10 @@ function package(protected) { // 语法错误
 - Dr. Axel Rauschmayer，[JavaScript’s strict mode: a summary](http://www.2ality.com/2011/01/javascripts-strict-mode-summary.html)
 - Douglas Crockford, [Strict Mode Is Coming To Town](http://www.yuiblog.com/blog/2010/12/14/strict-mode-is-coming-to-town/)
 - [JavaScript Strict Mode Support](http://java-script.limewebs.com/strictMode/test_hosted.html)
+
+## 延伸阅读
+
+- [实例对象与 new 命令](../new)
+- [Object 对象的相关方法](../object)
+- [对象的继承](../prototype)
+- [this 关键字](../this)

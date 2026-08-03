@@ -495,3 +495,9 @@ function doAction(action) {
 - Axel Rauschmayer, [A meta style guide for JavaScript](http://www.2ality.com/2013/07/meta-style-guide.html)
 - Axel Rauschmayer, [Automatic semicolon insertion in JavaScript](http://www.2ality.com/2011/05/semicolon-insertion.html)
 - Rod Vagg, [JavaScript and Semicolons](http://dailyjs.com/2012/04/19/semicolons/)
+
+## 延伸阅读
+
+- [console 对象与控制台](../console)
+- [数据类型的转换](../conversion)
+- [错误处理机制](../error)

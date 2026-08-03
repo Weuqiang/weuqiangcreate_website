@@ -269,3 +269,15 @@ headers: {
 
 上面代码在手机中，点击链接会唤起拨号界面，可以直接拨打指定号码。
 
+
+## 延伸阅读
+
+- [HTML5](..)
+- [网页元素的属性](../attribute)
+- [其他标签](../elements)
+- [HTML 字符编码](../encode)
+- [表单标签](../form)
+- [iframe](../iframe)
+- [图像标签](../image)
+- [HTML 语言简介](../intro)
+- [link](../link)

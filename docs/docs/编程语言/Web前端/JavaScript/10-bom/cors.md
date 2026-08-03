@@ -255,3 +255,14 @@ CORS 与 JSONP 的使用目的相同，但是比 JSONP 更强大。JSONP 只支�
 - [HTTP access control (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS), MDN
 - [CORS](https://frontendian.co/cors), Ryan Miller
 - [Do You Really Know CORS?](http://performantcode.com/web/do-you-really-know-cors), Grzegorz Mirek
+
+## 延伸阅读
+
+- [ArrayBuffer 对象，Blob 对象](../arraybuffer)
+- [Cookie](../cookie)
+- [浏览器环境概述](../engine)
+- [File 对象，FileList 对象，FileReader 对象](../file)
+- [表单，FormData 对象](../form)
+- [History 对象](../history)
+- [IndexedDB API](../indexeddb)
+- [Location 对象，URL 对象，URLSearchParams 对象](../location)

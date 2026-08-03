@@ -733,3 +733,8 @@ top:
 ## 参考链接
 
 - Axel Rauschmayer, [Basic JavaScript for the impatient programmer](https://2ality.com/2013/06/basic-javascript.html)
+
+## 延伸阅读
+
+- [JavaScript 语言的历史](../history)
+- [导论](../introduction)

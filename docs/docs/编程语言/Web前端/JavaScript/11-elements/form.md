@@ -35,3 +35,12 @@ f.action = '/cgi-bin/some.cgi';
 f.method = 'POST';
 f.submit();
 ```
+
+## 延伸阅读
+
+- [a 元素](../a)
+- [button 元素](../button)
+- [img 元素](../image)
+- [input 元素](../input)
+- [option 元素](../option)
+- [video audio](../video)

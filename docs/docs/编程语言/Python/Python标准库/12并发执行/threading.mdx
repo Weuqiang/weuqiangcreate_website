@@ -204,3 +204,9 @@ if __name__ == '__main__':
 之所以如此，是因为 Python 的解释器有一个“全局解释器锁”（GIL）的东西，任何线程执行前必须先获得 GIL 锁，然后每执行 100 条字节码，解释器就自动释放 GIL 锁，让别的线程有机会执行。
 
 好在Python3.13已经支持在禁用 GIL 的情况下运行。
+
+## 延伸阅读
+
+- [并发执行](..)
+- [multiprocessing](../multiprocessing)
+- [subprocess](../subprocess)

@@ -151,3 +151,14 @@ el.replaceWith(span);
 
 上面代码中，`el`节点将被`span`节点替换。
 
+
+## 延伸阅读
+
+- [属性的操作](../attributes)
+- [CSS 操作](../css)
+- [Document 节点](../document)
+- [Element 节点](../element)
+- [DOM 概述](../general)
+- [Mutation Observer API](../mutationobserver)
+- [Node 接口](../node)
+- [NodeList 接口，HTMLCollection 接口](../nodelist)

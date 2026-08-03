@@ -204,3 +204,15 @@ Hard Disk
 
 上面代码中，`A`和`B`有共同的解释`C`，而`D`有两个解释`E`和`F`。
 
+
+## 延伸阅读
+
+- [HTML5](..)
+- [a](../a)
+- [网页元素的属性](../attribute)
+- [其他标签](../elements)
+- [HTML 字符编码](../encode)
+- [表单标签](../form)
+- [iframe](../iframe)
+- [图像标签](../image)
+- [HTML 语言简介](../intro)

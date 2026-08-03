@@ -273,3 +273,14 @@ ready('.foo', function(element){
 - Jeff Griffiths, [DOM MutationObserver – reacting to DOM changes without killing browser performance](https://hacks.mozilla.org/2012/05/dom-mutationobserver-reacting-to-dom-changes-without-killing-browser-performance/)
 - Addy Osmani, [Detect, Undo And Redo DOM Changes With Mutation Observers](http://addyosmani.com/blog/mutation-observers/)
 - Ryan Morr, [Using Mutation Observers to Watch for Element Availability](http://ryanmorr.com/using-mutation-observers-to-watch-for-element-availability/)
+
+## 延伸阅读
+
+- [属性的操作](../attributes)
+- [CSS 操作](../css)
+- [Document 节点](../document)
+- [Element 节点](../element)
+- [DOM 概述](../general)
+- [Node 接口](../node)
+- [NodeList 接口，HTMLCollection 接口](../nodelist)
+- [ParentNode 接口，ChildNode 接口](../parentnode)

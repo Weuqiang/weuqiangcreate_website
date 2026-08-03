@@ -643,3 +643,10 @@ var module1 = (function ($, YAHOO) {
 ## 参考链接
 
 - [JavaScript Modules: A Beginner’s Guide](https://www.freecodecamp.org/news/javascript-modules-a-beginner-s-guide-783f7d7a5fcc), by Preethi Kasireddy
+
+## 延伸阅读
+
+- [实例对象与 new 命令](../new)
+- [Object 对象的相关方法](../object)
+- [严格模式](../strict)
+- [this 关键字](../this)

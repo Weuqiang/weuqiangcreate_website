@@ -432,3 +432,14 @@ matches.input // "cat, bat, sat, fat"
 ## 参考链接
 
 - Ariya Hidayat, [JavaScript String: substring, substr, slice](http://ariya.ofilabs.com/2014/02/javascript-string-substring-substr-slice.html)
+
+## 延伸阅读
+
+- [Array 对象](../array)
+- [属性描述对象](../attributes)
+- [Boolean 对象](../boolean)
+- [Date 对象](../date)
+- [JSON 对象](../json)
+- [Math 对象](../math)
+- [Number 对象](../number)
+- [Object 对象](../object)

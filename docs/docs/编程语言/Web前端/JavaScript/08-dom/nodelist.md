@@ -196,3 +196,14 @@ document.images.namedItem('pic') === pic // true
 
 `Collection.namedItem('value')`等同于`Collection['value']`。
 
+
+## 延伸阅读
+
+- [属性的操作](../attributes)
+- [CSS 操作](../css)
+- [Document 节点](../document)
+- [Element 节点](../element)
+- [DOM 概述](../general)
+- [Mutation Observer API](../mutationobserver)
+- [Node 接口](../node)
+- [ParentNode 接口，ChildNode 接口](../parentnode)

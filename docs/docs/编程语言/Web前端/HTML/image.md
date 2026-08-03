@@ -292,3 +292,15 @@ sidebar_position: 10
 - [Responsive images](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images), MDN
 - [Native lazy-loading for the web](https://web.dev/native-lazy-loading), Houssein Djirdeh
 
+
+## 延伸阅读
+
+- [HTML5](..)
+- [a](../a)
+- [网页元素的属性](../attribute)
+- [其他标签](../elements)
+- [HTML 字符编码](../encode)
+- [表单标签](../form)
+- [iframe](../iframe)
+- [HTML 语言简介](../intro)
+- [link](../link)

@@ -89,3 +89,14 @@ if (new Boolean(null)) {
   console.log('true');
 } // true
 ```
+
+## 延伸阅读
+
+- [Array 对象](../array)
+- [属性描述对象](../attributes)
+- [Date 对象](../date)
+- [JSON 对象](../json)
+- [Math 对象](../math)
+- [Number 对象](../number)
+- [Object 对象](../object)
+- [RegExp 对象](../regexp)

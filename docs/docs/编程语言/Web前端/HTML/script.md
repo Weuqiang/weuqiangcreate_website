@@ -67,3 +67,15 @@ console.log('hello world');
 
 上面这段代码，只有浏览器不能执行 JavaScript 代码时才会显示，否则就不会显示。
 
+
+## 延伸阅读
+
+- [HTML5](..)
+- [a](../a)
+- [网页元素的属性](../attribute)
+- [其他标签](../elements)
+- [HTML 字符编码](../encode)
+- [表单标签](../form)
+- [iframe](../iframe)
+- [图像标签](../image)
+- [HTML 语言简介](../intro)

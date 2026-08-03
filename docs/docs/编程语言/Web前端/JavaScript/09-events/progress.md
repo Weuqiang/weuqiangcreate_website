@@ -155,3 +155,14 @@ xhr.upload.addEventListener('abort', transferCanceled, false);
 
 xhr.open();
 ```
+
+## 延伸阅读
+
+- [其他常见事件](../common)
+- [拖拉事件](../drag)
+- [Event 对象](../event)
+- [EventTarget 接口](../eventtarget)
+- [表单事件](../form)
+- [GlobalEventHandlers 接口](../globaleventhandlers)
+- [键盘事件](../keyboard)
+- [事件模型](../model)

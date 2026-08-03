@@ -505,3 +505,12 @@ arr.forEach(function (chr) {
 - Axel Rauschmayer, [JavaScript: sparse arrays vs. dense arrays](http://www.2ality.com/2012/06/dense-arrays.html)
 - Felix Bohm, [What They Didn’t Tell You About ES5′s Array Extras](http://net.tutsplus.com/tutorials/javascript-ajax/what-they-didnt-tell-you-about-es5s-array-extras/)
 - Juriy Zaytsev, [How ECMAScript 5 still does not allow to subclass an array](http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/)
+
+## 延伸阅读
+
+- [函数](../function)
+- [数据类型概述](../general)
+- [null, undefined 和布尔值](../null-undefined-boolean)
+- [数值](../number)
+- [对象](../object)
+- [字符串](../string)

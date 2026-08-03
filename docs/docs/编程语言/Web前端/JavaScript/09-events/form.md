@@ -149,3 +149,14 @@ function myFunction(e) {
 **（3）InputEvent.dataTransfer**
 
 `InputEvent.dataTransfer`属性返回一个 DataTransfer 实例。该属性只在文本框接受粘贴内容（insertFromPaste）或拖拽内容（`insertFromDrop`）时才有效。
+
+## 延伸阅读
+
+- [其他常见事件](../common)
+- [拖拉事件](../drag)
+- [Event 对象](../event)
+- [EventTarget 接口](../eventtarget)
+- [GlobalEventHandlers 接口](../globaleventhandlers)
+- [键盘事件](../keyboard)
+- [事件模型](../model)
+- [鼠标事件](../mouse)

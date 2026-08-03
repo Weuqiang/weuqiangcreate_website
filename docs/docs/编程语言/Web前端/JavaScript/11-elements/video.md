@@ -157,3 +157,12 @@ if (a.canPlayType('audio/wav')) {
 - error：网络或其他原因导致媒体文件无法加载时触发。
 - emptied：由于`error`或`abort`事件导致`networkState`属性变成无法获取数据时触发。
 
+
+## 延伸阅读
+
+- [a 元素](../a)
+- [button 元素](../button)
+- [form 元素](../form)
+- [img 元素](../image)
+- [input 元素](../input)
+- [option 元素](../option)

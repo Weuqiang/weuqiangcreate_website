@@ -130,3 +130,14 @@ if (
 ```
 
 上面代码表示，只要`Control`、`Alt`、`Meta`里面，同时按下任意两个或两个以上的键就返回。
+
+## 延伸阅读
+
+- [其他常见事件](../common)
+- [拖拉事件](../drag)
+- [Event 对象](../event)
+- [EventTarget 接口](../eventtarget)
+- [表单事件](../form)
+- [GlobalEventHandlers 接口](../globaleventhandlers)
+- [事件模型](../model)
+- [鼠标事件](../mouse)

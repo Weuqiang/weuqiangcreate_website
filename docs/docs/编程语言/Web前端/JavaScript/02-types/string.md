@@ -288,3 +288,12 @@ b64Decode('JUU0JUJEJUEwJUU1JUE1JUJE') // "你好"
 - Mathias Bynens, [JavaScript’s internal character encoding: UCS-2 or UTF-16?](http://mathiasbynens.be/notes/javascript-encoding)
 - Mathias Bynens, [JavaScript has a Unicode problem](http://mathiasbynens.be/notes/javascript-unicode)
 - Mozilla Developer Network, [Window.btoa](https://developer.mozilla.org/en-US/docs/Web/API/Window.btoa)
+
+## 延伸阅读
+
+- [数组](../array)
+- [函数](../function)
+- [数据类型概述](../general)
+- [null, undefined 和布尔值](../null-undefined-boolean)
+- [数值](../number)
+- [对象](../object)
