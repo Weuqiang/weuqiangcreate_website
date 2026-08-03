@@ -994,6 +994,10 @@ window.eval('...')
 
 上面这些形式都是`eval`的别名调用，作用域都是全局作用域。
 
+## 延伸阅读
+
+- 跨主题关联：[递归与分治](../../../../../计算机科学基础/数据结构与算法/递归与分治)（递归的构成与分治思想：JS 递归斐波那契在此看数学定义与栈溢出）
+
 ## 参考链接
 
 - Ben Alman, [Immediately-Invoked Function Expression (IIFE)](http://benalman.com/news/2010/11/immediately-invoked-function-expression/)
