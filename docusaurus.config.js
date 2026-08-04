@@ -42,6 +42,25 @@ const config = {
     defaultLocale: 'zh-Hans',
     locales: ['zh-Hans'],
   },
+  headTags: [
+    {
+      tagName: "script",
+      attributes: { type: "application/ld+json" },
+      innerHTML: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "知识花园",
+        url: `${websiteurl}${baseUrl}`,
+        description: "魏强的个人知识花园：编程、数学、AI、软工、嵌入式与读书笔记的系统整理。",
+        inLanguage: "zh-CN",
+        author: {
+          "@type": "Person",
+          name: "魏强",
+          url: `https://github.com/${githubusername}`,
+        },
+      }),
+    },
+  ],
   presets: [
     [
       "@docusaurus/preset-classic",
@@ -172,6 +191,7 @@ const config = {
       },
       { name: "author", content: "魏强" },
       { name: "theme-color", content: "#9c5b3f" },
+      { property: "og:site_name", content: "知识花园" },
     ],
     colorMode: {
       defaultMode: "light",

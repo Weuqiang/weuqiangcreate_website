@@ -25,7 +25,7 @@
     "dev": "docusaurus start --host 0.0.0.0",
     "build": "docusaurus build",
     "prebuild": "node scripts/gen-blog-kb-recs.js && node scripts/inject-blog-kb-links.js && node scripts/blog-summary.js && node scripts/gen-recent.js && node scripts/gen-knowledge-graph.js",
-    "postbuild": "node scripts/strip-null-bytes.js",
+    "postbuild": "node scripts/strip-null-bytes.js && node scripts/optimize-sitemap.js",
     "check:links": "node scripts/check-internal-links.js",
     "build:analyze": "npm run build -- --bundle-analyzer",
     "swizzle": "docusaurus swizzle",
