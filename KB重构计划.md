@@ -167,6 +167,13 @@ description: 一句话说明本文解决什么、学完能做什么
   - 知识库 → 书评（核心页 `## 延伸阅读` 补 📖 链接 `/read/...`）：人工智能 index、计算机科学导论 index、HTTP与网络安全、Web前端 index、编程语言 index。
   - 共 12 条跨插件双向链接；跨插件用站点绝对路径（Docusaurus 自动加 baseUrl），`onBrokenLinks:throw` 校验；build / check:links / content-audit --gate 全绿。
 
+- [✅] 6.8 跨语言类型系统枢纽互链（以「Rust/类型系统」为中枢，把"静态 vs 动态 / 强 vs 弱"织成网）
+  - 中枢 `Rust/类型系统/index.mdx` 新增：同目录兄弟（泛型与Trait / 枚举与模式匹配）+ 跨 6 语言类型系统对照（Go/Java/Python/C/JS）+ 编程语言总览；跨语言链接用**站点绝对路径**（因 index.md 相对基准坑 + `02-types` 剥前缀坑）。
+  - 反向回链：Go/Java/Python/C/JS 五语言核心页 `## 延伸阅读` 补「跨主题关联·类型系统」回链中枢；因普通页相对基准为**文件名级**（非目录级），深度比 index 场景多 1 层（C/Python `../../`、Go/Java `../../../`、JS `../../../../`）。
+  - 共 17 条双向链接；写入前用脚本按路由规则（含页名段、剥前缀、index.md 基准差异）模拟解析核验 17/17 命中。
+  - ⚠️ **彻底厘清 Docusaurus 三类相对链接坑**（本轮反复 broken link 根因，已根治）：① 普通页相对基准=文件名级（`../` 先去文件名段再回目录）；② index.md 相对基准=目录级（`../` 直接回目录）；③ index 页路由即目录本身，链接不可加 `/index` 后缀。
+  - build(onBrokenLinks:throw)✅、check:links✅（514 HTML/368 页/零空字节）、content-audit --gate✅。
+
 ---
 
 ## 六、进度看板（每次执行后更新）
