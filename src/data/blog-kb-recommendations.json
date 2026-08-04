@@ -3,19 +3,19 @@
     {
       "title": "容器化与 Docker",
       "url": "/docs/软件工程与后端/工程实践/容器化与Docker",
-      "description": "",
+      "description": "容器化与 Docker 工程实践：容器与虚拟机差异、镜像分层与构建缓存、Dockerfile 多阶段构建、compose 编排与镜像优化实战坑",
       "category": "工程实践"
     },
     {
       "title": "Docker",
       "url": "/docs/计算机科学基础/开发工具链/Docker",
-      "description": "",
+      "description": "Docker 容器技术实战：安装与快速上手、镜像容器仓库三大概念、常用命令、数据卷与网络、docker-compose 多服务编排与 k8s 定位",
       "category": "开发工具链"
     },
     {
       "title": "持续集成与部署",
       "url": "/docs/软件工程与后端/工程实践/持续集成与部署",
-      "description": "",
+      "description": "持续集成与部署实践：CI/CD 概念辨析、GitHub Actions 流水线实战、蓝绿与金丝雀部署策略、质量门禁与密钥配置管理",
       "category": "工程实践"
     }
   ],
@@ -37,19 +37,19 @@
     {
       "title": "容器化与 Docker",
       "url": "/docs/软件工程与后端/工程实践/容器化与Docker",
-      "description": "",
+      "description": "容器化与 Docker 工程实践：容器与虚拟机差异、镜像分层与构建缓存、Dockerfile 多阶段构建、compose 编排与镜像优化实战坑",
       "category": "工程实践"
     },
     {
       "title": "微服务与分布式架构",
       "url": "/docs/软件工程与后端/工程实践/微服务与分布式架构",
-      "description": "",
+      "description": "微服务与分布式架构：单体与微服务取舍、服务拆分原则、同步异步通信、服务发现与网关、数据一致性与可观测性",
       "category": "工程实践"
     },
     {
       "title": "持续集成与部署",
       "url": "/docs/软件工程与后端/工程实践/持续集成与部署",
-      "description": "",
+      "description": "持续集成与部署实践：CI/CD 概念辨析、GitHub Actions 流水线实战、蓝绿与金丝雀部署策略、质量门禁与密钥配置管理",
       "category": "工程实践"
     }
   ],
@@ -155,25 +155,25 @@
     {
       "title": "Git 与版本控制",
       "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "",
+      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
       "category": "工程实践"
     },
     {
       "title": "Git",
       "url": "/docs/计算机科学基础/开发工具链/Git",
-      "description": "",
+      "description": "Git 版本控制实战：四区模型、本地工作流与远程协作、分支管理与版本回退、标签与 commit 规范、GitHub Actions 自动化",
       "category": "开发工具链"
     },
     {
       "title": "代码规范与重构",
       "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "",
+      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
       "category": "工程实践"
     },
     {
       "title": "自动化测试与 TDD",
       "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
-      "description": "",
+      "description": "自动化测试与 TDD 实践：测试金字塔分层策略、pytest 基础与参数化、Mock 使用时机、红绿重构循环与覆盖率的正确用法",
       "category": "工程实践"
     },
     {
@@ -205,7 +205,7 @@
     {
       "title": "Git 与版本控制",
       "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "",
+      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
       "category": "工程实践"
     }
   ],
@@ -349,7 +349,7 @@
     {
       "title": "代码规范与重构",
       "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "",
+      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
       "category": "工程实践"
     },
     {
@@ -381,7 +381,7 @@
     {
       "title": "Git 与版本控制",
       "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "",
+      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
       "category": "工程实践"
     },
     {
@@ -453,25 +453,25 @@
     {
       "title": "Git 与版本控制",
       "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "",
+      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
       "category": "工程实践"
     },
     {
       "title": "Git",
       "url": "/docs/计算机科学基础/开发工具链/Git",
-      "description": "",
+      "description": "Git 版本控制实战：四区模型、本地工作流与远程协作、分支管理与版本回退、标签与 commit 规范、GitHub Actions 自动化",
       "category": "开发工具链"
     },
     {
       "title": "代码规范与重构",
       "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "",
+      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
       "category": "工程实践"
     },
     {
       "title": "自动化测试与 TDD",
       "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
-      "description": "",
+      "description": "自动化测试与 TDD 实践：测试金字塔分层策略、pytest 基础与参数化、Mock 使用时机、红绿重构循环与覆盖率的正确用法",
       "category": "工程实践"
     },
     {
@@ -595,13 +595,13 @@
     {
       "title": "代码规范与重构",
       "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "",
+      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
       "category": "工程实践"
     },
     {
       "title": "自动化测试与 TDD",
       "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
-      "description": "",
+      "description": "自动化测试与 TDD 实践：测试金字塔分层策略、pytest 基础与参数化、Mock 使用时机、红绿重构循环与覆盖率的正确用法",
       "category": "工程实践"
     },
     {
@@ -613,7 +613,7 @@
     {
       "title": "Git 与版本控制",
       "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "",
+      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
       "category": "工程实践"
     },
     {
@@ -723,7 +723,7 @@
     {
       "title": "代码规范与重构",
       "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "",
+      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
       "category": "工程实践"
     },
     {
@@ -735,7 +735,7 @@
     {
       "title": "自动化测试与 TDD",
       "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
-      "description": "",
+      "description": "自动化测试与 TDD 实践：测试金字塔分层策略、pytest 基础与参数化、Mock 使用时机、红绿重构循环与覆盖率的正确用法",
       "category": "工程实践"
     },
     {

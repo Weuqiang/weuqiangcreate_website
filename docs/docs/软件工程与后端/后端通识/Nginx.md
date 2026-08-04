@@ -4,6 +4,33 @@ title: Nginx
 description: "Nginx 配置文件结构与 Context 作用域，静态资源、SPA 部署、反向代理、负载均衡与 HTTPS 实战配置，附性能优化、故障排查和安全加固"
 ---
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 Nginx 的配置文件结构与 Context 作用域继承规则
+- 会配置静态资源服务、SPA 部署、反向代理、负载均衡与 HTTPS
+- 掌握常用变量、性能优化手段与故障排查思路
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 协议基础：[HTTP 与网络安全](../../../计算机科学基础/计算机科学导论/计算机网络/HTTP与网络安全)
+- 命令行操作：[Terminal](../../../计算机科学基础/开发工具链/Terminal)
+
+## 核心概念
+
+Nginx 是「事件驱动的反向代理」——它不为每个连接开线程，而是用少量 worker 进程 + epoll 事件循环处理海量并发连接，这是它能以极低资源扛住高并发的根本原因。配置文件的核心是 Context 嵌套（http → server → location）与就近继承：越内层的指令覆盖越外层，理解这条规则，配置就不再是抄来抄去的黑箱。
+
+本章主线：
+- 安装与快速开始
+- 配置文件结构与 Context 作用域
+- 核心模块：静态资源、反向代理、负载均衡
+- 企业级实战：SPA 部署、HTTPS、安全加固
+- 常用变量、性能优化与故障排查
+
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
@@ -996,6 +1023,18 @@ server {
 - [Nginx变量索引](https://nginx.org/en/docs/varindex.html)
 - [使用Nginx作为HTTP负载均衡器](https://nginx.org/en/docs/http/load_balancing.html)
 - [配置HTTPS服务器](https://nginx.org/en/docs/http/configuring_https_servers.html)
+
+## 小结
+
+Nginx 的一切都围绕「事件驱动 + 配置继承」两条主线。改配置前先想清楚指令在哪个 Context 生效，排障时先看 error_log 再猜原因。
+
+## 练习
+
+动手检验一下自己：
+
+1. `root` 与 `alias` 在 location 中的路径拼接规则有何不同？各举一例。
+2. 为什么 Nginx 能用几个进程扛住上万并发连接？与传统「一连接一线程」模型的差异在哪？
+3. 配置一个反向代理，把 /api/ 转发到后端服务并正确传递客户端真实 IP。
 
 ## 延伸阅读
 

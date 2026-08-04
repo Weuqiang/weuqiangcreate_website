@@ -4,6 +4,30 @@ title: 代码执行与调试
 description: "Python 代码执行与调试内置函数详解：breakpoint 断点调试，compile、eval、exec 动态编译与执行代码的用法和实用注意事项"
 ---
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 会用 `breakpoint()` 进入 pdb 交互式调试，掌握常用调试命令
+- 理解 `compile` 的三种模式与 `eval` / `exec` 的差异和适用边界
+- 认识动态执行代码的安全风险，知道何时应当坚决避免使用 `eval`
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [Python · 10函数](../10函数)、[Python · 39模块](../39模块)
+
+## 核心概念
+
+Python 源码先被编译成字节码（code object），再由虚拟机执行。`compile` 把这一过程显式暴露出来：`eval` 模式编译单个表达式并返回值，`exec` 模式编译任意语句块但返回 `None`。这种「运行期生成并执行代码」的能力非常强大，也非常危险——对不可信输入调用 `eval` 等同于把机器交给对方，正确做法是用 `ast.literal_eval` 或专门的解析器。
+
+本章主线：
+- `breakpoint()` 与 pdb 调试流程
+- `compile`：三种模式与 code object
+- `eval` 与 `exec` 的区别与返回值
+- 动态执行的安全风险与替代方案
+
 ## 内置函数
 
 ### breakpoint函数
@@ -105,6 +129,18 @@ print(return_value) # None
 return_value = eval("1 + 1") # 执行表达式，返回表达式的值
 print(return_value) # 2
 ```
+
+## 小结
+
+调试优先用 `breakpoint()` 而不是满屏 `print`；动态执行能力留给元编程场景，面对外部输入一律改用 `ast.literal_eval`。
+
+## 练习
+
+动手检验一下自己：
+
+1. `eval('x = 1')` 会报错吗？为什么？改用什么函数可以执行赋值语句？
+2. 用 `compile` 预编译一段循环执行 10 万次的表达式，相比每次 `eval` 字符串能快多少？
+3. 为什么 `eval(input())` 是严重的安全漏洞？给出安全的替代写法。
 
 ## 延伸阅读
 

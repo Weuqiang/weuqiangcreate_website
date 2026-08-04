@@ -1,7 +1,35 @@
 ---
 sidebar_position: 3
 title: Git
+description: "Git 版本控制实战：四区模型、本地工作流与远程协作、分支管理与版本回退、标签与 commit 规范、GitHub Actions 自动化"
 ---
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解工作区、暂存区、本地仓库、远程仓库四区模型与文件在其间的流转
+- 掌握日常工作流：init / add / commit / push / pull / branch / merge
+- 会做版本回退、标签管理，能写规范的 commit message 并配置 GitHub Actions
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 会用命令行执行基本命令：[Terminal](../Terminal)
+- 工作流配置格式：[YAML](../YAML)（GitHub Actions）
+
+## 核心概念
+
+Git 的心智模型只有一句话：**每次 commit 都是一份完整快照，分支只是指向某个 commit 的可移动指针**。理解这一点，分支切换（移动 HEAD 指针）、合并（找共同祖先做三方合并）、回退（把指针挪回去）都不再是需要背诵的命令，而是同一模型的自然推论。四区之间的流转（工作区 → 暂存区 → 本地仓库 → 远程仓库）则解释了为什么 `add` 和 `commit` 要分成两步。
+
+本章主线：
+- 四区模型与命令概览
+- 仓库初始化与本地工作流
+- 远程协作：push / pull / fetch
+- 分支管理、版本回退与标签
+- commit 规范与 GitHub Actions
+
 
 Git 是一个版本控制工具，既可以通过图形化的方式操作，也可以通过命令行来完成。
 
@@ -156,6 +184,17 @@ GitHub Actions 是一种工作流，是 CI/CD 最常用的工具。
 
 [GitHub Actions documentation](https://docs.github.com/en/actions)
 
+## 小结
+
+Git 管的是快照而非差异，分支只是指针。把四区模型和指针模型装进脑子，命令就成了模型的语法糖；再配上规范的 commit message，历史本身就是最好的项目文档。
+
+## 练习
+
+动手检验一下自己：
+
+1. `git reset --soft`、`--mixed`、`--hard` 分别把哪几个区回退了？画出四区模型说明。
+2. 误提交了敏感信息并已 push，应该如何处理？说明各方案的代价。
+3. 解释 merge 与 rebase 产生的历史差异，并说明团队协作中各自的适用场景。
 
 ## 延伸阅读
 
