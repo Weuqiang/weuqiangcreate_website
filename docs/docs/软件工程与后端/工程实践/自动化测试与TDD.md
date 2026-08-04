@@ -24,11 +24,35 @@ def test_add():
 
 运行：`pytest -q`。
 
+## 参数化与 Mock
+
+参数化避免复制粘贴相似用例；Mock 隔离外部依赖（数据库、网络），让单元测试稳定快速：
+
+```python
+import pytest
+from unittest.mock import Mock
+
+def test_fetch_user(monkeypatch):
+    # 伪造数据库查询，不连真库
+    fake_db = Mock()
+    fake_db.get.return_value = {"id": 1, "name": "魏强"}
+    monkeypatch.setattr("app.db", fake_db)
+
+    from app import fetch_user
+    assert fetch_user(1)["name"] == "魏强"
+
+@pytest.mark.parametrize("a,b,expect", [(1, 2, 3), (0, 0, 0), (-1, 1, 0)])
+def test_add_param(a, b, expect):
+    assert add(a, b) == expect
+```
+
 ## TDD 红绿重构
 
 1. **红**：先写一个会失败的测试，描述期望行为。
 2. **绿**：用最简实现让测试通过。
 3. **重构**：在测试保护下改善代码结构，测试必须仍全绿。
+
+示例：实现 `fizzbuzz`，先写 `assert fizzbuzz(3) == "Fizz"`，再补实现，逐步让 15 的倍数、5 的倍数都通过。
 
 ## Mock 与覆盖率
 
@@ -45,6 +69,22 @@ def test_add():
 :::info
 测试的价值不在于数量，而在于它能在你犯错时立刻报警。
 :::
+
+## 易错点
+
+- **测试互相依赖**：用例 A 改了全局状态、用例 B 依赖它，执行顺序一变就红。每个测试自负盈亏。
+- **过度 Mock**：把实现细节全 mock 掉，测试通过但真实协作已坏，等于没测。只 mock 真正的外部边界（DB/网络/时间）。
+- **为覆盖率写空测试**：`assert True` 凑数，既无断言价值又掩盖脆弱。
+
+## 练习
+
+给下面的函数写 TDD：先写会失败的测试，再实现，最后重构。
+
+```python
+# 需求：摄氏转华氏，公式 F = C * 9/5 + 32
+def celsius_to_fahrenheit(c):
+    ...
+```
 
 ## 延伸阅读
 
