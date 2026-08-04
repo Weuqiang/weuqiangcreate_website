@@ -1,9 +1,10 @@
 /**
  * 知识图谱生成器：扫描 docs/docs 目录树（两层：一级分类 + 子分类），
  * 读取 _category_.json 的 label 或 index 的 frontmatter title 作为中文名，
+ * 并递归统计每个分类下的真实内容页数（.md/.mdx，排除 index.*），
  * 产出 src/data/knowledge-graph.json 供首页「知识图谱」组件渲染。
  *
- * 这样图谱永远与真实分类同步——新增分类自动出现在图谱，不会过时。
+ * 这样图谱永远与真实分类同步——新增分类自动出现在图谱，内容页数也实时更新。
  * 由 package.json 的 prebuild 调用，CI 构建时也会自动更新。
  */
 const fs = require("fs");
@@ -44,6 +45,18 @@ function catLabel(dir) {
   return null;
 }
 
+// 递归统计某目录下内容页数（.md/.mdx，排除 index.* 与 _category_.json）
+function countContent(dir) {
+  let n = 0;
+  if (!fs.existsSync(dir)) return 0;
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) n += countContent(p);
+    else if (/\.mdx?$/.test(e.name) && !/^index\./.test(e.name)) n++;
+  }
+  return n;
+}
+
 const topDirs = fs
   .readdirSync(DOCS, { withFileTypes: true })
   .filter((d) => d.isDirectory())
@@ -51,7 +64,9 @@ const topDirs = fs
   .sort((a, b) => a.localeCompare(b, "zh"));
 
 const groups = { root: { color: "#9c5b3f", label: "知识花园" } };
-const nodes = [{ id: "root", label: "知识花园", to: "/", layer: 0, group: "root" }];
+const nodes = [
+  { id: "root", label: "知识花园", to: "/", layer: 0, group: "root", count: countContent(DOCS) },
+];
 const edges = [];
 const labelToId = { 知识花园: "root" };
 
@@ -61,7 +76,7 @@ topDirs.forEach((name) => {
   const gid = "d-" + name;
   groups[gid] = { color: COLOR[label] || "#888888", label };
   const to = "/docs/" + name + "/";
-  nodes.push({ id: gid, label, to, layer: 1, group: gid });
+  nodes.push({ id: gid, label, to, layer: 1, group: gid, count: countContent(dir) });
   edges.push(["root", gid]);
   labelToId[label] = gid;
 
@@ -75,7 +90,15 @@ topDirs.forEach((name) => {
     const slabel = catLabel(sdir) || sname;
     const sid = gid + "-" + sname;
     const sto = "/docs/" + name + "/" + sname + "/";
-    nodes.push({ id: sid, label: slabel, to: sto, layer: 2, group: gid, parent: gid });
+    nodes.push({
+      id: sid,
+      label: slabel,
+      to: sto,
+      layer: 2,
+      group: gid,
+      parent: gid,
+      count: countContent(sdir),
+    });
     edges.push([gid, sid]);
     labelToId[slabel] = sid;
   });
@@ -99,7 +122,7 @@ CROSS.forEach(([a, b]) => {
 
 fs.writeFileSync(OUT, JSON.stringify({ groups, nodes, edges }, null, 2));
 console.log(
-  `[gen-kg] 生成 ${nodes.length} 个节点 / ${edges.length} 条边 -> ${path.relative(
+  `[gen-kg] 生成 ${nodes.length} 个节点 / ${edges.length} 条边（含内容页计数）-> ${path.relative(
     path.resolve(__dirname, ".."),
     OUT
   )}`

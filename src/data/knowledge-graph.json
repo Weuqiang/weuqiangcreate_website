@@ -35,14 +35,16 @@
       "label": "知识花园",
       "to": "/",
       "layer": 0,
-      "group": "root"
+      "group": "root",
+      "count": 244
     },
     {
       "id": "d-编程语言",
       "label": "编程语言",
       "to": "/docs/编程语言/",
       "layer": 1,
-      "group": "d-编程语言"
+      "group": "d-编程语言",
+      "count": 169
     },
     {
       "id": "d-编程语言-C",
@@ -50,7 +52,8 @@
       "to": "/docs/编程语言/C/",
       "layer": 2,
       "group": "d-编程语言",
-      "parent": "d-编程语言"
+      "parent": "d-编程语言",
+      "count": 16
     },
     {
       "id": "d-编程语言-Go",
@@ -58,7 +61,8 @@
       "to": "/docs/编程语言/Go/",
       "layer": 2,
       "group": "d-编程语言",
-      "parent": "d-编程语言"
+      "parent": "d-编程语言",
+      "count": 6
     },
     {
       "id": "d-编程语言-Java",
@@ -66,7 +70,8 @@
       "to": "/docs/编程语言/Java/",
       "layer": 2,
       "group": "d-编程语言",
-      "parent": "d-编程语言"
+      "parent": "d-编程语言",
+      "count": 8
     },
     {
       "id": "d-编程语言-Python",
@@ -74,7 +79,8 @@
       "to": "/docs/编程语言/Python/",
       "layer": 2,
       "group": "d-编程语言",
-      "parent": "d-编程语言"
+      "parent": "d-编程语言",
+      "count": 35
     },
     {
       "id": "d-编程语言-Rust",
@@ -82,7 +88,8 @@
       "to": "/docs/编程语言/Rust/",
       "layer": 2,
       "group": "d-编程语言",
-      "parent": "d-编程语言"
+      "parent": "d-编程语言",
+      "count": 6
     },
     {
       "id": "d-编程语言-Web前端",
@@ -90,14 +97,16 @@
       "to": "/docs/编程语言/Web前端/",
       "layer": 2,
       "group": "d-编程语言",
-      "parent": "d-编程语言"
+      "parent": "d-编程语言",
+      "count": 98
     },
     {
       "id": "d-计算机科学基础",
       "label": "计算机科学基础",
       "to": "/docs/计算机科学基础/",
       "layer": 1,
-      "group": "d-计算机科学基础"
+      "group": "d-计算机科学基础",
+      "count": 22
     },
     {
       "id": "d-计算机科学基础-计算机科学导论",
@@ -105,7 +114,8 @@
       "to": "/docs/计算机科学基础/计算机科学导论/",
       "layer": 2,
       "group": "d-计算机科学基础",
-      "parent": "d-计算机科学基础"
+      "parent": "d-计算机科学基础",
+      "count": 8
     },
     {
       "id": "d-计算机科学基础-开发工具链",
@@ -113,7 +123,8 @@
       "to": "/docs/计算机科学基础/开发工具链/",
       "layer": 2,
       "group": "d-计算机科学基础",
-      "parent": "d-计算机科学基础"
+      "parent": "d-计算机科学基础",
+      "count": 5
     },
     {
       "id": "d-计算机科学基础-数据结构与算法",
@@ -121,14 +132,16 @@
       "to": "/docs/计算机科学基础/数据结构与算法/",
       "layer": 2,
       "group": "d-计算机科学基础",
-      "parent": "d-计算机科学基础"
+      "parent": "d-计算机科学基础",
+      "count": 9
     },
     {
       "id": "d-嵌入式开发",
       "label": "嵌入式开发",
       "to": "/docs/嵌入式开发/",
       "layer": 1,
-      "group": "d-嵌入式开发"
+      "group": "d-嵌入式开发",
+      "count": 9
     },
     {
       "id": "d-嵌入式开发-单片机MCU",
@@ -136,7 +149,8 @@
       "to": "/docs/嵌入式开发/单片机MCU/",
       "layer": 2,
       "group": "d-嵌入式开发",
-      "parent": "d-嵌入式开发"
+      "parent": "d-嵌入式开发",
+      "count": 2
     },
     {
       "id": "d-嵌入式开发-通信协议",
@@ -144,7 +158,8 @@
       "to": "/docs/嵌入式开发/通信协议/",
       "layer": 2,
       "group": "d-嵌入式开发",
-      "parent": "d-嵌入式开发"
+      "parent": "d-嵌入式开发",
+      "count": 2
     },
     {
       "id": "d-嵌入式开发-硬件与电路基础",
@@ -152,7 +167,8 @@
       "to": "/docs/嵌入式开发/硬件与电路基础/",
       "layer": 2,
       "group": "d-嵌入式开发",
-      "parent": "d-嵌入式开发"
+      "parent": "d-嵌入式开发",
+      "count": 2
     },
     {
       "id": "d-嵌入式开发-RTOS与固件",
@@ -160,14 +176,16 @@
       "to": "/docs/嵌入式开发/RTOS与固件/",
       "layer": 2,
       "group": "d-嵌入式开发",
-      "parent": "d-嵌入式开发"
+      "parent": "d-嵌入式开发",
+      "count": 2
     },
     {
       "id": "d-人工智能",
       "label": "人工智能",
       "to": "/docs/人工智能/",
       "layer": 1,
-      "group": "d-人工智能"
+      "group": "d-人工智能",
+      "count": 22
     },
     {
       "id": "d-人工智能-大模型LLM与应用",
@@ -175,7 +193,8 @@
       "to": "/docs/人工智能/大模型LLM与应用/",
       "layer": 2,
       "group": "d-人工智能",
-      "parent": "d-人工智能"
+      "parent": "d-人工智能",
+      "count": 7
     },
     {
       "id": "d-人工智能-机器学习",
@@ -183,7 +202,8 @@
       "to": "/docs/人工智能/机器学习/",
       "layer": 2,
       "group": "d-人工智能",
-      "parent": "d-人工智能"
+      "parent": "d-人工智能",
+      "count": 5
     },
     {
       "id": "d-人工智能-深度学习",
@@ -191,14 +211,16 @@
       "to": "/docs/人工智能/深度学习/",
       "layer": 2,
       "group": "d-人工智能",
-      "parent": "d-人工智能"
+      "parent": "d-人工智能",
+      "count": 10
     },
     {
       "id": "d-软件工程与后端",
       "label": "软件工程与后端",
       "to": "/docs/软件工程与后端/",
       "layer": 1,
-      "group": "d-软件工程与后端"
+      "group": "d-软件工程与后端",
+      "count": 14
     },
     {
       "id": "d-软件工程与后端-工程实践",
@@ -206,7 +228,8 @@
       "to": "/docs/软件工程与后端/工程实践/",
       "layer": 2,
       "group": "d-软件工程与后端",
-      "parent": "d-软件工程与后端"
+      "parent": "d-软件工程与后端",
+      "count": 8
     },
     {
       "id": "d-软件工程与后端-后端通识",
@@ -214,14 +237,16 @@
       "to": "/docs/软件工程与后端/后端通识/",
       "layer": 2,
       "group": "d-软件工程与后端",
-      "parent": "d-软件工程与后端"
+      "parent": "d-软件工程与后端",
+      "count": 6
     },
     {
       "id": "d-数学基础",
       "label": "数学基础",
       "to": "/docs/数学基础/",
       "layer": 1,
-      "group": "d-数学基础"
+      "group": "d-数学基础",
+      "count": 8
     },
     {
       "id": "d-数学基础-概率与统计",
@@ -229,7 +254,8 @@
       "to": "/docs/数学基础/概率与统计/",
       "layer": 2,
       "group": "d-数学基础",
-      "parent": "d-数学基础"
+      "parent": "d-数学基础",
+      "count": 2
     },
     {
       "id": "d-数学基础-离散数学",
@@ -237,7 +263,8 @@
       "to": "/docs/数学基础/离散数学/",
       "layer": 2,
       "group": "d-数学基础",
-      "parent": "d-数学基础"
+      "parent": "d-数学基础",
+      "count": 2
     },
     {
       "id": "d-数学基础-微积分",
@@ -245,7 +272,8 @@
       "to": "/docs/数学基础/微积分/",
       "layer": 2,
       "group": "d-数学基础",
-      "parent": "d-数学基础"
+      "parent": "d-数学基础",
+      "count": 2
     },
     {
       "id": "d-数学基础-线性代数",
@@ -253,7 +281,8 @@
       "to": "/docs/数学基础/线性代数/",
       "layer": 2,
       "group": "d-数学基础",
-      "parent": "d-数学基础"
+      "parent": "d-数学基础",
+      "count": 2
     }
   ],
   "edges": [

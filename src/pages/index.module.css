@@ -571,6 +571,18 @@
 .kgLabelRoot {
   fill: #fff;
 }
+.kgCount {
+  fill: var(--ifm-color-content);
+  opacity: 0.5;
+  font-family: var(--font-serif);
+  text-anchor: middle;
+  font-weight: 400;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.kgNodeHot .kgCount {
+  opacity: 0.95;
+}
 .kgNodeHot .kgDot {
   fill: var(--gc);
   stroke-width: 3;

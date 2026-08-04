@@ -189,6 +189,7 @@ function KnowledgeGraph() {
                   onBlur={() => setHover(null)}
                   style={{ animationDelay: `${i * 28}ms`, ["--gc"]: color }}
                 >
+                  <title>{n.label}{typeof n.count === "number" ? ` · ${n.count} 篇` : ""}</title>
                   <circle cx={p.x} cy={p.y} r={r + 9} fill="transparent" />
                   <circle
                     cx={p.x}
@@ -205,6 +206,16 @@ function KnowledgeGraph() {
                   >
                     {n.label}
                   </text>
+                  {typeof n.count === "number" && n.count > 0 && !onRoot && (
+                    <text
+                      x={p.x}
+                      y={p.y + (n.layer === 1 ? 21 : 16)}
+                      className={styles.kgCount}
+                      style={{ fontSize: n.layer === 1 ? 9.5 : 8.5 }}
+                    >
+                      {n.count}篇
+                    </text>
+                  )}
                 </Link>
               );
             })}
