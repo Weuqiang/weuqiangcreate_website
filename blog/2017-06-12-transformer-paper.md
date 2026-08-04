@@ -19,3 +19,16 @@ date: 2017-06-12
 我挺喜欢论文标题里那句「is All You Need」的笃定。做工程的人大多谨慎，习惯说「视情况而定」；敢在标题里拍胸脯说「只要注意力就够了」，要么是无知，要么是真看透了。现在看，是后者。
 
 有时候一个想法的重量，要等好几年后才压得下来。Transformer 就是这种。
+
+
+---
+
+---
+
+---
+
+## 延伸阅读（知识库）
+
+- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer)
+- [Vision Transformer](/docs/人工智能/深度学习/序列处理/Vision Transformer) — 把图像切成 patch 当作 token，用纯 Transformer 做图像分类——CV 与 NLP 架构大一统的开端。
+- [LSTM](/docs/人工智能/深度学习/序列处理/LSTM)

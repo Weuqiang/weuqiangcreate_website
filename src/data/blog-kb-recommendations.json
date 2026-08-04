@@ -1,0 +1,800 @@
+{
+  "docker-released": [
+    {
+      "title": "容器化与 Docker",
+      "url": "/docs/软件工程与后端/工程实践/容器化与Docker",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "Docker",
+      "url": "/docs/计算机科学基础/开发工具链/Docker",
+      "description": "",
+      "category": "开发工具链"
+    },
+    {
+      "title": "持续集成与部署",
+      "url": "/docs/软件工程与后端/工程实践/持续集成与部署",
+      "description": "",
+      "category": "工程实践"
+    }
+  ],
+  "react-released": [
+    {
+      "title": "对象",
+      "url": "/docs/编程语言/Web前端/JavaScript/types/object",
+      "description": "对象（object）是 JavaScript 语言的核心概念，也是最重要的数据类型。",
+      "category": "编程语言/Web前端/JavaScript/02-types"
+    },
+    {
+      "title": "Promise 对象",
+      "url": "/docs/编程语言/Web前端/JavaScript/async/promise",
+      "description": "Promise 对象是 JavaScript 的异步操作解决方案，为异步操作提供统一接口。它起到代理",
+      "category": "编程语言/Web前端/JavaScript/07-async"
+    }
+  ],
+  "kubernetes-released": [
+    {
+      "title": "容器化与 Docker",
+      "url": "/docs/软件工程与后端/工程实践/容器化与Docker",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "微服务与分布式架构",
+      "url": "/docs/软件工程与后端/工程实践/微服务与分布式架构",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "持续集成与部署",
+      "url": "/docs/软件工程与后端/工程实践/持续集成与部署",
+      "description": "",
+      "category": "工程实践"
+    }
+  ],
+  "tensorflow-released": [
+    {
+      "title": "AlexNet",
+      "url": "/docs/人工智能/深度学习/网格数据/AlexNet",
+      "description": "2012 年引爆深度学习的卷积网络——ReLU、Dropout、GPU 训练三件套的开端。",
+      "category": "人工智能/深度学习/网格数据"
+    },
+    {
+      "title": "ResNet",
+      "url": "/docs/人工智能/深度学习/网格数据/ResNet",
+      "description": "用残差连接让网络“想深就深”——解决深层网络的退化问题，现代 CNN 的基石。",
+      "category": "人工智能/深度学习/网格数据"
+    },
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Transformer",
+      "url": "/docs/人工智能/深度学习/序列处理/Transformer",
+      "description": "",
+      "category": "人工智能/深度学习/序列处理"
+    }
+  ],
+  "alphago-defeats-lee-sedol": [
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    },
+    {
+      "title": "分类算法",
+      "url": "/docs/人工智能/机器学习/分类算法",
+      "description": "",
+      "category": "机器学习"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "transformer-paper": [
+    {
+      "title": "Transformer",
+      "url": "/docs/人工智能/深度学习/序列处理/Transformer",
+      "description": "",
+      "category": "人工智能/深度学习/序列处理"
+    },
+    {
+      "title": "Vision Transformer",
+      "url": "/docs/人工智能/深度学习/序列处理/Vision Transformer",
+      "description": "把图像切成 patch 当作 token，用纯 Transformer 做图像分类——CV 与 NLP 架构大一统的开端。",
+      "category": "人工智能/深度学习/序列处理"
+    },
+    {
+      "title": "LSTM",
+      "url": "/docs/人工智能/深度学习/序列处理/LSTM",
+      "description": "",
+      "category": "人工智能/深度学习/序列处理"
+    }
+  ],
+  "openai-gpt-released": [
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    }
+  ],
+  "github-copilot-launch": [
+    {
+      "title": "Git 与版本控制",
+      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "Git",
+      "url": "/docs/计算机科学基础/开发工具链/Git",
+      "description": "",
+      "category": "开发工具链"
+    },
+    {
+      "title": "代码规范与重构",
+      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "自动化测试与 TDD",
+      "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "函数",
+      "url": "/docs/编程语言/Python/10函数",
+      "description": "",
+      "category": "Python"
+    }
+  ],
+  "stable-diffusion-open-source": [
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    },
+    {
+      "title": "ResNet",
+      "url": "/docs/人工智能/深度学习/网格数据/ResNet",
+      "description": "用残差连接让网络“想深就深”——解决深层网络的退化问题，现代 CNN 的基石。",
+      "category": "人工智能/深度学习/网格数据"
+    },
+    {
+      "title": "模型社区",
+      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Git 与版本控制",
+      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
+      "description": "",
+      "category": "工程实践"
+    }
+  ],
+  "chatgpt-released": [
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "gpt4-released": [
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "手写多模态大模型",
+      "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
+      "description": "从零搭一个能“看图说话”的多模态大模型（VLM）：视觉编码器 + 投影层 + 语言模型的最小配方。",
+      "category": "人工智能/深度学习/序列处理"
+    }
+  ],
+  "midjourney-v5-released": [
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    },
+    {
+      "title": "ResNet",
+      "url": "/docs/人工智能/深度学习/网格数据/ResNet",
+      "description": "用残差连接让网络“想深就深”——解决深层网络的退化问题，现代 CNN 的基石。",
+      "category": "人工智能/深度学习/网格数据"
+    }
+  ],
+  "llama-2-open-source": [
+    {
+      "title": "本地部署",
+      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型社区",
+      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "openai-sora-released": [
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    },
+    {
+      "title": "Transformer",
+      "url": "/docs/人工智能/深度学习/序列处理/Transformer",
+      "description": "",
+      "category": "人工智能/深度学习/序列处理"
+    }
+  ],
+  "deepseek-chinese-ai": [
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "本地部署",
+      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "代码规范与重构",
+      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "函数",
+      "url": "/docs/编程语言/Python/10函数",
+      "description": "",
+      "category": "Python"
+    }
+  ],
+  "llama31-opensource": [
+    {
+      "title": "本地部署",
+      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型社区",
+      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Git 与版本控制",
+      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "gemini15-pro": [
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "手写多模态大模型",
+      "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
+      "description": "从零搭一个能“看图说话”的多模态大模型（VLM）：视觉编码器 + 投影层 + 语言模型的最小配方。",
+      "category": "人工智能/深度学习/序列处理"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    },
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "claude35-sonnet": [
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "github-copilot-free": [
+    {
+      "title": "Git 与版本控制",
+      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "Git",
+      "url": "/docs/计算机科学基础/开发工具链/Git",
+      "description": "",
+      "category": "开发工具链"
+    },
+    {
+      "title": "代码规范与重构",
+      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "自动化测试与 TDD",
+      "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "函数",
+      "url": "/docs/编程语言/Python/10函数",
+      "description": "",
+      "category": "Python"
+    }
+  ],
+  "gpt4o-breakthrough": [
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "手写多模态大模型",
+      "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
+      "description": "从零搭一个能“看图说话”的多模态大模型（VLM）：视觉编码器 + 投影层 + 语言模型的最小配方。",
+      "category": "人工智能/深度学习/序列处理"
+    },
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    }
+  ],
+  "openai-o3-breakthrough": [
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "deepseek-v3-open-source": [
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "本地部署",
+      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型社区",
+      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Transformer",
+      "url": "/docs/人工智能/深度学习/序列处理/Transformer",
+      "description": "",
+      "category": "人工智能/深度学习/序列处理"
+    }
+  ],
+  "meta-llama-4-coming": [
+    {
+      "title": "本地部署",
+      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型社区",
+      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "ai-coding-tools-2025": [
+    {
+      "title": "代码规范与重构",
+      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "自动化测试与 TDD",
+      "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "函数",
+      "url": "/docs/编程语言/Python/10函数",
+      "description": "",
+      "category": "Python"
+    },
+    {
+      "title": "Git 与版本控制",
+      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "grok3-reasoning-revolution": [
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "检索增强",
+      "url": "/docs/人工智能/大模型LLM与应用/检索增强",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    }
+  ],
+  "gemma3-multimodal-opensource": [
+    {
+      "title": "本地部署",
+      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    },
+    {
+      "title": "手写多模态大模型",
+      "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
+      "description": "从零搭一个能“看图说话”的多模态大模型（VLM）：视觉编码器 + 投影层 + 语言模型的最小配方。",
+      "category": "人工智能/深度学习/序列处理"
+    }
+  ],
+  "llama4-multimodal-breakthrough": [
+    {
+      "title": "本地部署",
+      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型社区",
+      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "手写多模态大模型",
+      "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
+      "description": "从零搭一个能“看图说话”的多模态大模型（VLM）：视觉编码器 + 投影层 + 语言模型的最小配方。",
+      "category": "人工智能/深度学习/序列处理"
+    }
+  ],
+  "claude4-programming-breakthrough": [
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "代码规范与重构",
+      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "自动化测试与 TDD",
+      "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
+      "description": "",
+      "category": "工程实践"
+    },
+    {
+      "title": "函数",
+      "url": "/docs/编程语言/Python/10函数",
+      "description": "",
+      "category": "Python"
+    }
+  ],
+  "gemini25-deep-think": [
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    }
+  ],
+  "gpt5-revolutionary-ai": [
+    {
+      "title": "Agent开发",
+      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型评测",
+      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "模型微调",
+      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "上下文工程",
+      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
+      "description": "",
+      "category": "大模型（LLM）与应用"
+    },
+    {
+      "title": "经典神经网络",
+      "url": "/docs/人工智能/深度学习/经典神经网络",
+      "description": "",
+      "category": "深度学习"
+    }
+  ]
+}
