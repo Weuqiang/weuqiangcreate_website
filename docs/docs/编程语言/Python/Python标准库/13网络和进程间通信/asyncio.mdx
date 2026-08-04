@@ -1,71 +1,92 @@
 ---
 sidebar_position: 3
-title: asyncio
+title: asyncio 异步编程
 ---
-### asyncio 模块
 
-协程是编写并发代码的库，是构建 IO 密集型和高级结构化网络代码的最佳选择。
+## 学习目标
 
-例程的运行方式是通过代码主动切换状态并等待处理，因此效率更高，语法也更详细。循环对象需要处于活动状态：创建、设置、提交、等待运行和停止。
+- 说清 asyncio 解决什么问题：单线程内用「协作式多任务」并发处理大量 IO 等待
+- 用 `async` / `await` 写出可读的并发代码，掌握 `asyncio.run()` 启动协程
+- 用 `asyncio.gather` / `create_task` 并发运行多个协程
+- 避开三大坑：阻塞事件循环、忘记 `await`、在协程里调用同步阻塞函数
 
-例行程序的最佳数量取决于内存使用情况。
+## 核心直觉
 
-asyncio 模块包含了一些工具，用于编写异步代码。
+CPU 执行一条指令极快，但「等网络响应 / 等磁盘 / 等数据库」动辄几十毫秒——这段时间 CPU 其实在空转。多线程靠操作系统切换来利用等待期，但线程切换有开销，且受 GIL 限制无法真正并行 CPU 工作。
 
-协程的工作原理是事件循环，事件循环是一个无限循环，它等待事件并执行它们。
+asyncio 走另一条路：**单线程 + 事件循环**。协程用 `await` 主动让出控制权：当协程遇到 `await`，它把手里的控制权交还事件循环，循环转去执行别的协程；等 IO 数据到了，再回来接着跑。全程没有线程切换，却能让成千上万个 IO 等待「重叠」起来。
 
-每次任务会被挂起至事件循环队列中，然后按顺序执行。
+> 一句话：`asyncio` 适合 **IO 密集型**（网络、磁盘、爬虫、微服务调用）；**不适合 CPU 密集型**（那该用 `multiprocessing` 多进程）。
 
-await 关键字用于挂起协程，直到它被调用。
+## 最小示例
 
-async 关键字用于定义协程。
-
-asyncio 模块用于实现异步编程。
-
-[asyncio](https://docs.python.org/zh-cn/3.10/library/asyncio.html?highlight=asyncio#module-asyncio):asyncio Multiprocessing Module Code Documentation
+现代写法用 `asyncio.run()` 启动，不要再用手动 `get_event_loop` + `run_forever`：
 
 ```python showLineNumbers
 import asyncio
 
-class TestA:
-    def __init__(self,loop) -> None:
-        self.loop = loop
-        asyncio.set_event_loop(loop=self.loop) # step 3.1
+async def say(delay, msg):
+    await asyncio.sleep(delay)   # 模拟 IO 等待，主动让出控制权
+    print(msg)
 
-    async def run_page(self,tid): # step 7
-        print(tid)
-        # 此处编写爬虫代码
-        return tid
+async def main():
+    # 顺序执行：总耗时 ≈ 1 + 2 = 3 秒
+    await say(1, "hello")
+    await say(2, "world")
 
-    async def close(self,):
-        for i in asyncio.all_tasks(): # step 9.1
-            i.cancel()
-        self.loop.stop() # step  9.2
-
-
-def test():
-    get_async_loop = asyncio.new_event_loop() # step 1
-    asyncio.set_event_loop(get_async_loop) # step 2
-
-    async def spider(task_obj):
-        async_task =  [asyncio.ensure_future(task_obj.run_page(1)),
-                    asyncio.ensure_future(task_obj.run_page(2)),] # step  6
-        await asyncio.wait(async_task) # step  8
-
-        await task_obj.close() # step 9
-
-    task_obj = TestA(get_async_loop) #step 3
-    asyncio.run_coroutine_threadsafe(spider(task_obj), loop=get_async_loop) #step  4
-    get_async_loop.run_forever() # step 5
-
-test()
+# asyncio.run 负责创建事件循环、运行 main、收尾关闭
+asyncio.run(main())
 ```
 
-生成器函数与协程（注：函数）非常相似，它们 yield 多次，它们具有多个入口点，并且它们的执行可以被挂起。唯一的区别是生成器函数不能控制在它在 yield 后交给哪里继续执行，控制权总是转移到生成器的调用者
+把两个 `say` 并发起来，总耗时降到约 2 秒（取最长那个）：
 
-在 Python 创建协程时，task 是 future 的子类，所以 task 继承了 future 的属性和方法。几乎没有不同。
+```python
+async def main():
+    # gather 并发运行多个协程，等全部完成
+    await asyncio.gather(
+        say(1, "hello"),
+        say(2, "world"),
+    )
+```
+
+## 任务与并发控制
+
+`gather` 适合「一次性并发一批」。`create_task` 把协程包装成 Task 立即排入循环，便于边产生边调度：
+
+```python
+async def main():
+    task1 = asyncio.create_task(say(1, "a"))
+    task2 = asyncio.create_task(say(2, "b"))
+    # 此处 main 可先做别的事
+    await task1
+    await task2
+```
+
+限制并发数（避免一次性打爆对端）可用信号量：
+
+```python
+sem = asyncio.Semaphore(10)  # 最多 10 个并发
+
+async def fetch(url):
+    async with sem:
+        return await do_request(url)
+```
+
+## 易错点
+
+- **阻塞事件循环**：在协程里调用 `time.sleep(3)`、`requests.get()`、`open()` 这类同步阻塞函数，会卡住整个循环，所有协程一起卡。IO 一律用 `async` 版本（`asyncio.sleep` / `aiohttp` / `httpx.AsyncClient`）。
+- **忘记 `await`**：`await say()` 才会真正运行；只写 `say()` 返回的是一个「还没跑的协程对象」，不执行也不报错，极难排查（lint 会警告 "coroutine never awaited"）。
+- **混用线程做 CPU 重活**：重计算要丢给 `asyncio.to_thread(...)` 或 `loop.run_in_executor`，别直接在协程里算。
+- **`gather` 吞异常**：某个协程抛错，`gather` 默认不会立刻中断其他任务；需要时用 `return_exceptions=True` 或外层 `try`。
+
+## 练习
+
+1. 用 `asyncio.gather` 并发请求 5 个 URL（用 `httpx.AsyncClient` 或 `aiohttp`），对比顺序请求耗时。
+2. 写一个带 `Semaphore(3)` 的并发下载器，控制同时只下 3 个文件。
+3. 故意在协程里写 `time.sleep(1)` 观察程序变慢，再换成 `await asyncio.sleep(1)` 看差别。
 
 ## 延伸阅读
 
-- [网络与通信](..)
-- [方式一](../urllib)
+- 同章兄弟：[urllib 与 http.client](../urllib)
+- 父目录总览：[网络与通信](..)
+- 并发对照：[Go 并发模型](/docs/编程语言/Go/并发模型/)
