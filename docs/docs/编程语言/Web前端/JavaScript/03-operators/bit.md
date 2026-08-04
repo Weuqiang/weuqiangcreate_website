@@ -361,3 +361,10 @@ flags = ~flags;
 - Michal Budzynski, [JavaScript: The less known parts. Bitwise Operators](https://michalbe.blogspot.com/2013/03/javascript-less-known-parts-bitwise.html)
 - Axel Rauschmayer, [Basic JavaScript for the impatient programmer](https://www.2ality.com/2013/06/basic-javascript.html)
 - Mozilla Developer Network, [Bitwise Operators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_Operators)
+
+## 延伸阅读
+- [算术运算符](../arithmetic)
+- [布尔运算符](../boolean)
+- [比较运算符](../comparison)
+- [其他运算符，运算顺序](../priority)
+- [返回总览](../../)

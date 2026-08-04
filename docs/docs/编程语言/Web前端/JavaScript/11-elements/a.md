@@ -162,3 +162,11 @@ a.type // "video/mp4"
 - `blur()`：从当前元素移除键盘焦点，详见`HTMLElement`接口的介绍。
 - `focus()`：当前元素得到键盘焦点，详见`HTMLElement`接口的介绍。
 - `toString()`：返回当前`<a>`元素的 HTML 属性`href`。
+
+## 延伸阅读
+- [button 元素](../button)
+- [form 元素](../form)
+- [img 元素](../image)
+- [input 元素](../input)
+- [option 元素](../option)
+- [返回总览](../../)

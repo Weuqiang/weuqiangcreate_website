@@ -407,3 +407,11 @@ el.dispatchEvent(myEvent);
 ```
 
 上面代码也说明，CustomEvent 的事件实例，除了具有 Event 接口的实例属性，还具有`detail`属性。
+
+## 延伸阅读
+- [拖拉事件](../drag)
+- [Event 对象](../event)
+- [EventTarget 接口](../eventtarget)
+- [表单事件](../form)
+- [GlobalEventHandlers 接口](../globaleventhandlers)
+- [返回总览](../../)

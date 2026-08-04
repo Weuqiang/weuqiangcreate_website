@@ -63,3 +63,7 @@ blob = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
 经验法则：**内部缓存 / 临时存档用 pickle 图方便；对外交换数据用 json 保安全与兼容。**
 
 > 延伸：把 Python 对象转成跨语言的结构化数据，参见 `json` 模块；二进制高效存储大量数组则常用第三方 `numpy` / `pandas`。
+
+## 延伸阅读
+- [连接到磁盘上的数据库（如果不存在则创建）](../sqlite3)
+- [返回总览](../../)

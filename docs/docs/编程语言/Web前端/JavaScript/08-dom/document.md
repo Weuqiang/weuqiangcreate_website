@@ -961,3 +961,10 @@ function copyText(text) {
 
 这个方法指向`window.getSelection()`，参见`window`对象一节的介绍。
 
+## 延伸阅读
+- [属性的操作](../attributes)
+- [CSS 操作](../css)
+- [Element 节点](../element)
+- [DOM 概述](../general)
+- [Mutation Observer API](../mutationobserver)
+- [返回总览](../../)

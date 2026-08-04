@@ -665,3 +665,11 @@ isFinite(-1) // true
 
 - Dr. Axel Rauschmayer, [How numbers are encoded in JavaScript](https://www.2ality.com/2012/04/number-encoding.html)
 - Humphry, [JavaScript 中 Number 的一些表示上/下限](https://segmentfault.com/a/1190000000407658)
+
+## 延伸阅读
+- [数组](../array)
+- [函数](../function)
+- [数据类型概述](../general)
+- [null, undefined 和布尔值](../null-undefined-boolean)
+- [对象](../object)
+- [返回总览](../../)

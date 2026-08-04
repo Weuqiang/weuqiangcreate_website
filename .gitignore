@@ -61,3 +61,7 @@ temp/
 # Local agent / editor settings (not project config)
 .workbuddy/
 .claude/
+
+# 临时诊断/一次性批处理脚本（下划线前缀约定，不入库）
+scripts/_*.py
+scripts/_*.js

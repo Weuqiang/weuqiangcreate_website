@@ -131,3 +131,10 @@ Number.prototype.double = function () {
 
 上面代码在`String`和`Number`这两个对象的原型上面，分别自定义了一个方法，从而可以在所有实例对象上调用。注意，最后一行的`123`外面必须要加上圆括号，否则后面的点运算符（`.`）会被解释成小数点。
 
+## 延伸阅读
+- [Array 对象](../array)
+- [属性描述对象](../attributes)
+- [Boolean 对象](../boolean)
+- [Date 对象](../date)
+- [JSON 对象](../json)
+- [返回总览](../../)

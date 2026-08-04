@@ -286,3 +286,8 @@ console.log(3);
 - Bryan Klimt, [What’s so great about JavaScript Promises?](https://web.dev/articles/promises)
 - Jake Archibald, [JavaScript Promises There and back again](https://web.dev/articles/promises)
 - Mikito Takada, [7. Control flow, Mixu's Node book](http://book.mixu.net/node/ch7.html)
+
+## 延伸阅读
+- [异步操作概述](../general)
+- [定时器](../timer)
+- [返回总览](../../)

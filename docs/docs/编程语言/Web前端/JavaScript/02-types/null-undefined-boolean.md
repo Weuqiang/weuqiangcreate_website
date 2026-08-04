@@ -135,3 +135,11 @@ if ({}) {
 ## 参考链接
 
 - Axel Rauschmayer, [Categorizing values in JavaScript](https://www.2ality.com/2013/01/categorizing-values.html)
+
+## 延伸阅读
+- [数组](../array)
+- [函数](../function)
+- [数据类型概述](../general)
+- [数值](../number)
+- [对象](../object)
+- [返回总览](../../)

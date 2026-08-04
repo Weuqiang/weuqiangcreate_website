@@ -463,3 +463,11 @@ obj.hasOwnProperty('toString') // false
 - Javier Márquez, [JavaScript properties are enumerable, writable and configurable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty)
 - Sella Rafaeli, [Native JavaScript Data-Binding](https://www.sellarafaeli.com/blog/native_javascript_data_binding): 使用存取函数实现model与view的双向绑定
 - Lea Verou, [Copying object properties, the robust way](https://lea.verou.me/2015/08/copying-properties-the-robust-way/)
+
+## 延伸阅读
+- [Array 对象](../array)
+- [属性描述对象](../attributes)
+- [Boolean 对象](../boolean)
+- [Date 对象](../date)
+- [JSON 对象](../json)
+- [返回总览](../../)

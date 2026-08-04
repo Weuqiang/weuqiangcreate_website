@@ -504,3 +504,11 @@ console.log(temp.p1 + temp.p2);
 - Lakshan Perera, [Revisiting JavaScript Objects](https://www.laktek.com/2012/12/29/revisiting-javascript-objects/)
 - Angus Croll, [The Secret Life of JavaScript Primitives](https://javascriptweblog.wordpress.com/2010/09/27/the-secret-life-of-javascript-primitives/)
 - Dr. Axel Rauschmayer, [JavaScript’s with statement and why it’s deprecated](https://www.2ality.com/2011/06/with-statement.html)
+
+## 延伸阅读
+- [数组](../array)
+- [函数](../function)
+- [数据类型概述](../general)
+- [null, undefined 和布尔值](../null-undefined-boolean)
+- [数值](../number)
+- [返回总览](../../)

@@ -1054,3 +1054,11 @@ keyRangeValue.includes('W') // false
 - Tiffany Brown, [An Introduction to IndexedDB](https://web.archive.org/web/2019/http://dev.opera.com/articles/introduction-to-indexeddb/)
 - David Fahlander, [Breaking the Borders of IndexedDB](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/)
 - TutorialsPoint, [HTML5 - IndexedDB](https://www.tutorialspoint.com/html5/html5_indexeddb.htm)
+
+## 延伸阅读
+- [ArrayBuffer 对象，Blob 对象](../arraybuffer)
+- [Cookie](../cookie)
+- [CORS 通信](../cors)
+- [浏览器环境概述](../engine)
+- [File 对象，FileList 对象，FileReader 对象](../file)
+- [返回总览](../../)

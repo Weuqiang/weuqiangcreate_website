@@ -8,6 +8,30 @@ description: C 做网络编程直接调用 BSD socket API，这是 TCP/IP 协议
 
 C 做网络编程直接调用 **BSD socket** API（`<sys/socket.h>`、`<netinet/in.h>`、`<arpa/inet.h>`），这是 TCP/IP 协议栈在应用层的接口，几乎所有语言的高层网络库都建立在它之上。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 socket 模型与客户端/服务器分工
+- 掌握 TCP 的 `socket`/`bind`/`listen`/`accept`/`connect` 流程
+- 能写一个最小可用的回显服务器与客户端
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [并发执行（pthread）](../17并发执行)
+
+## 核心概念
+
+网络编程本质是「用文件描述符做跨机器的字节流」：socket 把网络连接抽象成可 read/write 的句柄。TCP 用「三次握手 + 可靠字节流」保证有序到达，服务器端 listen/accept、客户端 connect 完成握手。
+
+本章主线：
+- socket 抽象与 C/S 模型
+- TCP 流程：`socket`→`bind`→`listen`→`accept`
+- 客户端：`connect` 与收发
+- 阻塞 I/O 与并发服务器雏形
+
 ## 1. TCP 通信模型
 
 ```text
@@ -84,6 +108,10 @@ close(sock);
 
 1. 把服务端改成"回显"：收到什么就原样发回，用循环 `read` 处理多次收发。
 2. 写个客户端连续发 5 条消息，观察 TCP 字节流如何被服务端分多次 `read` 收齐。
+
+## 小结
+
+本章把网络变成「可 read/write 的 socket」：TCP 服务器 listen/accept、客户端 connect，握手后就是熟悉的字节流收发。结合多线程即可支撑并发连接。
 
 ## 延伸阅读
 

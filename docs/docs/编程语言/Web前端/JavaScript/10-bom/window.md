@@ -832,3 +832,11 @@ frames.myframe === myFrame // true
 ```
 
 另外，`name`属性的值会自动成为子窗口的名称，可以用在`window.open`方法的第二个参数，或者`<a>`和`<frame>`标签的`target`属性。
+
+## 延伸阅读
+- [ArrayBuffer 对象，Blob 对象](../arraybuffer)
+- [Cookie](../cookie)
+- [CORS 通信](../cors)
+- [浏览器环境概述](../engine)
+- [File 对象，FileList 对象，FileReader 对象](../file)
+- [返回总览](../../)
