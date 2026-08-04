@@ -1,4 +1,5 @@
 {
   "label": "软件工程与后端",
-  "position": 5
+  "position": 5,
+  "description": "后端通识与工程实践：API、数据库、CI/CD、测试、重构、分布式。"
 }
