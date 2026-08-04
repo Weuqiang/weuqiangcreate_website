@@ -1,6 +1,0 @@
-style(katex): 数学模式中裸中文改用 \text{} 包裹
-
-- Trie字典树.md: $O(总字符数)$ -> $O(\text{总字符数})$
-- 复杂度速查.md: $O(状态数 \times 转移数)$ -> $O(\text{状态数} \times \text{转移数})$
-- 全站精确扫描确认仅此 2 处真数学块中文（其余 $ 在行内代码反引号内，KaTeX 不解析，非问题）
-- 重跑 build 零 unicodeTextInMathMode 警告；三道门禁全绿：build 零断链 / check:links 575 HTML·427 页·零空字节 / content-audit 零破窗
