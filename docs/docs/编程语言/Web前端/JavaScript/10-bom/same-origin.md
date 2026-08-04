@@ -396,7 +396,7 @@ CORS 是跨源资源分享（Cross-Origin Resource Sharing）的缩写。它是 
 ## 参考链接
 
 - Mozilla Developer Network, [Window.postMessage](https://developer.mozilla.org/en-US/docs/Web/API/window.postMessage)
-- Jakub Jankiewicz, [Cross-Domain LocalStorage](http://jcubic.wordpress.com/2014/06/20/cross-domain-localstorage/)
+- Jakub Jankiewicz, [Cross-Domain LocalStorage](https://jcubic.wordpress.com/2014/06/20/cross-domain-localstorage/)
 - David Baron, [setTimeout with a shorter delay](http://dbaron.org/log/20100309-faster-timeouts): 利用 window.postMessage 可以实现0毫秒触发回调函数
 
 ## 延伸阅读

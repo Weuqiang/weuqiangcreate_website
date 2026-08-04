@@ -470,9 +470,9 @@ undefined + 1 // NaN
 
 ## 参考链接
 
-- Axel Rauschmayer, [What is {} + {} in JavaScript?](http://www.2ality.com/2012/01/object-plus-object.html)
-- Axel Rauschmayer, [JavaScript quirk 1: implicit conversion of values](http://www.2ality.com/2013/04/quirk-implicit-conversion.html)
-- Benjie Gillam, [Quantum JavaScript?](http://www.benjiegillam.com/2013/06/quantum-javascript/)
+- Axel Rauschmayer, [What is {} + {} in JavaScript?](https://www.2ality.com/2012/01/object-plus-object.html)
+- Axel Rauschmayer, [JavaScript quirk 1: implicit conversion of values](https://www.2ality.com/2013/04/quirk-implicit-conversion.html)
+- Benjie Gillam, [Quantum JavaScript?](https://www.benjiegillam.com/2013/06/quantum-javascript/)
 
 ## 延伸阅读
 

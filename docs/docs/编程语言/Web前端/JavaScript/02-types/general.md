@@ -116,7 +116,7 @@ typeof null // "object"
 
 ## 参考链接
 
-- Axel Rauschmayer, [Improving the JavaScript typeof operator](http://www.2ality.com/2011/11/improving-typeof.html)
+- Axel Rauschmayer, [Improving the JavaScript typeof operator](https://www.2ality.com/2011/11/improving-typeof.html)
 
 ## 延伸阅读
 

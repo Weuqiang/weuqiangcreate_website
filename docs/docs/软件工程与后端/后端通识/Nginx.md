@@ -990,12 +990,12 @@ server {
 
 ## 参考资源
 
-- [Nginx官方文档](http://nginx.org/en/docs/)
-- [Nginx新手指南](http://nginx.org/en/docs/beginners_guide.html)
-- [Nginx配置指令索引](http://nginx.org/en/docs/dirindex.html)
-- [Nginx变量索引](http://nginx.org/en/docs/varindex.html)
-- [使用Nginx作为HTTP负载均衡器](http://nginx.org/en/docs/http/load_balancing.html)
-- [配置HTTPS服务器](http://nginx.org/en/docs/http/configuring_https_servers.html)
+- [Nginx官方文档](https://nginx.org/en/docs/)
+- [Nginx新手指南](https://nginx.org/en/docs/beginners_guide.html)
+- [Nginx配置指令索引](https://nginx.org/en/docs/dirindex.html)
+- [Nginx变量索引](https://nginx.org/en/docs/varindex.html)
+- [使用Nginx作为HTTP负载均衡器](https://nginx.org/en/docs/http/load_balancing.html)
+- [配置HTTPS服务器](https://nginx.org/en/docs/http/configuring_https_servers.html)
 
 ## 延伸阅读
 

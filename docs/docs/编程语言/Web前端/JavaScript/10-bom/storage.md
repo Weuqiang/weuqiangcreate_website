@@ -136,11 +136,11 @@ window.addEventListener('storage', onStorageChange);
 
 ## 参考链接
 
-- Ryan Stewart，[Introducing the HTML5 storage APIs](http://www.adobe.com/devnet/html5/articles/html5-storage-apis.html)
-- [Getting Started with LocalStorage](http://codular.com/localstorage)
-- Feross Aboukhadijeh, [Introducing the HTML5 Hard Disk Filler™ API](http://feross.org/fill-disk/)
-- Ben Summers, [Inter-window messaging using localStorage](http://bens.me.uk/2013/localstorage-inter-window-messaging)
-- Stack Overflow, [Why does Internet Explorer fire the window “storage” event on the window that stored the data?](http://stackoverflow.com/questions/18265556/why-does-internet-explorer-fire-the-window-storage-event-on-the-window-that-st)
+- Ryan Stewart，[Introducing the HTML5 storage APIs](https://www.adobe.com/devnet/html5/articles/html5-storage-apis.html)
+- [Getting Started with LocalStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
+- Feross Aboukhadijeh, [Introducing the HTML5 Hard Disk Filler™ API](https://feross.org/fill-disk/)
+- Ben Summers, [Inter-window messaging using localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
+- Stack Overflow, [Why does Internet Explorer fire the window “storage” event on the window that stored the data?](https://stackoverflow.com/questions/18265556/why-does-internet-explorer-fire-the-window-storage-event-on-the-window-that-st)
 - Stack Overflow, [localStorage eventListener is not called](https://stackoverflow.com/questions/5370784/localstorage-eventlistener-is-not-called)
 
 ## 延伸阅读

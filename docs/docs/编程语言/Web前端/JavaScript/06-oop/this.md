@@ -936,9 +936,9 @@ bind(f, o)() // 123
 
 ## 参考链接
 
-- Jonathan Creamer, [Avoiding the "this" problem in JavaScript](http://tech.pro/tutorial/1192/avoiding-the-this-problem-in-javascript)
+- Jonathan Creamer, [Avoiding the "this" problem in JavaScript](https://web.archive.org/web/2019/http://tech.pro/tutorial/1192/avoiding-the-this-problem-in-javascript)
 - Erik Kronberg, [Bind, Call and Apply in JavaScript](https://variadic.me/posts/2013-10-22-bind-call-and-apply-in-javascript.html)
-- Axel Rauschmayer, [JavaScript’s this: how it works, where it can trip you up](http://www.2ality.com/2014/05/this.html)
+- Axel Rauschmayer, [JavaScript’s this: how it works, where it can trip you up](https://www.2ality.com/2014/05/this.html)
 
 ## 延伸阅读
 

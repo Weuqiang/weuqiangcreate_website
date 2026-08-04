@@ -132,7 +132,7 @@ sidebar_position: 10
 
 ## 响应式图像
 
-网页在不同尺寸的设备上，都能产生良好的显示效果，叫做[“响应式设计”](http://www.ruanyifeng.com/blog/2012/05/responsive_web_design.html)（responsive web design）。响应式设计的网页图像，就是“响应式图像”（responsive image）。
+网页在不同尺寸的设备上，都能产生良好的显示效果，叫做[“响应式设计”](https://www.ruanyifeng.com/blog/2012/05/responsive_web_design.html)（responsive web design）。响应式设计的网页图像，就是“响应式图像”（responsive image）。
 
 响应式图像的解决方案有很多，JavaScript 和 CSS 都可以实现。这里只介绍语义性最好的 HTML 方法，浏览器原生支持。
 

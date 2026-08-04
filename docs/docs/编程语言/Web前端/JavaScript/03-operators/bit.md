@@ -158,7 +158,7 @@ toInt32(Math.pow(2, 32) - 1) // -1
 
 上面表达式中，`0`（二进制`00`）与`3`（二进制`11`）进行异或运算，它们每一个二进制位都不同，所以得到`11`（即`3`）。
 
-“异或运算”有一个特殊运用，连续对两个数`a`和`b`进行三次异或运算，`a^=b; b^=a; a^=b;`，可以[互换](http://en.wikipedia.org/wiki/XOR_swap_algorithm)它们的值。这意味着，使用“异或运算”可以在不引入临时变量的前提下，互换两个变量的值。
+“异或运算”有一个特殊运用，连续对两个数`a`和`b`进行三次异或运算，`a^=b; b^=a; a^=b;`，可以[互换](https://en.wikipedia.org/wiki/XOR_swap_algorithm)它们的值。这意味着，使用“异或运算”可以在不引入临时变量的前提下，互换两个变量的值。
 
 ```javascript
 var a = 10;
@@ -359,5 +359,5 @@ flags = ~flags;
 ## 参考链接
 
 - Michal Budzynski, [JavaScript: The less known parts. Bitwise Operators](https://michalbe.blogspot.com/2013/03/javascript-less-known-parts-bitwise.html)
-- Axel Rauschmayer, [Basic JavaScript for the impatient programmer](http://www.2ality.com/2013/06/basic-javascript.html)
+- Axel Rauschmayer, [Basic JavaScript for the impatient programmer](https://www.2ality.com/2013/06/basic-javascript.html)
 - Mozilla Developer Network, [Bitwise Operators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_Operators)

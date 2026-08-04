@@ -134,4 +134,4 @@ if ({}) {
 
 ## 参考链接
 
-- Axel Rauschmayer, [Categorizing values in JavaScript](http://www.2ality.com/2013/01/categorizing-values.html)
+- Axel Rauschmayer, [Categorizing values in JavaScript](https://www.2ality.com/2013/01/categorizing-values.html)

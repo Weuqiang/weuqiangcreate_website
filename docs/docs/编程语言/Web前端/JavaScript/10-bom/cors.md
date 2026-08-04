@@ -251,10 +251,10 @@ CORS 与 JSONP 的使用目的相同，但是比 JSONP 更强大。JSONP 只支�
 
 ## 参考链接
 
-- [Using CORS](http://www.html5rocks.com/en/tutorials/cors/), Monsur Hossain
+- [Using CORS](https://web.dev/articles/cross-origin-resource-sharing), Monsur Hossain
 - [HTTP access control (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS), MDN
 - [CORS](https://frontendian.co/cors), Ryan Miller
-- [Do You Really Know CORS?](http://performantcode.com/web/do-you-really-know-cors), Grzegorz Mirek
+- [Do You Really Know CORS?](https://web.archive.org/web/2019/http://performantcode.com/web/do-you-really-know-cors), Grzegorz Mirek
 
 ## 延伸阅读
 

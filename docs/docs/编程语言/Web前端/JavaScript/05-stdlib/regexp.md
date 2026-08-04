@@ -966,9 +966,9 @@ m // ['b']
 
 ## 参考链接
 
-- Axel Rauschmayer, [JavaScript: an overview of the regular expression API](http://www.2ality.com/2011/04/javascript-overview-of-regular.html)
+- Axel Rauschmayer, [JavaScript: an overview of the regular expression API](https://www.2ality.com/2011/04/javascript-overview-of-regular.html)
 - Mozilla Developer Network, [Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions)
-- Axel Rauschmayer, [The flag /g of JavaScript’s regular expressions](http://www.2ality.com/2013/08/regexp-g.html)
+- Axel Rauschmayer, [The flag /g of JavaScript’s regular expressions](https://www.2ality.com/2013/08/regexp-g.html)
 - Sam Hughes, [Learn regular expressions in about 55 minutes](http://qntm.org/files/re/re.html)
 
 ## 延伸阅读

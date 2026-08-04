@@ -492,8 +492,8 @@ function doAction(action) {
 ## 参考链接
 
 - Eric Elliott, Programming JavaScript Applications, [Chapter 2. JavaScript Style Guide](https://www.oreilly.com/library/view/programming-javascript-applications/9781491950289/), O'Reilly, 2014
-- Axel Rauschmayer, [A meta style guide for JavaScript](http://www.2ality.com/2013/07/meta-style-guide.html)
-- Axel Rauschmayer, [Automatic semicolon insertion in JavaScript](http://www.2ality.com/2011/05/semicolon-insertion.html)
+- Axel Rauschmayer, [A meta style guide for JavaScript](https://www.2ality.com/2013/07/meta-style-guide.html)
+- Axel Rauschmayer, [Automatic semicolon insertion in JavaScript](https://www.2ality.com/2011/05/semicolon-insertion.html)
 - Rod Vagg, [JavaScript and Semicolons](http://dailyjs.com/2012/04/19/semicolons/)
 
 ## 延伸阅读

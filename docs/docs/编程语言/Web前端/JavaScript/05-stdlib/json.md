@@ -413,9 +413,9 @@ JSON.parse(JSON.stringify(obj))
 
 - MDN, [Using native JSON](https://developer.mozilla.org/en-US/docs/Using_native_JSON)
 - MDN, [JSON.parse](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/JSON/parse)
-- Dr. Axel Rauschmayer, [JavaScript’s JSON API](http://www.2ality.com/2011/08/json-api.html)
-- Jim Cowart, [What You Might Not Know About JSON.stringify()](http://freshbrewedcode.com/jimcowart/2013/01/29/what-you-might-not-know-about-json-stringify/)
-- Marco Rogers, [What is JSON?](https://docs.nodejitsu.com/articles/javascript-conventions/what-is-json/)
+- Dr. Axel Rauschmayer, [JavaScript’s JSON API](https://www.2ality.com/2011/08/json-api.html)
+- Jim Cowart, [What You Might Not Know About JSON.stringify()](https://web.archive.org/web/2019/https://freshbrewedcode.com/jimcowart/2013/01/29/what-you-might-not-know-about-json-stringify/)
+- Marco Rogers, [What is JSON?](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)
 
 ## 延伸阅读
 

@@ -12,7 +12,7 @@ category: 科技资讯
 
 ## 🌐 国际科技
 
-- [DeepSeek V4 Flash 0731 Intelligence, Performance and Price Analysis](https://artificialanalysis.ai/models/deepseek-v4-flash-ga)
+- [DeepSeek V4 Flash 0731 Intelligence, Performance and Price Analysis](https://artificialanalysis.ai/models/deepseek-v4-flash)
 - [The Maxwell Conjecture Is False (GPT 5.6 Sol)](https://arxiv.org/abs/2607.27197)
 - [Google fixed more Chrome bugs in June than over the past two years, thanks to AI](https://blog.google/security/chrome-stronger-with-every-update/)
 - [The session you cannot take with you](https://earendil.com/posts/session-portability/)

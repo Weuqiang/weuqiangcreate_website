@@ -425,22 +425,22 @@ JavaScript 是一种解释型语言，也就是说，它不需要编译，由解
 字节码不能直接运行，而是运行在一个虚拟机（Virtual Machine）之上，一般也把虚拟机称为 JavaScript 引擎。并非所有的 JavaScript 虚拟机运行时都有字节码，有的 JavaScript 虚拟机基于源码，即只要有可能，就通过 JIT（just in time）编译器直接把源码编译成机器码运行，省略字节码步骤。这一点与其他采用虚拟机（比如 Java）的语言不尽相同。这样做的目的，是为了尽可能地优化代码、提高性能。下面是目前最常见的一些 JavaScript 虚拟机：
 
 - [Chakra](https://en.wikipedia.org/wiki/Chakra_(JScript_engine)) (Microsoft Internet Explorer)
-- [Nitro/JavaScript Core](http://en.wikipedia.org/wiki/WebKit#JavaScriptCore) (Safari)
-- [Carakan](http://dev.opera.com/articles/view/labs-carakan/) (Opera)
-- [SpiderMonkey](https://developer.mozilla.org/en-US/docs/SpiderMonkey) (Firefox)
+- [Nitro/JavaScript Core](https://en.wikipedia.org/wiki/WebKit#JavaScriptCore) (Safari)
+- [Carakan](https://web.archive.org/web/2019/http://dev.opera.com/articles/view/labs-carakan/) (Opera)
+- [SpiderMonkey](https://spidermonkey.dev/) (Firefox)
 - [V8](https://en.wikipedia.org/wiki/Chrome_V8) (Chrome, Chromium)
 
 ## 参考链接
 
 - John Dalziel, [The race for speed part 2: How JavaScript compilers work](http://creativejs.com/2013/06/the-race-for-speed-part-2-how-javascript-compilers-work/)
-- Jake Archibald, [Deep dive into the murky waters of script loading](http://www.html5rocks.com/en/tutorials/speed/script-loading/)
+- Jake Archibald, [Deep dive into the murky waters of script loading](https://web.dev/articles/speed-script-loading)
 - Mozilla Developer Network, [window.setTimeout](https://developer.mozilla.org/en-US/docs/Web/API/window.setTimeout)
-- Remy Sharp, [Throttling function calls](http://remysharp.com/2010/07/21/throttling-function-calls/)
-- Ayman Farhat, [An alternative to JavaScript's evil setInterval](http://www.thecodeship.com/web-development/alternative-to-javascript-evil-setinterval/)
+- Remy Sharp, [Throttling function calls](https://remysharp.com/2010/07/21/throttling-function-calls/)
+- Ayman Farhat, [An alternative to JavaScript's evil setInterval](https://www.thecodeship.com/web-development/alternative-to-javascript-evil-setinterval/)
 - Ilya Grigorik, [Script-injected "async scripts" considered harmful](https://www.igvita.com/2014/05/20/script-injected-async-scripts-considered-harmful/)
-- Axel Rauschmayer, [ECMAScript 6 promises (1/2): foundations](http://www.2ality.com/2014/09/es6-promises-foundations.html)
-- Daniel Imms, [async vs defer attributes](http://www.growingwiththeweb.com/2014/02/async-vs-defer-attributes.html)
-- Craig Buckler, [Load Non-blocking JavaScript with HTML5 Async and Defer](http://www.sitepoint.com/non-blocking-async-defer/)
+- Axel Rauschmayer, [ECMAScript 6 promises (1/2): foundations](https://www.2ality.com/2014/09/es6-promises-foundations.html)
+- Daniel Imms, [async vs defer attributes](https://www.growingwiththeweb.com/2014/02/async-vs-defer-attributes.html)
+- Craig Buckler, [Load Non-blocking JavaScript with HTML5 Async and Defer](https://www.sitepoint.com/non-blocking-async-defer/)
 - Domenico De Felice, [How browsers work](https://domenicodefelice.blogspot.com/2015/08/how-browsers-work.html)
 
 ## 延伸阅读

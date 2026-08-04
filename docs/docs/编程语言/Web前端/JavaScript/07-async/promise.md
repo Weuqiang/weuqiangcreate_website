@@ -9,7 +9,7 @@ description: "Promise 对象是 JavaScript 的异步操作解决方案，为异�
 
 Promise 对象是 JavaScript 的异步操作解决方案，为异步操作提供统一接口。它起到代理作用（proxy），充当异步操作与回调函数之间的中介，使得异步操作具备同步操作的接口。Promise 可以让异步操作写起来，就像在写同步操作的流程，而不必一层层地嵌套回调函数。
 
-注意，本章只是 Promise 对象的简单介绍。为了避免与后续教程的重复，更完整的介绍请看[《ES6 标准入门》](http://es6.ruanyifeng.com/)的[《Promise 对象》](http://es6.ruanyifeng.com/#docs/promise)一章。
+注意，本章只是 Promise 对象的简单介绍。为了避免与后续教程的重复，更完整的介绍请看[《ES6 标准入门》](https://es6.ruanyifeng.com/)的[《Promise 对象》](https://es6.ruanyifeng.com/#docs/promise)一章。
 
 首先，Promise 是一个对象，也是一个构造函数。
 
@@ -280,9 +280,9 @@ console.log(3);
 ## 参考链接
 
 - Sebastian Porto, [Asynchronous JS: Callbacks, Listeners, Control Flow Libs and Promises](https://sporto.github.io/blog/2012/12/09/callbacks-listeners-promises/)
-- Rhys Brett-Bowen, [Promises/A+ - understanding the spec through implementation](http://modernjavascript.blogspot.com/2013/08/promisesa-understanding-by-doing.html)
+- Rhys Brett-Bowen, [Promises/A+ - understanding the spec through implementation](https://modernjavascript.blogspot.com/2013/08/promisesa-understanding-by-doing.html)
 - Matt Podwysocki, Amanda Silver, [Asynchronous Programming in JavaScript with “Promises”](http://blogs.msdn.com/b/ie/archive/2011/09/11/asynchronous-programming-in-javascript-with-promises.aspx)
 - Marc Harter, [Promise A+ Implementation](https://gist.github.com//wavded/5692344)
-- Bryan Klimt, [What’s so great about JavaScript Promises?](http://blog.parse.com/2013/01/29/whats-so-great-about-javascript-promises/)
-- Jake Archibald, [JavaScript Promises There and back again](http://www.html5rocks.com/en/tutorials/es6/promises/)
+- Bryan Klimt, [What’s so great about JavaScript Promises?](https://web.dev/articles/promises)
+- Jake Archibald, [JavaScript Promises There and back again](https://web.dev/articles/promises)
 - Mikito Takada, [7. Control flow, Mixu's Node book](http://book.mixu.net/node/ch7.html)

@@ -455,11 +455,11 @@ obj.hasOwnProperty('toString') // false
 
 ## 参考链接
 
-- Axel Rauschmayer, [Protecting objects in JavaScript](http://www.2ality.com/2013/08/protecting-objects.html)
-- kangax, [Understanding delete](http://perfectionkills.com/understanding-delete/)
-- Jon Bretman, [Type Checking in JavaScript](http://techblog.badoo.com/blog/2013/11/01/type-checking-in-javascript/)
-- Cody Lindley, [Thinking About ECMAScript 5 Parts](http://tech.pro/tutorial/1671/thinking-about-ecmascript-5-parts)
-- Bjorn Tipling, [Advanced objects in JavaScript](http://bjorn.tipling.com/advanced-objects-in-javascript)
-- Javier Márquez, [JavaScript properties are enumerable, writable and configurable](http://arqex.com/967/javascript-properties-enumerable-writable-configurable)
-- Sella Rafaeli, [Native JavaScript Data-Binding](http://www.sellarafaeli.com/blog/native_javascript_data_binding): 使用存取函数实现model与view的双向绑定
-- Lea Verou, [Copying object properties, the robust way](http://lea.verou.me/2015/08/copying-properties-the-robust-way/)
+- Axel Rauschmayer, [Protecting objects in JavaScript](https://www.2ality.com/2013/08/protecting-objects.html)
+- kangax, [Understanding delete](https://perfectionkills.com/understanding-delete/)
+- Jon Bretman, [Type Checking in JavaScript](https://web.archive.org/web/2019/https://techblog.badoo.com/blog/2013/11/01/type-checking-in-javascript/)
+- Cody Lindley, [Thinking About ECMAScript 5 Parts](https://codylindley.com/techpro/2013_12_05__thinking-about-ecmascript-5-pa/)
+- Bjorn Tipling, [Advanced objects in JavaScript](https://web.archive.org/web/2019/https://bjorn.tipling.com/advanced-objects-in-javascript)
+- Javier Márquez, [JavaScript properties are enumerable, writable and configurable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty)
+- Sella Rafaeli, [Native JavaScript Data-Binding](https://www.sellarafaeli.com/blog/native_javascript_data_binding): 使用存取函数实现model与view的双向绑定
+- Lea Verou, [Copying object properties, the robust way](https://lea.verou.me/2015/08/copying-properties-the-robust-way/)

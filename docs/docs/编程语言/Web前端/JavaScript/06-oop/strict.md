@@ -446,10 +446,10 @@ function package(protected) { // 语法错误
 ## 参考链接
 
 - MDN, [Strict mode](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Functions_and_function_scope/Strict_mode)
-- Dr. Axel Rauschmayer, [JavaScript: Why the hatred for strict mode?](http://www.2ality.com/2011/10/strict-mode-hatred.html)
-- Dr. Axel Rauschmayer，[JavaScript’s strict mode: a summary](http://www.2ality.com/2011/01/javascripts-strict-mode-summary.html)
-- Douglas Crockford, [Strict Mode Is Coming To Town](http://www.yuiblog.com/blog/2010/12/14/strict-mode-is-coming-to-town/)
-- [JavaScript Strict Mode Support](http://java-script.limewebs.com/strictMode/test_hosted.html)
+- Dr. Axel Rauschmayer, [JavaScript: Why the hatred for strict mode?](https://www.2ality.com/2011/10/strict-mode-hatred.html)
+- Dr. Axel Rauschmayer，[JavaScript’s strict mode: a summary](https://www.2ality.com/2011/01/javascripts-strict-mode-summary.html)
+- Douglas Crockford, [Strict Mode Is Coming To Town](https://web.archive.org/web/2019/https://www.yuiblog.com/blog/2010/12/14/strict-mode-is-coming-to-town/)
+- [JavaScript Strict Mode Support](https://web.archive.org/web/2019/https://java-script.limewebs.com/strictMode/test_hosted.html)
 
 ## 延伸阅读
 

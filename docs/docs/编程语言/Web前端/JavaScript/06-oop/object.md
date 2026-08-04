@@ -434,7 +434,7 @@ function copyObject(orig) {
 
 ## 参考链接
 
-- Dr. Axel Rauschmayer, [JavaScript properties: inheritance and enumerability](http://www.2ality.com/2011/07/js-properties.html)
+- Dr. Axel Rauschmayer, [JavaScript properties: inheritance and enumerability](https://www.2ality.com/2011/07/js-properties.html)
 
 ## 延伸阅读
 

@@ -457,7 +457,7 @@ try {
 
 ## 参考连接
 
-- Jani Hartikainen, [JavaScript Errors and How to Fix Them](http://davidwalsh.name/fix-javascript-errors)
+- Jani Hartikainen, [JavaScript Errors and How to Fix Them](https://davidwalsh.name/fix-javascript-errors)
 
 ## 延伸阅读
 
