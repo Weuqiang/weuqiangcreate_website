@@ -1,0 +1,178 @@
+---
+sidebar_position: 5
+title: "逻辑回归"
+description: "从对数几率出发理解逻辑回归：为什么用 sigmoid、为什么配交叉熵、决策边界长什么样，以及正则化与多分类的处理。"
+---
+
+逻辑回归名字里有「回归」，做的却是**分类**。它是工业界最常用的基线模型之一：训练快、可解释、输出概率、易上线。理解它，等于同时理解了「线性模型 + 概率输出 + 交叉熵」这三块深度学习的地基。
+
+## 学习目标
+
+- 说清楚逻辑回归为什么用 sigmoid 而不是随手挑一个 S 形函数。
+- 能推出交叉熵损失的梯度，并解释它为什么比 MSE 更适合分类。
+- 会画出决策边界，理解「线性模型 + 非线性激活」依然是线性边界。
+- 掌握 L1/L2 正则、类别不平衡、阈值选择这三个实战要点。
+- 知道二分类如何扩展到多分类（softmax / OvR）。
+
+## 核心直觉
+
+### 从「几率」到「对数几率」
+
+分类要输出的是概率 $p \in (0,1)$，但线性模型 $w^\top x + b$ 的输出是整个实数轴。直接截断很粗暴，我们换个思路：**不去建模概率本身，而是建模概率的对数几率（log-odds）**。
+
+几率（odds）定义为「发生 / 不发生」：
+
+$$
+\text{odds} = \frac{p}{1-p} \in (0, +\infty)
+$$
+
+再取对数，值域就铺满了整个实数轴：
+
+$$
+\text{logit}(p) = \log \frac{p}{1-p} \in (-\infty, +\infty)
+$$
+
+于是我们可以放心地让线性模型去拟合它：
+
+$$
+\log \frac{p}{1-p} = w^\top x + b
+$$
+
+把这个式子反解出 $p$，**sigmoid 就自己长出来了**：
+
+$$
+p = \frac{1}{1 + e^{-(w^\top x + b)}}
+$$
+
+所以 sigmoid 不是拍脑袋选的形状，而是「用线性模型拟合对数几率」这一假设的必然结果。这也给了权重一个漂亮的解释：**$w_j$ 增加 1 个单位，对数几率增加 $w_j$，几率乘以 $e^{w_j}$。**
+
+### 为什么配交叉熵而不是 MSE
+
+单个样本的似然可以写成一个式子（$y \in \{0,1\}$）：
+
+$$
+P(y \mid x) = p^{y}(1-p)^{1-y}
+$$
+
+取负对数就是交叉熵损失：
+
+$$
+L = -\left[y\log p + (1-y)\log(1-p)\right]
+$$
+
+对 $z = w^\top x + b$ 求导，会得到一个极其干净的结果：
+
+$$
+\frac{\partial L}{\partial z} = p - y, \qquad \frac{\partial L}{\partial w} = (p - y)\,x
+$$
+
+**梯度正比于「预测值与真实值之差」**，误差越大梯度越大，收敛快。
+
+反观 MSE：$L = (y-p)^2$ 的梯度会额外乘上 $\sigma'(z) = p(1-p)$。当模型「错得很自信」（比如真实标签是 1，却预测 $p = 0.01$）时，$p(1-p) \approx 0.01$，梯度几乎为 0，**模型错得越离谱学得越慢**。这就是分类任务不用 MSE 的根本原因。
+
+### 决策边界是一条直线
+
+预测类别时通常取 $p = 0.5$ 为阈值。而 $p = 0.5$ 恰好对应 $w^\top x + b = 0$——这是一个**超平面**。所以逻辑回归虽然套了非线性激活，边界仍是线性的；想要弯曲的边界，得靠[特征工程](/docs/人工智能/机器学习/特征工程)造多项式特征，或者换用[支持向量机](/docs/人工智能/机器学习/支持向量机SVM)的核方法、树模型。
+
+## 最小示例
+
+### 手写梯度下降，并与 sklearn 对照验算
+
+```python showLineNumbers
+import numpy as np
+from sklearn.datasets import make_classification
+from sklearn.linear_model import LogisticRegression
+
+# 1. 造一份线性可分性较好的二分类数据
+X, y = make_classification(
+    n_samples=500, n_features=2, n_informative=2, n_redundant=0,
+    n_clusters_per_class=1, class_sep=1.5, random_state=42,
+)
+
+def sigmoid(z):
+    # 数值稳定写法：避免 exp 溢出
+    return np.where(z >= 0, 1 / (1 + np.exp(-z)), np.exp(z) / (1 + np.exp(z)))
+
+def fit(X, y, lr=0.1, epochs=2000, l2=0.0):
+    n, d = X.shape
+    w, b = np.zeros(d), 0.0
+    for ep in range(epochs):
+        z = X @ w + b
+        p = sigmoid(z)
+        # 交叉熵梯度：(p - y) 就是核心
+        grad_w = X.T @ (p - y) / n + l2 * w
+        grad_b = (p - y).mean()
+        w -= lr * grad_w
+        b -= lr * grad_b
+        if ep % 500 == 0:
+            eps = 1e-12
+            loss = -np.mean(y * np.log(p + eps) + (1 - y) * np.log(1 - p + eps))
+            print(f"epoch {ep:4d}  loss={loss:.4f}")
+    return w, b
+
+w, b = fit(X, y)
+acc = ((sigmoid(X @ w + b) >= 0.5).astype(int) == y).mean()
+print("手写实现  权重:", np.round(w, 3), " 偏置:", round(b, 3), " 准确率:", acc)
+
+# 2. 与 sklearn 对照（关掉正则以便公平比较）
+clf = LogisticRegression(penalty=None, max_iter=5000).fit(X, y)
+print("sklearn   权重:", np.round(clf.coef_[0], 3),
+      " 偏置:", round(clf.intercept_[0], 3),
+      " 准确率:", clf.score(X, y))
+```
+
+两组权重方向应当基本一致（数值不会完全相同，因为梯度下降未跑到严格最优）。**权重比值一致、准确率接近**就说明你的推导没错。
+
+### 验算一次：手推一步梯度
+
+取一个样本 $x = [1, 2]$，$y = 1$，当前 $w = [0,0]$、$b=0$：
+
+- $z = 0$，$p = \sigma(0) = 0.5$
+- $\partial L / \partial z = p - y = -0.5$
+- $\partial L / \partial w = -0.5 \times [1,2] = [-0.5, -1.0]$
+- 学习率 0.1 时更新后 $w = [0.05, 0.1]$
+
+权重朝着 $x$ 的方向移动了——因为这个正样本希望自己的 $z$ 更大。把这个手算结果和上面代码单步跑出来的值对照，就能确认实现无误。
+
+### 输出概率 + 阈值调节
+
+```python showLineNumbers
+from sklearn.metrics import precision_recall_curve
+
+proba = clf.predict_proba(X)[:, 1]
+prec, rec, thr = precision_recall_curve(y, proba)
+# 找到 F1 最高的阈值，而不是无脑用 0.5
+f1 = 2 * prec * rec / (prec + rec + 1e-12)
+best = f1[:-1].argmax()
+print(f"最佳阈值 {thr[best]:.3f}  精确率 {prec[best]:.3f}  召回率 {rec[best]:.3f}")
+```
+
+## 易错点
+
+- **忘记特征标准化**：逻辑回归本身对量纲不敏感，但梯度下降和正则项都对量纲敏感。年龄（0~100）和收入（0~100000）放一起，收入的权重会被正则「压死」。上线前统一 `StandardScaler`。
+- **类别极度不平衡时只看准确率**：99% 负样本时，全预测负类准确率就有 99%。要用 `class_weight="balanced"`，并改看 AUC / PR 曲线，详见[模型评估指标](/docs/人工智能/机器学习/模型评估指标)。
+- **默认阈值 0.5 当作金科玉律**：0.5 只在「误报和漏报代价相同」时才合理。风控、医疗场景应按业务代价重新选阈值。
+- **完全可分导致权重爆炸**：数据线性完全可分时，似然可以无限逼近 1，权重会趋于无穷。sklearn 默认带 L2 正则正是为了避免这一点，别随手关掉。
+- **把多重共线性当无所谓**：两个高度相关的特征会让权重一正一负地互相抵消，系数解释失效。此时用 L2（岭）稳定系数，或先做[降维](/docs/人工智能/机器学习/降维算法)。
+- **概率没校准就直接当概率用**：加了强正则或数据不平衡时，输出概率往往系统性偏低/偏高，需要 `CalibratedClassifierCV` 做校准。
+
+## 练习
+
+1. 把上面手写实现中的交叉熵换成 MSE，绘制两者的 loss 曲线，观察 MSE 版本在初期是否明显更慢。
+2. 给 `fit()` 传入 `l2=0.1`，对比权重范数 $\|w\|_2$ 的变化，验证正则确实在压缩权重。
+3. 用 `make_classification` 生成一份环形不可分数据（或用 `make_circles`），观察逻辑回归准确率骤降；再手工添加特征 $x_1^2 + x_2^2$，看准确率能否回到 0.9 以上——这就是核方法的朴素版本。
+4. 把标签改成 3 类，分别用 `multi_class="multinomial"`（softmax）和 OvR 训练，比较两者的决策边界差异。
+5. 用第三个代码块找出最佳阈值后，计算在阈值 0.5 与最佳阈值下混淆矩阵的差别，说明业务含义。
+
+## 小结
+
+逻辑回归 = **线性模型拟合对数几率 + sigmoid 还原概率 + 交叉熵做损失**。它的核心美感在于梯度恰好等于 $(p-y)x$：一个和线性回归形式完全一致的更新式。正因为这个结构，它天然是神经网络最后一层（二分类用 sigmoid、多分类用 softmax）的原型。先把逻辑回归吃透，后面看[经典神经网络](/docs/人工智能/深度学习/经典神经网络)会顺畅很多。
+
+## 延伸阅读
+
+- [回归算法](/docs/人工智能/机器学习/回归算法) — 线性回归与损失函数、激活函数对照表。
+- [分类算法](/docs/人工智能/机器学习/分类算法) — KNN、朴素贝叶斯等其他分类思路。
+- [模型评估指标](/docs/人工智能/机器学习/模型评估指标) — 准确率之外的 P/R/F1、ROC-AUC。
+- [特征工程](/docs/人工智能/机器学习/特征工程) — 让线性模型拥有非线性能力。
+- [支持向量机 SVM](/docs/人工智能/机器学习/支持向量机SVM) — 换一种「最大间隔」的线性分类视角。
+- [经典神经网络](/docs/人工智能/深度学习/经典神经网络) — 逻辑回归堆叠起来就是多层感知机。

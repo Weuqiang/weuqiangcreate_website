@@ -1,0 +1,146 @@
+---
+title: "GPIO 与中断"
+sidebar_position: 3
+---
+
+# GPIO 与中断
+
+GPIO（General Purpose Input/Output）是 MCU 与外界打交道最基础的通道：点灯、读按键、驱动继电器、模拟时序协议，全都从这里开始。而**中断**则决定了你的程序是「傻等」还是「被叫醒」。
+
+## 学习目标
+
+- 说清 GPIO 的输入/输出模式差异：推挽、开漏、上拉、下拉、浮空、模拟。
+- 能算出限流电阻，知道 MCU 引脚的驱动能力上限在哪里。
+- 掌握外部中断（EXTI）的配置流程与 ISR 编写规范。
+- 学会按键消抖的两种做法（软件延时判定 / 定时器采样），并能说明各自代价。
+- 理解「轮询 vs 中断」的选择依据：响应延迟、CPU 占用、实时性。
+
+## 核心直觉
+
+GPIO 排查的万能顺序仍然是那套四件套：**电源 → 时钟 → 复位 → 引脚复用**。
+
+- **电源**：引脚电平参考的是 `VDD`，3.3V MCU 直接读 5V 信号可能烧输入级；VDD 没上电时引脚是高阻。
+- **时钟**：STM32 上 GPIO 端口挂在 AHB/APB 总线，**没使能 GPIOx 时钟，寄存器写进去等于写进空气**——现象是"代码完全正确但引脚不动"。
+- **复位**：复位期间大多数引脚是浮空输入，外部若是 MOS 管栅极会误导通，需要外部下拉电阻兜底。
+- **引脚复用**：同一个物理引脚可能被 SPI/USART/TIM 抢走；`PA13/PA14` 默认是 SWD 调试口，随手配成普通 IO 会把自己锁死，之后连不上调试器。
+
+再补一条直觉：**输出模式看"谁提供电流"**。推挽输出上下管都能主动驱动，速度快；开漏输出只能拉低，高电平靠外部上拉电阻——这正是 I2C 能做「线与」总线的物理基础。
+
+中断的直觉则是：**ISR 是一段抢占了主程序 CPU 的代码**。它越短越好，只做「记录事件 + 置标志位」，重活留给主循环或 RTOS 任务。
+
+## 最小可运行例程
+
+按键（PA0，外部中断）控制 LED（PC13）翻转，STM32 HAL 版：
+
+```c
+/* CubeMX 中：PC13 → GPIO_Output，PA0 → GPIO_EXTI0，并使能 NVIC EXTI0 中断 */
+
+/* 手写初始化，看清每个字段的含义 */
+void GPIO_Init_Manual(void)
+{
+    GPIO_InitTypeDef gpio = {0};
+
+    __HAL_RCC_GPIOC_CLK_ENABLE();   /* 关键：不开时钟，寄存器写不进去 */
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    /* LED：推挽输出，MCU 主动拉高/拉低 */
+    gpio.Pin   = GPIO_PIN_13;
+    gpio.Mode  = GPIO_MODE_OUTPUT_PP;
+    gpio.Pull  = GPIO_NOPULL;
+    gpio.Speed = GPIO_SPEED_FREQ_LOW;  /* 低速即可，速度越高 EMI 越大 */
+    HAL_GPIO_Init(GPIOC, &gpio);
+
+    /* 按键：下降沿触发中断 + 内部上拉（按键另一端接 GND） */
+    gpio.Pin  = GPIO_PIN_0;
+    gpio.Mode = GPIO_MODE_IT_FALLING;
+    gpio.Pull = GPIO_PULLUP;           /* 没有上拉时引脚浮空，会乱触发 */
+    HAL_GPIO_Init(GPIOA, &gpio);
+
+    HAL_NVIC_SetPriority(EXTI0_IRQn, 2, 0);
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+}
+
+volatile uint8_t  g_key_event = 0;     /* volatile：ISR 与主循环共享必须加 */
+static   uint32_t s_last_tick = 0;
+
+/* HAL 已在 EXTI0_IRQHandler 里调用了本回调，我们只需实现它 */
+void HAL_GPIO_EXTI_Callback(uint16_t pin)
+{
+    if (pin == GPIO_PIN_0) {
+        uint32_t now = HAL_GetTick();
+        if (now - s_last_tick > 30) {  /* 30ms 时间窗消抖，不用 delay */
+            s_last_tick  = now;
+            g_key_event  = 1;          /* ISR 只置标志，绝不做耗时工作 */
+        }
+    }
+}
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    GPIO_Init_Manual();
+
+    while (1) {
+        if (g_key_event) {
+            g_key_event = 0;
+            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+        }
+        /* 主循环可以继续干别的事，不会被按键阻塞 */
+    }
+}
+```
+
+Arduino 版本对照（同样的思路，语法更短）：
+
+```cpp
+const int LED = 13, KEY = 2;
+volatile bool keyEvent = false;
+volatile unsigned long lastMs = 0;
+
+void onKey() {                          // ISR
+  unsigned long now = millis();
+  if (now - lastMs > 30) { lastMs = now; keyEvent = true; }
+}
+
+void setup() {
+  pinMode(LED, OUTPUT);
+  pinMode(KEY, INPUT_PULLUP);           // 内部上拉，按下为低
+  attachInterrupt(digitalPinToInterrupt(KEY), onKey, FALLING);
+}
+
+void loop() {
+  if (keyEvent) { keyEvent = false; digitalWrite(LED, !digitalRead(LED)); }
+}
+```
+
+## 易错点
+
+- **忘开 GPIO 时钟**：STM32 最经典的"没反应"，先查 `__HAL_RCC_GPIOx_CLK_ENABLE()`。
+- **共享变量不加 `volatile`**：编译器优化会把 `while (!flag)` 变成死循环，因为它认为 `flag` 不会自己变。
+- **在 ISR 里 `HAL_Delay` 或 `printf`**：`HAL_Delay` 依赖 SysTick 中断，若 SysTick 优先级更低会直接死锁；串口打印几毫秒的耗时会打乱整个实时性。
+- **按键不消抖**：机械触点在 5~20ms 内会抖动出十几个沿，一次按下触发多次中断。
+- **引脚浮空当输入**：没有上拉/下拉的输入脚会拾取环境噪声，读数随手靠近而变。
+- **直接驱动大电流负载**：单个引脚典型只能灌/拉 20mA 左右，且整片有总电流限制；继电器、电机必须经三极管/MOS 管，并加续流二极管。
+- **把 SWD 引脚配成普通 IO**：烧进去就连不上调试器了，只能靠 BOOT0 拉高从系统存储器启动来救砖。
+
+## 练习
+
+1. 用推挽和开漏两种模式分别驱动同一个 LED（开漏时外接 4.7kΩ 上拉），用示波器观察上升沿的差异并解释原因。
+2. 把消抖逻辑从"时间窗判定"改成"定时器每 5ms 采样一次，连续 3 次相同才确认"，比较两者在长按/连击场景下的表现。
+3. 实现长按与短按区分：短按（小于 1 秒）翻转 LED，长按（超过 1 秒）让 LED 进入闪烁模式。
+4. 故意去掉 `volatile` 并开 `-O2` 编译，观察程序行为变化，再用反汇编确认编译器做了什么。
+
+## 小结
+
+GPIO 看似简单，真正的门槛在「模式选对、电气参数不超限、复用不打架」。中断则把程序从"不停轮询"解放成"事件驱动"，代价是必须严守 ISR 纪律：短、快、不阻塞、共享变量加 `volatile`。把这两件事做扎实，后面的定时器、ADC、通信外设都会顺很多——它们本质上都是"配置外设 + 处理中断"的重复。
+
+## 延伸阅读
+
+- 前置基础：[STM32 与 HAL 库入门](/docs/嵌入式开发/单片机MCU/STM32与HAL库入门)
+- 快速上手：[Arduino 入门](/docs/嵌入式开发/单片机MCU/Arduino入门)
+- 下一篇：[定时器与 PWM](/docs/嵌入式开发/单片机MCU/定时器与PWM)
+- 中断与并发的深水区：[中断与临界区](/docs/嵌入式开发/RTOS与固件/中断与临界区)
+- 电气常识：[常见元器件与电路](/docs/嵌入式开发/硬件与电路基础/常见元器件与电路)
+- 抓波形定位抖动：[示波器与万用表使用](/docs/嵌入式开发/硬件与电路基础/示波器与万用表使用)
+- 语言准备：[C 语言入门](/docs/编程语言/C/0基础语法)

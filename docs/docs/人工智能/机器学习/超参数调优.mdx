@@ -1,0 +1,180 @@
+---
+sidebar_position: 9
+title: "超参数调优"
+description: "网格搜索、随机搜索与贝叶斯优化：为什么随机搜索常常赢过网格，以及如何用嵌套交叉验证得到诚实的分数。"
+---
+
+参数（parameter）是模型训练时自己学出来的，比如线性回归的权重；**超参数（hyperparameter）是你在训练前拍板的**，比如学习率、树的深度、正则强度 $C$。调参就是在超参数空间里找一组让泛化误差最小的组合。
+
+## 学习目标
+
+- 分清参数与超参数，知道哪些超参数值得优先调。
+- 理解网格搜索的组合爆炸问题与随机搜索的取胜原理。
+- 会用 `GridSearchCV` / `RandomizedSearchCV`，并把预处理一起放进搜索。
+- 掌握嵌套交叉验证，避免「用验证集选参数又用它报告成绩」。
+- 了解贝叶斯优化与早停（Successive Halving）的适用场景。
+
+## 核心直觉
+
+### 网格搜索：地毯式排查
+
+给每个超参数列一组候选值，穷举所有组合。3 个超参数各 5 个取值，就是 $5^3 = 125$ 组；再乘以 5 折交叉验证，就要训练 625 次模型。**维度每加一个，代价乘一遍**——这就是维度灾难在调参上的体现。
+
+网格搜索的优点是彻底、可复现；缺点是**在不重要的超参数上浪费了大量算力**。
+
+### 随机搜索：为什么它常常更划算
+
+Bergstra 与 Bengio 在 2012 年的经典论文指出一个关键事实：**超参数的重要性极不均衡**。通常只有 1~2 个超参数真正影响性能，其余的怎么调都差不多。
+
+假设有两个超参数，只有 $x$ 重要。做 $3\times3$ 的网格搜索，你在 $x$ 上其实只试了 **3 个不同的值**（另外 6 次是重复的 $x$ 配不同的无关 $y$）；而做 9 次随机采样，你在 $x$ 上试了 **9 个不同的值**。
+
+```text
+网格搜索 3×3               随机搜索 9 次
+  y                          y
+  │  ●   ●   ●               │    ●      ●
+  │  ●   ●   ●               │  ●    ●  ●
+  │  ●   ●   ●               │     ●   ●   ●
+  └──────────── x            └──────────────── x
+  x 上只有 3 个取值           x 上有 9 个不同取值
+```
+
+**同样的预算下，随机搜索对重要超参数的覆盖密度高得多。** 而且随机搜索可以随时叫停，网格搜索必须跑完才有意义。
+
+还有一个概率上的保证：若最优区域占参数空间体积的 5%，随机采样 60 次，至少命中一次的概率是 $1 - 0.95^{60} \approx 95.4\%$。这个数字与参数空间的维度无关——这正是随机搜索的魔力。
+
+### 搜索空间要用对数尺度
+
+学习率从 0.0001 到 1，如果均匀采样，绝大多数样本会落在 0.1~1 之间，而真正好用的区间往往是 0.001~0.01。**对跨数量级的超参数（学习率、正则强度 $C$、$\gamma$）应在对数空间采样**，用 `loguniform` 而不是 `uniform`。
+
+### 嵌套交叉验证：诚实的分数
+
+用交叉验证选出最佳超参数后，那个「最佳分数」已经被优化过，是乐观偏高的。要得到诚实估计，需要两层循环：
+
+- **内层**：在训练折上做交叉验证，选超参数。
+- **外层**：用没参与选参的那一折评估。
+
+代价是训练次数翻倍，但当你要对外声称「我的模型有 0.93 的 AUC」时，这是必需的。
+
+## 最小示例
+
+### 网格搜索 vs 随机搜索：同预算对比
+
+```python showLineNumbers
+import time
+import numpy as np
+from scipy.stats import loguniform, randint
+from sklearn.datasets import make_classification
+from sklearn.svm import SVC
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+
+X, y = make_classification(n_samples=1200, n_features=20, n_informative=8,
+                           random_state=42)
+pipe = Pipeline([("scale", StandardScaler()), ("svc", SVC())])
+
+# --- 网格搜索：4×4 = 16 组 ---
+grid = {"svc__C": [0.1, 1, 10, 100],
+        "svc__gamma": [0.001, 0.01, 0.1, 1]}
+t0 = time.time()
+gs = GridSearchCV(pipe, grid, cv=5, n_jobs=-1).fit(X, y)
+print(f"网格搜索  最佳 {gs.best_score_:.4f}  参数 {gs.best_params_}  "
+      f"用时 {time.time()-t0:.1f}s  训练 {len(gs.cv_results_['params'])*5} 次")
+
+# --- 随机搜索：同样 16 组，但在对数空间连续采样 ---
+dist = {"svc__C": loguniform(1e-2, 1e3),
+        "svc__gamma": loguniform(1e-4, 1e1)}
+t0 = time.time()
+rs = RandomizedSearchCV(pipe, dist, n_iter=16, cv=5,
+                        random_state=42, n_jobs=-1).fit(X, y)
+print(f"随机搜索  最佳 {rs.best_score_:.4f}  参数 "
+      f"{ {k: round(v, 4) for k, v in rs.best_params_.items()} }  "
+      f"用时 {time.time()-t0:.1f}s")
+```
+
+在多数数据集上，**同样 16 次尝试，随机搜索找到的分数不低于网格搜索**，因为它试过的 `C` 和 `gamma` 各有 16 个不同取值，而网格只有 4 个。
+
+### 把预处理选项也纳入搜索
+
+超参数不只属于模型，预处理方式同样是超参数：
+
+```python showLineNumbers
+from sklearn.preprocessing import MinMaxScaler, RobustScaler
+from sklearn.decomposition import PCA
+
+pipe2 = Pipeline([("scale", StandardScaler()),
+                  ("pca", PCA()),
+                  ("svc", SVC())])
+
+space = {
+    "scale": [StandardScaler(), MinMaxScaler(), RobustScaler()],
+    "pca__n_components": randint(5, 20),
+    "svc__C": loguniform(1e-2, 1e3),
+    "svc__gamma": loguniform(1e-4, 1e1),
+}
+rs2 = RandomizedSearchCV(pipe2, space, n_iter=30, cv=5,
+                         random_state=0, n_jobs=-1).fit(X, y)
+print("最佳组合:", rs2.best_params_)
+print("最佳得分:", round(rs2.best_score_, 4))
+```
+
+### 嵌套交叉验证：报告诚实的分数
+
+```python showLineNumbers
+from sklearn.model_selection import cross_val_score, KFold
+
+inner = KFold(5, shuffle=True, random_state=1)
+outer = KFold(5, shuffle=True, random_state=2)
+
+search = RandomizedSearchCV(pipe, dist, n_iter=10, cv=inner,
+                            random_state=0, n_jobs=-1)
+nested = cross_val_score(search, X, y, cv=outer, n_jobs=-1)
+
+print(f"内层选参后的乐观分数: {rs.best_score_:.4f}")
+print(f"嵌套交叉验证诚实分数: {nested.mean():.4f} ± {nested.std():.4f}")
+```
+
+通常你会看到嵌套分数**略低**于内层最佳分数，这个差值就是「选择偏差」的大小。
+
+### 用减半搜索省算力
+
+```python showLineNumbers
+from sklearn.experimental import enable_halving_search_cv  # noqa: F401
+from sklearn.model_selection import HalvingRandomSearchCV
+
+hs = HalvingRandomSearchCV(pipe, dist, factor=3, random_state=0,
+                           cv=5, n_jobs=-1).fit(X, y)
+print("减半搜索最佳:", round(hs.best_score_, 4))
+```
+
+减半搜索（Successive Halving）先用少量数据筛掉大批差参数，再把资源集中给幸存者，是**「早停 + 锦标赛」**的思路，在候选很多时能省下数倍时间。
+
+## 易错点
+
+- **在测试集上调参**：调参必须只用训练集 + 交叉验证。测试集碰一次就「脏」了。
+- **预处理没进 Pipeline**：在 `GridSearchCV` 外面先做 `StandardScaler().fit_transform(X)`，每一折的验证集都被训练统计量污染，分数虚高。
+- **学习率、$C$ 用线性网格**：跨数量级的参数必须用对数尺度，否则等于没搜。
+- **搜索空间边界卡死最优值**：如果最佳 `C` 恰好等于你设定的最大值 100，说明真正的最优可能在 100 之外，要**扩大范围重搜**。
+- **只看 `best_score_` 不看方差**：0.912 与 0.909 若标准差是 0.02，两者没有实质差别，应优先选更简单（正则更强）的那组。
+- **对不平衡数据用默认 `scoring="accuracy"`**：应显式指定 `scoring="roc_auc"` 或 `"f1"`，详见[模型评估指标](/docs/人工智能/机器学习/模型评估指标)。
+- **忘记 `refit`**：`GridSearchCV` 默认 `refit=True` 会用最佳参数在全量训练集上重训，`best_estimator_` 才能直接用于预测；关掉后别忘了自己重训。
+
+## 练习
+
+1. 把随机搜索的 `n_iter` 从 5 递增到 100，绘制「尝试次数—最佳分数」曲线，观察收益递减的拐点在哪。
+2. 把 `loguniform` 换成 `uniform`，在相同 `n_iter` 下对比结果，验证对数尺度的重要性。
+3. 用 $1 - (1-p)^n$ 这个公式，计算「最优区域占 1% 时，需要采样多少次才能有 95% 把握命中」。
+4. 对[随机森林](/docs/人工智能/机器学习/随机森林)做一次随机搜索（`n_estimators`、`max_depth`、`max_features`），观察哪个超参数的影响最大。
+5. 对比 `HalvingRandomSearchCV` 与 `RandomizedSearchCV` 在相同候选数下的耗时与最终分数，评估减半策略的性价比。
+
+## 小结
+
+调参的正确姿势是：**先用随机搜索在对数空间粗扫大范围 → 锁定有希望的区域 → 再用小范围网格或贝叶斯优化精修 → 最后用嵌套交叉验证报告诚实分数。** 更重要的是记住优先级：数据质量 > 特征工程 > 模型选择 > 超参数调优。当调参只能带来 0.5% 的提升时，回头去看[特征工程](/docs/人工智能/机器学习/特征工程)往往更划算。
+
+## 延伸阅读
+
+- [模型评估指标](/docs/人工智能/机器学习/模型评估指标) — 交叉验证与评分函数的选择。
+- [特征工程](/docs/人工智能/机器学习/特征工程) — Pipeline 的正确写法。
+- [支持向量机 SVM](/docs/人工智能/机器学习/支持向量机SVM) — `C` 与 `gamma` 的实战调参对象。
+- [集成学习与 Boosting](/docs/人工智能/机器学习/集成学习Boosting) — 学习率与树数量的联动调法。
+- [Adam 与 BatchNorm](/docs/人工智能/深度学习/网格数据/Adam与BatchNorm) — 深度学习里的学习率调度。

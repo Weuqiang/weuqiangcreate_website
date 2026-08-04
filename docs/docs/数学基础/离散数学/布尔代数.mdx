@@ -1,0 +1,142 @@
+---
+title: "布尔代数"
+sidebar_position: 4
+description: "只有 0 和 1 的代数系统：基本运算与定律、真值表、德摩根律、范式与卡诺图化简，含 Python 真值表验证。"
+---
+
+# 布尔代数
+
+计算机的一切最终都归结为「开」与「关」。布尔代数就是研究这两个值上运算规律的数学，它既是数字电路的设计语言，也是程序中每一个 `if` 条件的理论基础。
+
+## 学习目标
+
+- 熟练使用 AND / OR / NOT / XOR 并写出真值表。
+- 运用德摩根律、分配律、吸收律化简布尔表达式。
+- 把任意真值表写成析取范式（DNF），并用卡诺图做进一步化简。
+- 用 Python 穷举验证两个布尔表达式是否等价。
+
+## 核心直觉
+
+布尔代数只有两个值：$0$（假）与 $1$（真）。三个基本运算可以用日常语言直接理解：
+
+| 运算 | 记法 | 直觉 | 类比 |
+|------|------|------|------|
+| AND | $a\land b$、$ab$ | 都为真才真 | 串联开关 |
+| OR | $a\lor b$、$a+b$ | 有一为真即真 | 并联开关 |
+| NOT | $\lnot a$、$\bar a$ | 取反 | 常闭继电器 |
+| XOR | $a\oplus b$ | 不同才真 | 楼道双控灯 |
+
+**为什么它叫「代数」**？因为它和普通算术一样满足交换律、结合律、分配律，可以像化简多项式那样化简逻辑式。但有三条**独有**的定律，恰恰是普通算术没有的：
+
+- **幂等律**：$a\land a=a$，$a\lor a=a$（重复一次没有意义）
+- **双分配律**：不仅 $a(b+c)=ab+ac$，还有 $a+bc=(a+b)(a+c)$（算术里第二条不成立！）
+- **吸收律**：$a\lor(a\land b)=a$（大条件已经涵盖了小条件）
+
+最重要的是**德摩根律**——它是「取反穿过括号」的规则：
+
+$$
+\overline{a\land b}=\bar a\lor\bar b,\qquad
+\overline{a\lor b}=\bar a\land\bar b
+$$
+
+口诀：**反号进括号，与或要互换**。这条定律在日常编程中天天用到：`!(x > 0 && y > 0)` 等价于 `x <= 0 || y <= 0`。写反了就是经典 bug。
+
+**范式**解决的问题是：给定任意真值表，如何机械地写出对应的表达式？答案是**析取范式（DNF）**——把所有输出为 1 的行各写成一个「与项」，再全部用 OR 连起来。这保证了**任何布尔函数都能只用 AND、OR、NOT 表达**（这三者构成完备集；实际上单独一个 NAND 就已完备，这也是芯片大量使用与非门的原因）。
+
+DNF 通常很啰嗦，需要化简。**卡诺图**的诀窍是把相邻格（只差一个变量）合并：若 $a\bar b$ 与 $ab$ 同时为 1，则合并为 $a$——因为「不管 $b$ 是什么，结果都由 $a$ 决定」。格子按格雷码排列，正是为了保证物理相邻等价于逻辑相邻。
+
+## 最小示例
+
+```python
+from itertools import product
+
+# ---- 通用工具：打印真值表 & 判定等价 ----
+def truth_table(fn, names):
+    n = len(names)
+    print(" | ".join(names) + " | 输出")
+    print("-" * (4 * n + 7))
+    rows = []
+    for vals in product([0, 1], repeat=n):
+        out = int(fn(*vals))
+        rows.append(out)
+        print(" | ".join(str(v) for v in vals) + f" |  {out}")
+    return rows
+
+def equivalent(f, g, n):
+    return all(int(f(*v)) == int(g(*v)) for v in product([0, 1], repeat=n))
+
+# ---- 1. 德摩根律验证 ----
+print("NOT(a AND b):")
+truth_table(lambda a, b: not (a and b), ["a", "b"])
+print("\n(NOT a) OR (NOT b):")
+truth_table(lambda a, b: (not a) or (not b), ["a", "b"])
+print("\n两式等价:", equivalent(lambda a, b: not (a and b),
+                                lambda a, b: (not a) or (not b), 2))   # True ✔
+
+# ---- 2. 吸收律与分配律 ----
+print("\n吸收律 a + ab = a:",
+      equivalent(lambda a, b: a or (a and b), lambda a, b: a, 2))       # True ✔
+print("布尔独有的分配律 a + bc = (a+b)(a+c):",
+      equivalent(lambda a, b, c: a or (b and c),
+                 lambda a, b, c: (a or b) and (a or c), 3))             # True ✔
+
+# ---- 3. 从真值表构造 DNF 并化简 ----
+# 目标函数：三人表决，多数同意即通过
+def majority(a, b, c):
+    return (a + b + c) >= 2
+
+print("\n多数表决真值表:")
+truth_table(majority, ["a", "b", "c"])
+
+# 输出为 1 的行: (0,1,1),(1,0,1),(1,1,0),(1,1,1)
+# 原始 DNF: ā·b·c + a·b̄·c + a·b·c̄ + a·b·c   （4 个三变量与项）
+def dnf(a, b, c):
+    return ((not a and b and c) or (a and not b and c)
+            or (a and b and not c) or (a and b and c))
+
+# 卡诺图化简结果: ab + ac + bc   （3 个两变量与项，门数大幅下降）
+def simplified(a, b, c):
+    return (a and b) or (a and c) or (b and c)
+
+print("\nDNF 与目标等价:", equivalent(dnf, majority, 3))          # True ✔
+print("化简式与目标等价:", equivalent(simplified, majority, 3))   # True ✔
+# 化简把 4×3=12 个字面量降到 3×2=6 个，硬件成本减半
+
+# ---- 4. NAND 的完备性：只用与非门实现三种基本运算 ----
+nand = lambda a, b: int(not (a and b))
+print("\nNOT a  = a NAND a :", equivalent(lambda a: not a, lambda a: nand(a, a), 1))
+print("a AND b = NOT(a NAND b):",
+      equivalent(lambda a, b: a and b, lambda a, b: nand(nand(a, b), nand(a, b)), 2))
+print("a OR  b = (a NAND a) NAND (b NAND b):",
+      equivalent(lambda a, b: a or b, lambda a, b: nand(nand(a, a), nand(b, b)), 2))
+# 三个都是 True ✔ -> NAND 单独即可搭建任意逻辑电路
+```
+
+## 易错点
+
+- **德摩根律只换一半**。把 `!(a && b)` 写成 `!a && !b` 是最高频错误，正确结果是 `!a || !b`。运算符也必须一起翻转。
+- **误用算术直觉**。$a+bc=(a+b)(a+c)$ 在布尔代数成立，在普通算术中不成立；反过来，布尔代数里没有减法与除法。
+- **忽略短路求值的副作用**。编程语言中 `&&`、`||` 会短路，`f() && g()` 与 `g() && f()` 在纯逻辑上等价，但若函数有副作用则行为不同。
+- **XOR 与 OR 混淆**。自然语言的「或」常是排他的（「茶或咖啡」），但逻辑 OR 是包含性的（两者都要也算真）。
+- **卡诺图漏掉环绕相邻**。最左列与最右列、最上行与最下行也是相邻的，忘记环绕会导致化简不彻底。
+- **化简后未验证**。手工化简极易出错，务必用穷举真值表核对——变量少时这是零成本的完全验证。
+
+## 练习
+
+1. 化简 $\overline{\overline{a}\lor\overline{b}}$。
+   *答案：由德摩根律，$\overline{\bar a\lor\bar b}=a\land b$。*
+2. 写出 XOR 的 DNF 表达式。
+   *答案：$a\oplus b=\bar a b\lor a\bar b$（输出为 1 的两行各写一个与项）。*
+3. 用吸收律化简 $ab\lor a\bar b\lor \bar ab$。
+   *提示：前两项合并为 $a(b\lor\bar b)=a$，得 $a\lor\bar ab$；再由 $a\lor\bar ab=a\lor b$，最终结果是 $a\lor b$。可用上面的 `equivalent` 验证。*
+
+## 小结
+
+布尔代数在 $\{0,1\}$ 上定义 AND、OR、NOT 三种基本运算，满足交换、结合、分配等类似算术的定律，同时具备幂等律、双分配律与吸收律这些独有性质。德摩根律给出取反穿过括号的规则，是化简与调试逻辑条件的核心工具。任何布尔函数都可由真值表机械地写成析取范式，再通过卡诺图合并相邻项化简，直接对应电路门数的减少。NAND 门单独即构成完备集，这正是数字电路以与非门为基本单元的原因。
+
+## 延伸阅读
+
+- 命题逻辑与真值表基础见 [集合逻辑与证明](/docs/数学基础/离散数学/集合逻辑与证明)
+- 状态与转移的形式模型见 [自动机与形式语言](/docs/数学基础/离散数学/自动机与形式语言)
+- 化简效果的量化语言见 [复杂度初步](/docs/数学基础/离散数学/复杂度初步)
+- 组合计数视角见 [图论与组合基础](/docs/数学基础/离散数学/图论与组合基础)

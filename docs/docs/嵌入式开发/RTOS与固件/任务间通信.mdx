@@ -1,0 +1,294 @@
+---
+title: "任务间通信"
+sidebar_position: 5
+---
+
+# 任务间通信
+
+把系统拆成多个任务只是第一步，真正的工程难度在于**任务之间怎么安全地交换数据与同步节奏**。FreeRTOS 提供了队列、信号量、互斥量、事件组、任务通知、流/消息缓冲区——每一种都有其精确的适用场景，选错就会带来性能损失甚至死锁。
+
+## 学习目标
+
+- 掌握六种 IPC 原语的语义差异与选型决策。
+- 会用队列构建生产者-消费者流水线。
+- 理解计数信号量与二值信号量的区别及各自用途。
+- 掌握事件组做"多条件汇合"的模式。
+- 学会用任务通知替代轻量场景下的队列/信号量，获得数倍性能提升。
+- 能识别并避免死锁的四个必要条件。
+
+## 核心直觉
+
+### 直觉一：先问"我要传数据还是传信号"
+
+```text
+                    我要在任务间做什么？
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+    传递数据            传递信号            保护资源
+        │                   │                   │
+   ┌────┴────┐         ┌────┴────┐              │
+   │         │         │         │              │
+ 少量固定  大块变长   单个事件  多个条件      Mutex
+   │         │         │         │         （有优先级继承）
+ Queue   StreamBuffer Semaphore EventGroup
+         MessageBuffer   或
+                    TaskNotify（最快）
+```
+
+### 直觉二：六种原语的性能与能力对照
+
+| 原语 | 传数据 | 多对多 | 速度 | 典型用途 |
+|------|--------|--------|------|----------|
+| Queue 队列 | 值拷贝，固定大小 | 多发多收 | 中 | 传感器数据流、命令分发 |
+| Binary Semaphore | 否 | 多发多收 | 中 | ISR 通知任务"事件来了" |
+| Counting Semaphore | 否（带计数） | 多发多收 | 中 | 资源池计数、事件累积 |
+| Mutex 互斥量 | 否 | 一对一持有 | 中 | 保护 SPI/I2C/Flash 等共享外设 |
+| Event Group 事件组 | 24 bit 标志 | 多发多收 | 中 | 等待"A 且 B 且 C 都完成" |
+| Task Notification | 32 bit 值 | **一对一** | **最快（约快 45%）** | ISR→特定任务、轻量同步 |
+| Stream/Message Buffer | 字节流/变长消息 | **一对一** | 快 | UART 数据流、变长报文 |
+
+**任务通知是被严重低估的原语**：它不需要额外分配内核对象（每个任务自带一个通知槽），速度比队列快近一半，RAM 占用几乎为零。只要是"一个发送者对一个特定接收者"的场景，就应该优先考虑它。
+
+### 直觉三：死锁的四个必要条件，破坏任意一个即可
+
+```text
+1. 互斥        资源同一时刻只能被一个任务持有
+2. 持有并等待  任务 A 拿着锁 1 去要锁 2
+3. 不可剥夺    别人不能强行抢走 A 手里的锁
+4. 循环等待    A 等 B 手里的，B 等 A 手里的  ← 最容易破坏这条
+
+工程解法（按推荐度排序）：
+  ① 全局固定加锁顺序（永远先锁 SPI 再锁 Flash，绝不反过来）
+  ② 所有 Take 都带超时，绝不用 portMAX_DELAY
+  ③ 尽量只持有一把锁
+  ④ 用队列把"需要多资源的操作"集中到单个服务任务里做
+```
+
+### 排查四件套的 IPC 版本
+
+- **电源**：无关，但掉电时队列中未处理的数据会丢失，关键数据需持久化。
+- **时钟**：`pdMS_TO_TICKS` 依赖 `configTICK_RATE_HZ` 配置正确，配错会让所有超时时间失真。
+- **复位**：所有 IPC 对象必须在调度器启动前或使用前创建完成，用未创建的句柄会直接 HardFault。
+- **引脚复用**：无关，但 ISR 通知任务时别忘了 `portYIELD_FROM_ISR`。
+
+## 最小可运行例程
+
+**模式一：队列做生产者-消费者流水线**
+
+```c
+typedef struct {
+    uint32_t timestamp;
+    int16_t  temp_x100;      /* 定点数，避免在队列里传浮点 */
+    uint16_t humidity;
+} sensor_msg_t;
+
+QueueHandle_t g_sensor_q;
+
+void app_init(void)
+{
+    /* 队列存的是"值的拷贝"，长度 10，每项 sizeof(sensor_msg_t) 字节 */
+    g_sensor_q = xQueueCreate(10, sizeof(sensor_msg_t));
+    configASSERT(g_sensor_q != NULL);         /* 创建失败必须发现 */
+}
+
+/* 生产者 */
+void vSensorTask(void *pv)
+{
+    sensor_msg_t msg;
+    TickType_t   last = xTaskGetTickCount();
+
+    for (;;) {
+        msg.timestamp = xTaskGetTickCount();
+        msg.temp_x100 = read_temp_x100();
+        msg.humidity  = read_humidity();
+
+        /* 队列满时最多等 10ms，不用 portMAX_DELAY —— 避免生产者被永久卡住 */
+        if (xQueueSend(g_sensor_q, &msg, pdMS_TO_TICKS(10)) != pdTRUE) {
+            g_drop_count++;                    /* 记录丢弃，用于健康监控 */
+        }
+
+        vTaskDelayUntil(&last, pdMS_TO_TICKS(100));   /* 精确 100ms 周期 */
+    }
+}
+
+/* 消费者 */
+void vUploadTask(void *pv)
+{
+    sensor_msg_t msg;
+
+    for (;;) {
+        if (xQueueReceive(g_sensor_q, &msg, pdMS_TO_TICKS(5000)) == pdTRUE) {
+            mqtt_publish(&msg);
+        } else {
+            /* 5 秒没数据 = 生产者可能挂了，上报异常 */
+            log_warn("sensor queue starved");
+        }
+    }
+}
+```
+
+**模式二：任务通知——ISR 通知任务的最快方式**
+
+```c
+static TaskHandle_t s_dma_task_handle;
+
+/* DMA 传输完成中断 */
+void DMA1_Channel1_IRQHandler(void)
+{
+    BaseType_t woken = pdFALSE;
+
+    HAL_DMA_IRQHandler(&hdma_adc1);
+
+    /* 直接通知指定任务，无需任何内核对象，开销极小 */
+    vTaskNotifyGiveFromISR(s_dma_task_handle, &woken);
+    portYIELD_FROM_ISR(woken);            /* 立刻切换，把延迟压到最低 */
+}
+
+void vProcessTask(void *pv)
+{
+    s_dma_task_handle = xTaskGetCurrentTaskHandle();
+
+    for (;;) {
+        /* pdTRUE = 取走后清零（当二值信号量用）
+           pdFALSE = 递减 1（当计数信号量用）                */
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) > 0) {
+            process_adc_buffer();
+        } else {
+            log_warn("DMA timeout, restarting");
+            restart_adc_dma();
+        }
+    }
+}
+
+/* 进阶：用通知值的不同 bit 传递事件类型 */
+#define NOTIFY_RX_DONE   (1u << 0)
+#define NOTIFY_TX_DONE   (1u << 1)
+#define NOTIFY_ERROR     (1u << 2)
+
+void uart_isr(void)
+{
+    BaseType_t woken = pdFALSE;
+    xTaskNotifyFromISR(s_uart_task, NOTIFY_RX_DONE, eSetBits, &woken);
+    portYIELD_FROM_ISR(woken);
+}
+
+void vUartTask(void *pv)
+{
+    uint32_t bits;
+    for (;;) {
+        /* 第二个参数：退出时清除哪些 bit */
+        if (xTaskNotifyWait(0, 0xFFFFFFFF, &bits, portMAX_DELAY) == pdTRUE) {
+            if (bits & NOTIFY_RX_DONE) handle_rx();
+            if (bits & NOTIFY_TX_DONE) handle_tx();
+            if (bits & NOTIFY_ERROR)   handle_err();
+        }
+    }
+}
+```
+
+**模式三：事件组——等待多个条件同时满足**
+
+```c
+EventGroupHandle_t g_sys_events;
+
+#define EV_WIFI_READY    (1 << 0)
+#define EV_TIME_SYNCED   (1 << 1)
+#define EV_SENSOR_READY  (1 << 2)
+#define EV_ALL_READY     (EV_WIFI_READY | EV_TIME_SYNCED | EV_SENSOR_READY)
+
+void app_init(void) { g_sys_events = xEventGroupCreate(); }
+
+/* 各个初始化任务完成后各自置位 */
+void vWifiTask(void *pv)
+{
+    wifi_connect();
+    xEventGroupSetBits(g_sys_events, EV_WIFI_READY);
+    /* ... 继续正常工作 ... */
+}
+
+/* 主业务任务：等所有前置条件都就绪才开始 */
+void vMainTask(void *pv)
+{
+    EventBits_t bits = xEventGroupWaitBits(
+            g_sys_events,
+            EV_ALL_READY,
+            pdFALSE,                  /* 不清除标志（其他任务也要看） */
+            pdTRUE,                   /* pdTRUE = AND 逻辑，全部满足才返回 */
+            pdMS_TO_TICKS(30000));    /* 30 秒超时 */
+
+    if ((bits & EV_ALL_READY) == EV_ALL_READY) {
+        start_business_logic();
+    } else {
+        /* 精确定位是谁没就绪，而不是笼统报"初始化失败" */
+        if (!(bits & EV_WIFI_READY))   log_err("wifi not ready");
+        if (!(bits & EV_TIME_SYNCED))  log_err("time not synced");
+        if (!(bits & EV_SENSOR_READY)) log_err("sensor not ready");
+        NVIC_SystemReset();
+    }
+    vTaskDelete(NULL);
+}
+```
+
+**模式四：固定加锁顺序防死锁**
+
+```c
+/* 给每个锁分配一个全局唯一的"层级号"，规定只能从小到大加锁 */
+typedef enum {
+    LOCK_LEVEL_SPI   = 1,
+    LOCK_LEVEL_FLASH = 2,
+    LOCK_LEVEL_LOG   = 3,
+} lock_level_t;
+
+/* 正确：始终按层级递增顺序 */
+void save_config(void)
+{
+    if (xSemaphoreTake(g_spi_mutex, pdMS_TO_TICKS(100)) != pdTRUE) return;
+    if (xSemaphoreTake(g_flash_mutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+        xSemaphoreGive(g_spi_mutex);       /* 失败路径必须释放已持有的锁！ */
+        return;
+    }
+
+    flash_write_config();
+
+    xSemaphoreGive(g_flash_mutex);          /* 释放顺序与加锁相反 */
+    xSemaphoreGive(g_spi_mutex);
+}
+
+/* 错误：另一处代码反过来先锁 FLASH 再锁 SPI → 与上面并发时死锁 */
+```
+
+## 易错点
+
+- **队列传指针却让数据先失效**：队列存的是拷贝，若你传的是指向局部变量的指针，接收方拿到时那块栈早已被覆盖。传指针必须指向静态区或堆上、且约定好谁负责释放。
+- **`portMAX_DELAY` 用成默认值**：一旦对端出问题，任务就永久挂起，看门狗也救不了（因为任务"没死"只是不动）。生产代码所有阻塞 API 都应带超时。
+- **在 ISR 里用不带 FromISR 的 API**：直接崩溃或触发断言。
+- **忘了 `portYIELD_FROM_ISR`**：通知发出去了，但要等下一个 tick 才切换任务，实时性凭空损失。
+- **用二值信号量做互斥**：没有优先级继承，会引发优先级反转。保护资源一律用 Mutex。
+- **事件组的 `xClearOnExit` 用错**：设 pdTRUE 时第一个醒来的任务会把标志清掉，其他等待者永远等不到——多消费者场景要设 pdFALSE 并自行管理。
+- **队列长度设得太小**：突发流量下大量丢包。应按"生产峰值速率 × 消费者最坏延迟"估算深度，并统计丢弃计数。
+- **任务通知当广播用**：任务通知是严格一对一的，一个任务只有一个通知槽。需要一对多请用事件组。
+- **Mutex 在 ISR 中使用**：Mutex 需要任务上下文来做优先级继承，中断里绝对不能用。
+- **创建 IPC 对象不检查返回值**：堆不足时 `xQueueCreate` 返回 NULL，后续操作直接访问空指针。
+
+## 练习
+
+1. 用队列实现三级流水线：采集任务 → 滤波任务 → 上报任务，并在每级统计队列的最高水位（`uxQueueMessagesWaiting`）。
+2. 把一处 ISR 通知任务的实现从二值信号量改成任务通知，用 GPIO 打点测量两者的唤醒延迟差异。
+3. 用事件组实现"WiFi 就绪 或 以太网就绪"（OR 逻辑）后即可上报的策略，对比 AND 逻辑的写法。
+4. 故意构造一个死锁：两个任务以相反顺序获取两把 Mutex，观察系统卡死；然后加超时和固定顺序修复它。
+5. 用 Stream Buffer 接收 UART 数据流，对比它与队列在传输 1KB 数据时的 RAM 占用和吞吐差异。
+
+## 小结
+
+任务间通信的选型口诀：**传数据用队列，传信号用信号量，保护资源用互斥量，多条件汇合用事件组，一对一的轻量场景优先用任务通知**。所有阻塞调用都要带超时，所有加锁都要有固定顺序，所有 IPC 对象创建后都要检查返回值。把这几条变成肌肉记忆，你的 RTOS 系统就能长期稳定运行。
+
+## 延伸阅读
+
+- 上一篇：[中断与临界区](/docs/嵌入式开发/RTOS与固件/中断与临界区)
+- 下一篇：[固件 OTA 升级](/docs/嵌入式开发/RTOS与固件/固件OTA升级)
+- 任务与调度基础：[FreeRTOS 任务与调度](/docs/嵌入式开发/RTOS与固件/FreeRTOS任务与调度)
+- 队列与栈都吃 RAM：[内存管理与栈溢出](/docs/嵌入式开发/RTOS与固件/内存管理与栈溢出)
+- 协议栈的任务化实现：[Modbus 协议](/docs/嵌入式开发/通信协议/Modbus协议)
+- 理论对照：[进程、线程与调度](/docs/计算机科学基础/计算机科学导论/操作系统/进程线程与调度)
+- 并发语法基础：[C 语言并发执行](/docs/编程语言/C/17并发执行)

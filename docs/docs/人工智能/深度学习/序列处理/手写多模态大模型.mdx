@@ -1,64 +1,350 @@
 ---
 sidebar_position: 4
 title: 手写多模态大模型
-description: 从零搭一个能“看图说话”的多模态大模型（VLM）：视觉编码器 + 投影层 + 语言模型的最小配方。
+description: 从零搭一个能“看图说话”的视觉语言模型（VLM）：视觉编码器 + 投影层 + 语言模型的完整实现、两阶段训练与数据构造。
 ---
 
-多模态大模型（Vision-Language Model, VLM）能同时理解**图像**和**文本**，做图文问答、图像描述、视觉推理。本篇用最小配方讲清它的骨架，并给出可动手的从零实现思路（参考开源项目 [MiniMind](https://github.com/jingyaogong/minimind) 与 [MiniMind-V](https://github.com/jingyaogong/minimind-v)、李沐的[动手学深度学习](https://github.com/d2l-ai/d2l-zh)）。
+多模态大模型（Vision-Language Model, VLM）能同时理解**图像**和**文本**，做图文问答、图像描述、视觉推理。本篇给出最小可实现的骨架、完整的前向传播代码和两阶段训练流程，参考开源项目 [MiniMind-V](https://github.com/jingyaogong/minimind-v) 与李沐的[动手学深度学习](https://github.com/d2l-ai/d2l-zh)。
 
-## 核心架构
+## 学习目标
+
+- 说清 VLM 三大组件的分工，理解投影层为什么是关键。
+- 掌握视觉 token 与文本 token 的拼接方式，以及占位符替换法。
+- 理解两阶段训练（对齐预训练 + 指令微调）各自冻结什么、学什么。
+- 写出带图像输入的 loss mask，知道哪些位置该算损失。
+- 了解视觉 token 压缩的几种主流方案及其取舍。
+
+## 核心直觉
+
+### 架构：把图像翻译成「外语单词」
 
 VLM = **视觉编码器** + **投影层（Projector）** + **语言模型（LLM）**：
 
+```text
+图像 ──► ViT 视觉编码器 ──► 视觉特征 (B, N, D_v)
+                                      │
+                                      ▼ 投影层 Linear/MLP (D_v → D_llm)
+                                      │
+                              视觉 token (B, N, D_llm)
+                                      │
+文本 ──► Tokenizer ──► Embedding ──► 文本 token (B, M, D_llm)
+                                      │
+                                      ▼ 按位置拼接
+              [视觉 token | 文本 token] ──► LLM ──► 自回归生成回答
 ```
-图像 ──► ViT 视觉编码器 ──► 视觉 token (B, N, D_v)
-                                      │
-                                      ▼ 投影层 Linear(D_v → D_llm)
-                                      │
-文本 ──► Tokenizer ──► 文本 token (B, M, D_llm)
-                                      │
-                                      ▼ 拼接
-              [视觉 token | 文本 token] ──► LLM ──► 生成回答
+
+理解 VLM 最好的比喻是**翻译**：LLM 只懂「词向量」这一门语言，而 ViT 说的是「视觉特征」。投影层就是同声传译，把视觉特征翻译成 LLM 能读懂的词向量。**训练 VLM 的第一阶段，本质上就是在训练这个翻译官。**
+
+### 三大组件的分工
+
+| 组件 | 常用选择 | 参数量 | 是否训练 |
+| --- | --- | --- | --- |
+| 视觉编码器 | CLIP ViT-L/14、SigLIP | 300M~600M | 阶段一冻结，阶段二可选解冻 |
+| 投影层 | 单层 Linear 或两层 MLP | 几 M~几十 M | **全程训练** |
+| 语言模型 | Qwen、LLaMA、MiniMind | 0.5B~70B | 阶段一冻结，阶段二训练（常用 LoRA） |
+
+**为什么用 CLIP 的 ViT 而不是 ImageNet 分类的 ViT？** 因为 CLIP 的视觉编码器已经在图文对上做过对齐训练，特征天然带语义（参见[多模态应用](/docs/人工智能/大模型LLM与应用/多模态应用)里对共享嵌入空间的解释），投影层学起来轻松得多。
+
+**投影层用 Linear 还是 MLP？** LLaVA 的消融实验显示，两层 MLP（中间带 GELU）比单层 Linear 明显更好，因为跨模态映射本身是非线性的。这是性价比极高的一个改动。
+
+### 视觉 token 怎么塞进文本序列
+
+有两种做法：
+
+**方法一：前置拼接**（最简单）——把 N 个视觉 token 直接放在文本前面。缺点是无法处理「文字—图片—文字」交错的输入。
+
+**方法二：占位符替换**（主流）——在文本里放特殊 token（如 `<image>`），tokenize 之后找到它的位置，把该位置的 embedding 替换成 N 个视觉 token。这样图片可以出现在对话的任意位置，也支持多图。
+
+```text
+输入文本： "描述这张图 <image> 里有什么？"
+tokenize： [描述][这张图][<image>][里][有什么][？]
+                          ↓ 展开成 N 个视觉 token
+embedding：[e1][e2][v1][v2]...[vN][e4][e5][e6]
 ```
 
-- **视觉编码器**：冻结的 ViT，把一张图压成 N 个视觉向量（如 196 个 patch 特征）。
-- **投影层**：一个小小的 MLP，把视觉向量“翻译”进 LLM 的词向量空间，让 LLM 能读懂图像。
-- **语言模型**：沿用你已有的自回归 LLM，负责把“图 + 问题”续写成答案。
+### 两阶段训练：先学翻译，再学对话
 
-## 训练两阶段
+**阶段一：对齐预训练**
 
-1. **对齐预训练**：冻结 ViT 和 LLM，只训投影层。用大量“图-文”对，让投影层学会把视觉特征映射到 LLM 空间。这一步最便宜。
-2. **指令微调**：解冻（或全部）参数，用多模态对话数据（问题 + 图 → 答案）端到端微调，让模型学会按指令回答。
+- **冻结**：ViT 和 LLM 全部冻结。
+- **训练**：只有投影层（几十 M 参数）。
+- **数据**：大量图文对（如 LAION、CC3M），任务是「看图生成描述」。
+- **目的**：让投影层学会把视觉特征映射到 LLM 的词向量空间。
+- **成本**：极低，单卡也能跑。**这一步千万别解冻 LLM**——随机初始化的投影层会产生噪声梯度，直接破坏预训练好的语言能力。
 
-## 最小可运行示例（PyTorch 草图）
+**阶段二：指令微调**
 
-```python
+- **冻结**：ViT 通常仍冻结（或用很小的学习率）。
+- **训练**：投影层 + LLM（全量或 LoRA）。
+- **数据**：多模态对话数据（图 + 问题 → 答案），质量远比数量重要。
+- **目的**：学会按指令回答，而不只是描述图片。
+
+### Loss mask：只对答案算损失
+
+这是实现时最容易写错的地方。一条训练样本包含视觉 token、用户问题、助手回答三部分，但**只有「助手回答」部分应该计算交叉熵损失**：
+
+```text
+序列： [v1 v2 ... vN] [用户: 这是什么？] [助手: 这是一只猫。]
+mask： [ -100  ...  -100 ] [   -100 ...   -100  ] [ 真实 token id ... ]
+                ↑ 忽略                ↑ 忽略            ↑ 只算这里
+```
+
+PyTorch 的 `CrossEntropyLoss` 默认 `ignore_index=-100`，把不算损失的位置标成 -100 即可。**忘记 mask 会让模型去「预测用户的提问」，训练目标完全跑偏。**
+
+## 最小示例
+
+### 完整可运行的 TinyVLM
+
+下面这份实现不依赖任何预训练权重，用随机初始化的小模型跑通全流程，**可以直接复制运行**：
+
+```python showLineNumbers
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+IMAGE_TOKEN_ID = 0          # 约定：token id 0 代表 <image> 占位符
+
+class TinyViT(nn.Module):
+    """极简视觉编码器：patch embedding + 若干 Transformer 层"""
+    def __init__(self, img_size=32, patch=8, dim=128, depth=2, heads=4):
+        super().__init__()
+        self.n_patch = (img_size // patch) ** 2
+        self.proj = nn.Conv2d(3, dim, patch, patch)
+        self.pos = nn.Parameter(torch.zeros(1, self.n_patch, dim))
+        layer = nn.TransformerEncoderLayer(dim, heads, dim * 4,
+                                           batch_first=True, norm_first=True)
+        self.enc = nn.TransformerEncoder(layer, depth)
+        nn.init.trunc_normal_(self.pos, std=0.02)
+
+    def forward(self, img):
+        x = self.proj(img).flatten(2).transpose(1, 2)   # (B, N, dim)
+        return self.enc(x + self.pos)
+
+class Projector(nn.Module):
+    """两层 MLP 比单层 Linear 效果更好（LLaVA-1.5 的经验）"""
+    def __init__(self, dim_v, dim_llm):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim_v, dim_llm), nn.GELU(), nn.Linear(dim_llm, dim_llm))
+
+    def forward(self, x):
+        return self.net(x)
+
+class TinyLLM(nn.Module):
+    """极简自回归语言模型（因果掩码 Transformer）"""
+    def __init__(self, vocab=1000, dim=256, depth=4, heads=4, max_len=512):
+        super().__init__()
+        self.embed = nn.Embedding(vocab, dim)
+        self.pos = nn.Parameter(torch.zeros(1, max_len, dim))
+        layer = nn.TransformerEncoderLayer(dim, heads, dim * 4,
+                                           batch_first=True, norm_first=True)
+        self.blocks = nn.TransformerEncoder(layer, depth)
+        self.norm = nn.LayerNorm(dim)
+        self.lm_head = nn.Linear(dim, vocab, bias=False)
+        nn.init.trunc_normal_(self.pos, std=0.02)
+
+    def forward_embeds(self, embeds):
+        L = embeds.shape[1]
+        mask = torch.triu(torch.ones(L, L, device=embeds.device), 1).bool()  # 因果掩码
+        h = self.blocks(embeds + self.pos[:, :L], mask=mask)
+        return self.lm_head(self.norm(h))
 
 class TinyVLM(nn.Module):
-    def __init__(self, vision, llm, dim_v, dim_llm):
+    def __init__(self, vocab=1000, dim_v=128, dim_llm=256):
         super().__init__()
-        self.vision = vision                        # 冻结的 ViT
-        self.projector = nn.Linear(dim_v, dim_llm)  # 视觉→语言空间对齐
-        self.llm = llm                              # 语言模型
+        self.vision = TinyViT(dim=dim_v)
+        self.projector = Projector(dim_v, dim_llm)
+        self.llm = TinyLLM(vocab=vocab, dim=dim_llm)
 
-    def forward(self, image, input_ids):
-        v = self.vision(image)                      # (B, N, dim_v)
-        v = self.projector(v)                       # (B, N, dim_llm)
-        t = self.llm.get_input_embeddings()(input_ids)  # (B, M, dim_llm)
-        x = torch.cat([v, t], dim=1)                # 拼接视觉与文本
-        return self.llm(inputs_embeds=x).logits
+    def build_inputs(self, images, input_ids):
+        """把 <image> 占位符替换成 N 个视觉 token"""
+        B = input_ids.shape[0]
+        v = self.projector(self.vision(images))          # (B, N, dim_llm)
+        text = self.llm.embed(input_ids)                 # (B, M, dim_llm)
+
+        merged = []
+        for b in range(B):
+            pos = (input_ids[b] == IMAGE_TOKEN_ID).nonzero()
+            if len(pos) == 0:                            # 纯文本样本
+                merged.append(text[b])
+                continue
+            p = int(pos[0])
+            merged.append(torch.cat([text[b, :p], v[b], text[b, p + 1:]], dim=0))
+        return torch.stack(merged)                       # (B, M-1+N, dim_llm)
+
+    def forward(self, images, input_ids, labels=None):
+        embeds = self.build_inputs(images, input_ids)
+        logits = self.llm.forward_embeds(embeds)
+        if labels is None:
+            return logits
+        # labels 需与拼接后的序列等长，非答案位置填 -100
+        loss = F.cross_entropy(logits[:, :-1].reshape(-1, logits.shape[-1]),
+                               labels[:, 1:].reshape(-1), ignore_index=-100)
+        return logits, loss
+
+# ---------- 跑一遍 ----------
+torch.manual_seed(0)
+model = TinyVLM()
+B, M = 2, 12
+images = torch.randn(B, 3, 32, 32)
+input_ids = torch.randint(1, 1000, (B, M))
+input_ids[:, 3] = IMAGE_TOKEN_ID                    # 第 4 个位置放 <image>
+
+embeds = model.build_inputs(images, input_ids)
+print(f"文本长度 {M}, 视觉 token {model.vision.n_patch} 个 "
+      f"-> 拼接后序列长度 {embeds.shape[1]}")
+print("验算:", M - 1 + model.vision.n_patch, "= M - 1 + N ✔")
+
+logits = model(images, input_ids)
+print("logits 形状:", tuple(logits.shape))
 ```
 
-## 常见误区
+跑完你会看到序列长度确实是 $M - 1 + N$（减去被替换掉的那个占位符）。**这个尺寸验算是排查 VLM bug 的第一道关卡。**
 
-- **直接拼接不训投影层 = 模型看不懂图**：视觉特征和文本词向量量纲不同，必须先对齐。
-- **分辨率越高越好？** 更高分辨率 = 更多视觉 token = 更贵；常用动态分辨率或固定 224 / 336。
-- **以为“多模态 = 把图塞进 prompt”**：真正的 VLM 是视觉特征进入模型内部，而非简单拼接字符串。
+### 构造 loss mask 并计算损失
+
+```python showLineNumbers
+def make_labels(input_ids, answer_start, n_visual):
+    """
+    input_ids: (B, M) 原始文本 token
+    answer_start: 每条样本中答案在原文本里的起始下标
+    n_visual: 视觉 token 数量（占位符会展开成这么多）
+    """
+    B, M = input_ids.shape
+    L = M - 1 + n_visual
+    labels = torch.full((B, L), -100, dtype=torch.long)
+    for b in range(B):
+        img_pos = int((input_ids[b] == IMAGE_TOKEN_ID).nonzero()[0])
+        for m in range(answer_start[b], M):
+            # 原文本下标 m 在拼接后的新下标
+            new_idx = m + n_visual - 1 if m > img_pos else m
+            labels[b, new_idx] = input_ids[b, m]
+    return labels
+
+labels = make_labels(input_ids, answer_start=[8, 9], n_visual=model.vision.n_patch)
+print("参与计算损失的位置数:", (labels != -100).sum().item(), "（应等于答案 token 数）")
+
+logits, loss = model(images, input_ids, labels)
+print("loss =", round(loss.item(), 4),
+      "  理论初始值 ≈ ln(vocab) =", round(float(torch.log(torch.tensor(1000.0))), 4))
+```
+
+**这个验算非常有用**：随机初始化的模型，损失应该接近 $\ln(V)$（1000 词表约等于 6.91）。如果你的初始 loss 远离这个值，说明 mask 或标签对齐写错了。
+
+### 两阶段训练的参数冻结
+
+```python showLineNumbers
+def set_stage(model, stage: int):
+    if stage == 1:      # 对齐预训练：只训投影层
+        for p in model.vision.parameters():
+            p.requires_grad = False
+        for p in model.llm.parameters():
+            p.requires_grad = False
+        for p in model.projector.parameters():
+            p.requires_grad = True
+    else:               # 指令微调：投影层 + LLM
+        for p in model.vision.parameters():
+            p.requires_grad = False
+        for p in model.llm.parameters():
+            p.requires_grad = True
+        for p in model.projector.parameters():
+            p.requires_grad = True
+
+for stage in (1, 2):
+    set_stage(model, stage)
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    total = sum(p.numel() for p in model.parameters())
+    print(f"阶段 {stage}: 可训练 {trainable/1e6:.2f}M / 共 {total/1e6:.2f}M "
+          f"({trainable/total:.1%})")
+```
+
+输出会显示阶段一只训练很小一部分参数——**这就是为什么对齐预训练成本极低，个人开发者也能复现。**
+
+### 一个能跑通的训练循环
+
+```python showLineNumbers
+set_stage(model, 1)
+opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=1e-3)
+
+for step in range(30):
+    opt.zero_grad()
+    _, loss = model(images, input_ids, labels)
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(
+        [p for p in model.parameters() if p.requires_grad], 1.0)
+    opt.step()
+    if step % 10 == 0:
+        print(f"step {step:>2}  loss={loss.item():.4f}")
+print("损失下降说明投影层确实在学习把视觉特征映射到语言空间")
+```
+
+由于只用了 2 条样本，这里会迅速过拟合到接近 0——**这恰好是验证训练管线正确的最佳方式：如果一个模型连 2 条样本都记不住，说明代码有 bug。**
+
+### 视觉 token 太多怎么办
+
+高分辨率图像会产生大量视觉 token（如 336×336 配 patch 14 得到 576 个），显著推高成本。三种主流压缩方案：
+
+```python showLineNumbers
+import torch.nn as nn
+
+class PixelShuffleCompress(nn.Module):
+    """相邻 2×2 的视觉 token 拼接后投影，token 数降为 1/4（InternVL 方案）"""
+    def __init__(self, dim_v, dim_llm, scale=2):
+        super().__init__()
+        self.scale = scale
+        self.proj = nn.Sequential(
+            nn.Linear(dim_v * scale * scale, dim_llm), nn.GELU(),
+            nn.Linear(dim_llm, dim_llm))
+
+    def forward(self, x):                      # x: (B, N, D)，N 必须是平方数
+        B, N, D = x.shape
+        s = int(N ** 0.5)
+        x = x.reshape(B, s, s, D)
+        x = x.reshape(B, s // self.scale, self.scale,
+                      s // self.scale, self.scale, D)
+        x = x.permute(0, 1, 3, 2, 4, 5).reshape(
+            B, (s // self.scale) ** 2, D * self.scale * self.scale)
+        return self.proj(x)
+
+comp = PixelShuffleCompress(128, 256)
+feats = torch.randn(2, 16, 128)                # 16 个视觉 token
+print("压缩前:", feats.shape, "-> 压缩后:", comp(feats).shape)   # 16 -> 4
+```
+
+另外两种是 **Q-Former**（BLIP-2，用固定数量的可学习 query 通过交叉注意力抽取信息，压到 32 个 token）和**自适应池化**（最简单，直接对特征图做平均池化）。
+
+## 易错点
+
+- **阶段一就解冻 LLM**：随机初始化的投影层输出等于噪声，会直接摧毁 LLM 的语言能力，模型开始说胡话。**必须先单独把投影层训到收敛。**
+- **loss mask 写错**：对用户提问和视觉 token 也算损失，训练目标跑偏。用「初始 loss 是否接近 $\ln V$」来自检。
+- **占位符替换后位置错位**：拼接改变了序列长度，labels、attention_mask、position_ids 都要同步调整。**长度不一致是 VLM 最高频的 bug。**
+- **视觉与文本特征量纲差异大**：ViT 输出的模长可能远大于词向量，导致视觉 token 主导注意力。投影层后加 LayerNorm 通常能明显改善。
+- **分辨率无脑拉高**：视觉 token 数随分辨率平方增长，336 换成 672 时 token 数变 4 倍，成本和延迟同步爆炸。先做压缩再考虑提分辨率。
+- **多图输入不加分隔标记**：同时传多张图时，务必在提示词里写明「图1」「图2」，否则模型会张冠李戴。
+- **只用图像描述数据做指令微调**：模型会退化成「只会描述图片」，无论你问什么都在念图。**指令数据必须包含多样的任务类型和拒答样本。**
+- **推理时忘记 `model.eval()`**：Dropout 和归一化层行为不一致，输出不稳定。参见 [Adam 与 BatchNorm](/docs/人工智能/深度学习/网格数据/Adam与BatchNorm)。
+
+## 练习
+
+1. 把 `Projector` 从两层 MLP 改回单层 Linear，在同一份小数据上对比收敛速度，验证 LLaVA 的消融结论。
+2. 故意把 `make_labels` 里的偏移写错（不区分 `m > img_pos`），观察初始 loss 如何偏离 $\ln(1000) \approx 6.91$。
+3. 把 `TinyViT` 的 patch 从 8 改成 4，计算视觉 token 数量的变化，并观察显存与耗时。
+4. 实现「前置拼接」版本的 `build_inputs`，与占位符替换版对比，讨论哪种更适合多轮多图对话。
+5. 用 `PixelShuffleCompress` 替换普通投影层，验证序列长度变为 1/4，并观察 loss 收敛是否变慢。
+6. 给模型加上纯文本样本（不含 `<image>`）混合训练，验证 `build_inputs` 的分支逻辑正确，思考为什么混入纯文本数据能缓解「灾难性遗忘」。
+7. 用真实组件替换：`transformers` 的 CLIP ViT + 一个小型开源 LLM，在几百条图文对上跑通阶段一，看投影层能否学出可用的描述能力。
+
+## 小结
+
+VLM 的骨架比想象中简单：**冻结的视觉编码器提特征 → 一个小 MLP 做翻译 → 现成的 LLM 负责生成**。真正的难点不在架构，而在工程细节：**序列拼接的长度对齐、loss mask 的正确性、两阶段的冻结策略、视觉 token 的成本控制**。
+
+把本篇的 TinyVLM 跑通，再把三个组件换成真实的预训练模型，你就拥有了一个完整的 VLM 训练管线。至于落地时选什么方案、怎么评测，请继续看[多模态应用](/docs/人工智能/大模型LLM与应用/多模态应用)。
 
 ## 延伸阅读
 
-- [Vision Transformer](../Vision Transformer) — 这里的视觉编码器。
-- [Transformer](../Transformer) — LLM 的骨架。
-- [模型微调](<../../../大模型LLM与应用/模型微调>) — 第二阶段指令微调怎么做的。
+- [Vision Transformer](</docs/人工智能/深度学习/序列处理/Vision Transformer>) — 这里的视觉编码器原理。
+- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer) — LLM 的骨架与注意力机制。
+- [模型微调](/docs/人工智能/大模型LLM与应用/模型微调) — 第二阶段指令微调与 LoRA 的实操。
+- [多模态应用](/docs/人工智能/大模型LLM与应用/多模态应用) — 训好之后能做什么产品。
+- [推理加速：量化与蒸馏](/docs/人工智能/大模型LLM与应用/推理加速) — 让 VLM 跑得起、跑得快。
+- [本地部署](/docs/人工智能/大模型LLM与应用/本地部署) — 多模态模型的部署方式。

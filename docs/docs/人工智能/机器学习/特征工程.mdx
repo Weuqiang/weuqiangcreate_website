@@ -1,0 +1,195 @@
+---
+sidebar_position: 8
+title: "特征工程"
+description: "缺失值、类别编码、缩放、分箱、交互特征与特征选择：用 Pipeline 把特征工程做成不泄露、可复现的流水线。"
+---
+
+有句老话：**「数据和特征决定了机器学习的上限，模型和算法只是逼近这个上限。」** 在深度学习之前，特征工程占据了算法工程师 70% 以上的时间；即便在今天，表格数据场景里它依然是拉开差距的关键。
+
+## 学习目标
+
+- 掌握缺失值、类别变量、数值缩放三类基础处理的选型依据。
+- 理解分箱、交互项、多项式特征如何给线性模型注入非线性能力。
+- 会用 `Pipeline` + `ColumnTransformer` 写出零泄露的预处理流程。
+- 区分过滤式 / 包裹式 / 嵌入式三类特征选择方法。
+- 知道哪些操作对树模型是无用功，避免做无谓的工作。
+
+## 核心直觉
+
+### 特征工程在做什么：把信息摆到模型够得着的地方
+
+模型不是万能的，它只能看见你喂给它的东西。举个极端例子：预测「用户是否会流失」，原始数据里有 `注册时间` 和 `最后登录时间` 两列时间戳。线性模型看到两个巨大的整数，什么也学不到；但如果你构造出 `距上次登录天数 = 今天 - 最后登录时间`，模型立刻就能抓住信号。
+
+**特征工程的本质，是把领域知识编码成模型能理解的数值形式。**
+
+### 缺失值：先问「为什么缺」
+
+| 缺失机制 | 含义 | 处理建议 |
+| --- | --- | --- |
+| MCAR（完全随机缺失） | 缺失与任何变量无关 | 均值 / 中位数填充即可 |
+| MAR（随机缺失） | 缺失依赖其他观测变量 | 用其他特征建模填充（KNN / 迭代填充） |
+| MNAR（非随机缺失） | 缺失依赖缺失值本身 | **缺失本身就是信息**，加一列 `is_missing` 标记 |
+
+比如「收入」字段的缺失往往集中在高收入人群（不愿填），这是 MNAR，直接填中位数会抹掉最有价值的信号。
+
+### 类别编码：别给无序类别编上大小
+
+| 方法 | 适用 | 风险 |
+| --- | --- | --- |
+| One-Hot | 无序、类别数少（通常小于 15） | 高基数时维度爆炸 |
+| Ordinal | 有序类别（小学 / 中学 / 大学） | 用在无序类别上会引入虚假大小关系 |
+| Target Encoding | 高基数（城市、商品 ID） | **极易过拟合与泄露**，必须在交叉验证内部做 |
+| Frequency Encoding | 高基数、频次本身有意义 | 不同类别频次相同会撞车 |
+
+一个高频错误：把「北京=1, 上海=2, 广州=3」直接喂给线性模型，等于告诉它「广州 = 3 倍北京」。
+
+### 缩放：谁需要，谁不需要
+
+- **需要**：线性回归/[逻辑回归](/docs/人工智能/机器学习/逻辑回归)（因为正则项按量纲惩罚）、[SVM](/docs/人工智能/机器学习/支持向量机SVM)、KNN、[K-Means](/docs/人工智能/机器学习/聚类算法)、[PCA](/docs/人工智能/机器学习/降维算法)、神经网络。凡是**算距离或带正则**的都需要。
+- **不需要**：决策树、[随机森林](/docs/人工智能/机器学习/随机森林)、GBDT/XGBoost。树按阈值分裂，单调变换不改变分裂结果。
+
+常用的三种：`StandardScaler`（减均值除标准差，默认首选）、`MinMaxScaler`（压到 0~1，有明确边界时用）、`RobustScaler`（用中位数和四分位距，离群点多时用）。
+
+### 造新特征：给线性模型装上曲线
+
+- **分箱（Binning）**：把年龄切成「少年/青年/中年/老年」，捕捉非单调关系，同时抗离群点。
+- **交互特征**：`面积 × 单价`、`点击数 / 曝光数`（比率特征往往比原始两列都强）。
+- **多项式特征**：$x_1^2,\ x_1x_2$，让线性边界弯曲，但维度按 $O(d^2)$ 增长，慎用。
+- **时间特征**：从时间戳拆出小时、星期几、是否节假日；对周期量用 $\sin/\cos$ 编码，让 23 点和 0 点在数值上相邻。
+
+## 最小示例
+
+### 一条零泄露的完整流水线
+
+```python showLineNumbers
+import numpy as np
+import pandas as pd
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
+
+# 一份带缺失值和类别列的模拟数据
+rng = np.random.default_rng(42)
+n = 800
+df = pd.DataFrame({
+    "age": rng.normal(40, 12, n),
+    "income": rng.lognormal(10, 0.6, n),
+    "city": rng.choice(["北京", "上海", "广州", "成都"], n),
+    "level": rng.choice(["低", "中", "高"], n),
+})
+df.loc[rng.choice(n, 80, replace=False), "income"] = np.nan   # 人为制造缺失
+y = ((df["age"] > 38) & (df["income"].fillna(0) > 20000)).astype(int)
+
+num_cols = ["age", "income"]
+cat_cols = ["city", "level"]
+
+numeric = Pipeline([
+    ("impute", SimpleImputer(strategy="median", add_indicator=True)),  # 保留缺失标记
+    ("scale", StandardScaler()),
+])
+categorical = Pipeline([
+    ("impute", SimpleImputer(strategy="most_frequent")),
+    ("onehot", OneHotEncoder(handle_unknown="ignore")),   # 线上出现新城市也不崩
+])
+
+pre = ColumnTransformer([("num", numeric, num_cols),
+                         ("cat", categorical, cat_cols)])
+
+model = Pipeline([("pre", pre), ("clf", LogisticRegression(max_iter=1000))])
+scores = cross_val_score(model, df, y, cv=5, scoring="roc_auc")
+print(f"AUC = {scores.mean():.4f} ± {scores.std():.4f}")
+```
+
+**关键点**：`StandardScaler` 和 `SimpleImputer` 都写在 Pipeline 里，`cross_val_score` 会在每一折的训练部分单独 `fit`，验证折的统计量绝不会泄露进来。
+
+### 亲手制造一次数据泄露，看看分数虚高多少
+
+```python showLineNumbers
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+
+X_num = df[num_cols].fillna(df[num_cols].median())
+
+# 错误做法：在全量数据上标准化，再划分
+wrong = StandardScaler().fit_transform(X_num)
+Xtr, Xte, ytr, yte = train_test_split(wrong, y, test_size=0.3, random_state=0)
+m1 = LogisticRegression(max_iter=1000).fit(Xtr, ytr)
+print("泄露版 AUC:", round(roc_auc_score(yte, m1.predict_proba(Xte)[:, 1]), 4))
+
+# 正确做法：先划分，只用训练集的统计量
+Xtr, Xte, ytr, yte = train_test_split(X_num, y, test_size=0.3, random_state=0)
+sc = StandardScaler().fit(Xtr)
+m2 = LogisticRegression(max_iter=1000).fit(sc.transform(Xtr), ytr)
+print("正确版 AUC:", round(roc_auc_score(yte, m2.predict_proba(sc.transform(Xte))[:, 1]), 4))
+```
+
+标准化这种「温和」的泄露差距通常很小，但换成 Target Encoding 或过采样，差距可以达到几个点——足以让你在线上翻车。
+
+### 周期特征的正确编码
+
+```python showLineNumbers
+hours = np.array([0, 6, 12, 18, 23])
+sin_h = np.sin(2 * np.pi * hours / 24)
+cos_h = np.cos(2 * np.pi * hours / 24)
+for h, s, c in zip(hours, sin_h, cos_h):
+    print(f"{h:>2}点 -> sin={s:+.3f} cos={c:+.3f}")
+
+# 验算：23 点与 0 点的欧氏距离应远小于 0 点与 12 点
+d_23_0 = np.hypot(sin_h[-1] - sin_h[0], cos_h[-1] - cos_h[0])
+d_0_12 = np.hypot(sin_h[0] - sin_h[2], cos_h[0] - cos_h[2])
+print(f"距离(23时,0时)={d_23_0:.3f}   距离(0时,12时)={d_0_12:.3f}")
+```
+
+输出会显示 23 点与 0 点距离约 0.26，而 0 点与 12 点距离为 2.0——正是我们想要的「时间是个圆」。
+
+### 三类特征选择
+
+```python showLineNumbers
+from sklearn.feature_selection import SelectKBest, f_classif, RFE
+from sklearn.ensemble import RandomForestClassifier
+
+Xs = StandardScaler().fit_transform(X_num)
+
+# 1) 过滤式：只看统计量，最快
+print("过滤式选中:", SelectKBest(f_classif, k=1).fit(Xs, y).get_support())
+
+# 2) 包裹式：反复训练模型逐个剔除，最准也最慢
+print("包裹式排名:", RFE(LogisticRegression(max_iter=1000), n_features_to_select=1).fit(Xs, y).ranking_)
+
+# 3) 嵌入式：训练过程中自带重要性，性价比最高
+rf = RandomForestClassifier(n_estimators=200, random_state=0).fit(X_num, y)
+print("嵌入式重要性:", dict(zip(num_cols, rf.feature_importances_.round(3))))
+```
+
+## 易错点
+
+- **在划分数据前做任何 `fit`**：包括标准化、填充、编码、过采样、特征选择。**只要用到了标签或全局统计量，就必须放进 Pipeline。**
+- **Target Encoding 直接用全量均值**：这是泄露的重灾区，训练集 AUC 逼近 1、线上一塌糊涂。必须用 K 折内编码或加平滑。
+- **对树模型做标准化/归一化**：纯属浪费算力，不会带来任何收益。
+- **One-Hot 高基数特征**：10 万个商品 ID 展开成 10 万列，内存直接爆掉。改用 Target/Frequency 编码或 embedding。
+- **`OneHotEncoder` 不设 `handle_unknown="ignore"`**：线上出现训练时没见过的类别会直接抛异常。
+- **盲目做多项式扩展**：`PolynomialFeatures(degree=3)` 在 50 个特征上会生成 2 万多列，过拟合且不可解释。
+- **用相关系数筛掉「无关」特征**：皮尔逊相关只能捕捉线性关系，$y = x^2$ 的相关系数可能接近 0，但它是完美的预测因子。
+
+## 练习
+
+1. 把示例中 `income` 的缺失填充从 `median` 改成 `mean`，再改成 `KNNImputer`，比较三者的交叉验证 AUC。
+2. 关闭 `add_indicator=True`，观察 AUC 变化，判断这份数据的缺失是否携带信息。
+3. 给 `city` 实现一个 K 折内的 Target Encoding，与 One-Hot 对比效果；再故意写一个全量版本，量化泄露带来的虚高。
+4. 对 `age` 做等宽分箱和等频分箱（`KBinsDiscretizer`），看哪种更能提升线性模型表现。
+5. 用同一份数据分别训练逻辑回归和随机森林，验证「树模型对是否标准化完全不敏感」。
+
+## 小结
+
+特征工程有两条铁律：**第一，把领域知识变成特征；第二，任何预处理都必须写进 Pipeline。** 前者决定模型上限，后者决定你的线下评估是否可信。当你发现调参怎么调都提不动 1 个点时，回头看看特征——那里通常还躺着 5 个点。
+
+## 延伸阅读
+
+- [降维算法](/docs/人工智能/机器学习/降维算法) — PCA / t-SNE 作为特征压缩手段。
+- [模型评估指标](/docs/人工智能/机器学习/模型评估指标) — 用交叉验证正确衡量特征改动的收益。
+- [超参数调优](/docs/人工智能/机器学习/超参数调优) — 把预处理选项也纳入搜索空间。
+- [随机森林](/docs/人工智能/机器学习/随机森林) — 自带特征重要性的嵌入式选择。
+- [集成学习与 Boosting](/docs/人工智能/机器学习/集成学习Boosting) — 表格数据上特征工程的最佳搭档。

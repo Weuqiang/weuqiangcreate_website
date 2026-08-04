@@ -1,0 +1,180 @@
+---
+title: "看门狗"
+sidebar_position: 7
+---
+
+# 看门狗
+
+产品出厂后没有人给它按复位键。程序跑飞、死循环、外设卡死、电压瞬跌导致状态错乱——**看门狗（Watchdog）就是最后一道自动救命机制**：只要你在规定时间内没来"喂狗"，它就把系统复位。
+
+## 学习目标
+
+- 分清独立看门狗 IWDG 与窗口看门狗 WWDG 的定位与差异。
+- 会计算看门狗超时时间，并选出合理的喂狗周期。
+- 掌握多任务/多模块场景下的**软件看门狗**设计（各模块签到，全员到齐才喂）。
+- 会通过复位标志位判断"上次是不是被狗咬了"，并记录故障现场。
+- 知道调试时如何冻结看门狗，避免单步调试被反复复位。
+
+## 核心直觉
+
+看门狗的本质是**一个独立的倒计时器，数到 0 就拉复位**。喂狗就是把它重新装满。
+
+```text
+        喂狗          喂狗          （程序跑飞，没人喂）
+         │             │                    │
+计数值 ──┴──╲       ───┴──╲             ────┴──╲
+              ╲            ╲                     ╲___ 0  →  系统复位
+```
+
+两种狗的区别，用一句话概括：
+
+- **IWDG（独立看门狗）**：用独立的 LSI 内部低速时钟，**主时钟挂了它照样跑**，只有"喂太晚"会复位。适合防死机。
+- **WWDG（窗口看门狗）**：挂在 APB 时钟上，既怕"喂太晚"也怕**"喂太早"**。喂早了同样复位——这能检测"程序跑飞后进了一个疯狂喂狗的死循环"这种更隐蔽的故障。
+
+```text
+WWDG 时间轴：
+ |=========禁止喂========|=====允许喂=====|====== 超时复位 ======
+ 0                     窗口值 W          0x3F
+     喂了 → 复位            喂了 → 正常        没喂 → 复位
+```
+
+四件套在看门狗场景的对应：
+- **电源**：欠压导致的程序异常，看门狗能救回来，但真正的解法是配 BOR/欠压检测。
+- **时钟**：IWDG 用 LSI，而 LSI 频率误差可达 ±30%~50%，算超时必须留足余量。
+- **复位**：复位后要**先读 `RCC_CSR` 判断复位来源**，否则你永远不知道产品在现场偷偷重启了多少次。
+- **引脚复用**：看门狗不占引脚，但常配合一个"故障指示灯"或日志串口输出复位原因。
+
+## 最小可运行例程
+
+IWDG 配置与超时计算（STM32F1，LSI ≈ 40kHz）：
+
+```c
+IWDG_HandleTypeDef hiwdg;
+
+/* 超时公式：T = (4 × 2^PR) × (RLR + 1) / f_LSI
+   取 PR = IWDG_PRESCALER_64（分频 64），RLR = 1249：
+   T = 64 × 1250 / 40000 = 2.0 秒                            */
+void watchdog_init(void)
+{
+    hiwdg.Instance       = IWDG;
+    hiwdg.Init.Prescaler = IWDG_PRESCALER_64;
+    hiwdg.Init.Reload    = 1249;
+    HAL_IWDG_Init(&hiwdg);      /* 一旦启动，软件无法再关闭它 */
+}
+
+/* 喂狗 */
+#define FEED_DOG()   HAL_IWDG_Refresh(&hiwdg)
+```
+
+判断上电原因，把"偷偷重启"暴露出来：
+
+```c
+typedef enum { RST_POWER_ON, RST_PIN, RST_IWDG, RST_WWDG, RST_SOFT, RST_LOWPWR } rst_src_t;
+
+rst_src_t get_reset_source(void)
+{
+    rst_src_t src = RST_POWER_ON;
+
+    if      (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST)) src = RST_IWDG;
+    else if (__HAL_RCC_GET_FLAG(RCC_FLAG_WWDGRST)) src = RST_WWDG;
+    else if (__HAL_RCC_GET_FLAG(RCC_FLAG_SFTRST))  src = RST_SOFT;
+    else if (__HAL_RCC_GET_FLAG(RCC_FLAG_PINRST))  src = RST_PIN;
+    else if (__HAL_RCC_GET_FLAG(RCC_FLAG_LPWRRST)) src = RST_LOWPWR;
+
+    __HAL_RCC_CLEAR_RESET_FLAGS();   /* 必须清，否则标志会一直留着 */
+    return src;
+}
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    MX_USART1_UART_Init();
+
+    if (get_reset_source() == RST_IWDG) {
+        printf("[WARN] 上次是被看门狗复位的！检查是哪个模块卡死\r\n");
+        log_fault_to_flash();      /* 把现场记录下来，供售后分析 */
+    }
+
+    watchdog_init();
+    ...
+}
+```
+
+**软件看门狗（多模块签到制）**——真实项目里最实用的写法。只有所有关键模块都在各自周期内报到，才允许喂硬件狗：
+
+```c
+/* 每个模块占一个 bit，全部置位才喂狗 */
+typedef enum {
+    MOD_SENSOR  = (1u << 0),
+    MOD_COMM    = (1u << 1),
+    MOD_CONTROL = (1u << 2),
+    MOD_ALL     = MOD_SENSOR | MOD_COMM | MOD_CONTROL
+} mod_bit_t;
+
+static volatile uint32_t s_checkin = 0;
+
+/* 各模块在自己的循环里调用 */
+void wdg_checkin(mod_bit_t who) { s_checkin |= who; }
+
+/* 由一个高优先级定时器中断（比如每 500ms）统一裁决 */
+void wdg_tick_500ms(void)
+{
+    if ((s_checkin & MOD_ALL) == MOD_ALL) {
+        FEED_DOG();          /* 全员到齐才喂 */
+        s_checkin = 0;       /* 清零，进入下一轮考核 */
+    }
+    /* 有模块没签到 → 不喂 → 2 秒后 IWDG 复位整机 */
+}
+```
+
+FreeRTOS 环境下同理，用一个低优先级的守护任务轮询各任务的心跳时间戳：
+
+```c
+void vWatchdogTask(void *pv)
+{
+    for (;;) {
+        TickType_t now = xTaskGetTickCount();
+        bool healthy = true;
+
+        for (int i = 0; i < TASK_NUM; i++) {
+            /* 任一任务超过 3 秒没更新心跳，就判定异常 */
+            if (now - g_heartbeat[i] > pdMS_TO_TICKS(3000)) healthy = false;
+        }
+
+        if (healthy) HAL_IWDG_Refresh(&hiwdg);
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+```
+
+## 易错点
+
+- **在中断里无脑喂狗**：定时器中断照常运行、主循环早死了，狗被喂得好好的，系统却是僵尸状态。喂狗动作必须与"业务真的在推进"绑定。
+- **喂狗周期贴着超时值**：LSI 误差可达 ±50%，若超时 2 秒就该在 500ms 左右喂一次，留足余量。
+- **忘了在长耗时操作前处理**：Flash 擦除、大批量传输可能耗时几百毫秒，要么中途喂狗，要么临时加大超时。
+- **调试时被反复复位**：应在 DBGMCU 里冻结看门狗，CubeMX 的 `Debug Freeze` 选项或 `__HAL_DBGMCU_FREEZE_IWDG()`。
+- **不查复位标志**：产品在现场每天重启十次而你毫不知情，这是最常见的隐性质量事故。
+- **用看门狗掩盖 bug**：狗只是兜底，不是修 bug 的手段。每次被咬都应当作严重缺陷追查根因。
+- **进入 Stop/Standby 前忘了 IWDG 仍在跑**：IWDG 在低功耗模式下依然计数，会把你从休眠中"复位醒来"，需要重新规划超时或改用 RTC 方案。
+- **IWDG 启动后想关**：硬件设计上不可关闭，只能复位。开发阶段先用宏控制是否启用。
+
+## 练习
+
+1. 配置一个 2 秒超时的 IWDG，在主循环里人为制造死循环，观察复位现象与串口输出的复位来源。
+2. 实现上文的多模块签到机制，故意让某一个模块停止签到，验证整机是否在预期时间内复位。
+3. 计算 WWDG 在 APB1 = 36MHz 下的窗口上下限，写一段"喂太早"的代码验证它同样会复位。
+4. 把复位次数与复位原因写入 Flash 的一小块区域，做成简易的黑匣子，重启后能打印历史记录。
+
+## 小结
+
+看门狗是产品可靠性的底线，但它是**兜底**而非**免死金牌**。正确姿势是：硬件狗超时留足余量、喂狗动作与业务活性强绑定、多模块用签到制、复位后必查复位来源并记录现场。做到这四条，你的设备才敢真的放到无人值守的现场去跑。
+
+## 延伸阅读
+
+- 上一篇：[低功耗模式](/docs/嵌入式开发/单片机MCU/低功耗模式)
+- 中断优先级会影响喂狗时机：[GPIO 与中断](/docs/嵌入式开发/单片机MCU/GPIO与中断)
+- 定时喂狗的时基：[定时器与 PWM](/docs/嵌入式开发/单片机MCU/定时器与PWM)
+- 卡死常源于栈溢出：[内存管理与栈溢出](/docs/嵌入式开发/RTOS与固件/内存管理与栈溢出)
+- 复位后的现场分析：[固件烧录与调试](/docs/嵌入式开发/RTOS与固件/固件烧录与调试)
+- OTA 升级期间的看门狗策略：[固件 OTA 升级](/docs/嵌入式开发/RTOS与固件/固件OTA升级)

@@ -43,8 +43,16 @@ date: 2017-06-12
 
 ---
 
+---
+
+---
+
+---
+
+---
+
 ## 延伸阅读（知识库）
 
 - [Transformer](/docs/人工智能/深度学习/序列处理/Transformer)
-- [Vision Transformer](/docs/人工智能/深度学习/序列处理/Vision Transformer) — 把图像切成 patch 当作 token，用纯 Transformer 做图像分类——CV 与 NLP 架构大一统的开端。
+- [Vision Transformer](/docs/人工智能/深度学习/序列处理/Vision Transformer) — 把图像切成 patch 当作 token，用纯 Transformer 做图像分类——含完整可运行实现、归纳偏置分析与 CIFAR-10 训练脚本。
 - [LSTM](/docs/人工智能/深度学习/序列处理/LSTM)

@@ -1,0 +1,269 @@
+---
+title: "Modbus 协议"
+sidebar_position: 5
+---
+
+# Modbus 协议
+
+Modbus 诞生于 1979 年，至今仍是工业现场**最通用的设备语言**。PLC、变频器、电表、温控器、传感器网关——几乎所有工业设备都支持它。它简单到可以在一页纸上说完，却能撑起整个工厂的数据采集。
+
+## 学习目标
+
+- 掌握 Modbus 的四类数据模型与对应功能码。
+- 分清 RTU / ASCII / TCP 三种传输格式的帧结构差异。
+- 会手工构造并校验一帧 Modbus RTU 报文（含 CRC16）。
+- 理解 RS485 半双工的收发切换时序，这是最常见的踩坑点。
+- 能实现一个基本可用的 Modbus RTU 从机。
+
+## 核心直觉
+
+### 直觉一：Modbus 只有"读/写寄存器"这一件事
+
+所有 Modbus 通信都可以理解成：**主机对从机的一张大表进行读写**。这张表分四个区：
+
+| 数据区 | 读写 | 单位 | 典型用途 | 常用功能码 |
+|--------|------|------|----------|------------|
+| 线圈 Coils | 读写 | 1 bit | 继电器输出、开关量控制 | 01 读 / 05 写单个 / 15 写多个 |
+| 离散输入 Discrete Inputs | 只读 | 1 bit | 按钮、限位开关状态 | 02 读 |
+| 输入寄存器 Input Registers | 只读 | 16 bit | 温度、电压等测量值 | 04 读 |
+| 保持寄存器 Holding Registers | 读写 | 16 bit | 设定值、参数配置 | 03 读 / 06 写单个 / 16 写多个 |
+
+**记忆口诀**：`0x` 开头是线圈（可读写位），`1x` 是离散输入（只读位），`3x` 是输入寄存器（只读字），`4x` 是保持寄存器（可读写字）。工程师之间说"4 万区的 40001"，指的就是保持寄存器 0 号。
+
+### 直觉二：三种传输格式的取舍
+
+```text
+Modbus RTU（最常用）
+  [从机地址 1B][功能码 1B][数据 N B][CRC16 2B]
+  紧凑二进制，靠 3.5 个字符时间的静默间隔来分帧
+  介质：RS485 / RS232
+
+Modbus ASCII
+  [:][地址 2char][功能码 2char][数据][LRC 2char][CR][LF]
+  可读性好但长度翻倍，现在很少用了
+
+Modbus TCP
+  [事务ID 2B][协议ID 2B][长度 2B][单元ID 1B][功能码 1B][数据 N B]
+  跑在 TCP:502 上，去掉了 CRC（TCP 自带校验），加了 MBAP 头
+```
+
+**RTU 分帧的关键**：Modbus 没有帧头帧尾标志，靠**时间**分帧。相邻两帧之间必须静默至少 3.5 个字符时间，帧内字符间隔不得超过 1.5 个字符时间。
+
+```text
+9600bps、8N1 → 1 字符 = 11 bit / 9600 ≈ 1.146ms
+  t3.5 ≈ 4.01ms   （帧间隔，超过它就认为新帧开始）
+  t1.5 ≈ 1.72ms   （帧内最大间隔，超过它认为帧损坏）
+
+注意：波特率高于 19200 时，标准规定固定用 t3.5 = 1.75ms、t1.5 = 750µs
+```
+
+### 直觉三：RS485 是半双工，方向切换是头号坑
+
+```text
+       ┌──────────┐
+MCU ───┤ MAX485   ├─── A/B 差分线
+  TX   │          │
+  RX   │  DE/RE ──┼─── 由 GPIO 控制方向
+       └──────────┘
+
+DE=1 → 发送模式（此时收不到）
+DE=0 → 接收模式
+
+时序要求：
+1. 拉高 DE
+2. 发送数据
+3. 【必须等最后一个 bit 真正移出去】← 关键！
+4. 拉低 DE
+
+如果第 3 步用了"HAL_UART_Transmit 返回就拉低"，
+最后一两个字节会被硬生生截断，现象是"从机偶尔不回复"。
+正确做法是等 TC（Transmission Complete）标志，而不是 TXE。
+```
+
+### 排查四件套的 Modbus 版本
+
+- **电源**：RS485 收发器供电是否稳定？隔离型收发器的隔离电源有没有起来？
+- **时钟**：波特率误差超过 2% 就会误码，检查 UART 时钟源与分频。
+- **复位**：从机上电后需要时间初始化，主机轮询要有重试机制。
+- **引脚复用**：DE/RE 引脚配置、A/B 线接反（接反的现象是完全收不到，用万用表测静态电压 A 应略高于 B）。
+
+## 最小可运行例程
+
+**CRC16 计算（Modbus 专用多项式 0xA001）**
+
+```c
+/* Modbus RTU 的 CRC16，注意是低字节在前发送 */
+uint16_t modbus_crc16(const uint8_t *buf, uint16_t len)
+{
+    uint16_t crc = 0xFFFF;
+
+    for (uint16_t i = 0; i < len; i++) {
+        crc ^= buf[i];
+        for (uint8_t j = 0; j < 8; j++) {
+            if (crc & 0x0001) crc = (crc >> 1) ^ 0xA001;
+            else              crc = (crc >> 1);
+        }
+    }
+    return crc;   /* 发送时：先发 crc & 0xFF，再发 crc >> 8 */
+}
+```
+
+**手工解析一帧真实报文**（读从机 0x01 的保持寄存器 40001 起共 2 个）：
+
+```text
+主机请求：
+  01  03  00 00  00 02  C4 0B
+  │   │   │      │      └── CRC16（低字节 C4 在前）
+  │   │   │      └───────── 寄存器数量 = 2
+  │   │   └──────────────── 起始地址 = 0x0000（即 40001）
+  │   └──────────────────── 功能码 03 = 读保持寄存器
+  └──────────────────────── 从机地址 = 1
+
+从机正常应答：
+  01  03  04  00 7B  01 C8  BA 8D
+  │   │   │   │      │      └── CRC16
+  │   │   │   │      └───────── 寄存器2 = 0x01C8 = 456
+  │   │   │   └──────────────── 寄存器1 = 0x007B = 123
+  │   │   └──────────────────── 字节数 = 4
+  │   └──────────────────────── 功能码回显
+  └──────────────────────────── 从机地址回显
+
+从机异常应答（例如地址越界）：
+  01  83  02  C0 F1
+      │   └── 异常码 02 = 非法数据地址
+      └────── 功能码 | 0x80 = 异常标志
+```
+
+**RS485 收发方向的正确控制**
+
+```c
+#define RS485_TX_EN()  HAL_GPIO_WritePin(DE_GPIO_Port, DE_Pin, GPIO_PIN_SET)
+#define RS485_RX_EN()  HAL_GPIO_WritePin(DE_GPIO_Port, DE_Pin, GPIO_PIN_RESET)
+
+void rs485_send(const uint8_t *buf, uint16_t len)
+{
+    RS485_TX_EN();
+    /* 收发器方向切换需要建立时间，某些芯片要几百 ns */
+    __NOP(); __NOP(); __NOP();
+
+    HAL_UART_Transmit(&huart2, (uint8_t *)buf, len, 100);
+
+    /* 关键：等待 TC 标志，确认最后一个 bit 已经移出移位寄存器 */
+    while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) == RESET) { }
+
+    RS485_RX_EN();   /* 立刻切回接收，别让从机的回复丢在门外 */
+}
+```
+
+**一个最小可用的 Modbus RTU 从机（支持功能码 03 / 06）**
+
+```c
+#define SLAVE_ADDR      0x01
+#define HOLD_REG_NUM    16
+
+static uint16_t g_hold_reg[HOLD_REG_NUM];   /* 保持寄存器区 */
+static uint8_t  g_rx_buf[256], g_tx_buf[256];
+
+/* 异常应答 */
+static void send_exception(uint8_t func, uint8_t code)
+{
+    g_tx_buf[0] = SLAVE_ADDR;
+    g_tx_buf[1] = func | 0x80;
+    g_tx_buf[2] = code;
+    uint16_t crc = modbus_crc16(g_tx_buf, 3);
+    g_tx_buf[3] = crc & 0xFF;
+    g_tx_buf[4] = crc >> 8;
+    rs485_send(g_tx_buf, 5);
+}
+
+/* 收到一帧完整报文后调用（帧边界由 t3.5 空闲中断判定） */
+void modbus_handle_frame(uint16_t len)
+{
+    if (len < 4) return;                       /* 太短，丢弃 */
+    if (g_rx_buf[0] != SLAVE_ADDR && g_rx_buf[0] != 0x00) return;  /* 不是发给我的 */
+
+    /* 校验 CRC：把收到的 CRC 与重算结果比对 */
+    uint16_t crc_recv = g_rx_buf[len - 2] | (g_rx_buf[len - 1] << 8);
+    if (crc_recv != modbus_crc16(g_rx_buf, len - 2)) return;   /* 静默丢弃，不回复 */
+
+    uint8_t  func  = g_rx_buf[1];
+    uint16_t addr  = (g_rx_buf[2] << 8) | g_rx_buf[3];
+    uint16_t count = (g_rx_buf[4] << 8) | g_rx_buf[5];
+
+    switch (func) {
+    case 0x03: {                               /* 读保持寄存器 */
+        if (count == 0 || count > 125)      { send_exception(func, 0x03); return; }
+        if (addr + count > HOLD_REG_NUM)    { send_exception(func, 0x02); return; }
+
+        g_tx_buf[0] = SLAVE_ADDR;
+        g_tx_buf[1] = 0x03;
+        g_tx_buf[2] = count * 2;
+        for (uint16_t i = 0; i < count; i++) {
+            g_tx_buf[3 + i * 2] = g_hold_reg[addr + i] >> 8;    /* 大端序！ */
+            g_tx_buf[4 + i * 2] = g_hold_reg[addr + i] & 0xFF;
+        }
+        uint16_t n = 3 + count * 2;
+        uint16_t c = modbus_crc16(g_tx_buf, n);
+        g_tx_buf[n] = c & 0xFF; g_tx_buf[n + 1] = c >> 8;
+        rs485_send(g_tx_buf, n + 2);
+        break;
+    }
+    case 0x06: {                               /* 写单个保持寄存器 */
+        if (addr >= HOLD_REG_NUM) { send_exception(func, 0x02); return; }
+        g_hold_reg[addr] = count;              /* 此处 count 位置其实是写入值 */
+        rs485_send(g_rx_buf, len);             /* 写单个：原样回显整帧 */
+        break;
+    }
+    default:
+        send_exception(func, 0x01);            /* 01 = 非法功能码 */
+        break;
+    }
+}
+
+/* 用 UART 空闲中断（IDLE）做帧边界检测，天然符合 t3.5 语义 */
+void USART2_IRQHandler(void)
+{
+    if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE)) {
+        __HAL_UART_CLEAR_IDLEFLAG(&huart2);
+        HAL_UART_DMAStop(&huart2);
+        uint16_t len = RX_BUF_SIZE - __HAL_DMA_GET_COUNTER(huart2.hdmarx);
+        modbus_handle_frame(len);
+        HAL_UART_Receive_DMA(&huart2, g_rx_buf, RX_BUF_SIZE);
+    }
+    HAL_UART_IRQHandler(&huart2);
+}
+```
+
+## 易错点
+
+- **地址偏移搞混**：文档里的 40001 对应协议中的地址 0x0000，差 1。这是 Modbus 世界头号误解来源，调试时先用一个已知寄存器验证偏移。
+- **RS485 方向切换过早**：只等 TXE 不等 TC，尾字节被吃掉。现象是"短帧正常、长帧偶尔失败"。
+- **CRC 字节序发反**：Modbus 数据是大端序（高字节在前），但 **CRC 是小端序（低字节在前）**，这个不一致坑了无数人。
+- **CRC 错却回了异常帧**：标准规定 CRC 错误应**静默丢弃、不做任何回复**，否则会在总线上制造更多冲突。
+- **没加终端电阻和偏置电阻**：RS485 总线两端各需 120Ω 终端；空闲时总线浮空会导致误触发，需要上下拉偏置（如 A 上拉 560Ω、B 下拉 560Ω）。
+- **多从机地址冲突**：两个从机同地址会同时应答，波形叠加成乱码。上线前用地址扫描确认唯一。
+- **轮询周期太快**：从机来不及处理就发下一帧，要给足处理时间并设合理超时（一般 100~1000ms）。
+- **32 位数据的字序不统一**：Modbus 原生只有 16 位寄存器，浮点数和 32 位整数需要占两个寄存器，但**高字在前还是低字在前没有统一标准**。对接不同厂家设备时必须实测确认，四种组合（ABCD/CDAB/BADC/DCBA）都有人用。
+- **忽略广播地址 0**：地址 0 是广播，所有从机执行但**都不应答**。若你的从机对广播也回复，总线会瞬间冲突。
+
+## 练习
+
+1. 手工计算 `01 03 00 00 00 02` 的 CRC16，验证是否等于 `C4 0B`。
+2. 用 USB 转 RS485 模块 + Modbus Poll（或开源的 mbpoll）连接你实现的从机，完成读写测试。
+3. 扩展上文从机代码，支持功能码 0x10（写多个寄存器）与 0x01/0x05（线圈操作）。
+4. 实现浮点数的读取：把一个 float 拆成两个寄存器，分别测试 ABCD 与 CDAB 两种字序，观察上位机显示差异。
+5. 在总线上挂三个从机，用逻辑分析仪抓取一次完整轮询，测量帧间隔是否满足 t3.5 要求。
+
+## 小结
+
+Modbus 的协议本身极简——**四类数据区 + 十几个功能码 + CRC16**，一天就能学完。真正的工程难点在物理层与时序：RS485 的方向切换、终端与偏置电阻、t3.5 帧边界判定、以及各厂家在 32 位字序上的各行其是。把这些细节处理好，你写的从机就能挂进任何一条工业总线。
+
+## 延伸阅读
+
+- 上一篇：[无线通信 WiFi / BLE / LoRa](/docs/嵌入式开发/通信协议/无线通信WiFi_BLE_LoRa)
+- 串口基础：[UART / SPI / I2C 详解](/docs/嵌入式开发/通信协议/UART_SPI_I2C详解)
+- 板内总线深入：[I2C 与 SPI 深水区](/docs/嵌入式开发/通信协议/I2C与SPI深水区)
+- 工业总线对照：[CAN 总线与无线通信](/docs/嵌入式开发/通信协议/CAN总线与无线通信)
+- 长线干扰与防护：[EMC 基础](/docs/嵌入式开发/硬件与电路基础/EMC基础)
+- 抓帧与时序验证：[示波器与万用表使用](/docs/嵌入式开发/硬件与电路基础/示波器与万用表使用)
+- 协议栈跑在任务里：[任务间通信](/docs/嵌入式开发/RTOS与固件/任务间通信)

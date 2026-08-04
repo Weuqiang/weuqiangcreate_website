@@ -1,0 +1,279 @@
+---
+title: "数据库概念"
+sidebar_position: 6
+---
+
+# 数据库概念
+
+程序退出后数据就没了——除非你把它存起来。存成文件当然可以，但当数据量上百万、多个用户同时读写、还要保证「转账时钱不会凭空消失」时，手写文件读写就崩溃了。数据库就是为解决这一整类问题而生的**专用软件**。
+
+## 学习目标
+
+- 说清关系模型的三个核心概念：**关系（表）、元组（行）、属性（列）**，以及主键/外键的作用。
+- 写出增删改查与多表连接的 SQL，理解 SQL 的执行顺序为何与书写顺序不同。
+- 说清 ACID 四个特性，并解释事务隔离级别与三类并发异常的对应关系。
+- 理解索引为什么用 B+ 树、什么时候索引会失效。
+- 知道范式与反范式的取舍，以及何时该选 NoSQL。
+
+## 核心直觉
+
+### 关系模型：用「表」表达一切
+
+1970 年 Codd 提出关系模型，其核心洞察是：**任何数据关系都能用二维表 + 集合运算表达**。
+
+| 数学术语 | 数据库术语 | 直观理解 |
+|---|---|---|
+| 关系（Relation） | 表（Table） | 一张二维表格 |
+| 元组（Tuple） | 行（Row / Record） | 一条记录 |
+| 属性（Attribute） | 列（Column / Field） | 一个字段 |
+| 域（Domain） | 数据类型 | 该列的取值范围 |
+| 基数（Cardinality） | 行数 | — |
+
+两个关键约束把散乱的表织成网：
+
+- **主键（Primary Key）**：唯一标识一行，不可重复、不可为空。
+- **外键（Foreign Key）**：指向另一张表的主键，用来表达「属于」关系，并由数据库**强制保证引用完整性**（不能指向不存在的记录）。
+
+三种实体关系的建模方式：
+
+| 关系类型 | 建模方式 | 例子 |
+|---|---|---|
+| 一对一 | 任一方加外键（或合并成一张表） | 用户 ↔ 身份证 |
+| 一对多 | **「多」的一方加外键** | 用户 → 多个订单 |
+| 多对多 | 引入**中间表**，存两个外键 | 学生 ↔ 课程（选课表） |
+
+多对多必须用中间表，这是关系模型最重要的建模技巧——因为一个字段装不下多个值。
+
+### SQL：声明式的威力
+
+SQL 最迷人的地方在于它是**声明式**的：你说「我要什么」，而不是「怎么做」。`SELECT ... WHERE age > 18` 不需要你写循环、判断、收集结果——数据库的**查询优化器**会自己决定用不用索引、多表按什么顺序连接。
+
+但这也带来一个常见困惑：**SQL 的执行顺序与书写顺序完全不同**。
+
+```text
+书写顺序：SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT
+执行顺序：FROM  → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT
+            ①       ②        ③         ④        ⑤        ⑥        ⑦
+```
+
+理解这个顺序能解释两个高频问题：
+
+- **为什么 `WHERE` 里不能用 `SELECT` 中定义的别名？** 因为 `WHERE`（②）比 `SELECT`（⑤）先执行，那时别名还不存在。
+- **`WHERE` 和 `HAVING` 有什么区别？** `WHERE` 在分组**前**过滤原始行，`HAVING` 在分组**后**过滤聚合结果。所以 `HAVING COUNT(*) > 3` 合法，`WHERE COUNT(*) > 3` 不合法。
+
+### ACID：事务的四条承诺
+
+事务（Transaction）是一组「要么全做、要么全不做」的操作。经典例子是转账：扣 A 的钱、加 B 的钱，两步必须捆绑。
+
+| 特性 | 含义 | 转账例子 | 实现手段 |
+|---|---|---|---|
+| **A**tomicity 原子性 | 全成功或全回滚 | 不会扣了 A 的钱却没加给 B | undo log |
+| **C**onsistency 一致性 | 从一个合法状态到另一个合法状态 | 转账前后总金额不变 | 约束 + 其余三者共同保证 |
+| **I**solation 隔离性 | 并发事务互不干扰 | 两笔转账同时进行不会互相污染 | 锁 / MVCC |
+| **D**urability 持久性 | 提交后即使断电也不丢 | 显示成功就一定成功 | redo log + 刷盘 |
+
+**隔离级别**是性能与正确性的权衡旋钮。级别越高越安全，但并发度越低：
+
+| 隔离级别 | 脏读 | 不可重复读 | 幻读 | 说明 |
+|---|---|---|---|---|
+| 读未提交 Read Uncommitted | ❌ 可能 | ❌ 可能 | ❌ 可能 | 几乎不用 |
+| 读已提交 Read Committed | ✅ 避免 | ❌ 可能 | ❌ 可能 | Oracle/PostgreSQL 默认 |
+| 可重复读 Repeatable Read | ✅ | ✅ | ❌ 可能（MySQL 用间隙锁基本避免） | **MySQL InnoDB 默认** |
+| 串行化 Serializable | ✅ | ✅ | ✅ | 最安全，性能最差 |
+
+三类异常的区别：
+
+- **脏读**：读到了另一个事务**尚未提交**的数据（对方回滚后，你读到的是根本不存在的值）。
+- **不可重复读**：同一事务内两次读**同一行**，结果不同（因为期间别人 UPDATE 并提交了）。
+- **幻读**：同一事务内两次读**同一范围**，行数不同（因为期间别人 INSERT 了新行）。
+
+### 索引：为什么是 B+ 树
+
+没有索引，查询就是全表扫描 $O(n)$。索引本质是「为某一列额外维护一个有序结构」，把查找降到 $O(\log n)$。
+
+**为什么不用哈希表？** 哈希只支持等值查询，不支持 `>`、`BETWEEN`、`ORDER BY`。
+
+**为什么不用红黑树？** 因为磁盘的代价模型和内存完全不同。磁盘按**块**（4KB～16KB）读取，一次 IO 约 0.1～10 毫秒，比内存访问慢 10 万倍。所以索引结构的目标不是「减少比较次数」，而是**减少 IO 次数**，也就是**降低树高**。
+
+| 结构 | 每节点存的键数 | 1000 万行的树高 | 磁盘 IO 次数 |
+|---|---|---|---|
+| 红黑树（二叉） | 1 | $\log_2 10^7 \approx 24$ | ~24 次 |
+| **B+ 树**（阶 = 500） | ~500 | $\log_{500} 10^7 \approx 3$ | **~3 次** |
+
+B+ 树相比 B 树还有两个专门为数据库设计的特点：
+
+1. **数据只存在叶子节点**，内部节点只存索引键 → 内部节点能塞下更多键 → 树更矮。
+2. **叶子节点用链表串起来** → 范围查询 `BETWEEN 10 AND 100` 只需定位起点后顺着链表扫，无需回到根部。
+
+## 最小示例
+
+用 Python 内置的 `sqlite3` 完整跑一遍（无需安装任何东西）：
+
+```python
+import sqlite3
+
+conn = sqlite3.connect(":memory:")      # 内存数据库，退出即销毁
+conn.execute("PRAGMA foreign_keys = ON")  # SQLite 需显式开启外键约束
+cur = conn.cursor()
+
+# ---- 1. 建表：一对多（用户 → 订单）----
+cur.executescript("""
+CREATE TABLE users (
+    id      INTEGER PRIMARY KEY,
+    name    TEXT NOT NULL,
+    city    TEXT
+);
+
+CREATE TABLE orders (
+    id       INTEGER PRIMARY KEY,
+    user_id  INTEGER NOT NULL,
+    amount   REAL NOT NULL CHECK (amount > 0),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+""")
+
+# ---- 2. 插入数据 ----
+cur.executemany("INSERT INTO users VALUES (?, ?, ?)", [
+    (1, "阿明", "北京"), (2, "小红", "上海"), (3, "老王", "北京"),
+])
+cur.executemany("INSERT INTO orders VALUES (?, ?, ?)", [
+    (1, 1, 120.0), (2, 1, 80.5), (3, 2, 300.0), (4, 3, 45.0), (5, 1, 60.0),
+])
+
+# ---- 3. 外键约束生效：插入不存在的 user_id 会失败 ----
+try:
+    cur.execute("INSERT INTO orders VALUES (99, 999, 10.0)")
+except sqlite3.IntegrityError as e:
+    print("外键约束拦截:", e)          # FOREIGN KEY constraint failed
+
+# ---- 4. JOIN + GROUP BY + HAVING ----
+cur.execute("""
+SELECT u.name, u.city, COUNT(o.id) AS cnt, SUM(o.amount) AS total
+FROM users u
+JOIN orders o ON u.id = o.user_id
+WHERE u.city = '北京'
+GROUP BY u.id
+HAVING SUM(o.amount) > 100
+ORDER BY total DESC
+""")
+for row in cur.fetchall():
+    print(row)
+# ('阿明', '北京', 3, 260.5)
+# 老王只有 45.0，被 HAVING 过滤掉了
+
+# ---- 5. 事务：原子性演示 ----
+def transfer(conn, from_order, to_order, amount):
+    try:
+        conn.execute("BEGIN")
+        conn.execute("UPDATE orders SET amount = amount - ? WHERE id = ?",
+                     (amount, from_order))
+        conn.execute("UPDATE orders SET amount = amount + ? WHERE id = ?",
+                     (amount, to_order))
+        conn.execute("COMMIT")
+        return True
+    except sqlite3.Error as e:
+        conn.execute("ROLLBACK")
+        print("事务回滚:", e)
+        return False
+
+before = conn.execute("SELECT SUM(amount) FROM orders").fetchone()[0]
+transfer(conn, 1, 2, 1000)              # 会让 order 1 变成负数，触发 CHECK
+after = conn.execute("SELECT SUM(amount) FROM orders").fetchone()[0]
+print(f"总额 {before} → {after}（回滚后不变）")
+
+# ---- 6. 索引与执行计划 ----
+cur.execute("EXPLAIN QUERY PLAN SELECT * FROM orders WHERE user_id = 1")
+print("建索引前:", cur.fetchall())
+
+cur.execute("CREATE INDEX idx_orders_user ON orders(user_id)")
+cur.execute("EXPLAIN QUERY PLAN SELECT * FROM orders WHERE user_id = 1")
+print("建索引后:", cur.fetchall())
+# 建索引前: [(..., 'SCAN orders')]                    ← 全表扫描
+# 建索引后: [(..., 'SEARCH orders USING INDEX ...')]  ← 走索引
+
+conn.close()
+```
+
+**手算这段 SQL 的执行过程**（第 4 步的查询）：
+
+| 阶段 | 操作 | 中间结果行数 |
+|---|---|---|
+| ① FROM + JOIN | users(3) 与 orders(5) 按 user_id 连接 | 5 行 |
+| ② WHERE | 过滤 `city = '北京'`（阿明 3 单 + 老王 1 单） | 4 行 |
+| ③ GROUP BY | 按 u.id 分组 | 2 组（阿明、老王） |
+| ④ HAVING | 过滤 `SUM > 100`（阿明 260.5 ✅，老王 45.0 ❌） | 1 组 |
+| ⑤ SELECT | 取出 name, city, cnt, total | 1 行 |
+| ⑥ ORDER BY | 按 total 降序 | 1 行 |
+
+最终输出 `('阿明', '北京', 3, 260.5)`，与程序结果一致。
+
+### 范式与反范式
+
+**范式（Normal Form）** 的目的是消除数据冗余，避免更新异常。
+
+| 范式 | 要求 | 违反的后果 |
+|---|---|---|
+| 1NF | 每个字段都是**原子值**，不可再分 | 一个字段存 `"语文,数学,英语"` → 无法单独查询/统计 |
+| 2NF | 满足 1NF，且非主键字段**完全依赖**整个主键 | 联合主键下的部分依赖 → 冗余 |
+| 3NF | 满足 2NF，且非主键字段之间**无传递依赖** | 订单表存了「用户名」，改名要更新所有订单 |
+
+**但范式不是越高越好。** 高范式意味着表更多、JOIN 更多，而 JOIN 在大数据量下很贵。所以实践中常做**反范式（Denormalization）**——故意冗余部分字段换取查询性能。
+
+典型例子：订单表冗余一份「下单时的用户名和地址」。这不仅是性能优化，更是**业务正确性要求**——用户后来改了名字，历史订单也应该显示当时的名字。
+
+### 关系型 vs NoSQL
+
+| 维度 | 关系型（MySQL/PostgreSQL） | NoSQL（MongoDB/Redis/Cassandra） |
+|---|---|---|
+| 数据模型 | 固定 schema 的表 | 文档 / 键值 / 列族 / 图 |
+| 一致性 | 强一致（ACID） | 多为最终一致（BASE） |
+| 扩展方式 | 纵向为主（加配置） | 横向为主（加机器） |
+| JOIN | 原生支持 | 通常不支持或很弱 |
+| 适合 | 事务、复杂查询、强关系 | 海量数据、高并发读写、schema 多变 |
+
+**CAP 定理**：分布式系统在**一致性（C）、可用性（A）、分区容错性（P）** 三者中最多同时满足两个。由于网络分区在分布式环境中不可避免，实际是在 CP 与 AP 之间选择——传统数据库偏 CP，多数 NoSQL 偏 AP。
+
+## 易错点
+
+1. **`SELECT *` 用在生产代码里。** 会传输不需要的列、无法命中覆盖索引、表结构变更时代码可能出错。明确列出需要的字段。
+
+2. **字符串拼接 SQL 导致注入。** `f"SELECT * FROM users WHERE name = '{name}'"` 是致命漏洞——传入 `' OR '1'='1` 就能绕过。**永远使用参数化查询**（上面代码里的 `?` 占位符）。
+
+3. **索引不是越多越好。** 每个索引都会拖慢 `INSERT`/`UPDATE`/`DELETE`（要同步维护索引），并占用额外空间。只给**高频查询条件、区分度高**的列建索引。性别这种只有两个值的列建索引几乎无用。
+
+4. **索引失效的常见场景**：在索引列上使用函数（`WHERE YEAR(created_at) = 2024`）、以通配符开头的模糊匹配（`LIKE '%abc'`）、隐式类型转换（字符串列传数字）、联合索引未遵循**最左前缀原则**。
+
+5. **`NULL` 的三值逻辑。** SQL 中 `NULL` 表示「未知」，`NULL = NULL` 的结果是 `NULL` 而不是 `TRUE`。判断空值必须用 `IS NULL` / `IS NOT NULL`。同样，`COUNT(column)` 会跳过 NULL，而 `COUNT(*)` 不会。
+
+6. **N+1 查询问题。** 先查 100 个用户，再循环里对每个用户查一次订单 → 101 次数据库往返。应该用一次 `JOIN` 或 `WHERE user_id IN (...)` 解决。这是 ORM 使用中最常见的性能杀手。
+
+7. **忘记事务边界。** 多步写操作没包在事务里，中途失败会留下不一致的中间状态。
+
+8. **误以为「事务 = 加锁」。** 现代数据库（MySQL InnoDB、PostgreSQL）大量使用 **MVCC（多版本并发控制）**：读操作读快照、不加锁，只有写才加锁。这是「读不阻塞写、写不阻塞读」的关键。
+
+## 练习
+
+1. 运行上面的完整代码，然后加一张 `products` 表和一张 `order_items` 中间表，把「订单 ↔ 商品」建成多对多关系，并写出「统计每个商品的总销量」的 SQL。
+2. 用 `EXPLAIN QUERY PLAN` 对比：在 `users(city)` 上建索引前后，`SELECT * FROM users WHERE city = '北京'` 的执行计划有何不同。
+3. 写出「查出没有任何订单的用户」的三种 SQL 写法：`LEFT JOIN ... IS NULL`、`NOT IN`、`NOT EXISTS`，并说明 `NOT IN` 遇到 NULL 时的坑。
+4. 设计一个博客系统的表结构：用户、文章、标签、评论。要求文章与标签是多对多，评论支持嵌套回复（自引用外键）。画出 ER 图并写出建表语句。
+5. 手动制造一次**脏读**：开两个数据库连接，把隔离级别设为「读未提交」，在事务 A 中 UPDATE 但不提交，在事务 B 中读取。然后改成「读已提交」，观察差异。
+6. 解释为什么下面这条语句在 `created_at` 有索引时仍会全表扫描，并改写它：
+
+   ```sql
+   SELECT * FROM orders WHERE DATE(created_at) = '2024-01-01';
+   ```
+
+## 小结
+
+数据库把「持久化存储」这件事从「读写文件」升级成了一套完整的工程学科。关系模型用**表 + 主外键**把数据结构化，SQL 用**声明式语法**把「怎么查」的负担交给优化器，**ACID** 用日志和锁给出正确性承诺，**B+ 树索引**针对磁盘的块访问特性把查询压到三次 IO。这四块拼图共同回答了一个问题：*如何让多个用户并发地、可靠地、快速地操作海量数据*。日常开发中最值得反复回顾的是三件事——**参数化查询防注入、索引的建与失效、N+1 查询**，它们分别对应安全、性能和架构三个层面最常见的坑。
+
+## 延伸阅读
+
+- [计算机科学导论总览](/docs/计算机科学基础/计算机科学导论) — 返回上一级。
+- [文件系统](/docs/计算机科学基础/计算机科学导论/操作系统/文件系统) — 数据库最终要落到磁盘上，理解块与 IO 是理解索引设计的前提。
+- [内存管理](/docs/计算机科学基础/计算机科学导论/操作系统/内存管理) — 缓冲池与页缓存的原理相通。
+- [平衡树](/docs/计算机科学基础/数据结构与算法/平衡树) — B+ 树与内存平衡树的对比。
+- [哈希表](/docs/计算机科学基础/数据结构与算法/哈希表) — 哈希索引的原理与局限。
+- [软件工程与后端：数据库](/docs/软件工程与后端/后端通识/数据库) — 具体数据库产品的选型与实操。
+- [HTTP 与网络安全](/docs/计算机科学基础/计算机科学导论/计算机网络/HTTP与网络安全) — SQL 注入在 Web 攻击面中的位置。

@@ -1,0 +1,201 @@
+---
+sidebar_position: 12
+title: "向量数据库"
+description: "Embedding、相似度度量、HNSW/IVF 索引与混合检索：手写一个能跑的迷你向量库，再讲清生产选型与调参。"
+---
+
+[检索增强](/docs/人工智能/大模型LLM与应用/检索增强) 里那句「在向量数据库中检索最相似的向量」，底下藏着一整套工程：**怎么把文本变成向量、怎么衡量相似、几百万条向量怎么在毫秒内搜完、召回不准怎么办。** 本篇把这层拆开。
+
+## 学习目标
+
+- 理解 embedding 把「语义相似」变成「空间邻近」的本质。
+- 分清余弦相似度、内积、欧氏距离的关系与适用场景。
+- 说清 HNSW 与 IVF 两类近似最近邻（ANN）索引的取舍。
+- 亲手实现一个含暴力检索与倒排索引的迷你向量库并验算召回率。
+- 掌握混合检索（向量 + BM25）与重排的工程配方。
+
+## 核心直觉
+
+### 语义相似 = 空间邻近
+
+Embedding 模型把一段文本映射成 $d$ 维实数向量（常见 384 / 768 / 1024 / 1536 维）。训练目标让**语义相近的文本在空间中靠近**：「猫」和「猫咪」几乎重合，「猫」和「狗」较近（都是宠物），「猫」和「股票」很远。
+
+于是「找语义最相近的文档」就变成了几何问题：**在向量空间里找最近邻。**
+
+### 三种度量，其实是同一件事
+
+| 度量 | 公式 | 特点 |
+| --- | --- | --- |
+| 余弦相似度 | $\dfrac{a \cdot b}{\lVert a \rVert \lVert b \rVert}$ | 只看方向，忽略长度，文本检索默认选择 |
+| 内积（IP） | $a \cdot b$ | 长度也参与，向量归一化后**等价于余弦** |
+| 欧氏距离 | $\lVert a - b \rVert_2$ | 归一化后与余弦单调等价：$\lVert a-b \rVert^2 = 2 - 2\cos\theta$ |
+
+**结论：只要把向量做 L2 归一化，三者排序结果完全一致。** 生产上普遍做法就是存入前归一化，然后用内积——因为内积计算最快，还能用上 SIMD 指令。
+
+### 为什么需要 ANN 索引
+
+暴力检索（Flat）要把查询向量和库里每一条都算一遍，复杂度 $O(nd)$。100 万条 768 维向量，一次查询就是 7.68 亿次乘加——单机几百毫秒，扛不住高并发。
+
+近似最近邻（ANN）用**牺牲一点点召回率换取几十上百倍加速**：
+
+```text
+Flat（暴力）      召回 100%    慢    适合 10 万条以内
+   ↓
+IVF（倒排）        召回 90~98%  快    先聚类分桶，只搜最近的几个桶
+   ↓
+HNSW（图索引）     召回 95~99%  很快  多层跳表式导航图，内存换速度
+   ↓
+PQ / SQ（量化）    召回下降     省内存 向量压缩，常与 IVF/HNSW 组合
+```
+
+- **IVF**：用 [K-Means](/docs/人工智能/机器学习/聚类算法) 把向量聚成 `nlist` 个桶，查询时只搜最近的 `nprobe` 个桶。`nprobe` 越大越准越慢，是最直观的「精度-速度」旋钮。这与[聚类算法](/docs/人工智能/机器学习/聚类算法)页里「多层聚类缩小搜索范围」讲的是同一件事。
+- **HNSW**：构建多层邻接图，上层稀疏用于「长途跳跃」，下层稠密用于「精细定位」，像地铁换乘：先坐快线到附近区域，再换公交精确到站。参数 `M`（每点连边数）和 `efSearch`（搜索时的候选队列长度）控制质量。
+- **PQ（乘积量化）**：把 768 维切成若干子空间，每段用聚类中心的编号代替，内存可压到 1/10 以上，代价是精度损失。
+
+### 混合检索：向量搜不到关键词
+
+向量检索的软肋是**精确匹配**：型号「XR-2100」、人名、专有缩写，语义模型往往抓不准；而 BM25 这类关键词检索恰好擅长。工程上把两路结果用 **RRF（Reciprocal Rank Fusion）** 融合：
+
+$$
+\text{score}(d) = \sum_{r \in \text{retrievers}} \frac{1}{k + \text{rank}_r(d)}, \quad k \approx 60
+$$
+
+RRF 只用排名不用分数，天然免去了两套打分体系量纲不一致的麻烦。融合后再用 Cross-Encoder 重排 top-50，是当前 RAG 的标准配方。
+
+## 最小示例
+
+### 手写迷你向量库：暴力 + IVF，并验算召回率
+
+```python showLineNumbers
+import numpy as np
+
+rng = np.random.default_rng(42)
+N, D, K = 20000, 64, 10          # 2 万条 64 维向量，取 top-10
+
+def l2_normalize(x):
+    return x / (np.linalg.norm(x, axis=-1, keepdims=True) + 1e-12)
+
+data = l2_normalize(rng.normal(size=(N, D)))
+query = l2_normalize(rng.normal(size=(D,)))
+
+# ---------- 1) 暴力检索：归一化后内积 = 余弦相似度 ----------
+def flat_search(data, q, k=K):
+    scores = data @ q
+    idx = np.argpartition(-scores, k)[:k]
+    return idx[np.argsort(-scores[idx])]
+
+truth = flat_search(data, query)
+print("暴力检索 top-10:", truth[:5], "...")
+
+# ---------- 2) IVF 索引：K-Means 分桶 + 只搜 nprobe 个桶 ----------
+from sklearn.cluster import KMeans
+
+nlist = 100
+km = KMeans(n_clusters=nlist, n_init=3, random_state=0).fit(data)
+buckets = [np.where(km.labels_ == c)[0] for c in range(nlist)]
+
+def ivf_search(q, nprobe, k=K):
+    centroid_scores = km.cluster_centers_ @ q
+    probe = np.argsort(-centroid_scores)[:nprobe]        # 只看最近的几个桶
+    cand = np.concatenate([buckets[c] for c in probe if len(buckets[c])])
+    scores = data[cand] @ q
+    top = cand[np.argsort(-scores)[:k]]
+    return top, len(cand)
+
+for nprobe in [1, 3, 5, 10, 30]:
+    got, scanned = ivf_search(query, nprobe)
+    recall = len(set(got) & set(truth)) / K
+    print(f"nprobe={nprobe:<3} 扫描 {scanned:>6} 条 "
+          f"({scanned/N:>5.1%})  召回率={recall:.0%}")
+```
+
+运行结果会呈现一条清晰的曲线：`nprobe=1` 时只扫了约 1% 的数据，召回率可能只有 30%~50%；`nprobe=10` 时扫描约 10%、召回率往往已达 90% 以上。**这就是 ANN 的核心交易：用 10% 的算力换 90% 的效果。**
+
+### 验证「归一化后三种度量等价」
+
+```python showLineNumbers
+a, b = l2_normalize(rng.normal(size=(2, D)))
+cos = a @ b
+euc2 = np.sum((a - b) ** 2)
+print(f"余弦相似度 = {cos:.6f}")
+print(f"欧氏距离平方 = {euc2:.6f}")
+print(f"2 - 2*cos   = {2 - 2*cos:.6f}   ← 与上一行相等")
+```
+
+这条恒等式 $\lVert a-b \rVert^2 = 2 - 2\cos\theta$ 解释了为什么很多库只提供内积就够了。
+
+### 用 RRF 融合两路检索
+
+```python showLineNumbers
+def rrf_fuse(rank_lists, k=60, topn=5):
+    """rank_lists: 多个检索器返回的有序 doc_id 列表"""
+    score = {}
+    for lst in rank_lists:
+        for rank, doc in enumerate(lst, start=1):
+            score[doc] = score.get(doc, 0.0) + 1.0 / (k + rank)
+    return sorted(score, key=score.get, reverse=True)[:topn]
+
+vector_hits = ["d3", "d1", "d7", "d2", "d9"]     # 向量检索结果
+bm25_hits   = ["d7", "d5", "d1", "d8", "d3"]     # 关键词检索结果
+print("融合后 top-5:", rrf_fuse([vector_hits, bm25_hits]))
+```
+
+两路都靠前的 `d1`、`d3`、`d7` 会被顶上来——这正是我们想要的「双重认证」。
+
+### 分块策略的量化对照
+
+```python showLineNumbers
+def chunk(text, size=200, overlap=50):
+    step = size - overlap
+    return [text[i:i + size] for i in range(0, max(len(text) - overlap, 1), step)]
+
+doc = "".join(f"第{i}句内容。" for i in range(1, 61))
+for size, ov in [(200, 0), (200, 50), (400, 80)]:
+    cs = chunk(doc, size, ov)
+    print(f"size={size} overlap={ov:<3} -> {len(cs)} 块，"
+          f"冗余率 {(sum(len(c) for c in cs)/len(doc) - 1):.0%}")
+```
+
+重叠能避免关键句被切断，但会带来存储和检索冗余。**经验值：chunk 200~500 字、overlap 取 10%~20%。**
+
+## 易错点
+
+- **查询和文档用了不同的 embedding 模型**：向量空间不一致，检索结果等于随机。**换模型必须全量重建索引。**
+- **忘记归一化就用内积**：长文档向量模长更大，会系统性排在前面，造成「长文档霸榜」。
+- **非对称检索用了对称模型**：query 通常很短、doc 很长，应选择支持非对称检索的模型（如带 `query:` / `passage:` 前缀的 E5、BGE 系列）。前缀写错会明显掉点。
+- **chunk 切得太大或太小**：太大导致一个 chunk 里混了多个主题、向量被「平均」得没有区分度；太小则丢失上下文。
+- **只看向量检索，不做混合**：涉及编号、型号、人名的查询必然翻车。
+- **HNSW 建好后想大量删除**：图索引对删除不友好，通常只做「墓碑标记」，删除多了必须重建。
+- **忽略元数据过滤的代价**：先 ANN 再过滤可能过滤后不足 k 条；先过滤再 ANN 又用不上索引。生产库（Milvus / Qdrant）提供的「带过滤的图搜索」才是正解。
+- **在 10 万条以下的数据上过度设计**：这个量级 Flat 暴力检索几十毫秒就搞定，上 HNSW 只是徒增复杂度和召回损失。
+
+### 选型速查
+
+| 场景 | 建议 |
+| --- | --- |
+| 原型验证、数据量小 | FAISS Flat / Chroma，零运维 |
+| 单机百万级、要过滤 | Qdrant / Milvus Lite，HNSW + 标量过滤 |
+| 亿级、多租户 | Milvus / Vespa 集群，IVF-PQ 省内存 |
+| 已有 PostgreSQL | pgvector，省一套基础设施，百万级足够 |
+| 已有 Elasticsearch | 直接开 dense_vector，天然做混合检索 |
+
+## 练习
+
+1. 把 `nlist` 从 100 改成 20 和 500，重跑召回率实验，总结「桶数」与「召回-速度」曲线的关系。
+2. 关掉 `l2_normalize`，观察内积检索的结果如何偏向模长大的向量，量化这种偏差。
+3. 用 `sentence-transformers` 加载一个真实的中文 embedding 模型，对 20 条句子建库，检查「近义句」是否确实排在前面。
+4. 实现一个简单的 BM25（可用 `rank_bm25` 库），与向量检索用 RRF 融合，在一份含型号编码的语料上对比命中率。
+5. 把 chunk 的 overlap 从 0 调到 50%，观察检索命中率与索引体积的变化，找到你数据上的平衡点。
+6. 阅读[聚类算法](/docs/人工智能/机器学习/聚类算法)中分层聚类的部分，解释 IVF 与 HNSW 在「分层缩小搜索范围」这一思想上的共同点。
+
+## 小结
+
+向量数据库 = **embedding（把语义变几何）+ ANN 索引（把 $O(n)$ 变成 $O(\log n)$）+ 混合检索与重排（把召回补齐）**。选型时先问数据量：十万以内别折腾，百万级上 HNSW，亿级考虑量化与集群。**永远记得同时评估召回率，而不只是 QPS。**
+
+## 延伸阅读
+
+- [检索增强](/docs/人工智能/大模型LLM与应用/检索增强) — 向量库在 RAG 全链路中的位置。
+- [聚类算法](/docs/人工智能/机器学习/聚类算法) — IVF 索引背后的 K-Means。
+- [降维算法](/docs/人工智能/机器学习/降维算法) — 向量压缩与可视化。
+- [提示工程系统篇](/docs/人工智能/大模型LLM与应用/提示工程系统篇) — 检索结果如何注入提示词。
+- [评测基准实践](/docs/人工智能/大模型LLM与应用/评测基准实践) — 用 Recall@k、nDCG 量化检索质量。

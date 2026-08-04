@@ -1,0 +1,159 @@
+---
+title: "低功耗模式"
+sidebar_position: 6
+---
+
+# 低功耗模式
+
+电池供电的设备，续航就是产品力。一颗 STM32 全速跑可能吃 30mA，进了待机模式只剩几个 µA——差了四个数量级。**低功耗设计不是"最后再优化"，而是从架构阶段就要定下来的事**。
+
+## 学习目标
+
+- 分清 Sleep / Stop / Standby 三档模式的差异：谁还在跑、谁能唤醒、醒来后从哪继续。
+- 会算电池续航：平均电流 = (工作电流 × 工作时间 + 休眠电流 × 休眠时间) / 总周期。
+- 掌握 `WFI` / `WFE` 的用法与 RTC、EXTI 唤醒配置。
+- 知道哪些"隐形耗电"会毁掉低功耗设计：浮空引脚、上拉电阻、LDO 静态电流、外设时钟。
+- 能用「占空比思维」重构固件：睡得越久越省电。
+
+## 核心直觉
+
+低功耗的第一直觉是**占空比，而不是峰值电流**。一个 20mA 的传感器采集只要 10ms，每分钟采一次，平均电流只有 `20mA × 10ms / 60s ≈ 3.3µA`。所以优化方向永远是"缩短醒着的时间"，而不是"让 CPU 跑慢一点"——降频往往反而更费电，因为同样的活干得更久。
+
+三档模式的心智模型：
+
+| 模式 | CPU | 主时钟 | SRAM/寄存器 | 典型电流 | 唤醒源 | 醒来后 |
+|------|-----|--------|-------------|----------|--------|--------|
+| Sleep | 停 | 开 | 保持 | 数 mA | 任意中断 | 从 `WFI` 下一行继续 |
+| Stop | 停 | 关（保留 LSI/LSE） | 保持 | 十几~几百 µA | EXTI、RTC | 从 `WFI` 下一行继续，**但要重配时钟** |
+| Standby | 停 | 关 | **丢失**（仅备份域保留） | 1~3 µA | WKUP 引脚、RTC 闹钟、IWDG | **等同复位**，从 `main` 重新开始 |
+
+排查"功耗降不下来"时，把四件套翻译成低功耗版本：
+- **电源**：板上的 LDO 自身静态电流是多少？很多常见 LDO 静态就吃 5mA，MCU 再省也白搭。外围传感器、上拉电阻、LED 指示灯是不是一直在耗电？
+- **时钟**：进 Stop 前有没有关掉不用的外设时钟？HSE 有没有停？
+- **复位**：Standby 醒来是复位路径，你的初始化代码会不会把刚存的状态冲掉？要用备份寄存器或 RTC 域保存。
+- **引脚复用**：**浮空的 GPIO 是隐形耗电大户**——输入缓冲器在中间电平会让上下管同时微导通。进入低功耗前应把不用的引脚统统配成模拟模式或加确定的上下拉。
+
+## 最小可运行例程
+
+用 RTC 闹钟每 10 秒唤醒一次，采集后回到 Stop 模式：
+
+```c
+/* ---------- 1. 进入 Stop 前的"熄灯"准备 ---------- */
+static void prepare_for_low_power(void)
+{
+    GPIO_InitTypeDef g = {0};
+
+    /* 不用的引脚全设为模拟模式：输入缓冲器关闭，漏电最小 */
+    g.Mode = GPIO_MODE_ANALOG;
+    g.Pull = GPIO_NOPULL;
+    g.Pin  = GPIO_PIN_All & ~(GPIO_PIN_13 | GPIO_PIN_14); /* 保留 SWD 便于调试 */
+    HAL_GPIO_Init(GPIOA, &g);
+
+    g.Pin = GPIO_PIN_All;
+    HAL_GPIO_Init(GPIOB, &g);
+
+    /* 关掉外设电源开关（如果板上有 MOS 给传感器供电，这里断开） */
+    HAL_GPIO_WritePin(SENSOR_PWR_GPIO_Port, SENSOR_PWR_Pin, GPIO_PIN_RESET);
+
+    /* 关闭不需要的外设时钟 */
+    __HAL_RCC_ADC1_CLK_DISABLE();
+    __HAL_RCC_USART1_CLK_DISABLE();
+}
+
+/* ---------- 2. 睡 10 秒 ---------- */
+static void sleep_seconds(uint32_t sec)
+{
+    /* 关键：SysTick 中断会每 1ms 把你叫醒，必须先停掉 */
+    HAL_SuspendTick();
+
+    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc,
+                                sec * 2048u,               /* LSE/16 分频下的计数值 */
+                                RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+
+    /* 进入 Stop：调压器进低功耗模式，用 WFI 等中断 */
+    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+
+    /* ===== 醒来后从这一行继续执行 ===== */
+    SystemClock_Config();      /* Stop 会关 HSE/PLL，必须重新配时钟！ */
+    HAL_ResumeTick();
+    HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+}
+
+/* ---------- 3. 主循环：醒 → 干活 → 睡 ---------- */
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    MX_RTC_Init();
+
+    while (1) {
+        HAL_GPIO_WritePin(SENSOR_PWR_GPIO_Port, SENSOR_PWR_Pin, GPIO_PIN_SET);
+        HAL_Delay(5);                 /* 等传感器上电稳定 */
+
+        MX_ADC1_Init();
+        uint16_t v = adc_read_blocking();
+        upload_if_needed(v);          /* 只在必要时才开无线，无线最费电 */
+
+        prepare_for_low_power();
+        sleep_seconds(10);            /* 睡 10 秒，电流降到 µA 级 */
+    }
+}
+```
+
+Standby 模式的差别在于醒来即复位，需要靠备份寄存器传递状态：
+
+```c
+/* 睡前：把计数存进备份寄存器（Standby 下 SRAM 会丢，备份域不丢） */
+HAL_PWR_EnableBkUpAccess();
+HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, wake_count);
+
+HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);   /* PA0 上升沿唤醒 */
+HAL_PWR_EnterSTANDBYMode();                  /* 此行之后代码永不执行 */
+
+/* 醒来后在 main 开头判断唤醒来源 */
+if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB)) {
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
+    wake_count = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1);   /* 恢复状态 */
+}
+```
+
+续航估算示例：
+
+```text
+工作 50ms @ 12mA，休眠 9.95s @ 3µA，周期 10s
+平均电流 = (12mA × 0.05s + 0.003mA × 9.95s) / 10s
+         = (0.6 + 0.02985) mAs / 10s ≈ 0.063 mA = 63µA
+2000mAh 电池理论续航 ≈ 2000 / 0.063 ≈ 31700 小时 ≈ 3.6 年（未计自放电）
+```
+
+## 易错点
+
+- **忘了停 SysTick**：1ms 一次的滴答中断会让你"刚睡下就被叫醒"，实测功耗几乎没降。
+- **Stop 醒来不重配时钟**：系统悄悄跑在 HSI 8MHz 上，串口波特率全错、定时器周期全变，现象极其迷惑。
+- **浮空引脚漏电**：一块板子明明 MCU 只有 2µA，实测 300µA，多半是几十个引脚浮空 + 外部电路灌电流。
+- **LDO 静态电流吃掉一切**：选型时要看 `Iq`，低功耗场景应选 Iq 在 1µA 量级的产品。
+- **调试器接着测功耗**：SWD 连着时调试电路持续工作，且 Stop 模式可能被强制保持时钟，必须拔线用万用表串测。
+- **上拉电阻常年耗电**：一个 4.7kΩ 上拉在 3.3V 下持续拉低就是 0.7mA，比 MCU 睡眠电流大两百倍。I2C 上拉在休眠时应考虑断电。
+- **Standby 后以为能接着跑**：它等同复位，所有全局变量都回到初值。
+- **唤醒引脚没消抖/没配对边沿**：会出现"刚睡下立刻醒"的循环。
+
+## 练习
+
+1. 用万用表 µA 档串在电源回路，实测 Run / Sleep / Stop / Standby 四档的真实电流，与数据手册对比。
+2. 把所有未用引脚配成模拟模式前后各测一次功耗，量化浮空引脚的代价。
+3. 设计一个"每 5 分钟上报一次温度"的节点，估算 CR2032（约 220mAh）能撑多久，并给出三条降耗改进。
+4. 实现双唤醒源：RTC 定时唤醒 + 按键立即唤醒，并在醒来后区分是哪种唤醒源。
+
+## 小结
+
+低功耗的核心是「尽快干完、尽快睡下、睡下时全board都要安静」。软件上关时钟、停滴答、处理好引脚状态；硬件上选低 Iq 的 LDO、给外设加电源开关、避免常年导通的上拉与指示灯。最后一定要用真实测量验证——低功耗是唯一一个"你以为做对了，实测差一百倍"的领域。
+
+## 延伸阅读
+
+- 上一篇：[ADC 采样](/docs/嵌入式开发/单片机MCU/ADC采样)
+- 下一篇：[看门狗](/docs/嵌入式开发/单片机MCU/看门狗)
+- 唤醒源基础：[GPIO 与中断](/docs/嵌入式开发/单片机MCU/GPIO与中断)
+- 定时唤醒的时基：[定时器与 PWM](/docs/嵌入式开发/单片机MCU/定时器与PWM)
+- 电源链路与 LDO 选型：[电源与稳压](/docs/嵌入式开发/硬件与电路基础/电源与稳压)
+- 远距离低功耗联网：[无线通信 WiFi / BLE / LoRa](/docs/嵌入式开发/通信协议/无线通信WiFi_BLE_LoRa)

@@ -1,0 +1,251 @@
+---
+sidebar_position: 14
+title: "推理加速：量化与蒸馏"
+description: "显存不够、速度太慢怎么办：INT8/INT4 量化、知识蒸馏、KV Cache、PagedAttention 与投机解码的原理与选型。"
+---
+
+模型训练完只是开始，**能不能在可接受的成本下服务用户，才决定它有没有价值**。一个 70B 模型 FP16 需要约 140GB 显存，单卡放不下；即使放得下，每秒几个 token 的速度也没法用。本篇系统讲清推理加速的几条主线。
+
+## 学习目标
+
+- 会估算模型的显存占用，判断瓶颈在算力还是带宽。
+- 理解量化的本质：用更少的比特表示权重，以及为什么 INT4 还能用。
+- 分清训练后量化（PTQ）与量化感知训练（QAT），了解 GPTQ / AWQ / GGUF 的差异。
+- 理解知识蒸馏中「软标签」为什么比硬标签信息量更大。
+- 掌握 KV Cache、PagedAttention、连续批处理、投机解码这些系统级优化。
+
+## 核心直觉
+
+### 先算一笔账：显存去哪了
+
+推理时显存主要由三块构成：
+
+$$
+\text{显存} \approx \underbrace{P \times b}_{\text{权重}} + \underbrace{2 \times L \times H \times s \times n \times b_{kv}}_{\text{KV Cache}} + \text{激活与碎片}
+$$
+
+其中 $P$ 是参数量，$b$ 是每参数字节数，$L$ 层数，$H$ 隐藏维，$s$ 序列长度，$n$ 并发数。
+
+以 7B 模型为例：
+
+| 精度 | 每参数字节 | 权重显存 | 说明 |
+| --- | --- | --- | --- |
+| FP32 | 4 | 28 GB | 训练常用，推理浪费 |
+| FP16 / BF16 | 2 | 14 GB | 推理基准线 |
+| INT8 | 1 | 7 GB | 几乎无损 |
+| INT4 | 0.5 | 3.5 GB | 消费级显卡可跑，略有损失 |
+
+**关键洞察：大模型推理是「访存密集」而非「计算密集」。** 生成每个 token 都要把全部权重从显存读进计算单元，瓶颈在显存带宽。所以**把权重变小，不仅省显存，还直接变快**——这是量化能加速的根本原因。
+
+### 量化：用更少的比特表示同一个数
+
+最基础的对称量化，把浮点范围线性映射到整数范围：
+
+$$
+s = \frac{\max(\lvert W \rvert)}{2^{k-1}-1}, \qquad
+W_q = \mathrm{round}\!\left(\frac{W}{s}\right), \qquad
+\hat W = W_q \times s
+$$
+
+$s$ 叫缩放因子（scale）。反量化后的 $\hat W$ 与原值有误差，误差大小取决于比特数和数值分布。
+
+**为什么 4bit 还能用？** 因为神经网络权重高度冗余、分布集中在 0 附近，且推理时误差会被后续层的非线性「吸收」。但有个前提：**必须处理好离群值（outlier）**。少数几个绝对值极大的权重会把 scale 撑大，导致其余权重全被压缩到几个量化格子里，精度崩塌。各家方案的差异主要就在怎么对付离群值：
+
+| 方案 | 思路 | 适用 |
+| --- | --- | --- |
+| LLM.int8() | 把离群通道单独用 FP16 算，其余走 INT8 | 通用，几乎无损 |
+| GPTQ | 逐层用二阶信息（Hessian）逐列量化并补偿误差 | GPU 推理，4bit 主流 |
+| AWQ | 按激活重要性保护 1% 的关键权重通道 | 速度快，精度好 |
+| SmoothQuant | 把激活的离群「难度」按比例迁移一部分到权重上 | W8A8，端到端加速 |
+| GGUF（llama.cpp） | 分块量化 + 多种混合精度档位 | CPU / Mac / 边缘设备 |
+
+按量化粒度还分：**per-tensor**（整个张量一个 scale，最快最糙）、**per-channel**（每个输出通道一个，常用）、**per-group**（每 64/128 个权重一组，4bit 标配，精度最好）。
+
+### PTQ 与 QAT
+
+- **训练后量化（PTQ）**：模型训完直接量化，只需几百条校准数据估计激活范围。**成本极低，8bit 首选。**
+- **量化感知训练（QAT）**：训练时就插入「伪量化」节点，让模型自己适应量化误差。效果更好，但要重新训练。低比特（4bit 以下）或精度要求苛刻时才值得。
+
+### 知识蒸馏：让小模型学大模型的「思考方式」
+
+蒸馏用大模型（教师）指导小模型（学生）。核心在于**软标签**：
+
+假设一张图片是「猫」，硬标签是 `[0, 1, 0]`（狗/猫/汽车）。教师模型的输出可能是 `[0.24, 0.75, 0.01]`——这里额外告诉了学生一个信息：**「这张图有点像狗，但绝对不像汽车」**。这种类别间的相似性结构就是「暗知识」，信息量远大于一个 one-hot。
+
+为了放大这些小概率的差异，引入温度 $T$ 软化 softmax：
+
+$$
+p_i = \frac{\exp(z_i/T)}{\sum_j \exp(z_j/T)}
+$$
+
+$T=1$ 是原始输出，$T$ 越大分布越平滑、暗知识越明显（常取 2~10）。损失是两项的加权：
+
+$$
+L = \alpha \underbrace{T^2 \cdot \mathrm{KL}(p^{teacher}_T \,\Vert\, p^{student}_T)}_{\text{蒸馏损失}} + (1-\alpha)\underbrace{\mathrm{CE}(y, p^{student}_1)}_{\text{硬标签损失}}
+$$
+
+乘 $T^2$ 是因为软化后梯度会缩小 $T^2$ 倍，需要补偿回来。
+
+在 LLM 时代，蒸馏更多以两种形式出现：**黑盒蒸馏**（用强模型生成大量高质量问答对，拿去微调小模型，如 Alpaca 系列）和**白盒蒸馏**（对齐 logits 或中间层表示，需要教师权重）。
+
+### 系统级优化：不改模型也能快几倍
+
+- **KV Cache**：自回归生成时，前面 token 的 Key/Value 不必重算，缓存下来。这把每步复杂度从 $O(s^2)$ 降到 $O(s)$，是**所有推理框架的默认操作**。代价是显存随序列长度线性增长。
+- **PagedAttention（vLLM）**：把 KV Cache 像操作系统的虚拟内存一样分页管理，消除碎片，显存利用率从约 60% 提到 90% 以上，吞吐量提升数倍。
+- **连续批处理（Continuous Batching）**：传统静态批处理要等最慢的请求跑完；连续批处理让完成的请求立刻退出、新请求随时插入，GPU 空转大幅减少。
+- **投机解码（Speculative Decoding）**：用一个小的「草稿模型」一次猜 4~8 个 token，再让大模型**一次性并行验证**。猜对就白赚，猜错就回退。由于瓶颈是访存，大模型验证 8 个 token 和生成 1 个 token 的耗时差不多，因此能有 2~3 倍加速，且**输出分布严格无损**。
+- **FlashAttention**：通过分块计算避免把巨大的注意力矩阵写回显存，省显存又提速。
+
+## 最小示例
+
+### 手写对称量化，量化 INT8 与 INT4 并测量误差
+
+```python showLineNumbers
+import numpy as np
+
+rng = np.random.default_rng(0)
+W = rng.normal(0, 0.02, size=(4096, 4096)).astype(np.float32)   # 模拟一层权重
+W[0, :5] = [0.9, -1.1, 0.8, -0.95, 1.05]                        # 人为植入离群值
+
+def quantize(W, bits=8, per_channel=True):
+    qmax = 2 ** (bits - 1) - 1
+    axis = 1 if per_channel else None
+    scale = np.max(np.abs(W), axis=axis, keepdims=True) / qmax
+    scale = np.maximum(scale, 1e-8)
+    # 4bit 在 numpy 里同样先用 int8 承载，真实框架会做位打包
+    Wq = np.clip(np.round(W / scale), -qmax - 1, qmax).astype(np.int8)
+    return Wq, scale
+
+def dequantize(Wq, scale):
+    return Wq.astype(np.float32) * scale
+
+def report(bits, per_channel):
+    Wq, s = quantize(W, bits, per_channel)
+    Wh = dequantize(Wq, s)
+    err = np.abs(W - Wh)
+    rel = np.linalg.norm(W - Wh) / np.linalg.norm(W)
+    mode = "per-channel" if per_channel else "per-tensor "
+    print(f"{bits}bit {mode} 最大误差={err.max():.5f}  相对误差={rel:.4%}  "
+          f"显存={W.nbytes/1e6:.0f}MB -> {W.nbytes*bits/32/1e6:.0f}MB")
+
+for bits in (8, 4):
+    for pc in (False, True):
+        report(bits, pc)
+```
+
+运行后你会看到两个关键现象：
+
+1. **per-channel 的相对误差明显小于 per-tensor**——因为离群值只污染它所在的那一行。
+2. **从 8bit 到 4bit，误差量级跳升**，这解释了为什么 4bit 必须配合 group-wise 量化和离群值保护。
+
+### 分组量化：4bit 的救命稻草
+
+```python showLineNumbers
+def quantize_grouped(W, bits=4, group=128):
+    qmax = 2 ** (bits - 1) - 1
+    r, c = W.shape
+    Wg = W.reshape(r, c // group, group)
+    scale = np.max(np.abs(Wg), axis=2, keepdims=True) / qmax
+    scale = np.maximum(scale, 1e-8)
+    Wq = np.clip(np.round(Wg / scale), -qmax - 1, qmax)
+    Wh = (Wq * scale).reshape(r, c)
+    return np.linalg.norm(W - Wh) / np.linalg.norm(W)
+
+for g in (4096, 1024, 128, 32):
+    print(f"4bit group={g:<5} 相对误差 = {quantize_grouped(W, 4, g):.4%}")
+```
+
+group 越小，每组共享的 scale 越贴合局部分布，误差越小；代价是每组都要存一个 scale，**这就是 4bit 模型实际大小略大于「参数量的一半字节」的原因**。
+
+### 蒸馏损失的最小实现
+
+```python showLineNumbers
+import numpy as np
+
+def softmax(z, T=1.0):
+    z = z / T
+    z = z - z.max(axis=-1, keepdims=True)
+    e = np.exp(z)
+    return e / e.sum(axis=-1, keepdims=True)
+
+teacher_logits = np.array([[2.0, 4.0, -1.0]])   # 教师：更像第 2 类，但第 1 类也不算离谱
+student_logits = np.array([[1.0, 1.5, 0.5]])
+y_true = np.array([1])
+
+for T in (1, 3, 10):
+    pt = softmax(teacher_logits, T)
+    print(f"T={T:<3} 教师软标签 = {np.round(pt, 4)}")
+
+def distill_loss(sl, tl, y, T=3.0, alpha=0.7):
+    ps, pt = softmax(sl, T), softmax(tl, T)
+    kl = np.sum(pt * (np.log(pt + 1e-12) - np.log(ps + 1e-12)))
+    ce = -np.log(softmax(sl, 1.0)[0, y[0]] + 1e-12)
+    return alpha * (T ** 2) * kl + (1 - alpha) * ce
+
+print("蒸馏总损失 =", round(float(distill_loss(student_logits, teacher_logits, y_true)), 4))
+```
+
+打印出来能直观看到：$T=1$ 时软标签接近 `[0.12, 0.88, 0.00]`，第 3 类的信息被压没了；$T=10$ 时变成 `[0.30, 0.37, 0.23]`，**类别间的相对关系被放大了**——这正是学生要学的东西。
+
+### KV Cache 的收益估算
+
+```python showLineNumbers
+def kv_cache_gb(layers, hidden, seq, batch, bytes_per=2):
+    # 2 是 K 和 V 两份
+    return 2 * layers * hidden * seq * batch * bytes_per / 1024 ** 3
+
+for seq in (1024, 4096, 32768):
+    print(f"7B 模型 seq={seq:<6} batch=8  KV Cache ≈ "
+          f"{kv_cache_gb(32, 4096, seq, 8):.2f} GB")
+```
+
+结果会显示：**长上下文场景下 KV Cache 可能比权重本身还大**。这就是为什么需要 PagedAttention、GQA/MQA（多个 Query 头共享 KV）以及 KV Cache 量化。
+
+## 易错点
+
+- **以为量化只省显存不提速**：大模型推理是访存瓶颈，权重变小 = 读得快 = 直接提速。但要注意，**如果反量化开销大于访存收益（小 batch 小模型），可能反而变慢**。
+- **量化后不做评测就上线**：4bit 在困惑度上可能只掉 1%，但在数学推理、代码生成这类需要精确性的任务上可能掉 5~10 个点。**必须用[评测基准实践](/docs/人工智能/大模型LLM与应用/评测基准实践)里的自建集回归。**
+- **校准数据选错**：PTQ 的校准集应与真实业务分布一致，用维基百科校准一个客服模型会明显掉点。
+- **对所有层一视同仁**：第一层、最后一层（embedding / lm_head）对量化最敏感，通常保留 FP16。
+- **混淆权重量化与激活量化**：W4A16（只量化权重）易实现、收益大；W8A8（激活也量化）才能真正吃到 INT8 算力，但难度高得多。
+- **蒸馏时学生容量太小**：学生和教师差距超过 10 倍参数量，通常学不动，不如直接训练小模型。
+- **黑盒蒸馏忽视许可协议**：用商业模型输出训练自己的模型，多数服务条款是禁止的，商用前务必确认。
+- **投机解码草稿模型选得太大**：草稿模型应比主模型小 10 倍以上，否则验证的收益抵不过草稿的开销。
+
+## 选型速查
+
+| 场景 | 推荐方案 |
+| --- | --- |
+| 单卡跑 7B，追求速度 | AWQ / GPTQ 4bit + vLLM |
+| CPU / Mac / 树莓派 | GGUF（Q4_K_M 是速度与质量的甜点） |
+| 追求几乎无损 | INT8（LLM.int8() 或 SmoothQuant） |
+| 高并发在线服务 | vLLM（PagedAttention + 连续批处理）+ 4bit |
+| 延迟敏感的单请求 | 投机解码 + FlashAttention |
+| 想要一个专用小模型 | 黑盒蒸馏出数据 → [模型微调](/docs/人工智能/大模型LLM与应用/模型微调) |
+
+## 练习
+
+1. 修改示例中离群值的大小（从 1.0 改到 10.0），观察 per-tensor 量化的相对误差如何恶化，验证「离群值是量化头号敌人」。
+2. 实现一个 LLM.int8() 的简化版：找出绝对值最大的 1% 通道保留 FP32，其余 INT8，比较相对误差的改善。
+3. 用上面的显存公式估算：一张 24GB 显卡，跑 13B 模型在 4bit 下最多能支持多长的上下文（batch=1）。
+4. 把蒸馏示例中的 $\alpha$ 从 0 扫到 1，观察总损失的构成变化，理解软硬标签的权衡。
+5. 用 llama.cpp 把同一个模型分别量化成 Q8_0、Q5_K_M、Q4_K_M，对比文件体积、生成速度和一份自建评测集上的得分。
+6. 在 vLLM 上分别开启和关闭连续批处理，用 32 并发压测，对比吞吐量差异。
+
+## 小结
+
+推理加速有三条互相独立、可以叠加的路线：
+
+1. **模型层面**：量化（省显存 + 提速）、蒸馏（换个更小的模型）、剪枝。
+2. **系统层面**：KV Cache、PagedAttention、连续批处理、FlashAttention。
+3. **解码层面**：投机解码、提前退出、缓存复用。
+
+实践顺序建议：**先上成熟框架（vLLM / llama.cpp）吃满系统优化 → 再上 4bit 量化 → 仍不够才考虑蒸馏专用小模型。** 每一步都必须配套评测，别用精度换来的速度骗自己。
+
+## 延伸阅读
+
+- [本地部署](/docs/人工智能/大模型LLM与应用/本地部署) — Ollama 与 vLLM 的实际部署命令。
+- [模型微调](/docs/人工智能/大模型LLM与应用/模型微调) — LoRA 与量化训练 QLoRA。
+- [评测基准实践](/docs/人工智能/大模型LLM与应用/评测基准实践) — 量化后必须跑的回归评测。
+- [模型社区](/docs/人工智能/大模型LLM与应用/模型社区) — 到哪里下载已量化好的权重。
+- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer) — KV Cache 与注意力机制的原理来源。

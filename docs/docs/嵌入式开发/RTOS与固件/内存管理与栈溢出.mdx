@@ -1,0 +1,260 @@
+---
+title: "内存管理与栈溢出"
+sidebar_position: 3
+---
+
+# 内存管理与栈溢出
+
+MCU 上的 RAM 常常只有 20KB、64KB。**栈溢出是嵌入式系统崩溃的头号原因**，而且它最恶劣的地方在于：踩坏的是别人的数据，崩溃现场往往和真凶隔着十万八千里。搞清内存布局，是从"能跑"到"跑得稳"的分水岭。
+
+## 学习目标
+
+- 画出 MCU 的完整 RAM 布局：`.data` / `.bss` / heap / stack 各在哪。
+- 会读链接脚本（.ld）和 map 文件，精确知道自己用了多少内存。
+- 掌握栈深度的估算与实测方法（染色法 / 水位标记）。
+- 理解 FreeRTOS 的五种堆管理方案（heap_1~heap_5）该怎么选。
+- 学会用 MPU、栈溢出检测钩子、Canary 值提前抓住越界。
+
+## 核心直觉
+
+### 直觉一：RAM 是一场"堆与栈的相向而行"
+
+```text
+高地址 ┌─────────────────────┐  RAM 顶端 (如 0x20005000)
+       │      栈 Stack       │ ↓ 向下生长（压栈时地址减小）
+       │         ↓           │
+       ├─────────────────────┤
+       │                     │
+       │   ← 空闲区域 →      │  ← 这段空隙就是你的安全余量
+       │                     │
+       ├─────────────────────┤
+       │         ↑           │
+       │      堆 Heap        │ ↑ 向上生长（malloc）
+       ├─────────────────────┤
+       │  .bss（未初始化）   │  全局变量，启动时清零
+       ├─────────────────────┤
+       │  .data（已初始化）  │  全局变量，启动时从 Flash 拷贝过来
+低地址 └─────────────────────┘  RAM 起始 (如 0x20000000)
+```
+
+**栈溢出的本质**：栈向下长得太多，撞进了堆或 `.bss` 区，把全局变量悄悄改写了。程序不会立刻崩，而是在几百毫秒后因为某个全局变量变成乱值而行为异常——**这就是它极难调试的原因**。
+
+### 直觉二：裸机的栈 vs RTOS 的栈，完全是两回事
+
+```text
+裸机：只有一个栈（MSP），整个 RAM 剩余空间都给它，通常很宽裕
+
+FreeRTOS：每个任务有独立的栈！
+  ┌─────────────────────────────────────┐
+  │ FreeRTOS Heap（configTOTAL_HEAP_SIZE）│
+  │  ├─ 任务A 栈 (256 words = 1KB)      │  ← 任务栈是从堆里切出来的
+  │  ├─ 任务B 栈 (512 words = 2KB)      │
+  │  ├─ 队列、信号量的控制块与缓冲区    │
+  │  └─ 剩余空闲                        │
+  └─────────────────────────────────────┘
+  MSP 只在中断和调度器启动前使用（ISR 栈）
+```
+
+**注意 `xTaskCreate` 的栈参数单位是"字"不是"字节"**。在 32 位 MCU 上传 128 表示 512 字节——这是新手把栈设得太小的经典原因。
+
+### 直觉三：排查四件套的内存版本
+
+- **电源**：欠压会导致 RAM 内容随机翻转，看起来极像内存踩踏。先排除电源。
+- **时钟**：与内存关系不大，但 DMA 传输超速可能踩到边界外。
+- **复位**：HardFault 后看 `SCB->CFSR` 和栈帧里的 PC/LR，能定位到出事的指令。
+- **引脚复用**：无关，但要注意 DMA 目标地址写错会直接踩内存。
+
+## 最小可运行例程
+
+**第一步：读懂 map 文件，知道自己剩多少 RAM**
+
+```text
+=== 编译输出的 map 文件片段（arm-none-eabi-gcc）===
+.data           0x20000000     0x1a4
+.bss            0x200001a4    0x2c58
+._user_heap_stack  0x20002dfc   0x604
+
+Memory Configuration:
+RAM  origin 0x20000000  length 0x5000 (20KB)
+
+计算：
+  已用静态内存 = 0x1a4 + 0x2c58 = 0x2DFC = 11772 字节
+  剩余给堆栈   = 20480 − 11772 = 8708 字节
+
+链接脚本里的检查（.ld 文件末尾加这段，超了直接编译报错）：
+  ._user_heap_stack : {
+      . = ALIGN(8);
+      . = . + _Min_Heap_Size;
+      . = . + _Min_Stack_Size;
+      . = ALIGN(8);
+  } >RAM
+```
+
+**第二步：栈染色法——实测栈的真实水位**
+
+```c
+/* 启动时把整个栈区填成魔数，运行一段时间后看有多少被覆盖，
+   就知道栈的最高水位在哪 —— 这是最实用的栈深度测量法 */
+
+#define STACK_MAGIC   0xCDCDCDCDu
+extern uint32_t _estack;          /* 链接脚本定义的栈顶 */
+extern uint32_t _sstack;          /* 栈底（部分脚本需自行定义） */
+
+/* 在 main() 最开头调用，注意不能覆盖当前正在用的那一小块栈 */
+void stack_paint(void)
+{
+    uint32_t *p   = &_sstack;
+    uint32_t  sp  = __get_MSP();
+
+    /* 只填从栈底到当前 SP 之下 64 字节的区域，留出安全间隔 */
+    while ((uint32_t)p < sp - 64) {
+        *p++ = STACK_MAGIC;
+    }
+}
+
+/* 运行一段时间后调用，返回"曾经用到的最大栈深度（字节）" */
+uint32_t stack_high_water_mark(void)
+{
+    uint32_t *p = &_sstack;
+
+    while (*p == STACK_MAGIC && p < &_estack) p++;   /* 找第一个被改写的位置 */
+
+    uint32_t unused = (uint32_t)p - (uint32_t)&_sstack;
+    uint32_t total  = (uint32_t)&_estack - (uint32_t)&_sstack;
+
+    printf("Stack: total=%lu used_peak=%lu free=%lu (%lu%%)\r\n",
+           total, total - unused, unused, unused * 100 / total);
+    return total - unused;
+}
+```
+
+**第三步：FreeRTOS 的栈与堆监控**
+
+```c
+/* --- 1. 开启栈溢出检测（FreeRTOSConfig.h）---
+   #define configCHECK_FOR_STACK_OVERFLOW    2
+   方法 2 会在切换任务时检查栈末尾 16 字节的魔数是否被改写，
+   开销很小，开发阶段务必开启                                */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+    taskDISABLE_INTERRUPTS();
+    printf("[FATAL] stack overflow in task: %s\r\n", pcTaskName);
+    /* 生产环境：记录到 Flash 后触发复位，而不是死在这里 */
+    log_fault_to_flash(pcTaskName);
+    NVIC_SystemReset();
+}
+
+/* --- 2. 堆耗尽钩子 --- */
+void vApplicationMallocFailedHook(void)
+{
+    printf("[FATAL] heap exhausted, free=%u min_ever=%u\r\n",
+           xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
+    NVIC_SystemReset();
+}
+
+/* --- 3. 周期性巡检各任务的栈余量 --- */
+void vMonitorTask(void *pv)
+{
+    for (;;) {
+        /* uxTaskGetStackHighWaterMark 返回"历史最小剩余"，单位是字 */
+        for (int i = 0; i < TASK_NUM; i++) {
+            UBaseType_t left = uxTaskGetStackHighWaterMark(g_task_handles[i]);
+            if (left < 32) {          /* 剩余不到 128 字节，危险 */
+                printf("[WARN] task %d stack low: %lu words\r\n", i, left);
+            }
+        }
+        printf("Heap free: %u, min ever: %u\r\n",
+               xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
+
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
+}
+```
+
+**第四步：五种 heap 方案怎么选**
+
+```text
+heap_1  只分配不释放，最简单最安全   → 任务都在启动时创建、之后不再变化（推荐首选）
+heap_2  可释放但不合并，会碎片化     → 已废弃，不要用
+heap_3  包装标准 malloc/free         → 需要 newlib，占空间，不推荐
+heap_4  可释放且合并相邻空闲块       → 需要动态创建/删除对象时的最佳选择（最常用）
+heap_5  同 heap_4，但支持多块不连续内存 → 有外部 SRAM/SDRAM 时用
+
+经验法则：
+  静态系统 → heap_1（零碎片风险）
+  动态系统 → heap_4
+  能用静态分配就用静态：xTaskCreateStatic / xQueueCreateStatic
+  把内存问题在编译期就暴露出来，远好过运行期崩溃。
+```
+
+**第五步：用固定块内存池替代 malloc**
+
+```c
+/* 嵌入式里 malloc 的最大风险是碎片化：
+   反复 malloc/free 不同大小的块，最终虽有足够总空闲但没有连续大块。
+   解法：固定大小的内存池，永不碎片。                          */
+
+#define POOL_BLOCK_SIZE   64
+#define POOL_BLOCK_NUM    16
+
+static uint8_t  s_pool[POOL_BLOCK_NUM][POOL_BLOCK_SIZE];
+static uint16_t s_used_bitmap = 0;     /* 每 bit 表示一块是否被占用 */
+
+void *pool_alloc(void)
+{
+    taskENTER_CRITICAL();
+    for (int i = 0; i < POOL_BLOCK_NUM; i++) {
+        if (!(s_used_bitmap & (1u << i))) {
+            s_used_bitmap |= (1u << i);
+            taskEXIT_CRITICAL();
+            return s_pool[i];
+        }
+    }
+    taskEXIT_CRITICAL();
+    return NULL;                       /* 池满，调用方必须处理 */
+}
+
+void pool_free(void *p)
+{
+    int idx = ((uint8_t *)p - (uint8_t *)s_pool) / POOL_BLOCK_SIZE;
+    if (idx >= 0 && idx < POOL_BLOCK_NUM) {
+        taskENTER_CRITICAL();
+        s_used_bitmap &= ~(1u << idx);
+        taskEXIT_CRITICAL();
+    }
+}
+```
+
+## 易错点
+
+- **`xTaskCreate` 的栈单位是字不是字节**：写 128 以为是 128 字节，实际是 512 字节；反过来若按字节思维给 1024，实际吃掉 4KB，小 RAM 芯片直接创建失败。
+- **在栈上放大数组**：`uint8_t buf[2048];` 作为局部变量，一进函数栈就爆。大缓冲区应该是 `static` 或从内存池取。
+- **递归 + 小栈**：MCU 上应尽量避免递归；必须用时要能证明深度上界。
+- **printf 吃栈惊人**：带浮点的 `printf` 一次可能吃掉 500~1000 字节栈。在小栈任务里调用 `printf` 是经典死法。
+- **中断嵌套没算进栈预算**：ISR 使用的是 MSP（FreeRTOS 下），中断嵌套层数 × 每层栈帧要单独预留。
+- **只测平均不测峰值**：栈的峰值出现在"最深的调用链 + 恰好来了嵌套中断"的时刻，必须用染色法测历史水位。
+- **动态分配不判 NULL**：`malloc` 在 MCU 上失败是常态，不判空就是踩地址 0。
+- **忘了 DMA 缓冲区的对齐与 Cache**：带 D-Cache 的 MCU（如 STM32F7/H7）上，DMA 缓冲区必须 32 字节对齐并做 Cache 维护，否则读到脏数据。
+- **HardFault 里没打印现场**：应该在 HardFault_Handler 里把栈帧中的 PC、LR、PSR 打印出来，直接定位到出事的代码行。
+
+## 练习
+
+1. 打开你项目的 map 文件，算出 `.data + .bss` 占用，以及剩余可供堆栈使用的字节数。
+2. 实现栈染色法，运行你的程序 10 分钟后读出峰值水位，与你原先的估算对比。
+3. 故意在一个 128 字（512 字节）栈的任务里调用带浮点的 `printf`，观察 `vApplicationStackOverflowHook` 是否被触发。
+4. 把项目中所有 `xTaskCreate` 改成 `xTaskCreateStatic`，体会静态分配如何把内存问题提前到编译期。
+5. 编写一个 HardFault 处理程序，解析栈帧并打印出错时的 PC 值，再用 map 文件反查是哪个函数。
+
+## 小结
+
+嵌入式内存管理的核心信条是：**能静态就别动态，能不用堆就不用堆，栈深度必须实测而非估计**。开发阶段把 `configCHECK_FOR_STACK_OVERFLOW`、malloc 失败钩子、栈水位巡检全部打开，让问题在你面前暴露，而不是留给现场的用户。记住那句话：栈溢出不会在犯罪现场留下尸体，你必须提前布好监控。
+
+## 延伸阅读
+
+- 上一篇：[固件烧录与调试](/docs/嵌入式开发/RTOS与固件/固件烧录与调试)
+- 任务与栈的关系：[FreeRTOS 任务与调度](/docs/嵌入式开发/RTOS与固件/FreeRTOS任务与调度)
+- 下一篇：[中断与临界区](/docs/嵌入式开发/RTOS与固件/中断与临界区)
+- 任务间数据传递：[任务间通信](/docs/嵌入式开发/RTOS与固件/任务间通信)
+- 卡死兜底：[看门狗](/docs/嵌入式开发/单片机MCU/看门狗)
+- 理论对照：[操作系统内存管理](/docs/计算机科学基础/计算机科学导论/操作系统/内存管理)
+- 指针与内存基础：[C 语言存储类别与内存管理](/docs/编程语言/C/10存储类别、链接和内存管理)

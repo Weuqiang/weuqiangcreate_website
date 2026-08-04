@@ -1,0 +1,142 @@
+---
+title: "QR 与 LU 分解"
+sidebar_position: 7
+description: "把高斯消元写成 LU、把正交化写成 QR，理解两种分解的适用场景、复杂度与数值稳定性，并用 numpy 手工实现并验证。"
+---
+
+# QR 与 LU 分解
+
+矩阵分解的动机只有一句话：**把难解的矩阵拆成好解的矩阵之积**。三角矩阵可以回代求解，正交矩阵的逆就是转置——LU 和 QR 正是分别利用了这两个「便宜」的结构。
+
+## 学习目标
+
+- 说明 LU 分解与高斯消元的对应关系，并解释为什么需要选主元（$PA=LU$）。
+- 用一次分解重复求解多个右端项，理解 $O(n^3)$ 与 $O(n^2)$ 的成本差异。
+- 用 Gram–Schmidt 解释 QR 的来历，说明 $Q$ 正交带来的便利。
+- 判断在解方程、最小二乘、病态问题三种场景下该选 LU、QR 还是 SVD。
+
+## 核心直觉
+
+**LU：把消元过程存下来。** 高斯消元时，你不断做「第 2 行减去第 1 行的 3 倍」这类操作。这些操作本身可以记成一个下三角矩阵 $L$（对角为 1，下方存放乘数），消完后的上三角结果就是 $U$。于是
+
+$$
+A=LU
+$$
+
+好处是：**消元只做一次**。之后无论换多少个右端项 $\vec b$，只需两步廉价回代——先解 $L\vec y=\vec b$（前代），再解 $U\vec x=\vec y$（回代）。分解成本 $O(n^3)$，每次回代仅 $O(n^2)$。
+
+但如果主元恰好是 0（或非常小），消元就会除零或放大误差。解决办法是**行交换**，记成置换矩阵 $P$：
+
+$$
+PA=LU
+$$
+
+这就是所有数值库实际使用的「部分选主元 LU」。
+
+**QR：把列向量正交化。** 用 Gram–Schmidt 依次把 $A$ 的列减去它在前面已正交化方向上的投影，得到一组标准正交的 $\vec q_i$；记录下来的投影系数正好排成上三角矩阵 $R$：
+
+$$
+A=QR,\qquad Q^{T}Q=I
+$$
+
+$Q$ 正交意味着 $Q^{-1}=Q^{T}$——求逆变成转置，且正交变换**不改变向量长度**，误差不会被放大。这正是 QR 在最小二乘中优于正规方程的原因：
+
+$$
+A\vec x\approx\vec b\ \Longrightarrow\ QR\vec x\approx\vec b\ \Longrightarrow\ R\vec x=Q^{T}\vec b
+$$
+
+右边是一个上三角方程，直接回代即可，而且**全程没有出现 $A^TA$**，条件数没有被平方。
+
+一句话选型：
+
+| 场景 | 首选 | 理由 |
+|------|------|------|
+| 方阵解方程、多右端项 | LU | 最快，可复用分解 |
+| 超定最小二乘 | QR | 稳定，不平方条件数 |
+| 秩亏、严重病态 | SVD | 唯一能安全处理零奇异值 |
+
+## 最小示例
+
+```python
+import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+
+A = np.array([[2., 1., 1.],
+              [4., 3., 3.],
+              [8., 7., 9.]])
+
+# ================= 手写 LU（Doolittle，不选主元，仅供理解） =================
+def lu_decompose(M):
+    n = M.shape[0]
+    U = M.astype(float).copy()
+    L = np.eye(n)
+    for k in range(n):                       # 逐列消元
+        for i in range(k + 1, n):
+            factor = U[i, k] / U[k, k]       # 消元乘数
+            L[i, k] = factor                 # 乘数存进 L
+            U[i, :] -= factor * U[k, :]      # 行变换
+    return L, U
+
+L, U = lu_decompose(A)
+print(np.allclose(L @ U, A))     # True ✔ 分解正确
+print(L)                         # 下三角，对角全 1
+print(U)                         # 上三角
+
+# 用 LU 解 A x = b：前代 + 回代
+def solve_lu(L, U, b):
+    y = np.zeros_like(b)
+    for i in range(len(b)):                          # 前代 Ly = b
+        y[i] = b[i] - L[i, :i] @ y[:i]
+    x = np.zeros_like(b)
+    for i in reversed(range(len(b))):                # 回代 Ux = y
+        x[i] = (y[i] - U[i, i+1:] @ x[i+1:]) / U[i, i]
+    return x
+
+b = np.array([4., 10., 30.])
+x = solve_lu(L, U, b)
+print(np.allclose(x, np.linalg.solve(A, b)))   # True ✔
+
+# ================= QR：正交化 =================
+Q, R = np.linalg.qr(A)
+print(np.allclose(Q.T @ Q, np.eye(3)))   # True ✔ Q 的列标准正交
+print(np.allclose(Q @ R, A))             # True ✔
+print(np.triu(R) is not None and np.allclose(R, np.triu(R)))  # True ✔ R 是上三角
+
+# 用 QR 解最小二乘（超定）
+A2 = np.array([[1., 1.], [1., 2.], [1., 3.]])
+b2 = np.array([2., 2.5, 4.])
+Q2, R2 = np.linalg.qr(A2)
+x_qr = np.linalg.solve(R2, Q2.T @ b2)                 # R x = Qᵀ b
+x_ls, *_ = np.linalg.lstsq(A2, b2, rcond=None)
+print(np.allclose(x_qr, x_ls))                        # True ✔
+```
+
+需要选主元的工业级 LU 可用 `scipy.linalg.lu(A)`，它返回 $P,L,U$ 三个因子。
+
+## 易错点
+
+- **不选主元的 LU 会崩**。若某个主元为 0（例如 $\begin{bmatrix}0&1\\1&0\end{bmatrix}$），上面的手写版本会除零。真实场景务必用带选主元的实现。
+- **不是所有矩阵都有 LU 分解**，但**任意**矩阵都有 QR 分解，且实矩阵都有 SVD。通用性 LU < QR < SVD。
+- **QR 中 $Q$ 的符号不唯一**。`np.linalg.qr` 可能给出与手算相反的符号，只要 $QR=A$ 成立就都对。
+- **经典 Gram–Schmidt 数值不稳定**，会逐步丢失正交性；库函数用的是 Householder 反射，不要照抄教科书公式写生产代码。
+- **只解一次方程时别费劲手动分解**。直接 `np.linalg.solve` 内部已经在做选主元 LU；手动分解的价值在于**同一个 $A$ 反复用**。
+
+## 练习
+
+1. 对 $A=\begin{bmatrix}2&3\\4&7\end{bmatrix}$ 手算 LU。
+   *答案：乘数 $4/2=2$，$L=\begin{bmatrix}1&0\\2&1\end{bmatrix}$，$U=\begin{bmatrix}2&3\\0&1\end{bmatrix}$。*
+2. 已知 $A$ 是 $1000\times1000$ 矩阵，需要对 200 个不同的 $\vec b$ 求解。比较「每次都 solve」与「先 LU 再回代」的总运算量。
+   *提示：前者约 $200\times\frac{2}{3}n^3$；后者约 $\frac{2}{3}n^3+200\times2n^2$，快约两个数量级。*
+3. 说明为什么用 QR 解最小二乘比正规方程更稳定。
+   *提示：正规方程的条件数为 $\kappa(A)^2$，而 QR 路径中 $Q$ 是正交的、保长，条件数仍为 $\kappa(A)$。*
+
+## 小结
+
+LU 是高斯消元的矩阵化记录，把一次昂贵的消元变成可反复复用的三角回代，是解方阵线性系统的默认方案，实用版本必须带部分选主元。QR 把矩阵拆成正交阵与上三角阵，因为正交变换保长、不放大误差，它是超定最小二乘的稳健首选。当矩阵秩亏或极度病态时，两者都不够，应退回到 SVD。选择哪种分解，本质上是在通用性与计算成本之间取舍。
+
+## 延伸阅读
+
+- 消元与秩的基础见 [矩阵与线性方程组](/docs/数学基础/线性代数/矩阵与线性方程组)
+- 最小二乘的几何原理见 [正交投影与最小二乘](/docs/数学基础/线性代数/正交投影与最小二乘)
+- 最通用也最稳健的分解见 [奇异值分解SVD](/docs/数学基础/线性代数/奇异值分解SVD)
+- 运算量估计的语言见 [复杂度初步](/docs/数学基础/离散数学/复杂度初步)

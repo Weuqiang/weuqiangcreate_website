@@ -1,60 +1,277 @@
 ---
 sidebar_position: 2
 title: AlexNet
-description: 2012 年引爆深度学习的卷积网络——ReLU、Dropout、GPU 训练三件套的开端。
+description: 2012 年引爆深度学习的卷积网络——ReLU、Dropout、GPU 训练三件套的开端，含逐层尺寸推导与可运行训练代码。
 ---
 
-在 2012 年 ImageNet 图像识别挑战赛（ILSVRC）中取得了巨大突破，是深度学习在计算机视觉领域爆发的标志。它比 LeNet-5 更深、更宽，使用了 ReLU 激活函数、Dropout 等技术。
-
-证明了 GPU 可以大幅提升神经网络的训练速度，证明了深度学习在计算机视觉领域的有效性。
+在 2012 年 ImageNet 图像识别挑战赛（ILSVRC）中，AlexNet 以 top-5 错误率 15.3% 夺冠，把第二名（26.2%，传统特征工程方法）远远甩开 10 个百分点以上。这个断层式的差距，直接宣告了「手工设计特征」时代的终结。
 
 :::info
 《ImageNet Classification with Deep Convolutional Neural Networks》截止 2025 年，谷歌学术总引用次数排名第 3。
 :::
 
-## 网络结构要点
+## 学习目标
 
-5 层卷积 + 3 层全连接，关键创新：
+- 说清 AlexNet 相对 [LeNet-5](/docs/人工智能/深度学习/网格数据/LeNet-5) 到底改了什么，以及每项改动解决什么问题。
+- 能手工推导每一层的输出尺寸与参数量，知道参数主要堆在哪里。
+- 理解 ReLU 为什么能缓解梯度消失，Dropout 为什么等价于集成。
+- 跑通一份可训练的 AlexNet 变体代码。
+- 知道哪些设计已经过时（LRN、双 GPU 拆分），哪些至今仍是标配。
 
-- **ReLU 激活**：用 `max(0, x)` 代替 sigmoid / tanh，缓解梯度消失、计算更快。
-- **Dropout**：在全连接层以 p=0.5 随机“关掉”一半神经元，强迫网络不依赖特定节点，强力防过拟合。
-- **数据增强 + 局部响应归一化（LRN）**：LRN 现已被 BatchNorm 取代，了解即可。
-- **双 GPU 训练**：当年显存有限，把网络拆到两张 GPU 上。
+## 核心直觉
 
-## ReLU 激活函数
+### 三个「天时地利」缺一不可
 
-`sigmoid` 在两端梯度趋近 0，深层网络梯度消失；ReLU 在正区间梯度恒为 1，信号能顺畅回传，且计算只需一次比较，极快。代价是“死神经元”（负区间梯度为 0，可能再也不激活），可用 LeakyReLU 缓解。
+AlexNet 的成功不是单点突破，而是三件事同时成熟：
 
-## Dropout
+1. **数据**：ImageNet 提供了 1400 万张标注图片、1000 个类别。此前的数据集只有几万张，参数一多就过拟合。
+2. **算力**：两块 GTX 580（各 3GB 显存）让训练 6000 万参数的网络在一周内可行。
+3. **算法**：ReLU + Dropout + 数据增强，解决了「深了训不动」和「大了会过拟合」。
 
-训练时每个样本随机丢弃部分神经元，等价于训练一堆“子网络”并做近似集成；推理时**关闭 Dropout**（或训练时按保留概率缩放、推理用原值）。注意：Dropout 通常只放在全连接层，卷积层一般靠其他正则。
+**缺任何一环，AlexNet 都不会出现。** 这也是理解深度学习发展史的一把钥匙：算法进步往往要等算力和数据追上来。
 
-## 最小可运行示例（PyTorch）
+### ReLU：让梯度活下来
 
-```python
+sigmoid 的导数是 $\sigma'(x) = \sigma(x)(1-\sigma(x))$，最大值只有 0.25。反向传播经过 $n$ 层，梯度至少要乘 $0.25^n$：
+
+$$
+0.25^5 \approx 0.00098, \qquad 0.25^8 \approx 1.5\times 10^{-5}
+$$
+
+八层过后梯度几乎归零，前面的层根本学不动——这就是**梯度消失**。
+
+ReLU 定义为 $f(x) = \max(0, x)$，正区间导数恒为 1，梯度可以原封不动地传回去。论文里的实测是：**达到同样的训练误差，ReLU 比 tanh 快约 6 倍。**
+
+代价是「死亡 ReLU」：一旦某个神经元的输入长期为负，梯度恒为 0，它就永远不再更新。缓解办法是 LeakyReLU（负区间给一个小斜率）或者调小学习率。
+
+### Dropout：训练一个网络，得到指数级多的集成
+
+训练时以概率 $p$ 随机把神经元输出置零。对含 $n$ 个神经元的层，等价于在 $2^n$ 个「子网络」中随机抽一个来训练；推理时用完整网络，近似于对所有子网络求平均。
+
+这和[随机森林](/docs/人工智能/机器学习/随机森林)的思想异曲同工：**用随机性制造差异，用平均消除方差。**
+
+关键细节是**尺度对齐**。训练时约有 $p$ 比例的神经元被关掉，输出期望缩小了 $(1-p)$ 倍。现代框架采用 **Inverted Dropout**：训练时把保留的神经元除以 $(1-p)$ 补偿，推理时什么都不做。所以 `model.eval()` 一定要调用，否则推理还在随机丢弃。
+
+### 逐层尺寸推导
+
+卷积输出尺寸的通用公式（必背）：
+
+$$
+H_{out} = \left\lfloor \frac{H_{in} + 2P - K}{S} \right\rfloor + 1
+$$
+
+以 224×224×3 输入为例（论文原文用 227 更严谨，这里按 PyTorch 官方实现的 padding 取值）：
+
+| 层 | 配置 | 输出尺寸 | 参数量 |
+| --- | --- | --- | --- |
+| Conv1 | 96 个 11×11，stride 4，pad 2 | 55×55×96 | $96 \times (3\times11\times11+1) \approx 35$K |
+| MaxPool1 | 3×3，stride 2 | 27×27×96 | 0 |
+| Conv2 | 256 个 5×5，pad 2 | 27×27×256 | $\approx 614$K |
+| MaxPool2 | 3×3，stride 2 | 13×13×256 | 0 |
+| Conv3 | 384 个 3×3，pad 1 | 13×13×384 | $\approx 885$K |
+| Conv4 | 384 个 3×3，pad 1 | 13×13×384 | $\approx 1.3$M |
+| Conv5 | 256 个 3×3，pad 1 | 13×13×256 | $\approx 885$K |
+| MaxPool3 | 3×3，stride 2 | 6×6×256 | 0 |
+| FC6 | 9216 → 4096 | 4096 | $\approx 37.7$M |
+| FC7 | 4096 → 4096 | 4096 | $\approx 16.8$M |
+| FC8 | 4096 → 1000 | 1000 | $\approx 4.1$M |
+
+**看这张表最重要的收获**：卷积层只占约 4M 参数，全连接层却占了近 59M——**超过 90% 的参数集中在最后三层全连接**。这正是 Dropout 只加在全连接层的原因，也是后来 [ResNet](/docs/人工智能/深度学习/网格数据/ResNet) 用全局平均池化取代大 FC 层的动机。
+
+验算 Conv1 的输出：$\lfloor (224 + 2\times2 - 11)/4 \rfloor + 1 = \lfloor 217/4 \rfloor + 1 = 54 + 1 = 55$。✔
+
+### 其他关键设计
+
+- **重叠池化**：池化窗口 3×3 但步幅 2，相邻窗口有重叠，论文报告能降低约 0.4% 的错误率。
+- **数据增强**：随机裁剪 + 水平翻转把数据量放大 2048 倍，再加 PCA 颜色扰动。**这是当年最有效的正则手段。**
+- **LRN（局部响应归一化）**：模仿生物侧抑制，让响应大的神经元抑制邻居。后来被证明收益很小，已被 [BatchNorm](/docs/人工智能/深度学习/网格数据/Adam与BatchNorm) 完全取代。
+- **双 GPU 分组**：因为显存不够而把网络劈成两半，这个「无奈之举」意外启发了后来的分组卷积（ResNeXt、MobileNet）。
+
+## 最小示例
+
+### 完整结构定义与尺寸验证
+
+```python showLineNumbers
+import torch
 import torch.nn as nn
 
-alexnet = nn.Sequential(
-    nn.Conv2d(3, 96, 11, stride=4, padding=2), nn.ReLU(), nn.MaxPool2d(3, 2),
-    nn.Conv2d(96, 256, 5, padding=2), nn.ReLU(), nn.MaxPool2d(3, 2),
-    nn.Conv2d(256, 384, 3, padding=1), nn.ReLU(),
-    nn.Conv2d(384, 384, 3, padding=1), nn.ReLU(),
-    nn.Conv2d(384, 256, 3, padding=1), nn.ReLU(), nn.MaxPool2d(3, 2),
-    nn.Flatten(),
-    nn.Linear(256 * 6 * 6, 4096), nn.ReLU(), nn.Dropout(0.5),
-    nn.Linear(4096, 4096), nn.ReLU(), nn.Dropout(0.5),
-    nn.Linear(4096, 1000),
-)
+class AlexNet(nn.Module):
+    def __init__(self, num_classes=1000, dropout=0.5):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=2), nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(96, 256, kernel_size=5, padding=2), nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(256, 384, kernel_size=3, padding=1), nn.ReLU(inplace=True),
+            nn.Conv2d(384, 384, kernel_size=3, padding=1), nn.ReLU(inplace=True),
+            nn.Conv2d(384, 256, kernel_size=3, padding=1), nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+        )
+        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))   # 兼容不同输入尺寸
+        self.classifier = nn.Sequential(
+            nn.Dropout(dropout), nn.Linear(256 * 6 * 6, 4096), nn.ReLU(inplace=True),
+            nn.Dropout(dropout), nn.Linear(4096, 4096), nn.ReLU(inplace=True),
+            nn.Linear(4096, num_classes),
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.avgpool(x)
+        return self.classifier(torch.flatten(x, 1))
+
+net = AlexNet()
+x = torch.randn(2, 3, 224, 224)
+print("输出形状:", net(x).shape)          # torch.Size([2, 1000])
+
+# 逐层打印形状，亲眼验证上面那张表
+h = x
+for i, layer in enumerate(net.features):
+    h = layer(h)
+    if isinstance(layer, (nn.Conv2d, nn.MaxPool2d)):
+        print(f"{i:>2} {layer.__class__.__name__:<10} -> {tuple(h.shape)}")
+
+total = sum(p.numel() for p in net.parameters())
+conv = sum(p.numel() for p in net.features.parameters())
+fc = sum(p.numel() for p in net.classifier.parameters())
+print(f"总参数 {total/1e6:.1f}M | 卷积 {conv/1e6:.1f}M | 全连接 {fc/1e6:.1f}M "
+      f"（全连接占比 {fc/total:.1%}）")
 ```
 
-## 常见误区
+跑一遍就能亲眼看到「参数 90% 在全连接层」这个结论。
 
-- **把 LRN 当标配**：现代网络用 BatchNorm，LRN 基本消失。
-- **推理时还开着 Dropout**：会导致输出随机、精度骤降，务必 `model.eval()`。
-- **以为更深就更强**：AlexNet 的成功在于“数据 + GPU + 正则 + 激活”的组合，而非单纯深度。
+### 在 CIFAR-10 上训练一个缩小版
+
+原版 AlexNet 需要 224×224 输入和 ImageNet 级数据，个人电脑难以复现。下面这份缩小版针对 32×32 的 CIFAR-10，在普通 GPU 上几分钟就能看到收敛：
+
+```python showLineNumbers
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+train_tf = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),     # 数据增强：随机裁剪
+    transforms.RandomHorizontalFlip(),        # 数据增强：水平翻转
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
+])
+test_tf = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
+])
+
+train_set = datasets.CIFAR10("./data", train=True, download=True, transform=train_tf)
+test_set = datasets.CIFAR10("./data", train=False, download=True, transform=test_tf)
+train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=2)
+test_loader = DataLoader(test_set, batch_size=256, num_workers=2)
+
+class SmallAlexNet(nn.Module):
+    """按 CIFAR-10 的 32×32 输入缩小：去掉大步幅，通道数减半"""
+    def __init__(self, num_classes=10):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 64, 3, padding=1), nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),                              # 32 -> 16
+            nn.Conv2d(64, 192, 3, padding=1), nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),                              # 16 -> 8
+            nn.Conv2d(192, 384, 3, padding=1), nn.ReLU(inplace=True),
+            nn.Conv2d(384, 256, 3, padding=1), nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, 3, padding=1), nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),                              # 8 -> 4
+        )
+        self.classifier = nn.Sequential(
+            nn.Dropout(0.5), nn.Linear(256 * 4 * 4, 1024), nn.ReLU(inplace=True),
+            nn.Dropout(0.5), nn.Linear(1024, 512), nn.ReLU(inplace=True),
+            nn.Linear(512, num_classes),
+        )
+
+    def forward(self, x):
+        return self.classifier(torch.flatten(self.features(x), 1))
+
+model = SmallAlexNet().to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9,
+                            weight_decay=5e-4)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
+
+def evaluate():
+    model.eval()                       # 关键：关闭 Dropout
+    correct = total = 0
+    with torch.no_grad():
+        for x, y in test_loader:
+            x, y = x.to(device), y.to(device)
+            correct += (model(x).argmax(1) == y).sum().item()
+            total += y.size(0)
+    return correct / total
+
+for epoch in range(20):
+    model.train()                      # 关键：开启 Dropout
+    running = 0.0
+    for x, y in train_loader:
+        x, y = x.to(device), y.to(device)
+        optimizer.zero_grad()
+        loss = criterion(model(x), y)
+        loss.backward()
+        optimizer.step()
+        running += loss.item() * y.size(0)
+    scheduler.step()
+    print(f"epoch {epoch+1:>2}  loss={running/len(train_set):.4f}  "
+          f"test_acc={evaluate():.4f}")
+```
+
+20 个 epoch 后测试准确率通常能到 **0.82~0.86**。想验证各个组件的价值，把 `Dropout` 换成 `nn.Identity()`、把增强关掉，各跑一次对比曲线即可。
+
+### 亲手验证 Dropout 的尺度补偿
+
+```python showLineNumbers
+import torch.nn as nn
+
+x = torch.ones(1, 10000)
+drop = nn.Dropout(0.5)
+
+drop.train()
+out_train = drop(x)
+print(f"训练模式：非零比例 {(out_train != 0).float().mean():.3f}，"
+      f"非零值 {out_train.max():.1f}，输出均值 {out_train.mean():.3f}")
+
+drop.eval()
+out_eval = drop(x)
+print(f"推理模式：非零比例 {(out_eval != 0).float().mean():.3f}，"
+      f"输出均值 {out_eval.mean():.3f}")
+```
+
+输出显示：训练时约一半置零、保留的值被放大到 2.0，**两种模式下输出均值都是 1.0**。这就是 Inverted Dropout 的尺度补偿。
+
+## 易错点
+
+- **推理时忘记 `model.eval()`**：Dropout 仍在随机丢弃，输出每次都不同且精度骤降。这是新手最高频的 bug。
+- **`nn.ReLU(inplace=True)` 用在需要复用的张量上**：原地修改会破坏残差连接等需要原始值的场景。AlexNet 是纯串行结构所以安全，[ResNet](/docs/人工智能/深度学习/网格数据/ResNet) 里就要小心。
+- **把 LRN 当成必要组件**：它已被淘汰，现代实现直接用 BatchNorm 或干脆不用。
+- **直接把 224 的网络喂 32×32 图片**：几次步幅 4 和池化之后特征图会缩成 0，直接报错。要么放大图片，要么像上面那样缩小网络。
+- **学习率照搬别人的配置**：AlexNet 原文用 SGD + momentum 0.9、初始 lr 0.01、误差不降时手动除以 10。换成 [Adam](/docs/人工智能/深度学习/网格数据/Adam与BatchNorm) 时初始 lr 应降到 1e-3 甚至 3e-4。
+- **忘记归一化输入**：不做 `Normalize` 时收敛会明显变慢，甚至发散。
+- **误以为深度是唯一功臣**：AlexNet 只有 8 层，真正的功臣是「数据 + GPU + ReLU + Dropout + 增强」的组合拳。
+
+## 练习
+
+1. 用尺寸公式手算：输入 227×227、Conv1 为 11×11/stride 4/pad 0 时的输出尺寸，再用 PyTorch 验证。
+2. 在 CIFAR-10 训练脚本里关闭全部数据增强，对比 20 个 epoch 后的训练/测试准确率差距，量化增强带来的泛化收益。
+3. 把两个 `nn.Dropout(0.5)` 改成 `nn.Identity()`，观察训练准确率和测试准确率的裂口如何扩大。
+4. 把所有 ReLU 换成 `nn.Sigmoid()`，观察损失下降速度，亲身感受梯度消失。
+5. 统计 `SmallAlexNet` 中卷积层与全连接层的参数占比，并尝试用 `nn.AdaptiveAvgPool2d(1)` 替换第一个大 FC 层，看参数量能减少多少、准确率损失多少。
+6. 用 `torchvision.models.alexnet(weights="DEFAULT")` 加载预训练权重，在一个小数据集上做迁移学习，对比从零训练的效果。
+
+## 小结
+
+AlexNet 是深度学习的「分水岭」：它没有发明多少全新的东西（卷积来自 LeNet-5、ReLU 和 Dropout 也早有雏形），但**第一次把它们组合起来，在足够大的数据和足够强的算力上跑通了**。它留给我们的遗产至今仍在：ReLU 系激活、Dropout 正则、数据增强、GPU 训练。而它的教训——参数堆在全连接层、深度受限于梯度传播——则直接催生了 [ResNet](/docs/人工智能/深度学习/网格数据/ResNet)。
 
 ## 延伸阅读
 
-- [ResNet](../../网格数据/ResNet) — 真正把“深”做到极致的后续工作。
-- [LeNet-5](../../网格数据/LeNet-5) — 卷积网络的起点。
-- [Adam 与 BatchNorm](../../网格数据/Adam与BatchNorm) — 训练提速的两大引擎。
+- [LeNet-5](/docs/人工智能/深度学习/网格数据/LeNet-5) — 卷积、池化、步幅的原理与手写实现。
+- [ResNet](/docs/人工智能/深度学习/网格数据/ResNet) — 用残差连接把网络做到 152 层。
+- [Adam 与 BatchNorm](/docs/人工智能/深度学习/网格数据/Adam与BatchNorm) — 取代 LRN 的归一化与自适应优化器。
+- [YOLO](/docs/人工智能/深度学习/网格数据/YOLO) — 从分类走向检测。
+- [经典神经网络](/docs/人工智能/深度学习/经典神经网络) — 反向传播与全连接网络基础。

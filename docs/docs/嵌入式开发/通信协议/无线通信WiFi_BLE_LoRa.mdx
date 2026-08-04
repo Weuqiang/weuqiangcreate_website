@@ -1,0 +1,253 @@
+---
+title: "无线通信 WiFi / BLE / LoRa"
+sidebar_position: 4
+---
+
+# 无线通信 WiFi / BLE / LoRa
+
+[CAN 总线与无线通信](/docs/嵌入式开发/通信协议/CAN总线与无线通信) 给出了三种无线技术的速查对比，这一篇进入工程细节：**怎么选型、怎么算功耗预算、怎么处理连接不稳定、天线该怎么摆**。无线是嵌入式里"能用"和"能量产"差距最大的领域。
+
+## 学习目标
+
+- 建立三维选型模型：距离 × 数据量 × 功耗，并会用它做实际决策。
+- 会算链路预算（发射功率 − 路径损耗 + 天线增益 vs 接收灵敏度）。
+- 掌握 WiFi + MQTT 的物联网标准架构与断线重连设计。
+- 理解 BLE 的 GATT 模型、广播间隔与连接间隔对功耗的影响。
+- 掌握 LoRa 的扩频因子（SF）取舍与占空比法规限制。
+- 知道天线布局的硬性要求：净空区、匹配、地平面。
+
+## 核心直觉
+
+### 直觉一：没有最好的无线，只有最匹配的三角约束
+
+```text
+              高数据量
+                 △
+             WiFi │
+                  │
+    远距离 ◄──────┼──────► 低功耗
+         LoRa     │      BLE
+                  ▽
+              短距离/中速
+
+任何无线技术都在"距离 / 速率 / 功耗"三者中只能占两头。
+物理定律不允许"又远又快又省电"。
+```
+
+实际选型的决策树：
+
+```text
+需要传视频/固件包（MB 级）？ ─是→ WiFi（或以太网）
+        │否
+是否要和手机直连、且电池供电？ ─是→ BLE
+        │否
+距离是否超过 1km、数据量小于 100 字节/次？ ─是→ LoRa / NB-IoT
+        │否
+是否在同一栋楼、需要自组网？ ─是→ Zigbee / Thread / BLE Mesh
+```
+
+### 直觉二：链路预算决定"能不能通"
+
+```text
+接收功率(dBm) = 发射功率 + 发射天线增益 − 路径损耗 + 接收天线增益
+
+自由空间路径损耗（FSPL）：
+  FSPL(dB) = 32.45 + 20·log10(f_MHz) + 20·log10(d_km)
+
+例：LoRa 470MHz，距离 2km
+  FSPL = 32.45 + 20·log10(470) + 20·log10(2)
+       = 32.45 + 53.4 + 6.0 = 91.9 dB
+
+发射 +20dBm，天线增益 2dBi ×2：
+  接收功率 = 20 + 2 − 91.9 + 2 = −67.9 dBm
+  LoRa SF12 灵敏度约 −137dBm → 余量 69dB，非常充裕 ✓
+
+同样距离用 BLE（2.4GHz，+0dBm，灵敏度 −95dBm）：
+  FSPL = 32.45 + 67.6 + 6.0 = 106 dB
+  接收功率 = 0 + 0 − 106 + 0 = −106 dBm < −95dBm → 通不了 ✗
+```
+
+**记住这个数量级感觉**：频率翻倍，路径损耗增加 6dB；距离翻倍，也增加 6dB。这就是为什么低频（LoRa 470/868MHz）天生传得远。
+
+### 直觉三：无线的功耗全在"发射"和"待机监听"
+
+```text
+典型电流（以 ESP32 为例）：
+  WiFi 发射峰值   240mA     ← 只有毫秒级，但决定电源选型
+  WiFi 连接保持    80mA     ← 这才是续航杀手
+  WiFi Modem-sleep 20mA
+  Light-sleep     0.8mA
+  Deep-sleep       10µA
+
+结论：物联网节点的正确姿势是"平时深睡，定时醒来连一次、发一次、立刻睡回去"。
+      千万不要为了"响应快"而保持长连接。
+```
+
+### 排查四件套的无线版本
+
+- **电源**：WiFi/GSM 发射瞬间电流是平均值的 5~10 倍，供电不足的典型现象是**"一联网就重启"**。模块 VDD 就近并 470µF 大电容是标配。
+- **时钟**：无线模块对晶振精度要求高（LoRa 通常要求 ±10ppm 以内），廉价晶振会导致频偏、收不到包。
+- **复位**：模块上电后需要几十到几百毫秒初始化，MCU 太早发 AT 命令会全部超时。
+- **引脚复用**：天线净空区内不能走任何信号线、不能铺铜——这是"引脚复用"在射频上的延伸：**天线周围的空间也是一种被复用的资源**。
+
+## 最小可运行例程
+
+**WiFi + MQTT：带自动重连的物联网节点骨架（ESP32 / Arduino 框架）**
+
+```cpp
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+const char* SSID   = "your-ssid";
+const char* PASS   = "your-pass";
+const char* BROKER = "broker.example.com";
+
+WiFiClient   net;
+PubSubClient mqtt(net);
+
+/* 指数退避重连：失败越多次，等待越久，避免疯狂重试耗尽电池 */
+uint32_t backoffMs = 1000;
+
+bool ensureWifi() {
+  if (WiFi.status() == WL_CONNECTED) { backoffMs = 1000; return true; }
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(SSID, PASS);
+
+  uint32_t start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
+    delay(100);
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    delay(backoffMs);
+    backoffMs = min(backoffMs * 2, (uint32_t)60000);  // 上限 60s
+    return false;
+  }
+  return true;
+}
+
+bool ensureMqtt() {
+  if (mqtt.connected()) return true;
+
+  mqtt.setServer(BROKER, 1883);
+  String cid = "node-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+
+  // 遗嘱消息：设备异常掉线时 Broker 自动替它发"离线"通知
+  return mqtt.connect(cid.c_str(), nullptr, nullptr,
+                      "dev/status", 1, true, "offline");
+}
+
+void publishSensor(float t, float h) {
+  char payload[64];
+  snprintf(payload, sizeof(payload),
+           "{\"t\":%.2f,\"h\":%.2f,\"rssi\":%d}", t, h, WiFi.RSSI());
+  mqtt.publish("dev/telemetry", payload, true);   // retain=true
+}
+
+void loop() {
+  if (ensureWifi() && ensureMqtt()) {
+    publishSensor(readTemp(), readHumi());
+    mqtt.loop();
+    delay(100);                                   // 等发送完成
+  }
+
+  // 关键：发完立刻断连深睡，而不是保持在线
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+  esp_sleep_enable_timer_wakeup(60ULL * 1000000); // 睡 60 秒
+  esp_deep_sleep_start();                          // 醒来从 setup() 重新开始
+}
+```
+
+**LoRa：扩频因子与空中时间（ToA）的权衡**
+
+```c
+/* SF 越大 → 传得越远、越抗干扰，但空中时间指数增长、功耗和占空比压力剧增 */
+
+/* BW=125kHz, CR=4/5, 20 字节负载时的近似空中时间 */
+/*  SF7  ≈ 56ms    灵敏度 −123dBm   适合近距离、高频次           */
+/*  SF9  ≈ 185ms   灵敏度 −129dBm   常用折中                     */
+/*  SF12 ≈ 1320ms  灵敏度 −137dBm   极远距离，但一次发射超过 1 秒 */
+
+/* 欧洲 868MHz 频段有 1% 占空比法规限制：
+   SF12 发一次 1.32s → 之后必须静默 132 秒才能再发！
+   这是很多"LoRa 项目跑不通"的根本原因——不是信号问题，是法规限制。 */
+
+typedef struct { uint8_t sf; uint32_t toa_ms; } lora_cfg_t;
+
+/* 自适应速率：先用低 SF 试，收不到 ACK 再逐级提高 */
+bool lora_send_adaptive(const uint8_t *data, uint8_t len)
+{
+    static const uint8_t sf_ladder[] = {7, 9, 10, 12};
+
+    for (int i = 0; i < 4; i++) {
+        lora_set_spreading_factor(sf_ladder[i]);
+
+        if (lora_send_and_wait_ack(data, len, 3000) == LORA_OK) {
+            g_current_sf = sf_ladder[i];   /* 记住可用的最低 SF，省电 */
+            return true;
+        }
+        /* 注意：提高 SF 前要检查占空比预算是否允许 */
+        if (!duty_cycle_budget_ok(sf_ladder[i + 1])) break;
+    }
+    return false;
+}
+```
+
+**BLE：连接参数直接决定功耗（NimBLE / ESP32 示例）**
+
+```cpp
+/* 广播间隔：越长越省电，但手机发现你的时间越久 */
+pAdvertising->setMinInterval(0x0640);   // 0x0640 × 0.625ms = 1000ms
+pAdvertising->setMaxInterval(0x0C80);   // = 2000ms
+
+/* 连接间隔：主设备每隔多久轮询一次从设备 */
+/* 参数：minInterval, maxInterval (×1.25ms), latency, timeout (×10ms) */
+pServer->updateConnParams(connHandle,
+                          0x0060,   // min 120ms
+                          0x00A0,   // max 200ms
+                          4,        // slave latency：可跳过 4 次轮询不回应
+                          400);     // 超时 4 秒
+
+/* slave latency 是 BLE 省电的精髓：
+   没有数据要发时，从设备可以连续跳过 N 个连接事件不醒来，
+   等效连接间隔变成 200ms × 5 = 1 秒，功耗降 80%，
+   但主设备想下发数据时仍能在下一个必答事件里送达。 */
+```
+
+## 易错点
+
+- **电源撑不住发射峰值**：最高频的"玄学重启"来源。ESP32 发射瞬间 240mA，若 LDO 只有 300mA 且没有大电容，电压跌落直接触发欠压复位。
+- **天线净空区被破坏**：PCB 天线下方铺了地铜、旁边走了信号线、外壳用了金属——任何一条都能让通信距离从 100 米掉到 3 米。**板载天线区域必须整层掏空，不铺铜、不走线。**
+- **保持长连接导致续航崩盘**：WiFi 常连 80mA，2000mAh 电池只能撑一天。改成"定时唤醒 → 发送 → 深睡"能提升上百倍。
+- **忽视 LoRa 占空比法规**：在受管制频段超额发射不仅违规，网关也会丢弃你的包。
+- **BLE 特征值超过 MTU**：默认 ATT MTU 只有 23 字节（有效负载 20 字节），发长数据必须先协商 MTU 或分包。
+- **没有重连退避**：断网后每 100ms 疯狂重试，既耗电又可能被路由器拉黑。必须用指数退避。
+- **明文传输 + 硬编码密钥**：无线是广播介质，任何人都能抓包。至少要用 TLS 或应用层 AES，密钥应存在 OTP/安全区而非源码里。
+- **RSSI 当距离用**：RSSI 受多径、遮挡、天线朝向影响极大，只能作粗略参考，不能当测距仪。
+- **在金属箱内做无线**：金属外壳等于法拉第笼，必须外置天线并做好接头密封。
+- **2.4GHz 频段拥挤**：WiFi、BLE、微波炉、无线鼠标全挤在这里。信道扫描和跳频是必需的。
+
+## 练习
+
+1. 为三个场景各做一次选型并给出链路预算计算：（a）室内智能插座；（b）手环与手机同步；（c）5km 外的农田土壤监测。
+2. 实测 ESP32 在"常连 WiFi"与"定时唤醒上报"两种策略下的平均电流，计算 2000mAh 电池的续航差距。
+3. 用 SDR 或频谱仪观察你的 WiFi 模块发射时的频谱，确认是否有明显杂散。
+4. 把 BLE 的 slave latency 从 0 改到 4，用功耗分析仪对比平均电流。
+5. 计算 LoRa 在 SF10、BW125、负载 32 字节时的空中时间，并推算在 1% 占空比限制下每小时最多能发几包。
+
+## 小结
+
+无线选型的本质是在**距离、速率、功耗**三角里做取舍，用链路预算把"能不能通"从玄学变成算术。工程上最容易翻车的三处是：**发射峰值电流的电源设计、天线净空区、以及为了省电而必须重构的"睡→醒→发→睡"架构**。把这三件事做对，无线项目就成功了一大半。
+
+## 延伸阅读
+
+- 上一篇：[I2C 与 SPI 深水区](/docs/嵌入式开发/通信协议/I2C与SPI深水区)
+- 下一篇：[Modbus 协议](/docs/嵌入式开发/通信协议/Modbus协议)
+- 无线速查与 CAN 对照：[CAN 总线与无线通信](/docs/嵌入式开发/通信协议/CAN总线与无线通信)
+- 睡眠唤醒架构：[低功耗模式](/docs/嵌入式开发/单片机MCU/低功耗模式)
+- 发射峰值电流的电源设计：[电源与稳压](/docs/嵌入式开发/硬件与电路基础/电源与稳压)
+- 天线净空与射频布局：[PCB 与布局常识](/docs/嵌入式开发/硬件与电路基础/PCB与布局常识)
+- 射频与电磁兼容：[EMC 基础](/docs/嵌入式开发/硬件与电路基础/EMC基础)
+- 空中升级：[固件 OTA 升级](/docs/嵌入式开发/RTOS与固件/固件OTA升级)

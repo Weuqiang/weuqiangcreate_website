@@ -1,0 +1,240 @@
+---
+title: "I2C 与 SPI 深水区"
+sidebar_position: 3
+---
+
+# I2C 与 SPI 深水区
+
+[UART / SPI / I2C 详解](/docs/嵌入式开发/通信协议/UART_SPI_I2C详解) 讲清了"怎么用"，这一篇讲"为什么它今天不工作"。真实项目里 I2C 和 SPI 的坑，几乎全在**速率上限、总线仲裁、错误恢复、时序细节**这四个深水区。
+
+## 学习目标
+
+- 会算 I2C 的上拉电阻取值范围，理解速率被什么物理量卡住。
+- 掌握 I2C 总线死锁（SDA 被从机拉死）的成因与标准恢复流程。
+- 搞清 SPI 的四种模式（CPOL/CPHA）到底在描述什么，配错会怎样。
+- 理解多主仲裁与时钟同步机制。
+- 会用 DMA + 超时 + 重试构建健壮的驱动层。
+
+## 核心直觉
+
+### I2C：一切限制都源于"开漏 + 上拉"
+
+I2C 的 SDA/SCL 都是**开漏输出**：芯片只能主动拉低，高电平靠外部上拉电阻把线"拽"上去。
+
+```text
+       VDD
+        │
+       [Rp]  上拉电阻
+        │
+SDA ────┼──────┬──────┬──────
+        │      │      │
+      主机   从机1  从机2      （都只能拉低，谁都能拉低 = 线与逻辑）
+        │
+       Cb  总线寄生电容（走线 + 引脚，典型 100~400pF）
+```
+
+**低电平是芯片主动拉的，快；高电平是 RC 充电上去的，慢。** 上升时间 `tr ≈ 0.85 × Rp × Cb`，这就是速率天花板：
+
+```text
+标准模式 100kHz：要求 tr < 1000ns
+快速模式 400kHz：要求 tr < 300ns
+
+若 Cb = 200pF，要跑 400kHz：
+  Rp < 300ns / (0.85 × 200pF) ≈ 1.76kΩ
+
+而下限受灌电流限制（VOL 要能拉到 0.4V 以下，IOL 典型 3mA）：
+  Rp > (3.3V − 0.4V) / 3mA ≈ 0.97kΩ
+
+结论：Cb=200pF 跑 400kHz，Rp 应取 1kΩ ~ 1.7kΩ，常选 1.5kΩ
+      而不是无脑抄的 4.7kΩ（那只够跑 100kHz）
+```
+
+**这条公式解释了 90% 的"I2C 挂多个器件后就不稳"**——挂的器件越多，Cb 越大，原来的 4.7kΩ 就拉不动了。
+
+### I2C 仲裁：谁先拉低谁赢
+
+多主场景下，每个主机发送时都会**回读总线实际电平**。如果我发 1（释放）却读到 0（别人拉低了），说明仲裁失败，立刻退出变成从机。因为地址小的设备二进制里 0 更靠前，所以"地址小的优先"。这个机制是无损的——赢的那一方数据完全不受影响。
+
+### SPI：四种模式就是两个开关的组合
+
+```text
+CPOL（时钟极性）：空闲时 SCK 是低(0) 还是高(1)
+CPHA（时钟相位）：在第 1 个(0) 还是第 2 个(1) 时钟沿采样
+
+Mode 0 (CPOL=0,CPHA=0)：空闲低，上升沿采样  ← 最常用
+Mode 1 (CPOL=0,CPHA=1)：空闲低，下降沿采样
+Mode 2 (CPOL=1,CPHA=0)：空闲高，下降沿采样
+Mode 3 (CPOL=1,CPHA=1)：空闲高，上升沿采样  ← 次常用
+
+时序图（Mode 0）：
+SCK  ──┐ ┌─┐ ┌─┐ ┌─
+       └─┘ └─┘ └─┘
+MOSI ──X───X───X───X──    数据在下降沿变化
+       ↑   ↑   ↑          主机在上升沿采样
+```
+
+**配错模式的典型现象**：读出来的字节是正确值移位一位，或者全 0xFF / 全 0x00。看到这种现象，第一反应就该是查 CPOL/CPHA。
+
+### 排查四件套的总线版本
+
+- **电源**：从机的 VDD 有没有上电？I2C 器件掉电时会把总线拉死。
+- **时钟**：I2C 时钟频率配置是否超过从机能力？SPI 时钟是否超过从机最大频率？
+- **复位**：上电时序不对（主机先发命令、从机还没复位完）会导致首次通信失败。
+- **引脚复用**：I2C 引脚必须配成 `AF_OD`（复用开漏），配成推挽会与从机对拉造成短路电流。
+
+## 最小可运行例程
+
+**I2C 总线死锁恢复**——工业项目必备。当从机在传输中途被复位/掉电，它可能正拉着 SDA 不放，导致整条总线永久卡死。标准解法是手动发 9 个时钟脉冲把它"逼"出来：
+
+```c
+/* I2C 总线死锁恢复：把 SCL/SDA 切成 GPIO 手动操作 */
+void i2c_bus_recover(void)
+{
+    GPIO_InitTypeDef g = {0};
+
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    HAL_I2C_DeInit(&hi2c1);                    /* 先释放外设对引脚的控制 */
+
+    /* SCL(PB6) / SDA(PB7) 改为开漏输出，手动打时钟 */
+    g.Pin   = GPIO_PIN_6 | GPIO_PIN_7;
+    g.Mode  = GPIO_MODE_OUTPUT_OD;
+    g.Pull  = GPIO_PULLUP;
+    g.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOB, &g);
+
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);   /* 释放 SDA */
+
+    /* 关键：最多发 9 个 SCL 脉冲，让从机把没发完的那个字节吐完 */
+    for (int i = 0; i < 9; i++) {
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+        i2c_delay_us(5);                        /* 约 100kHz */
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+        i2c_delay_us(5);
+
+        if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) == GPIO_PIN_SET) {
+            break;                              /* SDA 已释放，脱困成功 */
+        }
+    }
+
+    /* 补一个 STOP 条件，把总线状态机复位到空闲 */
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+    i2c_delay_us(5);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+    i2c_delay_us(5);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);   /* SDA 上升沿 = STOP */
+    i2c_delay_us(5);
+
+    /* 恢复 I2C 外设 */
+    MX_I2C1_Init();
+}
+```
+
+**带超时与重试的健壮 I2C 读写封装**：
+
+```c
+#define I2C_RETRY_MAX   3
+#define I2C_TIMEOUT_MS  50
+
+HAL_StatusTypeDef i2c_mem_read_safe(uint16_t dev, uint16_t reg,
+                                    uint8_t *buf, uint16_t len)
+{
+    for (int retry = 0; retry < I2C_RETRY_MAX; retry++) {
+        HAL_StatusTypeDef st = HAL_I2C_Mem_Read(&hi2c1, dev, reg,
+                                                I2C_MEMADD_SIZE_8BIT,
+                                                buf, len, I2C_TIMEOUT_MS);
+        if (st == HAL_OK) return HAL_OK;
+
+        /* 分类处理错误，而不是一律重试 */
+        uint32_t err = HAL_I2C_GetError(&hi2c1);
+        if (err & HAL_I2C_ERROR_AF) {
+            /* NACK：从机没应答 —— 地址错、器件没上电、器件忙 */
+            HAL_Delay(1);
+        } else if (err & (HAL_I2C_ERROR_BERR | HAL_I2C_ERROR_ARLO)) {
+            /* 总线错误或仲裁丢失 —— 需要恢复总线 */
+            i2c_bus_recover();
+        } else if (st == HAL_TIMEOUT || st == HAL_BUSY) {
+            /* 超时通常意味着 SDA 被拉死 */
+            i2c_bus_recover();
+        }
+    }
+    return HAL_ERROR;
+}
+
+/* 总线扫描：确认器件真实地址（7 位地址在 HAL 里要左移 1 位！） */
+void i2c_scan(void)
+{
+    for (uint8_t addr = 0x08; addr < 0x78; addr++) {
+        if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 2, 5) == HAL_OK) {
+            printf("found device at 0x%02X (HAL: 0x%02X)\r\n", addr, addr << 1);
+        }
+    }
+}
+```
+
+**SPI 高速传输：DMA + 片选精确控制**
+
+```c
+/* SPI 用 DMA 传大块数据（如刷 TFT 屏），CPU 完全空闲 */
+volatile bool g_spi_done = false;
+
+void spi_write_dma(const uint8_t *data, uint16_t len)
+{
+    g_spi_done = false;
+    CS_LOW();                                    /* 片选必须软件精确控制 */
+    HAL_SPI_Transmit_DMA(&hspi1, (uint8_t *)data, len);
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    /* 重要：DMA 完成 ≠ 移位寄存器发完，必须等 BSY 位清零再拉高 CS，
+       否则最后一个字节会被截断                                      */
+    while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_BSY)) { }
+    CS_HIGH();
+    g_spi_done = true;
+}
+
+/* 多从机共享 SPI 总线时，每个从机可能要求不同模式，切换要重配 */
+void spi_switch_mode(uint32_t cpol, uint32_t cpha, uint32_t prescaler)
+{
+    __HAL_SPI_DISABLE(&hspi1);
+    hspi1.Init.CLKPolarity     = cpol;
+    hspi1.Init.CLKPhase        = cpha;
+    hspi1.Init.BaudRatePrescaler = prescaler;
+    HAL_SPI_Init(&hspi1);
+    __HAL_SPI_ENABLE(&hspi1);
+}
+```
+
+## 易错点
+
+- **上拉电阻一律抄 4.7kΩ**：挂三四个器件后总线电容超标，波形变成三角波，400kHz 必错。用示波器看 SCL 上升沿是最快的判断方法。
+- **HAL 的 I2C 地址要左移一位**：数据手册给的是 7 位地址（如 0x68），HAL API 要传 `0x68 << 1 = 0xD0`。这是新手第一号错误。
+- **I2C 引脚配成推挽**：主从同时输出时形成对拉，电流可达几十 mA，长期会烧引脚。必须是 `GPIO_MODE_AF_OD`。
+- **忽略时钟拉伸（Clock Stretching）**：某些从机（如部分 EEPROM、温湿度传感器）在内部处理时会把 SCL 拉低。主机必须等待，硬 I2C 一般自动支持，但模拟 I2C 必须自己实现"等 SCL 真的变高"。
+- **不处理 EEPROM 写周期**：写完一页后器件内部要 5ms 左右擦写，期间对任何访问都 NACK。要用轮询 ACK 的方式等它就绪，而不是固定 delay。
+- **SPI 模式配错**：读出移位一位或恒定值，先查 CPOL/CPHA，再查是不是超频了。
+- **SPI 忘等 BSY 就拉 CS**：末字节被截断，现象是"偶尔少一个字节"，极难查。
+- **多从机没做模式隔离**：A 从机要 Mode 0、B 从机要 Mode 3，共用总线时必须在每次片选前切换配置。
+- **SPI 线太长没串阻**：几十厘米的排线会有严重振铃，在 MOSI/SCK 串 22~33Ω 电阻可显著改善。
+- **I2C 长距离硬拉**：I2C 设计上就是板内总线，超过 30cm 极易失败。要跨板请用 I2C 缓冲器（如 PCA9515）或直接换 RS485。
+
+## 练习
+
+1. 给你的板子测量 I2C 总线的实际电容（可用上升时间反推），据此重新计算并更换上拉电阻，验证能否稳定跑到 400kHz。
+2. 人为制造总线死锁：在从机传输中途给它断电再上电，验证 `i2c_bus_recover()` 能否恢复。
+3. 用逻辑分析仪抓 SPI 波形，分别用四种模式读取同一个器件，记录读数如何变化。
+4. 实现一个支持时钟拉伸的软件模拟 I2C，并与硬件 I2C 对比在带拉伸从机上的表现。
+5. 为 EEPROM 写入实现"ACK 轮询"就绪检测，对比它与固定 `HAL_Delay(10)` 的吞吐差异。
+
+## 小结
+
+I2C 的深水区在**上拉电阻与总线电容的物理约束**，以及**从机拉死后的恢复能力**；SPI 的深水区在**四种模式的精确匹配**与**CS/BSY 的时序细节**。工程上的通用解法是：算清电气参数、给每次传输加超时、区分错误类型做针对性恢复、大数据量上 DMA。把这套做进驱动层，你的总线就能在工业现场稳定跑十年。
+
+## 延伸阅读
+
+- 基础篇：[UART / SPI / I2C 详解](/docs/嵌入式开发/通信协议/UART_SPI_I2C详解)
+- 下一篇：[无线通信 WiFi / BLE / LoRa](/docs/嵌入式开发/通信协议/无线通信WiFi_BLE_LoRa)
+- 差分总线对照：[CAN 总线与无线通信](/docs/嵌入式开发/通信协议/CAN总线与无线通信)
+- 波形诊断方法：[示波器与万用表使用](/docs/嵌入式开发/硬件与电路基础/示波器与万用表使用)
+- 走线与信号完整性：[PCB 与布局常识](/docs/嵌入式开发/硬件与电路基础/PCB与布局常识)
+- 中断与 DMA 回调的并发安全：[中断与临界区](/docs/嵌入式开发/RTOS与固件/中断与临界区)

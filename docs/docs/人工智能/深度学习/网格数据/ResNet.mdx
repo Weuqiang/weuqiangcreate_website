@@ -1,64 +1,296 @@
 ---
 sidebar_position: 3
 title: ResNet
-description: 用残差连接让网络“想深就深”——解决深层网络的退化问题，现代 CNN 的基石。
+description: 用残差连接让网络“想深就深”——从退化现象、恒等映射到 BasicBlock/Bottleneck 的完整推导与可运行实现。
 ---
 
-ResNet 引入了“残差连接”（Residual Connection），解决了深度神经网络中梯度消失和网络退化的问题，使得可以训练非常深的网络（例如 152 层）。
-
-是深度学习领域最重要的突破之一，使得训练超深网络成为可能，极大地提升了图像识别的准确率。
+2015 年之前，「网络越深越好」只是一句口号：VGG 做到 19 层已经很吃力，继续加层反而**训练误差都在上升**。ResNet 用一个看似朴素的改动——**把输入直接加到输出上**——把网络做到了 152 层，并在 ILSVRC 2015 上把 top-5 错误率压到 3.57%，首次超过人类水平（约 5%）。
 
 :::info
 《Deep Residual Learning for Image Recognition》截止 2025 年，机器视觉标签下，谷歌学术总引用次数排名第 1。
 :::
 
-## 为什么需要残差
+## 学习目标
 
-单纯堆层数会遇到**退化（degradation）**：训练误差不降反升——这不是过拟合，而是深层网络**难以优化**。梯度在反向传播时一路乘小权重，越往前越接近 0（梯度消失），前面层几乎学不动。
+- 区分「退化问题」与「过拟合」「梯度消失」，理解它们是三件不同的事。
+- 从数学上说明残差连接为什么让梯度能直达浅层。
+- 手工推导 BasicBlock 与 Bottleneck 的参数量差异，理解 1×1 卷积的作用。
+- 实现一个能在 CIFAR-10 上训练的 ResNet-18，并验证「加深不掉点」。
+- 掌握下采样时 shortcut 的对齐写法，以及 pre-activation 变体。
 
-## 残差连接
+## 核心直觉
 
-核心公式：**y = F(x) + x**。
+### 退化问题：不是过拟合，是「优化不动」
 
-- `F(x)` 是残差映射（残差块要学的“增量”），`x` 是输入经捷径（shortcut）直接跳过。
-- 当 `F(x) ≈ 0` 时，输出 ≈ 输入，网络退化为**恒等映射**——保证加深后“至少不比浅层差”。
-- 梯度可沿 shortcut 直接回传到浅层，缓解梯度消失。
+论文里有一张关键实验图：56 层网络的**训练误差**竟然高于 20 层网络。请注意——
 
-## 两种残差块
+- 如果是**过拟合**，训练误差应该更低、测试误差更高。这里训练误差就更高，所以不是过拟合。
+- 如果只是**梯度消失**，BatchNorm 和良好的初始化本应能缓解，但实验里已经用了 BN，问题依旧。
 
-- **BasicBlock**（两层 3×3）：用于 ResNet-18 / 34。
-- **Bottleneck**（1×1→3×3→1×1）：先降维再升维，省算力；用于 ResNet-50 / 101 / 152。
+这说明存在第三种障碍：**深层网络的优化本身变难了**。理论上，56 层网络完全可以让多出来的 36 层学成恒等映射，从而至少和 20 层一样好。但实践证明，**让一堆非线性层去逼近恒等映射，对 SGD 来说非常困难**。
 
-## 最小可运行示例（PyTorch）
+### 残差：把「学映射」改成「学增量」
 
-```python
+既然恒等映射难学，那就把它**白送**给网络。设我们希望学到的目标映射是 $H(x)$，ResNet 让网络去学残差 $F(x) = H(x) - x$，然后：
+
+$$
+y = F(x) + x
+$$
+
+现在如果最优解就是恒等映射，网络只需要**把 $F$ 的权重压到 0** ——这对带权重衰减的 SGD 来说太容易了。**难题从「学会恒等」变成了「学会输出零」。**
+
+用一个比喻：让你从零画一幅《蒙娜丽莎》很难，但给你一张原作复印件，让你在上面做修改，就容易多了。$x$ 是复印件，$F(x)$ 是你的修改。
+
+### 梯度为什么能直达浅层
+
+设第 $L$ 层的输出可以递归展开为：
+
+$$
+x_L = x_l + \sum_{i=l}^{L-1} F(x_i, W_i)
+$$
+
+对浅层 $x_l$ 求梯度：
+
+$$
+\frac{\partial \mathcal{L}}{\partial x_l}
+= \frac{\partial \mathcal{L}}{\partial x_L}\left(1 + \frac{\partial}{\partial x_l}\sum_{i=l}^{L-1} F(x_i, W_i)\right)
+$$
+
+**注意括号里那个「1」**：无论后面的求和项多小，梯度都至少能以原始大小传回浅层。而普通网络的梯度是连乘形式 $\prod \frac{\partial x_{i+1}}{\partial x_i}$，任何一项小于 1 都会指数衰减。
+
+**加法结构把连乘变成了「1 + 修正项」，这就是残差连接的全部魔力。**
+
+### 两种残差块
+
+**BasicBlock**（ResNet-18/34）：两个 3×3 卷积串联。
+
+```text
+x ──┬── Conv3×3(C→C) → BN → ReLU → Conv3×3(C→C) → BN ──(+)── ReLU → out
+    └──────────────── identity ─────────────────────────┘
+```
+
+**Bottleneck**（ResNet-50/101/152）：1×1 降维 → 3×3 卷积 → 1×1 升维。
+
+```text
+x ──┬─ Conv1×1(256→64) → Conv3×3(64→64) → Conv1×1(64→256) ──(+)── ReLU → out
+    └─────────────────── identity ───────────────────────────┘
+```
+
+**为什么 Bottleneck 更划算？** 算一笔账，假设通道数 256、特征图 $H\times W$：
+
+| 结构 | 参数量 |
+| --- | --- |
+| 两个 3×3（256→256） | $2 \times 3\times3\times256\times256 \approx 1.18$M |
+| 1×1 降维 + 3×3 + 1×1 升维 | $256\times64 + 3\times3\times64\times64 + 64\times256 \approx 0.07$M |
+
+**参数量差了约 17 倍**，而表达能力相近。1×1 卷积在这里扮演「通道压缩机」的角色：先把 256 维压到 64 维，在低维空间做昂贵的 3×3 卷积，再升回去。这个思路后来被 MobileNet、Transformer 的 FFN 反复借用。
+
+### 下采样时 shortcut 怎么办
+
+当残差块要改变通道数或分辨率（stride=2）时，$F(x)$ 和 $x$ 的形状对不上，无法直接相加。论文给了三个选项，实践中默认用 B 方案：
+
+- **A**：用补零凑通道，不引入参数（省参数但性能略差）。
+- **B**：**只在维度变化时用 1×1 卷积 + BN 对齐**（默认，性价比最高）。
+- **C**：所有 shortcut 都用 1×1 卷积（参数多，收益微小）。
+
+## 最小示例
+
+### 从零实现 ResNet-18
+
+```python showLineNumbers
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class BasicBlock(nn.Module):
+    expansion = 1
+
+    def __init__(self, in_ch, out_ch, stride=1):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_ch, out_ch, 3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(out_ch)
+        self.conv2 = nn.Conv2d(out_ch, out_ch, 3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_ch)
+
+        # 维度不匹配时才建投影（方案 B）
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_ch != out_ch:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_ch, out_ch, 1, stride=stride, bias=False),
+                nn.BatchNorm2d(out_ch),
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out = out + self.shortcut(x)        # 残差相加必须在最后一个 BN 之后、ReLU 之前
+        return F.relu(out)
+
+class Bottleneck(nn.Module):
+    expansion = 4
+
+    def __init__(self, in_ch, mid_ch, stride=1):
+        super().__init__()
+        out_ch = mid_ch * self.expansion
+        self.conv1 = nn.Conv2d(in_ch, mid_ch, 1, bias=False)
+        self.bn1 = nn.BatchNorm2d(mid_ch)
+        self.conv2 = nn.Conv2d(mid_ch, mid_ch, 3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(mid_ch)
+        self.conv3 = nn.Conv2d(mid_ch, out_ch, 1, bias=False)
+        self.bn3 = nn.BatchNorm2d(out_ch)
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_ch != out_ch:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_ch, out_ch, 1, stride=stride, bias=False),
+                nn.BatchNorm2d(out_ch),
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = F.relu(self.bn2(self.conv2(out)))
+        out = self.bn3(self.conv3(out))
+        return F.relu(out + self.shortcut(x))
+
+class ResNet(nn.Module):
+    def __init__(self, block, num_blocks, num_classes=10):
+        super().__init__()
+        self.in_ch = 64
+        # CIFAR 版本：首层用 3×3 而非 7×7，且不做 maxpool
+        self.stem = nn.Sequential(
+            nn.Conv2d(3, 64, 3, padding=1, bias=False),
+            nn.BatchNorm2d(64), nn.ReLU(inplace=True))
+        self.layer1 = self._make_layer(block, 64, num_blocks[0], 1)
+        self.layer2 = self._make_layer(block, 128, num_blocks[1], 2)
+        self.layer3 = self._make_layer(block, 256, num_blocks[2], 2)
+        self.layer4 = self._make_layer(block, 512, num_blocks[3], 2)
+        self.pool = nn.AdaptiveAvgPool2d(1)      # 全局平均池化取代大 FC
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
+
+    def _make_layer(self, block, ch, n, stride):
+        layers = []
+        for s in [stride] + [1] * (n - 1):       # 只有第一个块做下采样
+            layers.append(block(self.in_ch, ch, s))
+            self.in_ch = ch * block.expansion
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = self.stem(x)
+        x = self.layer4(self.layer3(self.layer2(self.layer1(x))))
+        return self.fc(torch.flatten(self.pool(x), 1))
+
+def resnet18(n=10):  return ResNet(BasicBlock, [2, 2, 2, 2], n)
+def resnet34(n=10):  return ResNet(BasicBlock, [3, 4, 6, 3], n)
+def resnet50(n=10):  return ResNet(Bottleneck, [3, 4, 6, 3], n)
+
+for name, fn in [("ResNet-18", resnet18), ("ResNet-34", resnet34), ("ResNet-50", resnet50)]:
+    m = fn()
+    print(f"{name}: 参数 {sum(p.numel() for p in m.parameters())/1e6:.2f}M, "
+          f"输出 {tuple(m(torch.randn(2, 3, 32, 32)).shape)}")
+```
+
+留意输出：**ResNet-50 层数远多于 ResNet-34，参数量却只多一点点**——这正是 Bottleneck 的功劳。
+
+### 直接验证「残差让深层可训练」
+
+这是本篇最值得亲手跑的实验：搭两个同样深的网络，唯一区别是有没有 shortcut。
+
+```python showLineNumbers
+import torch, torch.nn as nn
+
+class PlainBlock(nn.Module):
+    """和 BasicBlock 结构完全相同，只是去掉了残差相加"""
     def __init__(self, ch):
         super().__init__()
-        self.conv1 = nn.Conv2d(ch, ch, 3, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(ch)
-        self.conv2 = nn.Conv2d(ch, ch, 3, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(ch)
+        self.body = nn.Sequential(
+            nn.Conv2d(ch, ch, 3, padding=1, bias=False), nn.BatchNorm2d(ch), nn.ReLU(),
+            nn.Conv2d(ch, ch, 3, padding=1, bias=False), nn.BatchNorm2d(ch))
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        identity = x
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out = out + identity      # 残差捷径
-        return self.relu(out)
+        return self.relu(self.body(x))
+
+class ResBlock(PlainBlock):
+    def forward(self, x):
+        return self.relu(self.body(x) + x)      # 唯一的区别
+
+def build(block, depth=20, ch=32):
+    return nn.Sequential(nn.Conv2d(3, ch, 3, padding=1), nn.BatchNorm2d(ch), nn.ReLU(),
+                         *[block(ch) for _ in range(depth)],
+                         nn.AdaptiveAvgPool2d(1), nn.Flatten(), nn.Linear(ch, 10))
+
+torch.manual_seed(0)
+x = torch.randn(64, 3, 32, 32)
+y = torch.randint(0, 10, (64,))
+
+for name, blk in [("Plain(无残差)", PlainBlock), ("Residual(有残差)", ResBlock)]:
+    torch.manual_seed(0)
+    net = build(blk)
+    opt = torch.optim.SGD(net.parameters(), lr=0.05, momentum=0.9)
+    lossfn = nn.CrossEntropyLoss()
+    for step in range(60):
+        opt.zero_grad()
+        loss = lossfn(net(x), y)
+        loss.backward()
+        if step == 0:
+            # 观察第一个块的梯度范数：残差版应明显更大
+            g = net[3].body[0].weight.grad.norm().item()
+        opt.step()
+    print(f"{name:<18} 首层梯度范数={g:.3e}  60 步后 loss={loss.item():.4f}")
 ```
 
-## 常见误区
+在 20 个块（40 层卷积）的深度下，**Plain 版本的首层梯度范数通常比 Residual 版本小 1~2 个数量级，损失也降得慢得多**。这就是退化现象的微缩复现。
 
-- **维度不匹配时 shortcut 要变换**：当通道数或分辨率变化（如 stride=2 下采样），shortcut 需用 1×1 卷积对齐，否则张量加不起来。
-- **BN 在推理时要切 `eval()`**：否则用 batch 统计而非全局统计，结果错乱。
-- **残差块不是越多越好到无脑**：极深网络仍需配合良好初始化与学习率策略。
+### pre-activation 变体
+
+何恺明团队在后续论文里发现，把 BN 和 ReLU 挪到卷积之前，效果更好：
+
+```python showLineNumbers
+class PreActBlock(nn.Module):
+    """BN-ReLU-Conv 顺序，shortcut 路径上完全没有非线性，梯度更通畅"""
+    def __init__(self, ch):
+        super().__init__()
+        self.bn1 = nn.BatchNorm2d(ch)
+        self.conv1 = nn.Conv2d(ch, ch, 3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(ch)
+        self.conv2 = nn.Conv2d(ch, ch, 3, padding=1, bias=False)
+
+    def forward(self, x):
+        out = self.conv1(torch.relu(self.bn1(x)))
+        out = self.conv2(torch.relu(self.bn2(out)))
+        return out + x          # 加法之后不再接 ReLU，信息可以完全无损地穿过
+```
+
+原版在相加后还有一个 ReLU，会截断负值；pre-activation 让 shortcut 成为一条**完全干净的恒等通路**，1001 层的网络也能训起来。
+
+## 易错点
+
+- **相加位置放错**：残差必须加在最后一个 BN 之后、ReLU 之前。写成 `relu(bn(conv(x))) + x` 会破坏恒等通路的性质。
+- **shortcut 维度不对齐**：stride=2 或通道数变化时忘记加 1×1 投影，运行时报形状不匹配错误。
+- **卷积后接 BN 还留着 `bias=True`**：BN 自带 $\beta$ 偏移，卷积的 bias 完全冗余，白白浪费参数。**凡是 Conv 后面接 BN，一律 `bias=False`。**
+- **`inplace=True` 的 ReLU 用在 shortcut 分支上**：原地修改会覆盖掉后面还要用的 `x`，导致梯度错误。主分支上用没问题，分叉点上要小心。
+- **推理忘记 `model.eval()`**：BN 会继续用 batch 统计量，batch size 为 1 时结果完全错乱。详见 [Adam 与 BatchNorm](/docs/人工智能/深度学习/网格数据/Adam与BatchNorm)。
+- **直接把 ImageNet 版 ResNet 用在 32×32 图片上**：官方 stem 是 7×7 stride 2 加 maxpool，两步就把 32 缩到 8，信息损失严重。CIFAR 应改用 3×3 stride 1 且去掉 maxpool（上面代码已处理）。
+- **以为残差连接万能**：它解决的是优化难题，不解决数据不足、标签噪声、任务本身的困难。
+
+## 练习
+
+1. 把对照实验的深度从 20 个块改成 5 个块，观察 Plain 与 Residual 的差距是否缩小，验证「退化只在深层出现」。
+2. 手算：Bottleneck 中通道 512、中间维 128 时的参数量，与两个 3×3（512→512）对比，算出压缩比。
+3. 把 `BasicBlock` 里的 `out + self.shortcut(x)` 改成 `out * 0.5 + self.shortcut(x) * 0.5`，观察收敛是否变慢，思考为什么系数为 1 最优。
+4. 实现 A 方案（补零对齐）的 shortcut，与 B 方案对比参数量和 CIFAR-10 准确率。
+5. 用 `PreActBlock` 替换 `BasicBlock` 训练 ResNet-18，比较收敛速度。
+6. 在训练好的模型上打印每个残差块 $F(x)$ 输出的平均幅度，验证「越深的块，残差幅度越小」这一现象。
+7. 用 `torchvision.models.resnet50(weights="DEFAULT")` 做迁移学习，冻结前三个 stage 只训最后一层，对比全量微调的效果与耗时。
+
+## 小结
+
+ResNet 的贡献可以浓缩成一个加号。它告诉我们：**当优化变难时，与其设计更复杂的模块，不如给网络一条更容易走的路。** 这个思想的影响远超 CV——[Transformer](/docs/人工智能/深度学习/序列处理/Transformer) 的每个子层都是残差连接，[Vision Transformer](</docs/人工智能/深度学习/序列处理/Vision Transformer>)、LLM 里的每一层也都是。可以说，**今天所有能训起来的深层网络，都在用 ResNet 的加号。**
 
 ## 延伸阅读
 
-- [AlexNet](../../网格数据/AlexNet) — 引爆深度学习的开山之作。
-- [LeNet-5](../../网格数据/LeNet-5) — 卷积网络的鼻祖。
-- [Vision Transformer](../../序列处理/Vision Transformer) — 跳过卷积、直接上注意力的后起之秀。
+- [AlexNet](/docs/人工智能/深度学习/网格数据/AlexNet) — 引爆深度学习的开山之作。
+- [LeNet-5](/docs/人工智能/深度学习/网格数据/LeNet-5) — 卷积、池化、步幅的原理与手写实现。
+- [Adam 与 BatchNorm](/docs/人工智能/深度学习/网格数据/Adam与BatchNorm) — 残差块里 BN 是标配。
+- [YOLO](/docs/人工智能/深度学习/网格数据/YOLO) — 常用 ResNet 系作为骨干网络。
+- [Vision Transformer](</docs/人工智能/深度学习/序列处理/Vision Transformer>) — 跳过卷积、直接上注意力的后起之秀。
+- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer) — 残差连接在序列模型中的应用。

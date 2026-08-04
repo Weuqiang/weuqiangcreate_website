@@ -1,0 +1,164 @@
+---
+sidebar_position: 6
+title: "支持向量机 SVM"
+description: "最大间隔、支持向量、软间隔与核技巧：用几何直觉理解 SVM，并用 sklearn 跑通线性核与 RBF 核的对比实验。"
+---
+
+支持向量机（Support Vector Machine, SVM）是深度学习兴起前统治小样本分类任务的模型。它的核心问题只有一句：**能把两类分开的直线有无数条，哪一条最好？**
+
+## 学习目标
+
+- 用几何语言说清「间隔（margin）」以及为什么要最大化它。
+- 理解支持向量的含义：为什么删掉大部分样本模型都不变。
+- 说明软间隔参数 $C$ 在「间隔宽度」与「容错」之间的权衡。
+- 理解核技巧：不显式升维也能得到非线性边界。
+- 会调 `C` 与 `gamma`，并知道 SVM 何时不该用。
+
+## 核心直觉
+
+### 最大间隔：把街道修得尽可能宽
+
+想象两类点之间要修一条街，街道中间的分隔线就是决策边界，街道两侧的边缘（路沿）刚好压在最近的样本上。SVM 要做的是**把这条街修到最宽**。
+
+设决策超平面为 $w^\top x + b = 0$，规定两类的标签为 $y \in \{-1, +1\}$，并归一化使最近样本满足 $|w^\top x + b| = 1$，则街道宽度（间隔）为：
+
+$$
+\text{margin} = \frac{2}{\|w\|}
+$$
+
+最大化间隔等价于最小化 $\|w\|^2$，于是得到硬间隔 SVM 的优化问题：
+
+$$
+\min_{w,b} \frac{1}{2}\|w\|^2 \quad \text{s.t.} \quad y_i (w^\top x_i + b) \ge 1,\ \forall i
+$$
+
+**为什么宽的街道更好？** 因为宽间隔意味着决策边界离数据远，测试样本轻微扰动也不会跨界——这是一种结构化的抗过拟合，和「正则化」是一回事。
+
+### 支持向量：只有路沿上的点说了算
+
+上面的约束里，绝大多数样本都满足 $y_i(w^\top x_i + b) > 1$（离街道很远），它们对最优解**毫无影响**。真正决定街道位置的，只有恰好压在路沿上的少数点，这些点就叫**支持向量**。
+
+这带来一个反直觉但很实用的性质：**删掉所有非支持向量，重新训练，得到的模型完全相同。** 这也是 SVM 内存友好、在小样本上稳健的原因。
+
+### 软间隔：允许几个人违章
+
+真实数据有噪声，强行要求「一个都不许分错」会让街道被一个离群点挤得极窄。软间隔为每个样本引入松弛变量 $\xi_i \ge 0$：
+
+$$
+\min_{w,b,\xi} \frac{1}{2}\|w\|^2 + C\sum_i \xi_i
+\quad \text{s.t.}\quad y_i(w^\top x_i + b) \ge 1 - \xi_i
+$$
+
+- **$C$ 大**：违章代价高 → 尽量不分错 → 街道窄 → 容易过拟合。
+- **$C$ 小**：允许更多违章 → 街道宽 → 偏向欠拟合、泛化更平滑。
+
+$C$ 其实是正则强度的倒数，和逻辑回归里的 `1/lambda` 同源。
+
+### 核技巧：在高维里画直线，在低维里看曲线
+
+如果数据在原空间线性不可分（比如同心圆），可以映射到高维再分。SVM 的优化问题在对偶形式下只出现样本间的**内积** $x_i^\top x_j$，因此我们不必真的算出高维坐标，只需要一个能直接给出高维内积的函数：
+
+$$
+K(x_i, x_j) = \phi(x_i)^\top \phi(x_j)
+$$
+
+这就是**核技巧**。常用核：
+
+| 核函数 | 表达式 | 适用场景 |
+| --- | --- | --- |
+| 线性核 | $x_i^\top x_j$ | 特征维度高、样本多（文本 TF-IDF） |
+| 多项式核 | $(\gamma x_i^\top x_j + r)^d$ | 已知特征存在交互项 |
+| RBF（高斯核） | $\exp(-\gamma \lVert x_i - x_j \rVert^2)$ | 默认首选，能拟合任意光滑边界 |
+
+RBF 核的 $\gamma$ 控制「一个样本的影响半径」：$\gamma$ 大 → 影响范围小 → 边界扭曲、过拟合；$\gamma$ 小 → 影响范围大 → 边界平滑，极端情况退化成线性。
+
+## 最小示例
+
+### 线性核与 RBF 核在环形数据上的对比
+
+```python showLineNumbers
+import numpy as np
+from sklearn.datasets import make_circles
+from sklearn.svm import SVC
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import cross_val_score
+
+X, y = make_circles(n_samples=400, noise=0.08, factor=0.45, random_state=42)
+
+for name, kernel, kw in [
+    ("线性核", "linear", {}),
+    ("RBF 核", "rbf", {"gamma": 1.0}),
+]:
+    clf = make_pipeline(StandardScaler(), SVC(kernel=kernel, C=1.0, **kw))
+    score = cross_val_score(clf, X, y, cv=5).mean()
+    print(f"{name}: 5 折交叉验证准确率 = {score:.3f}")
+
+# 典型输出：线性核约 0.5（等于瞎猜），RBF 核约 0.98
+```
+
+环形数据用直线无论如何都分不开，线性核准确率接近 0.5；换成 RBF 核立刻接近满分——这就是核技巧的威力。
+
+### 观察支持向量的数量
+
+```python showLineNumbers
+from sklearn.datasets import make_classification
+
+X, y = make_classification(n_samples=300, n_features=2, n_informative=2,
+                           n_redundant=0, class_sep=1.2, random_state=0)
+
+for C in [0.01, 1, 100]:
+    svm = SVC(kernel="linear", C=C).fit(X, y)
+    margin = 2 / np.linalg.norm(svm.coef_)
+    print(f"C={C:<6} 支持向量数={len(svm.support_):<4} 间隔宽度={margin:.3f}")
+
+# C 越小 → 支持向量越多、间隔越宽（更平滑）
+# C 越大 → 支持向量越少、间隔越窄（更贴合训练数据）
+```
+
+跑一遍就能亲眼看到 $C$ 与间隔宽度的反向关系，比记结论牢固得多。
+
+### 网格搜索找 (C, gamma)
+
+```python showLineNumbers
+from sklearn.model_selection import GridSearchCV
+
+param_grid = {
+    "svc__C": [0.1, 1, 10, 100],
+    "svc__gamma": [0.01, 0.1, 1, 10],
+}
+pipe = make_pipeline(StandardScaler(), SVC(kernel="rbf"))
+gs = GridSearchCV(pipe, param_grid, cv=5, n_jobs=-1).fit(X, y)
+print("最佳参数:", gs.best_params_, " 最佳得分:", round(gs.best_score_, 3))
+```
+
+调参方法本身见[超参数调优](/docs/人工智能/机器学习/超参数调优)。
+
+## 易错点
+
+- **不做标准化就上 RBF 核**：RBF 依赖欧氏距离，量纲不一致时大尺度特征会主导距离，模型直接失效。**SVM 必须配 `StandardScaler`**，这是最常见的踩坑。
+- **在大数据集上硬跑 SVC**：`SVC` 的训练复杂度大致在 $O(n^2) \sim O(n^3)$，样本上万就会明显变慢。此时改用 `LinearSVC`（基于 liblinear，线性核专用）或直接用 `SGDClassifier(loss="hinge")`。
+- **把 `C` 理解成学习率**：$C$ 是正则强度的倒数，与优化步长无关。
+- **`gamma="scale"` 与 `gamma="auto"` 混淆**：sklearn 新版默认 `scale`（考虑特征方差），旧版 `auto` 常导致欠拟合。显式写出来避免版本差异。
+- **想要概率输出却忘了 `probability=True`**：SVM 本身输出的是到超平面的距离而非概率，开启后 sklearn 会额外做 Platt 校准（训练变慢）。
+- **多分类以为是原生支持**：sklearn 的 `SVC` 通过 OvO（一对一）拼出多分类，类别多时子模型数量是 $k(k-1)/2$，会很慢。
+
+## 练习
+
+1. 在 `make_circles` 数据上把 `gamma` 从 0.01 扫到 100，绘制训练集与测试集准确率曲线，找出过拟合的拐点。
+2. 手工计算：给定两个支持向量 $x_1=[1,1]$（正类）与 $x_2=[-1,-1]$（负类），推出最大间隔超平面的 $w$ 与间隔宽度，再用 `SVC(kernel="linear", C=1e6)` 验证。
+3. 把 RBF 核换成多项式核 `poly` 并调 `degree`，观察 degree 增大时训练时间与过拟合的变化。
+4. 用 20newsgroups 文本数据（TF-IDF 特征）比较 `LinearSVC` 与 `SVC(kernel="rbf")` 的耗时和精度，验证「高维稀疏数据优先线性核」这一经验。
+5. 把 SVM 与[随机森林](/docs/人工智能/机器学习/随机森林)在同一份数据上对比，总结两者对特征缩放、类别特征的敏感度差异。
+
+## 小结
+
+SVM 的思想链条非常清晰：**最大化间隔 → 只有支持向量起作用 → 软间隔容忍噪声 → 核技巧带来非线性**。在样本量不大（几千到几万）、特征维度中等、需要强泛化的场景，它至今仍是极强的基线。样本量上百万时，请把它让位给线性模型或树模型/深度模型。
+
+## 延伸阅读
+
+- [分类算法](/docs/人工智能/机器学习/分类算法) — KNN 等其他分类器的对照。
+- [逻辑回归](/docs/人工智能/机器学习/逻辑回归) — 另一种线性分类视角：概率而非间隔。
+- [超参数调优](/docs/人工智能/机器学习/超参数调优) — 系统地搜 `C` 与 `gamma`。
+- [模型评估指标](/docs/人工智能/机器学习/模型评估指标) — 交叉验证与指标选择。
+- [降维算法](/docs/人工智能/机器学习/降维算法) — 核 PCA 与核技巧是同一套思想。

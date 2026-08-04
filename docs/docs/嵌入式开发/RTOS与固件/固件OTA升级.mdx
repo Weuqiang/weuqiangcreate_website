@@ -1,0 +1,331 @@
+---
+title: "固件 OTA 升级"
+sidebar_position: 6
+---
+
+# 固件 OTA 升级
+
+设备一旦出厂，物理接触的成本极高。**OTA（Over-The-Air，空中升级）是产品化的分水岭**——它决定了你能不能远程修 bug、加功能。但 OTA 也是最危险的功能：升级失败就是变砖，而召回一万台设备的成本足以让公司倒闭。
+
+## 学习目标
+
+- 设计 Flash 分区表，理解 Bootloader 与 App 的分工与跳转机制。
+- 掌握 A/B 双分区（双 Bank）方案，实现**永不变砖**的升级。
+- 会做完整性与真实性校验：CRC32、签名、版本防回滚。
+- 掌握断点续传与失败回滚机制。
+- 知道升级过程中看门狗、电源、中断向量表该怎么处理。
+
+## 核心直觉
+
+### 直觉一：OTA 的第一原则是"永远有一个能启动的固件"
+
+```text
+=== 方案 A：单分区（危险，不要用）===
+┌──────────┬───────────────────────────┐
+│Bootloader│         App 区            │
+└──────────┴───────────────────────────┘
+   升级时直接擦掉 App 写新的 → 中途掉电 = 变砖 ✗
+
+=== 方案 B：A/B 双分区（推荐）===
+┌──────────┬──────────────┬──────────────┬────────┐
+│Bootloader│  Slot A (App)│  Slot B (备)  │ 配置区 │
+│   32KB   │    224KB     │    224KB     │  8KB   │
+└──────────┴──────────────┴──────────────┴────────┘
+   运行 A 时把新固件写进 B，校验通过后改配置区标记，
+   重启由 Bootloader 从 B 启动。B 启动失败自动回退 A。 ✓
+
+=== 方案 C：下载区 + 搬运（Flash 不够时的折中）===
+┌──────────┬──────────────────┬──────────────┐
+│Bootloader│    App 运行区     │  下载缓存区   │
+└──────────┴──────────────────┴──────────────┘
+   完整下载并校验后，由 Bootloader 搬运覆盖 App 区。
+   搬运过程掉电仍会变砖，但窗口很短（只有几秒）。
+```
+
+**512KB 以上 Flash 的芯片一律上 A/B 方案**，多花的 Flash 钱远比一次召回便宜。
+
+### 直觉二：Bootloader 跳转 App 的三件事必须做对
+
+```text
+1. 关闭所有已开启的中断和外设（否则 App 里会收到意外中断）
+2. 重定位中断向量表（SCB->VTOR 指向 App 的起始地址）
+3. 设置主栈指针 MSP，再跳到复位向量
+
+App 的 Flash 布局：
+  0x08008000  ┌──────────────────┐
+              │ 初始 MSP 值 (4B) │ ← 第一个字
+  0x08008004  ├──────────────────┤
+              │ Reset_Handler地址│ ← 第二个字
+              ├──────────────────┤
+              │ 其他中断向量...   │
+              └──────────────────┘
+```
+
+### 直觉三：排查四件套的 OTA 版本
+
+- **电源**：**升级期间必须保证供电**。电池设备应检查电量高于阈值（如 30%）才允许升级；Flash 擦写电流较大，供电不足会导致写入失败。
+- **时钟**：Bootloader 里通常用默认 HSI 时钟，跳转前要把时钟恢复到复位默认状态，否则 App 的时钟初始化可能出错。
+- **复位**：跳转前必须清理干净，或者更稳妥的做法是——**用 `NVIC_SystemReset()` 复位后由 Bootloader 读标记决定启动哪个分区**，这比软件跳转干净得多。
+- **引脚复用**：Bootloader 用过的外设引脚要还原为复位状态。
+
+## 最小可运行例程
+
+**分区表与配置结构定义**
+
+```c
+/* ===== Flash 分区（以 STM32F103ZE，512KB Flash 为例）===== */
+#define FLASH_BASE_ADDR     0x08000000u
+#define BOOTLOADER_ADDR     0x08000000u    /* 32KB */
+#define SLOT_A_ADDR         0x08008000u    /* 224KB */
+#define SLOT_B_ADDR         0x08040000u    /* 224KB */
+#define CONFIG_ADDR         0x08078000u    /* 8KB，存启动配置 */
+
+#define SLOT_SIZE           (224u * 1024u)
+
+/* ===== 固件头：放在每个 Slot 的最开头，紧跟其后才是真正的固件 ===== */
+typedef struct {
+    uint32_t magic;            /* 0x4F544146 = "OTAF"，标识有效固件 */
+    uint32_t version;          /* 版本号，用于防回滚 */
+    uint32_t size;             /* 固件字节数 */
+    uint32_t crc32;            /* 固件体的 CRC32 */
+    uint32_t build_time;
+    uint8_t  signature[64];    /* 可选：ECDSA 签名，防止刷入恶意固件 */
+    uint32_t reserved[3];
+} __attribute__((packed)) fw_header_t;
+
+/* ===== 启动配置：Bootloader 靠它决定跳哪 ===== */
+typedef struct {
+    uint32_t magic;
+    uint8_t  active_slot;      /* 0=A, 1=B */
+    uint8_t  pending_slot;     /* 待验证的槽，0xFF 表示无 */
+    uint8_t  try_count;        /* 新固件尝试启动次数 */
+    uint8_t  confirmed;        /* 新固件是否已被 App 确认健康 */
+    uint32_t crc32;
+} __attribute__((packed)) boot_cfg_t;
+```
+
+**Bootloader 主逻辑：带自动回滚的启动决策**
+
+```c
+#define MAX_TRY_COUNT   3
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+
+    boot_cfg_t cfg;
+    boot_cfg_read(&cfg);
+
+    uint32_t target = (cfg.active_slot == 0) ? SLOT_A_ADDR : SLOT_B_ADDR;
+
+    /* --- 情况1：有待验证的新固件 --- */
+    if (cfg.pending_slot != 0xFF) {
+        if (cfg.try_count >= MAX_TRY_COUNT) {
+            /* ★ 自动回滚：试了 3 次都没被 App 确认，说明新固件有问题 */
+            cfg.pending_slot = 0xFF;
+            cfg.try_count    = 0;
+            boot_cfg_write(&cfg);
+            /* target 保持为旧的 active_slot */
+        } else {
+            cfg.try_count++;
+            boot_cfg_write(&cfg);
+            target = (cfg.pending_slot == 0) ? SLOT_A_ADDR : SLOT_B_ADDR;
+        }
+    }
+
+    /* --- 情况2：校验目标固件的完整性 --- */
+    if (!fw_verify(target)) {
+        /* 目标坏了，试另一个槽 */
+        uint32_t backup = (target == SLOT_A_ADDR) ? SLOT_B_ADDR : SLOT_A_ADDR;
+        if (fw_verify(backup)) {
+            target = backup;
+        } else {
+            /* 两个槽都坏了，进入串口/USB 恢复模式，等待手动灌固件 */
+            enter_recovery_mode();
+        }
+    }
+
+    jump_to_app(target);
+    while (1) { }
+}
+
+/* 固件完整性校验：magic + 长度 + CRC32 */
+bool fw_verify(uint32_t slot_addr)
+{
+    const fw_header_t *h = (const fw_header_t *)slot_addr;
+
+    if (h->magic != 0x4F544146u)          return false;
+    if (h->size == 0 || h->size > SLOT_SIZE - sizeof(fw_header_t)) return false;
+
+    const uint8_t *body = (const uint8_t *)(slot_addr + sizeof(fw_header_t));
+    if (crc32_calc(body, h->size) != h->crc32) return false;
+
+    /* 生产环境还应校验签名，确认固件来源可信 */
+    /* if (!ecdsa_verify(body, h->size, h->signature, PUBLIC_KEY)) return false; */
+
+    return true;
+}
+```
+
+**跳转到 App：三步走**
+
+```c
+typedef void (*app_entry_t)(void);
+
+void jump_to_app(uint32_t slot_addr)
+{
+    uint32_t app_addr = slot_addr + sizeof(fw_header_t);
+    uint32_t app_msp  = *(volatile uint32_t *)(app_addr);
+    uint32_t app_pc   = *(volatile uint32_t *)(app_addr + 4);
+
+    /* 合法性检查：MSP 必须落在 RAM 范围内 */
+    if ((app_msp & 0x2FFE0000u) != 0x20000000u) {
+        enter_recovery_mode();
+        return;
+    }
+
+    /* 步骤 1：关闭一切，清理现场 */
+    HAL_RCC_DeInit();
+    HAL_DeInit();
+    SysTick->CTRL = 0; SysTick->LOAD = 0; SysTick->VAL = 0;
+
+    __disable_irq();
+    for (int i = 0; i < 8; i++) {
+        NVIC->ICER[i] = 0xFFFFFFFF;      /* 关闭所有中断 */
+        NVIC->ICPR[i] = 0xFFFFFFFF;      /* 清除所有挂起标志 */
+    }
+
+    /* 步骤 2：重定位中断向量表 —— 漏掉这步，App 的中断会跳回 Bootloader！ */
+    SCB->VTOR = app_addr;
+
+    __enable_irq();
+    __DSB();
+    __ISB();
+
+    /* 步骤 3：设置栈指针后跳转 */
+    __set_MSP(app_msp);
+    ((app_entry_t)app_pc)();             /* 一去不复返 */
+}
+```
+
+**App 侧：接收固件、写入备用槽、标记待验证**
+
+```c
+static uint32_t s_write_offset = 0;
+static uint32_t s_target_slot;
+
+/* 分片接收（HTTP Range / MQTT 分包 / Modbus 都可以） */
+int ota_write_chunk(const uint8_t *data, uint32_t len, uint32_t offset)
+{
+    /* 断点续传：offset 不连续时要么跳过、要么报错重来 */
+    if (offset != s_write_offset) return -1;
+
+    /* Flash 按页擦除，跨页时先擦 */
+    if ((offset % FLASH_PAGE_SIZE) == 0) {
+        flash_erase_page(s_target_slot + offset);
+        HAL_IWDG_Refresh(&hiwdg);        /* ★ 擦除慢，别忘了喂狗 */
+    }
+
+    if (flash_write(s_target_slot + offset, data, len) != HAL_OK) return -2;
+
+    /* 回读校验，确保真的写进去了 */
+    if (memcmp((void *)(s_target_slot + offset), data, len) != 0) return -3;
+
+    s_write_offset += len;
+    return 0;
+}
+
+/* 全部接收完毕：校验后标记为待验证，然后重启 */
+int ota_finish(const fw_header_t *expected)
+{
+    if (!fw_verify(s_target_slot)) {
+        log_err("OTA image verify failed");
+        return -1;
+    }
+
+    /* 防回滚：新版本必须不低于当前版本，防止攻击者刷入有漏洞的旧固件 */
+    if (expected->version < get_current_version()) {
+        log_err("OTA rollback rejected");
+        return -2;
+    }
+
+    boot_cfg_t cfg;
+    boot_cfg_read(&cfg);
+    cfg.pending_slot = (s_target_slot == SLOT_A_ADDR) ? 0 : 1;
+    cfg.try_count    = 0;
+    cfg.confirmed    = 0;
+    boot_cfg_write(&cfg);
+
+    log_info("OTA done, rebooting into new firmware");
+    HAL_Delay(100);                       /* 让日志发完 */
+    NVIC_SystemReset();
+}
+
+/* ★★★ 新固件启动后必须调用这个，否则 3 次后会被自动回滚 ★★★ */
+void ota_confirm_healthy(void)
+{
+    /* 建议在"网络连上 + 核心功能自检通过"之后才调用，
+       而不是一进 main 就确认 —— 否则回滚机制形同虚设 */
+    boot_cfg_t cfg;
+    boot_cfg_read(&cfg);
+
+    if (cfg.pending_slot != 0xFF) {
+        cfg.active_slot  = cfg.pending_slot;   /* 提交：新槽转正 */
+        cfg.pending_slot = 0xFF;
+        cfg.try_count    = 0;
+        cfg.confirmed    = 1;
+        boot_cfg_write(&cfg);
+        log_info("new firmware confirmed");
+    }
+}
+```
+
+**OTA 前的准入检查**
+
+```c
+bool ota_precheck(void)
+{
+    if (get_battery_percent() < 30)   { log_err("battery too low"); return false; }
+    if (is_device_busy())             { log_err("device busy");     return false; }
+    if (get_rssi() < -80)             { log_err("signal too weak"); return false; }
+    if (xPortGetFreeHeapSize() < 8192){ log_err("heap too low");    return false; }
+    return true;
+}
+```
+
+## 易错点
+
+- **忘了设置 `SCB->VTOR`**：App 里的中断会跳到 Bootloader 的向量表，现象是"一进中断就跑飞"。这是 OTA 头号错误。同时 App 的链接脚本起始地址也必须改成 Slot 地址。
+- **跳转前没关中断和外设**：Bootloader 开的 SysTick 或 UART 中断在 App 里触发，而 App 还没初始化对应的处理函数。
+- **擦写 Flash 时被看门狗咬**：一页擦除可能要 20~100ms，整片擦除要几秒。必须在循环里喂狗。
+- **擦写 Flash 时中断照常执行**：STM32 的 Flash 在擦写期间**不能被读取**，若中断向量表和 ISR 代码就在同一 Bank 上，会直接 HardFault。解法：把关键代码拷到 RAM 执行，或使用双 Bank 芯片。
+- **没有确认机制的 OTA**：新固件启动了但功能是坏的（比如联不上网），却没有回滚机制，等于远程变砖。**必须有"App 主动确认健康"这一步**。
+- **一上电就 confirm**：把 `ota_confirm_healthy()` 放在 main 开头，那么任何能启动的固件都会被确认，回滚机制完全失效。要放在核心功能自检通过之后。
+- **不做签名校验**：只校验 CRC 只能防传输错误，防不了恶意固件。联网设备必须做数字签名验证。
+- **不防版本回滚**：攻击者可以刷入有已知漏洞的旧版本。要在 Bootloader 里检查版本号单调递增。
+- **断点续传没做偏移校验**：网络重连后从错误位置继续写，得到一个 CRC 恰好碰巧通过的损坏固件（概率虽低但存在）。
+- **配置区只有一份**：写配置时掉电会导致配置损坏、无法启动。应该用两份配置交替写入（乒乓），或加 CRC 后写两个副本。
+- **升级过程中电量耗尽**：电池设备必须做电量准入检查。
+
+## 练习
+
+1. 为你的 MCU 规划一份 A/B 分区表，写出每个区的起始地址与大小，并修改 App 的链接脚本使其能在 Slot A 运行。
+2. 实现最小 Bootloader：读配置 → 校验 CRC → 跳转，用串口打印每一步，观察跳转成功后 App 的中断是否正常。
+3. 故意在 OTA 写入到 50% 时断电，重启后验证设备是否仍能从旧固件正常启动。
+4. 实现"新固件三次未确认自动回滚"，刷入一个故意不调用 confirm 的固件，验证第 4 次启动是否回到旧版本。
+5. 给固件加 CRC32 之外的签名校验：用 Python 生成密钥对并签名固件，在 Bootloader 里用 micro-ecc 验签。
+
+## 小结
+
+OTA 的设计目标只有一个：**无论在哪一步断电、无论新固件多烂，设备都必须还能启动**。实现这个目标的四根支柱是：A/B 双分区、写入后完整性校验、启动后健康确认、失败自动回滚。再加上签名验签与版本防回滚，你的 OTA 才算达到可以量产的水准。宁可多花几十 KB 的 Flash，也不要冒变砖的风险。
+
+## 延伸阅读
+
+- 上一篇：[任务间通信](/docs/嵌入式开发/RTOS与固件/任务间通信)
+- 烧录与调试基础：[固件烧录与调试](/docs/嵌入式开发/RTOS与固件/固件烧录与调试)
+- 升级期间的喂狗策略：[看门狗](/docs/嵌入式开发/单片机MCU/看门狗)
+- 下载通道：[无线通信 WiFi / BLE / LoRa](/docs/嵌入式开发/通信协议/无线通信WiFi_BLE_LoRa)
+- 有线升级通道：[Modbus 协议](/docs/嵌入式开发/通信协议/Modbus协议)
+- 内存与 Flash 布局：[内存管理与栈溢出](/docs/嵌入式开发/RTOS与固件/内存管理与栈溢出)
+- 供电稳定性保障：[电源与稳压](/docs/嵌入式开发/硬件与电路基础/电源与稳压)

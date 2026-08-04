@@ -1,0 +1,151 @@
+---
+title: "ADC 采样"
+sidebar_position: 5
+---
+
+# ADC 采样
+
+温度、光强、电池电压、电流、麦克风——现实世界是连续的模拟量，而 MCU 只认数字。**ADC（模数转换器）** 就是这道桥。ADC 也是嵌入式里最容易"读数飘"的外设，因为它同时受软件配置和硬件布局影响。
+
+## 学习目标
+
+- 会做 ADC 的量化换算：分辨率、参考电压、LSB 大小。
+- 理解采样时间、采样保持电容与信号源阻抗的关系。
+- 掌握单次转换、连续转换 + DMA、定时器触发三种工作方式。
+- 会用内部参考电压（VREFINT）校准实际 VDDA，提高绝对精度。
+- 掌握常见滤波手段：过采样、滑动平均、中值滤波。
+
+## 核心直觉
+
+ADC 的基本换算只有一条：
+
+```text
+Vin = ADC_RAW × VREF+ / (2^N - 1)
+
+12 位 ADC，VREF+ = 3.3V：
+  1 LSB = 3.3 / 4095 ≈ 0.806 mV
+  读数 2048 → 约 1.65V
+```
+
+第二条关键直觉是**采样保持电容要充电**。ADC 内部有个 `C_ADC`（几 pF 到十几 pF），采样阶段外部信号要把它充到目标电压。如果信号源内阻很大（比如分压电阻用了 1MΩ），充电就慢，采样时间不够就会读到偏低的值。
+
+```text
+外部信号 ──[ R_source ]──┬── ADC 输入
+                          │
+                       C_ADC（采样保持电容）
+需要：t_sample > 大约 10 × R_source × C_ADC
+```
+
+所以经验法则是：**高阻信号源必须配长采样时间，或在 ADC 输入端并一个 10~100nF 电容 + 前置运放跟随器**。
+
+排查读数异常时，四件套的 ADC 版本是：
+- **电源**：`VDDA` 有没有独立滤波？`VREF+` 是接 VDDA 还是外部基准？电源纹波会 1:1 变成读数噪声。
+- **时钟**：ADC 时钟超频（STM32F1 上限 14MHz）会导致转换结果错乱。
+- **复位/校准**：F1 系列上电后必须执行一次 `HAL_ADCEx_Calibration_Start()`，不校准会有明显偏移。
+- **引脚复用**：ADC 输入脚必须配成 `GPIO_MODE_ANALOG`，配成数字输入会引入漏电流并干扰读数。
+
+## 最小可运行例程
+
+方式一：单通道阻塞式读取，最直白：
+
+```c
+ADC_HandleTypeDef hadc1;
+
+uint16_t adc_read_blocking(void)
+{
+    HAL_ADC_Start(&hadc1);
+    if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {  /* 10ms 超时 */
+        uint16_t raw = HAL_ADC_GetValue(&hadc1);
+        HAL_ADC_Stop(&hadc1);
+        return raw;
+    }
+    HAL_ADC_Stop(&hadc1);
+    return 0;
+}
+
+/* 换算成毫伏 */
+uint32_t adc_to_mv(uint16_t raw) { return (uint32_t)raw * 3300u / 4095u; }
+```
+
+方式二：多通道扫描 + DMA 循环搬运，CPU 零占用（生产项目的标准做法）：
+
+```c
+#define CH_NUM   3
+static volatile uint16_t g_adc_buf[CH_NUM];   /* DMA 直接往这里写 */
+
+void ADC_DMA_Init(void)
+{
+    /* CubeMX 中：ScanConvMode=ENABLE, ContinuousConvMode=ENABLE,
+       DMAContinuousRequests=ENABLE, NbrOfConversion=3
+       Rank1→IN0(电位器)  Rank2→IN1(NTC)  Rank3→VREFINT           */
+    HAL_ADCEx_Calibration_Start(&hadc1);      /* F1 必做，否则有零点漂移 */
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)g_adc_buf, CH_NUM);
+    /* 之后 g_adc_buf 会被硬件持续刷新，主循环随时读即可 */
+}
+
+/* 用内部 1.20V 基准反推真实 VDDA，避免电池电压下降导致读数整体偏移 */
+uint32_t get_vdda_mv(void)
+{
+    const uint32_t VREFINT_MV = 1200u;        /* 数据手册典型值 */
+    uint16_t vrefint_raw = g_adc_buf[2];
+    if (vrefint_raw == 0) return 3300u;
+    return VREFINT_MV * 4095u / vrefint_raw;  /* 真实供电电压 */
+}
+
+uint32_t read_channel_mv(uint8_t idx)
+{
+    return (uint32_t)g_adc_buf[idx] * get_vdda_mv() / 4095u;
+}
+```
+
+方式三：软件降噪。过采样（采 16 次求和右移 2 位）可把 12 位提升到近似 14 位有效精度：
+
+```c
+/* 过采样提精度：N 次平均等效增加 log4(N) 位分辨率 */
+uint16_t adc_oversample_16x(void)
+{
+    uint32_t sum = 0;
+    for (int i = 0; i < 16; i++) sum += adc_read_blocking();
+    return (uint16_t)(sum >> 2);   /* 16 次求和右移 2 → 14 位量程 */
+}
+
+/* 中值滤波：专治偶发尖峰（继电器吸合、电机启动那一下） */
+uint16_t adc_median3(uint16_t a, uint16_t b, uint16_t c)
+{
+    if (a > b) { uint16_t t = a; a = b; b = t; }
+    if (b > c) { uint16_t t = b; b = c; c = t; }
+    if (a > b) { uint16_t t = a; a = b; b = t; }
+    return b;
+}
+```
+
+## 易错点
+
+- **引脚没配成模拟模式**：数字输入缓冲器仍然工作，会漏电流并让读数偏高、抖动大。
+- **F1 忘记校准**：`HAL_ADCEx_Calibration_Start` 不调用，零点可能偏几十个 LSB。
+- **采样时间取最短**：默认 1.5 周期只适合低阻源。接热敏电阻、分压网络时要拉到 239.5 周期这一档。
+- **拿 VDD 当准确基准**：USB 供电的 3.3V 实际可能是 3.25~3.35V，用 VREFINT 校准可以消掉这项误差。
+- **DMA 缓冲区没加 `volatile`**：编译器会缓存旧值，主循环永远读到第一次的数。
+- **多通道扫描顺序与数组下标错位**：Rank 顺序和 `g_adc_buf` 下标必须一一对应，配错了就是"温度通道读到电位器"。
+- **模拟地与数字地混在一起**：大电流回路的地弹会直接叠加到 ADC 读数上，布局上应单点接地。
+- **忽略了输入超范围**：超过 VREF+ 或低于 0V 会触发 ESD 保护二极管导通，轻则读数封顶，重则损坏引脚。
+
+## 练习
+
+1. 用电位器分压做输入，画出「设定电压 vs ADC 读数」曲线，找出线性度最差的区段并解释原因。
+2. 分别用最短和最长采样时间读取一个串了 1MΩ 电阻的信号，对比读数差异，验证 RC 充电理论。
+3. 用定时器触发 ADC + DMA，以精确 1kHz 采样一路正弦波，把数据通过串口导出后画波形。
+4. 实现 NTC 热敏电阻测温：查 B 值公式做换算，并用 VREFINT 校准，与温度计对比误差。
+
+## 小结
+
+ADC 用好的关键是「软硬两条线都对」：软件上要配对模拟模式、采样时间、校准与 DMA；硬件上要给 VDDA 干净的电源、给高阻信号加缓冲、把模拟地和数字地规划好。读数飘的时候，先用示波器看看输入端本身有没有噪声，再怀疑代码——多数时候问题在电路，不在寄存器。
+
+## 延伸阅读
+
+- 上一篇：[定时器与 PWM](/docs/嵌入式开发/单片机MCU/定时器与PWM)
+- 下一篇：[低功耗模式](/docs/嵌入式开发/单片机MCU/低功耗模式)
+- 电源质量决定 ADC 精度：[电源与稳压](/docs/嵌入式开发/硬件与电路基础/电源与稳压)
+- 布局与地平面：[PCB 与布局常识](/docs/嵌入式开发/硬件与电路基础/PCB与布局常识)
+- 测量工具：[示波器与万用表使用](/docs/嵌入式开发/硬件与电路基础/示波器与万用表使用)
+- 元器件基础：[常见元器件与电路](/docs/嵌入式开发/硬件与电路基础/常见元器件与电路)

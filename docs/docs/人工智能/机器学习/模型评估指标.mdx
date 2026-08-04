@@ -1,0 +1,166 @@
+---
+sidebar_position: 7
+title: "模型评估指标"
+description: "准确率之外：混淆矩阵、精确率/召回率/F1、ROC-AUC 与 PR-AUC、回归指标 与交叉验证，用一份不平衡数据把指标选择讲透。"
+---
+
+「我的模型准确率 99%」——这句话可能毫无意义。如果 100 个人里只有 1 个患病，一个永远输出「健康」的模型准确率就是 99%，却一个病人都查不出。**选错指标，等于给自己发了一张假的成绩单。**
+
+## 学习目标
+
+- 读懂混淆矩阵，并能从中手算出所有分类指标。
+- 说清精确率与召回率的权衡，知道各自对应什么业务代价。
+- 理解 ROC-AUC 的概率含义，以及不平衡数据下为什么要看 PR-AUC。
+- 掌握回归任务的 MAE / RMSE / $R^2$ 各自的脾气。
+- 会用交叉验证得到可信的评估结果，而不是靠一次划分碰运气。
+
+## 核心直觉
+
+### 混淆矩阵：一切指标的源头
+
+二分类的所有结果只有四种，把它们排成 2×2 的表：
+
+|  | 预测为正 | 预测为负 |
+| --- | --- | --- |
+| **实际为正** | TP（真正例） | FN（假负例，**漏报**） |
+| **实际为负** | FP（假正例，**误报**） | TN（真负例） |
+
+由此定义：
+
+$$
+\text{Accuracy} = \frac{TP+TN}{TP+TN+FP+FN}, \quad
+\text{Precision} = \frac{TP}{TP+FP}, \quad
+\text{Recall} = \frac{TP}{TP+FN}
+$$
+
+用一句大白话记住它们：
+
+- **精确率**：我说是正的，有多少真是正的？——**「宁缺毋滥」**，关心误报。
+- **召回率**：所有真正的正例，我抓到了多少？——**「宁枉勿纵」**，关心漏报。
+
+### 精确率与召回率永远在打架
+
+把阈值调低，什么都判成正类 → 召回率 100%，精确率崩塌；把阈值调高，只挑最有把握的 → 精确率高，召回率极低。**这是同一个模型在不同阈值下的两端，不是两个模型的优劣。**
+
+F1 是两者的调和平均，用调和平均是因为它对「短板」更敏感——只要有一项接近 0，F1 就接近 0：
+
+$$
+F_1 = \frac{2 \cdot P \cdot R}{P + R}
+$$
+
+业务上如果两者代价不等，用 $F_\beta$：$\beta > 1$ 偏向召回（如癌症筛查），$\beta < 1$ 偏向精确（如垃圾邮件拦截，误杀正常邮件代价高）。
+
+### ROC-AUC 的概率含义
+
+ROC 曲线横轴是假正率 $FPR = FP/(FP+TN)$，纵轴是召回率 $TPR$，扫遍所有阈值画出的曲线。它下面的面积 AUC 有一个非常漂亮的解释：
+
+> **随机取一个正样本和一个负样本，模型给正样本打分更高的概率。**
+
+所以 AUC = 0.5 等于瞎猜，AUC = 1 是完美排序，AUC 与阈值无关，只衡量**排序能力**。
+
+**但在极度不平衡时 ROC 会骗人**：负样本极多时，FP 增加几百个对 $FPR$ 的影响微乎其微，曲线依旧好看。此时应看 **PR 曲线（精确率-召回率）**，它完全不看 TN，对少数类更诚实。经验法则：**正样本占比低于 10% 就优先看 PR-AUC。**
+
+### 回归指标的脾气
+
+| 指标 | 公式 | 特点 |
+| --- | --- | --- |
+| MAE | $\frac{1}{n}\sum \lvert y - \hat y \rvert$ | 与目标同量纲，对离群点稳健 |
+| MSE / RMSE | $\frac{1}{n}\sum (y-\hat y)^2$ | 放大大误差，对离群点敏感 |
+| $R^2$ | $1 - \frac{\sum (y-\hat y)^2}{\sum (y-\bar y)^2}$ | 无量纲，0 表示等同于「永远预测均值」，可以为负 |
+| MAPE | $\frac{1}{n}\sum \lvert \frac{y-\hat y}{y} \rvert$ | 百分比误差，$y$ 接近 0 时会爆炸 |
+
+## 最小示例
+
+### 从混淆矩阵到全套指标
+
+```python showLineNumbers
+import numpy as np
+from sklearn.datasets import make_classification
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import (confusion_matrix, classification_report,
+                             roc_auc_score, average_precision_score)
+
+# 构造 1:19 的不平衡数据（正样本仅 5%）
+X, y = make_classification(n_samples=4000, n_features=10, n_informative=5,
+                           weights=[0.95, 0.05], random_state=42)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3,
+                                          stratify=y, random_state=42)
+
+clf = LogisticRegression(max_iter=1000).fit(X_tr, y_tr)
+proba = clf.predict_proba(X_te)[:, 1]
+pred = (proba >= 0.5).astype(int)
+
+tn, fp, fn, tp = confusion_matrix(y_te, pred).ravel()
+print(f"TN={tn} FP={fp} FN={fn} TP={tp}")
+print(f"手算 准确率={(tp+tn)/(tp+tn+fp+fn):.4f}")
+print(f"手算 精确率={tp/(tp+fp):.4f}  召回率={tp/(tp+fn):.4f}")
+print(classification_report(y_te, pred, digits=4))
+
+print(f"ROC-AUC = {roc_auc_score(y_te, proba):.4f}")
+print(f"PR-AUC  = {average_precision_score(y_te, proba):.4f}")
+
+# 对照：一个永远预测负类的「废物模型」
+print(f"全预测负类的准确率 = {(y_te == 0).mean():.4f}")
+```
+
+运行后你会看到一个关键现象：**废物模型准确率约 0.95，而真模型的准确率可能只高出几个百分点**，但 PR-AUC 差距极大。这就是「准确率骗人」的实证。
+
+### 阈值扫描：亲手看到 P/R 的跷跷板
+
+```python showLineNumbers
+for t in [0.1, 0.2, 0.3, 0.5, 0.7, 0.9]:
+    p = (proba >= t).astype(int)
+    tp = ((p == 1) & (y_te == 1)).sum()
+    fp = ((p == 1) & (y_te == 0)).sum()
+    fn = ((p == 0) & (y_te == 1)).sum()
+    prec = tp / (tp + fp) if tp + fp else 0
+    rec = tp / (tp + fn) if tp + fn else 0
+    f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0
+    print(f"阈值 {t:<4} 精确率 {prec:.3f}  召回率 {rec:.3f}  F1 {f1:.3f}")
+```
+
+### 用交叉验证代替一次划分
+
+```python showLineNumbers
+from sklearn.model_selection import cross_validate, StratifiedKFold
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+res = cross_validate(LogisticRegression(max_iter=1000), X, y, cv=cv,
+                     scoring=["accuracy", "f1", "roc_auc", "average_precision"])
+for k, v in res.items():
+    if k.startswith("test_"):
+        print(f"{k[5:]:<18} {v.mean():.4f} ± {v.std():.4f}")
+```
+
+**注意标准差**：如果某指标的 ± 值和模型之间的差距同量级，说明「A 比 B 好」很可能只是随机波动。
+
+## 易错点
+
+- **不平衡数据只看准确率**：最经典的错误，前面已用代码证明。
+- **用测试集反复调参**：测试集一旦参与选择，就变成了「第二个验证集」，报告的分数会乐观偏高。正确做法：训练集 / 验证集（或交叉验证）/ 测试集三分，测试集只在最后动一次。
+- **交叉验证前就做了标准化或过采样**：在整个数据集上 `fit_transform` 会把验证折的信息泄露到训练折。必须用 `Pipeline` 把预处理包进去，让它在每折内部单独 fit。
+- **时间序列用随机 KFold**：用未来预测过去属于严重穿越，应使用 `TimeSeriesSplit`。
+- **$R^2$ 为负就以为代码有 bug**：$R^2 < 0$ 只是说明模型比「永远预测均值」还差，完全可能发生在测试集上。
+- **多分类直接用二分类指标**：需要明确 `average` 参数——`macro`（各类等权，关心小类）、`weighted`（按样本数加权）、`micro`（等价于全局准确率），选错会得出相反结论。
+- **忽略指标的置信区间**：单次划分得到的 0.912 与 0.908，差异往往没有统计意义。
+
+## 练习
+
+1. 把示例中的 `weights` 改成 `[0.99, 0.01]`，重跑并对比 ROC-AUC 与 PR-AUC 的下降幅度，验证「PR 对少数类更敏感」。
+2. 给逻辑回归加上 `class_weight="balanced"`，观察召回率提升与精确率下降的幅度，讨论在信贷风控里这笔交易是否划算。
+3. 手工在纸上写一个混淆矩阵（TP=8, FP=2, FN=12, TN=978），算出精确率、召回率、F1 与准确率，再用 `classification_report` 核对。
+4. 用 `TimeSeriesSplit` 对一份带时间戳的数据做交叉验证，与随机 `KFold` 的结果对比，看看穿越会让分数虚高多少。
+5. 在回归任务上人为加入一个极端离群点，比较 MAE 与 RMSE 的变化幅度，解释为什么 RMSE 更「怕」离群点。
+
+## 小结
+
+评估指标不是数学练习，而是**把业务代价翻译成数字**的过程。选指标前先问三个问题：正负样本比例是多少？误报和漏报哪个更贵？我需要的是排序能力还是硬分类？答完这三题，指标自然就定了。最后请始终用交叉验证 + 标准差来报告结果——一个没有波动范围的分数，说服力有限。
+
+## 延伸阅读
+
+- [逻辑回归](/docs/人工智能/机器学习/逻辑回归) — 概率输出与阈值选择。
+- [超参数调优](/docs/人工智能/机器学习/超参数调优) — 交叉验证如何嵌进搜索流程。
+- [特征工程](/docs/人工智能/机器学习/特征工程) — 防止数据泄露的 Pipeline 写法。
+- [集成学习与 Boosting](/docs/人工智能/机器学习/集成学习Boosting) — 用更强的模型把指标推上去。
+- [模型评测](/docs/人工智能/大模型LLM与应用/模型评测) — 换到大模型语境下的评测思路。

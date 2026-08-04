@@ -1,0 +1,265 @@
+---
+title: "中断与临界区"
+sidebar_position: 4
+---
+
+# 中断与临界区
+
+中断让 MCU 能"一边干活一边响应突发事件"，但它也带来了嵌入式最隐蔽的一类 bug：**竞态条件**。一个变量被主循环和 ISR 同时访问，99.99% 的时间都对，剩下的 0.01% 让你的设备在客户现场随机死机。
+
+## 学习目标
+
+- 理解 Cortex-M 的 NVIC 优先级模型：抢占优先级 vs 子优先级、数值越小越高。
+- 掌握 FreeRTOS 的优先级分界线 `configMAX_SYSCALL_INTERRUPT_PRIORITY` 的含义。
+- 会正确使用四种临界区手段，并知道各自的代价。
+- 能识别典型竞态场景，并给出无锁或加锁的正确解法。
+- 理解优先级反转的成因与优先级继承机制。
+
+## 核心直觉
+
+### 直觉一：Cortex-M 的优先级"数值越小、优先级越高"
+
+```text
+NVIC 优先级（以 4 位优先级、STM32 为例，取值 0~15）：
+  0  ← 最高优先级
+  ...
+  15 ← 最低优先级
+
+分组（NVIC_PRIORITYGROUP_4 时全部 4 位都是抢占优先级）：
+  抢占优先级不同 → 高的可以打断低的（中断嵌套）
+  抢占优先级相同、子优先级不同 → 不能互相打断，只影响同时挂起时谁先跑
+```
+
+**FreeRTOS 环境下必须理解这条分界线**：
+
+```text
+优先级数值
+   0  ┐
+   1  │  ← 高于 configMAX_SYSCALL_INTERRUPT_PRIORITY
+   2  │     这些中断：FreeRTOS 永远不会关掉它们（真正的实时中断）
+   3  ┘     ★ 但绝对不能在里面调用任何 FreeRTOS API ★
+  ───────── configMAX_SYSCALL_INTERRUPT_PRIORITY = 5
+   5  ┐
+   6  │  ← 低于（数值大于等于）分界线
+   ...│     这些中断：可以调用 xxxFromISR() 系列 API
+  15  ┘     进临界区时会被内核屏蔽
+
+configKERNEL_INTERRUPT_PRIORITY = 15（PendSV/SysTick 用最低优先级）
+```
+
+**违反这条规则的现象**：在高于分界线的 ISR 里调用 `xQueueSendFromISR`，程序会在 `configASSERT` 处停住，或者更糟——运行时随机破坏内核数据结构。
+
+### 直觉二：ISR 的三条纪律
+
+```text
+1. 短    ── 只做"读硬件 + 存数据 + 发通知"，微秒级完成
+2. 不阻塞 ── 不 delay、不等信号量、不 printf、不 malloc
+3. 通知   ── 重活交给任务，用 FromISR 系列 API 唤醒它
+
+反模式：                          正确模式：
+ISR {                             ISR {
+  read_sensor();                    raw = ADC->DR;              // 快
+  filter();          ← 耗时         xQueueSendFromISR(q, &raw,  // 通知
+  compute_pid();     ← 耗时                          &woken);
+  update_display();  ← 更耗时       portYIELD_FROM_ISR(woken);
+}                                 }
+                                  Task { 收数据 → 滤波 → PID → 显示 }
+```
+
+### 直觉三：临界区的四把刀，按代价从轻到重
+
+| 手段 | 屏蔽范围 | 代价 | 适用 |
+|------|----------|------|------|
+| 原子操作 / `volatile` 单字读写 | 无 | 零 | 单个对齐的 32 位变量读写 |
+| `taskENTER_CRITICAL()` | 屏蔽分界线以下的所有中断 | 中（影响实时性） | 保护几行代码的共享数据 |
+| 关全局中断 `__disable_irq()` | 屏蔽一切中断 | 高（连硬 fault 外全停） | 极短的原子序列，慎用 |
+| 互斥量 Mutex | 不屏蔽中断，只阻塞任务 | 低（但有上下文切换） | 保护长耗时资源（如 SPI 总线） |
+
+**核心原则：临界区越短越好**。在临界区里 `printf` 或 `HAL_Delay` 会让整个系统的中断响应延迟飙升。
+
+### 排查四件套的中断版本
+
+- **电源**：电压跌落会引起虚假中断（引脚电平抖动）。
+- **时钟**：外设时钟没开，中断标志永远不置位，现象是"中断从不触发"。
+- **复位**：NVIC 使能了但外设中断源没使能（如 `__HAL_UART_ENABLE_IT`），也是不触发。
+- **引脚复用**：EXTI 线共享——PA0 和 PB0 共用 EXTI0，同时配置会冲突。
+
+## 最小可运行例程
+
+**场景一：ISR 与任务共享数据的三种正确写法**
+
+```c
+/* ===== 反例：竞态 bug ===== */
+volatile uint32_t g_counter = 0;      /* 32 位对齐读写在 Cortex-M 上是原子的 */
+volatile uint64_t g_total   = 0;      /* 但 64 位不是！读写要两条指令 */
+
+void TIM2_IRQHandler(void) {
+    g_total += 1;                     /* 读-改-写三步，可能被打断 */
+}
+void task(void) {
+    uint64_t snapshot = g_total;      /* 读高 32 位后被中断，读到撕裂的值！ */
+}
+
+/* ===== 正确写法 1：临界区保护（最直接） ===== */
+uint64_t read_total_safe(void)
+{
+    uint64_t v;
+    taskENTER_CRITICAL();             /* 屏蔽可调用 API 的中断 */
+    v = g_total;
+    taskEXIT_CRITICAL();
+    return v;
+}
+
+/* ISR 里要用 FromISR 版本 */
+void TIM2_IRQHandler(void)
+{
+    UBaseType_t saved = taskENTER_CRITICAL_FROM_ISR();
+    g_total += 1;
+    taskEXIT_CRITICAL_FROM_ISR(saved);
+}
+
+/* ===== 正确写法 2：无锁双读校验（适合高频读、极短临界区不可接受时）===== */
+uint64_t read_total_lockfree(void)
+{
+    uint64_t a, b;
+    do {
+        a = g_total;
+        b = g_total;
+    } while (a != b);                 /* 两次读一致说明中间没被改 */
+    return a;
+}
+
+/* ===== 正确写法 3：根本不共享 —— 用队列传递（最推荐）===== */
+void TIM2_IRQHandler(void)
+{
+    BaseType_t woken = pdFALSE;
+    uint32_t   tick  = TIM2->CNT;
+
+    xQueueSendFromISR(g_tick_queue, &tick, &woken);
+    portYIELD_FROM_ISR(woken);        /* 若唤醒了高优先级任务，立刻切换 */
+}
+```
+
+**场景二：环形缓冲区——单生产者单消费者的无锁设计**
+
+```c
+/* 经典技巧：只要「一个 ISR 写、一个任务读」，且索引是原子读写的，
+   就完全不需要临界区。这是嵌入式里最优雅的并发结构。         */
+
+#define RB_SIZE  256                  /* 必须是 2 的幂，才能用位与取模 */
+
+typedef struct {
+    uint8_t           buf[RB_SIZE];
+    volatile uint16_t head;           /* 只有生产者(ISR)修改 */
+    volatile uint16_t tail;           /* 只有消费者(任务)修改 */
+} ringbuf_t;
+
+static ringbuf_t g_uart_rb;
+
+/* 生产者：在 UART 接收中断里调用 */
+static inline bool rb_push(ringbuf_t *rb, uint8_t d)
+{
+    uint16_t next = (rb->head + 1) & (RB_SIZE - 1);
+    if (next == rb->tail) return false;    /* 满了，丢弃（或计数溢出） */
+
+    rb->buf[rb->head] = d;
+    __DMB();                               /* 内存屏障：确保数据先写入再更新索引 */
+    rb->head = next;
+    return true;
+}
+
+/* 消费者：在任务里调用 */
+static inline bool rb_pop(ringbuf_t *rb, uint8_t *out)
+{
+    if (rb->tail == rb->head) return false;   /* 空 */
+
+    *out = rb->buf[rb->tail];
+    __DMB();
+    rb->tail = (rb->tail + 1) & (RB_SIZE - 1);
+    return true;
+}
+
+void USART1_IRQHandler(void)
+{
+    if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_RXNE)) {
+        rb_push(&g_uart_rb, (uint8_t)(USART1->DR & 0xFF));   /* 零阻塞、零加锁 */
+    }
+}
+```
+
+**场景三：优先级反转与优先级继承**
+
+```text
+优先级反转的经典场景：
+  低优先级任务 L 拿到了 Mutex，正在用 SPI
+  高优先级任务 H 来了，也要用 SPI → 被 Mutex 阻塞，只能等 L
+  中优先级任务 M 就绪 → 抢占 L（因为 M 优先级高于 L）
+  结果：H 被 M 间接延迟了！高优先级任务被中优先级任务卡住 = 优先级反转
+
+  时间轴：
+  H  ──┐            ┌────── （被迫等待，可能超时）
+       ↓阻塞         ↑
+  M       ┌───────┐        （M 一直在跑，L 得不到 CPU）
+  L  ──┬─┘       └─继续───┘
+       拿锁
+
+FreeRTOS 的解法：Mutex 自带优先级继承
+  L 拿着 H 需要的锁时，L 的优先级被临时提升到 H 的水平，
+  这样 M 就抢不走 L，L 快速跑完释放锁，H 立刻恢复执行。
+```
+
+```c
+/* 关键：保护共享资源要用 Mutex（有继承），不要用 Binary Semaphore（无继承） */
+SemaphoreHandle_t g_spi_mutex;
+
+void init(void) {
+    g_spi_mutex = xSemaphoreCreateMutex();      /* ✓ 有优先级继承 */
+    /* g_spi_mutex = xSemaphoreCreateBinary();     ✗ 无继承，会发生反转 */
+}
+
+void use_spi(void)
+{
+    if (xSemaphoreTake(g_spi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        spi_transfer(...);                       /* 独占访问 */
+        xSemaphoreGive(g_spi_mutex);             /* 务必成对，异常路径也要放 */
+    } else {
+        /* 超时要有处理，不能假装没发生 */
+        log_error("SPI mutex timeout");
+    }
+}
+```
+
+## 易错点
+
+- **在高优先级 ISR 里调用 FreeRTOS API**：优先级数值小于 `configMAX_SYSCALL_INTERRUPT_PRIORITY` 的中断绝对禁止。开发时务必打开 `configASSERT` 和 `configASSERT_DEFINED`，FreeRTOS 会帮你抓住这个错误。
+- **忘记用 FromISR 版本**：`xQueueSend` 在 ISR 里会尝试阻塞，直接导致系统崩溃。
+- **忘记 `portYIELD_FROM_ISR`**：数据发进队列了，但高优先级任务要等到下一个 tick 才被调度，实时性白白损失几毫秒。
+- **临界区里做耗时操作**：`taskENTER_CRITICAL()` 后调用 `printf`，会屏蔽中断几毫秒，UART 丢字节、定时器丢拍。
+- **临界区嵌套不匹配**：`ENTER` 和 `EXIT` 必须严格成对，FreeRTOS 用计数器管理嵌套，漏掉一个 `EXIT` 中断就永远不开了。
+- **用二值信号量做互斥**：没有优先级继承，会引发优先级反转。互斥用 Mutex，同步用 Semaphore，这是两种不同的语义。
+- **在 ISR 里用 Mutex**：Mutex 不能在中断中使用（优先级继承机制需要任务上下文），中断里同步只能用信号量的 FromISR 版本或任务通知。
+- **以为 `volatile` 能解决竞态**：`volatile` 只保证"每次都真的去内存读写"，**不保证操作的原子性**。`counter++` 加了 volatile 依然是竞态的。
+- **中断优先级用默认值 0**：所有中断都设成 0，就失去了嵌套能力，且在 FreeRTOS 下必然触发断言。
+- **EXTI 线共享冲突**：PA5 和 PC5 都用 EXTI5，同时使能会互相干扰。
+
+## 练习
+
+1. 写一段 `g_counter++` 在 ISR 和主循环同时执行的代码，让中断频率很高，运行足够久后验证计数是否丢失，然后加临界区对比。
+2. 把 `configMAX_SYSCALL_INTERRUPT_PRIORITY` 设为 5，故意在优先级 2 的中断里调用 `xQueueSendFromISR`，观察 `configASSERT` 的触发。
+3. 用 GPIO 翻转法测量 `taskENTER_CRITICAL()` 到 `taskEXIT_CRITICAL()` 之间的实际耗时，评估它对中断延迟的影响。
+4. 实现上文的无锁环形缓冲区，用 UART 高速接收数据，验证在无临界区的情况下不丢不错。
+5. 构造一个优先级反转场景（三个任务 + 一个共享资源），分别用 Mutex 和二值信号量实现，用 Tracealyzer 或 GPIO 打点对比高优先级任务的等待时间。
+
+## 小结
+
+并发安全的黄金法则只有三句：**ISR 要短、共享数据要保护、优先级分界线不能越**。而最好的保护往往是"不共享"——用队列或环形缓冲区把数据从 ISR 传给任务，天然避开了绝大多数竞态。当你确实需要加锁时，记住：互斥用 Mutex（有优先级继承），同步用 Semaphore，临界区越短越好。
+
+## 延伸阅读
+
+- 上一篇：[内存管理与栈溢出](/docs/嵌入式开发/RTOS与固件/内存管理与栈溢出)
+- 下一篇：[任务间通信](/docs/嵌入式开发/RTOS与固件/任务间通信)
+- 调度模型基础：[FreeRTOS 任务与调度](/docs/嵌入式开发/RTOS与固件/FreeRTOS任务与调度)
+- 中断的硬件侧：[GPIO 与中断](/docs/嵌入式开发/单片机MCU/GPIO与中断)
+- 定时器中断源：[定时器与 PWM](/docs/嵌入式开发/单片机MCU/定时器与PWM)
+- 理论对照：[进程、线程与调度](/docs/计算机科学基础/计算机科学导论/操作系统/进程线程与调度)
+- 并发语法基础：[C 语言并发执行](/docs/编程语言/C/17并发执行)

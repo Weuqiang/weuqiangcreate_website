@@ -1,0 +1,212 @@
+---
+sidebar_position: 10
+title: "集成学习与 Boosting"
+description: "从 Bagging 到 Boosting：AdaBoost 如何加权样本、GBDT 如何拟合残差、XGBoost/LightGBM 又快在哪，以及调参的先后顺序。"
+---
+
+[随机森林](/docs/人工智能/机器学习/随机森林)已经展示了「三个臭皮匠顶个诸葛亮」的威力，那是 **Bagging** 路线。本篇讲另一条更强、也更需要小心调参的路线：**Boosting**——让每一棵新树专门去纠正前面所有树犯下的错。在结构化/表格数据上，梯度提升树至今仍是 Kaggle 的头号武器。
+
+## 学习目标
+
+- 用偏差-方差分解说清 Bagging 与 Boosting 的分工差异。
+- 理解 AdaBoost 的样本重加权机制，能手算一轮更新。
+- 理解 GBDT「用新树拟合负梯度（残差）」的核心思想。
+- 知道 XGBoost / LightGBM / CatBoost 各自的工程改进点。
+- 掌握学习率与树数量的联动，以及调参的推荐顺序。
+
+## 核心直觉
+
+### Bagging 降方差，Boosting 降偏差
+
+回忆泛化误差的分解：
+
+$$
+\text{Error} = \text{Bias}^2 + \text{Variance} + \text{Noise}
+$$
+
+- **Bagging（如随机森林）**：并行训练一堆**深树**。单棵深树偏差低但方差高，取平均后方差被摊薄。$n$ 个相关性为 $\rho$ 的模型平均后，方差约为 $\rho\sigma^2 + \frac{1-\rho}{n}\sigma^2$——这就是为什么随机森林还要随机选特征：**降低 $\rho$ 才能真正降方差**。
+- **Boosting（如 GBDT）**：串行训练一堆**浅树**（常见深度 3~6，叫「弱学习器」）。单棵浅树偏差高，但每一棵都在补上一轮的短板，累加后偏差持续下降。
+
+一句话记忆：**Bagging 是「民主投票」，Boosting 是「师徒接力」。** 前者可以随便并行，后者必须排队。
+
+### AdaBoost：给做错的题加权
+
+AdaBoost 的机制像老师批改作业：**这次做错的题，下次加重分量再练。**
+
+1. 初始所有样本权重相等：$w_i = 1/n$。
+2. 训练一个弱分类器，算加权错误率 $\varepsilon$。
+3. 计算该分类器的话语权：
+
+$$
+\alpha = \frac{1}{2}\ln\frac{1-\varepsilon}{\varepsilon}
+$$
+
+4. 更新样本权重：分对的降权 $e^{-\alpha}$，分错的升权 $e^{\alpha}$，再归一化。
+5. 最终预测是所有弱分类器的加权投票 $\mathrm{sign}(\sum \alpha_t h_t(x))$。
+
+**手算一轮**：若 $\varepsilon = 0.3$，则 $\alpha = \frac{1}{2}\ln(0.7/0.3) \approx 0.424$。错样本权重乘以 $e^{0.424} \approx 1.53$，对样本乘以 $e^{-0.424} \approx 0.654$。错误率越低，$\alpha$ 越大、话语权越高；若 $\varepsilon = 0.5$（等于瞎猜），$\alpha = 0$，这个分类器直接被忽略。
+
+### GBDT：用新树去拟合残差
+
+梯度提升换了个更通用的视角：**把「加一棵树」看作在函数空间里走一步梯度下降。**
+
+模型是加法形式 $F_m(x) = F_{m-1}(x) + \nu \cdot h_m(x)$，我们希望新树 $h_m$ 指向损失下降最快的方向，也就是负梯度：
+
+$$
+r_i = -\left[\frac{\partial L(y_i, F(x_i))}{\partial F(x_i)}\right]_{F = F_{m-1}}
+$$
+
+当损失是平方误差 $L = \frac{1}{2}(y - F)^2$ 时，负梯度恰好等于 $y_i - F_{m-1}(x_i)$，也就是**残差**。所以「GBDT 拟合残差」只是平方损失下的特例；换成对数损失、Huber 损失，拟合的就是对应的负梯度——这正是「梯度」提升名字的由来。
+
+其中 $\nu$ 是**学习率（shrinkage）**，每棵树的贡献都要打个折。$\nu$ 越小，需要的树越多，但泛化通常越好，二者呈**反比联动**。
+
+### XGBoost / LightGBM / CatBoost 的工程改进
+
+| 框架 | 关键改进 | 适用场景 |
+| --- | --- | --- |
+| XGBoost | 损失做二阶泰勒展开（用上 Hessian）、正则项写进目标函数、列采样、稀疏感知 | 通用，稳健，社区成熟 |
+| LightGBM | 直方图分裂 + Leaf-wise 生长 + GOSS 采样 + EFB 特征捆绑 | 大数据量，**速度最快** |
+| CatBoost | 有序目标编码（防泄露）、对称树 | 类别特征多，**省去手工编码** |
+
+XGBoost 的目标函数长这样，第二项就是显式正则：
+
+$$
+\mathcal{L} = \sum_i L(y_i, \hat y_i) + \sum_k \left(\gamma T_k + \frac{1}{2}\lambda \lVert w_k \rVert^2\right)
+$$
+
+其中 $T$ 是叶子数、$w$ 是叶子权重。**把正则写进目标函数，是 XGBoost 比原始 GBDT 更抗过拟合的关键。**
+
+LightGBM 的 Leaf-wise 生长每次只分裂增益最大的叶子（而非逐层），同样叶子数下精度更高，但**更容易过拟合，必须用 `num_leaves` 和 `min_data_in_leaf` 约束**。
+
+## 最小示例
+
+### 三种集成方法横向对比
+
+```python showLineNumbers
+import numpy as np
+from sklearn.datasets import make_classification
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import (RandomForestClassifier, AdaBoostClassifier,
+                              GradientBoostingClassifier)
+from sklearn.model_selection import cross_val_score
+
+X, y = make_classification(n_samples=3000, n_features=20, n_informative=10,
+                           n_redundant=5, random_state=42)
+
+models = {
+    "单棵决策树": DecisionTreeClassifier(random_state=0),
+    "随机森林(Bagging)": RandomForestClassifier(n_estimators=300, random_state=0),
+    "AdaBoost": AdaBoostClassifier(n_estimators=300, learning_rate=0.5, random_state=0),
+    "GBDT": GradientBoostingClassifier(n_estimators=300, learning_rate=0.1,
+                                       max_depth=3, random_state=0),
+}
+for name, m in models.items():
+    s = cross_val_score(m, X, y, cv=5, scoring="roc_auc")
+    print(f"{name:<20} AUC = {s.mean():.4f} ± {s.std():.4f}")
+```
+
+典型结果是：单棵树最差，随机森林大幅提升，GBDT 通常再高一点点。**这个提升幅度就是集成学习的价值。**
+
+### 手写一个 30 行的 GBDT，验证「拟合残差」
+
+```python showLineNumbers
+import numpy as np
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.metrics import mean_squared_error
+
+rng = np.random.default_rng(0)
+X = rng.uniform(-3, 3, size=(500, 1))
+y = np.sin(X).ravel() + rng.normal(0, 0.15, 500)   # 带噪声的正弦
+
+lr, n_trees = 0.1, 200
+F = np.full_like(y, y.mean())      # 初始预测：全体均值
+trees = []
+
+for m in range(n_trees):
+    residual = y - F                            # 平方损失下，负梯度 = 残差
+    tree = DecisionTreeRegressor(max_depth=3).fit(X, residual)
+    F += lr * tree.predict(X)                   # 走一小步
+    trees.append(tree)
+    if m in (0, 9, 49, 199):
+        print(f"第 {m+1:>3} 棵树后 MSE = {mean_squared_error(y, F):.4f}")
+
+# 对照 sklearn
+from sklearn.ensemble import GradientBoostingRegressor
+gb = GradientBoostingRegressor(n_estimators=200, learning_rate=0.1,
+                               max_depth=3).fit(X, y)
+print("sklearn GBDT MSE =", round(mean_squared_error(y, gb.predict(X)), 4))
+```
+
+你会看到 MSE 随树的增加单调下降，且手写版与 sklearn 的结果非常接近——**核心逻辑真的只有「算残差、拟合、按学习率累加」三行**。
+
+### 学习率与树数量的联动
+
+```python showLineNumbers
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+
+X, y = make_classification(n_samples=3000, n_features=20, n_informative=10,
+                           random_state=42)
+Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.3, random_state=0)
+
+for lr in [0.5, 0.1, 0.02]:
+    gb = GradientBoostingClassifier(n_estimators=500, learning_rate=lr,
+                                    max_depth=3, random_state=0).fit(Xtr, ytr)
+    # staged_predict_proba 可以看到每加一棵树后的表现
+    aucs = [roc_auc_score(yte, p[:, 1]) for p in gb.staged_predict_proba(Xte)]
+    best_n = int(np.argmax(aucs)) + 1
+    print(f"lr={lr:<5} 最佳树数={best_n:<4} 最佳 AUC={max(aucs):.4f}  "
+          f"500 棵时 AUC={aucs[-1]:.4f}")
+```
+
+结果会清晰显示：**学习率越小，需要的树越多；学习率大时树多了反而掉点（过拟合）。** 这就是必须配合早停的原因。
+
+### 早停：让模型自己决定种多少棵树
+
+```python showLineNumbers
+from sklearn.ensemble import HistGradientBoostingClassifier
+
+hgb = HistGradientBoostingClassifier(
+    learning_rate=0.05, max_iter=1000,
+    early_stopping=True, validation_fraction=0.15,
+    n_iter_no_change=30, random_state=0,
+).fit(Xtr, ytr)
+print("实际迭代轮数:", hgb.n_iter_)
+print("测试 AUC:", round(roc_auc_score(yte, hgb.predict_proba(Xte)[:, 1]), 4))
+```
+
+`HistGradientBoostingClassifier` 是 sklearn 自带的直方图梯度提升（借鉴 LightGBM），无需额外安装依赖，大数据下比 `GradientBoostingClassifier` 快一个数量级。
+
+## 易错点
+
+- **学习率和树数量分开调**：两者强耦合。正确做法是**固定一个较小的学习率（0.05~0.1），用早停决定树数量**，最后再微调其他参数。
+- **Boosting 用深树**：树太深会让单个弱学习器过强，Boosting 迅速过拟合。GBDT 的 `max_depth` 一般取 3~6，与随机森林的「越深越好」完全相反。
+- **以为 Boosting 也能靠加树永远变好**：Bagging 加树几乎不会过拟合（方差持续下降），但 **Boosting 加树会过拟合**，必须早停。
+- **LightGBM 不限制 `num_leaves`**：Leaf-wise 生长下 `num_leaves` 默认 31 已不小，盲目调到 255 极易过拟合。经验上让 `num_leaves` 小于 $2^{\text{max depth}}$。
+- **对异常值和噪声标签掉以轻心**：AdaBoost 会不断给分错的样本加权，**标错的样本会被反复放大**，最终主导模型。噪声大时优先选随机森林或带 Huber 损失的 GBDT。
+- **忘记 Boosting 是串行的**：不能像随机森林那样靠多核线性加速，训练时间随树数线性增长。
+- **在小数据上盲目上 XGBoost**：几百条样本时，正则化良好的逻辑回归往往更稳。
+
+## 练习
+
+1. 在手写 GBDT 里把 `lr` 改成 1.0，观察 MSE 曲线是否出现震荡，理解 shrinkage 的稳定作用。
+2. 把手写 GBDT 的损失从平方误差换成绝对误差（负梯度为 $\mathrm{sign}(y-F)$），比较它对离群点的稳健性。
+3. 手算 AdaBoost：10 个样本初始权重均为 0.1，弱分类器分错 3 个，求 $\alpha$ 与更新归一化后的各样本权重，再用 `AdaBoostClassifier` 的 `estimator_weights_` 验证。
+4. 在训练集里人为翻转 5% 的标签，对比 AdaBoost 与随机森林的性能下降幅度，验证「AdaBoost 怕噪声」。
+5. 安装 LightGBM，在同一份数据上对比它与 `HistGradientBoostingClassifier` 的训练耗时和精度。
+6. 用[超参数调优](/docs/人工智能/机器学习/超参数调优)里的随机搜索，为 GBDT 搜索 `max_depth`、`subsample`、`min_samples_leaf`，看能提升多少。
+
+## 小结
+
+- **Bagging = 并行 + 深树 + 降方差**，代表是随机森林，稳、省心、难调坏。
+- **Boosting = 串行 + 浅树 + 降偏差**，代表是 GBDT 系，上限更高，但对学习率、树深、早停敏感。
+
+实战建议：表格数据先用随机森林拿基线，再上 LightGBM/XGBoost 冲上限，配合早停与交叉验证；如果两者差距不大，选更稳、更快、更好解释的那个。
+
+## 延伸阅读
+
+- [随机森林](/docs/人工智能/机器学习/随机森林) — Bagging 路线与决策树基础。
+- [分类算法](/docs/人工智能/机器学习/分类算法) — 弱学习器的候选池。
+- [模型评估指标](/docs/人工智能/机器学习/模型评估指标) — 早停依据的验证指标怎么选。
+- [超参数调优](/docs/人工智能/机器学习/超参数调优) — 学习率与树数量的搜索策略。
+- [特征工程](/docs/人工智能/机器学习/特征工程) — 树模型也吃特征质量，只是不吃标准化。

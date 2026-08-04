@@ -1,0 +1,143 @@
+---
+title: "定时器与 PWM"
+sidebar_position: 4
+---
+
+# 定时器与 PWM
+
+定时器是 MCU 里最"多才多艺"的外设：它能精确计时、周期性触发中断、输出 PWM 调光调速、捕获外部信号周期，还能给 ADC/DMA 当触发源。学会定时器，你的程序才算真正摆脱 `delay()`。
+
+## 学习目标
+
+- 掌握 `预分频 PSC` 与 `自动重装载 ARR` 的计算公式，能反推任意频率配置。
+- 会用定时器中断替代阻塞延时，写出非阻塞的周期任务。
+- 理解 PWM 的频率与占空比分别控制什么，能驱动 LED 调光、蜂鸣器、舵机、电机。
+- 了解输入捕获与编码器模式的用途。
+- 知道定时器分辨率与频率的取舍关系。
+
+## 核心直觉
+
+定时器本质就是一个**不停加一的计数器**，配上两个关键寄存器：
+
+```text
+定时器时钟 f_TIM
+        │
+        ├─ 经 PSC 分频 →  计数频率 f_CNT = f_TIM / (PSC + 1)
+        │
+        └─ CNT 从 0 数到 ARR，溢出 → 产生更新事件(UEV)/中断
+
+周期 T = (PSC + 1) × (ARR + 1) / f_TIM
+```
+
+`+1` 的原因是寄存器从 0 开始计数，这是最容易算错 1 个单位的地方。
+
+PWM 的直觉更简单：**ARR 决定周期（频率），CCR 决定高电平持续多久（占空比）**。占空比 = CCR / (ARR + 1)。LED 亮度、电机转速、舵机角度，都是靠调 CCR 实现的。
+
+排查定时器不工作时，还是那套四件套的变体：
+- **时钟**：`__HAL_RCC_TIMx_CLK_ENABLE()` 有没有开？注意 APB1 定时器在预分频不为 1 时，定时器时钟是 APB1 的 **2 倍**，这里最容易算出双倍频率。
+- **引脚复用**：PWM 输出脚必须配成 `AF_PP`（复用推挽），配成普通输出是没波形的。
+- **启动函数**：`HAL_TIM_Base_Start_IT()` 与 `HAL_TIM_PWM_Start()` 是两码事，用错了要么没中断、要么没波形。
+- **高级定时器 TIM1/TIM8**：必须额外使能主输出 `MOE`（HAL 里是 `HAL_TIMEx_PWMN_Start` 或 `__HAL_TIM_MOE_ENABLE`），否则引脚静悄悄。
+
+## 最小可运行例程
+
+系统时钟 72MHz，做两件事：TIM2 每 1ms 中断一次当软件时基，TIM3_CH1 输出 1kHz PWM 做呼吸灯。
+
+```c
+TIM_HandleTypeDef htim2, htim3;
+
+/* ---- TIM2：1ms 周期中断 ----
+   f_TIM = 72MHz, PSC = 7199 → f_CNT = 72e6 / 7200 = 10kHz
+   ARR = 9 → 周期 = 10 / 10kHz = 1ms                        */
+void TIM2_Base_Init(void)
+{
+    __HAL_RCC_TIM2_CLK_ENABLE();
+
+    htim2.Instance           = TIM2;
+    htim2.Init.Prescaler     = 7199;
+    htim2.Init.Period        = 9;
+    htim2.Init.CounterMode   = TIM_COUNTERMODE_UP;
+    htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    HAL_TIM_Base_Init(&htim2);
+
+    HAL_NVIC_SetPriority(TIM2_IRQn, 3, 0);
+    HAL_NVIC_EnableIRQ(TIM2_IRQn);
+    HAL_TIM_Base_Start_IT(&htim2);      /* 带 _IT 才会产生中断 */
+}
+
+/* ---- TIM3_CH1：1kHz PWM，分辨率 1000 级 ----
+   PSC = 71  → f_CNT = 1MHz
+   ARR = 999 → f_PWM = 1MHz / 1000 = 1kHz，CCR 取值 0~999    */
+void TIM3_PWM_Init(void)
+{
+    TIM_OC_InitTypeDef oc = {0};
+    __HAL_RCC_TIM3_CLK_ENABLE();
+
+    htim3.Instance       = TIM3;
+    htim3.Init.Prescaler = 71;
+    htim3.Init.Period    = 999;
+    HAL_TIM_PWM_Init(&htim3);
+
+    oc.OCMode     = TIM_OCMODE_PWM1;   /* CNT < CCR 时输出高 */
+    oc.Pulse      = 0;                 /* 初始占空比 0% */
+    oc.OCPolarity = TIM_OCPOLARITY_HIGH;
+    HAL_TIM_PWM_ConfigChannel(&htim3, &oc, TIM_CHANNEL_1);
+
+    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+}
+
+/* 1ms 中断里做呼吸灯，主循环完全空闲 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    static int16_t duty = 0, step = 2;
+
+    if (htim->Instance == TIM2) {
+        duty += step;
+        if (duty >= 999 || duty <= 0) step = -step;   /* 到头就反向 */
+        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, duty); /* 改 CCR 即改亮度 */
+    }
+}
+```
+
+舵机控制是同一套公式的另一种参数：舵机要 50Hz（20ms 周期），高电平 0.5~2.5ms 对应 0~180 度。
+
+```c
+/* PSC = 71 → 1MHz（1 个计数 = 1us）；ARR = 19999 → 20ms 周期 */
+/* 角度 0~180 映射到 CCR 500~2500 */
+static inline uint16_t angle_to_ccr(uint8_t deg)
+{
+    return 500 + (uint16_t)((uint32_t)deg * 2000 / 180);
+}
+__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, angle_to_ccr(90)); /* 打到中位 */
+```
+
+## 易错点
+
+- **`+1` 忘了加**：把周期算成 `PSC × ARR / f`，结果频率总差一点点，高频时误差尤其明显。
+- **APB1 定时器倍频**：STM32F1 上 APB1 是 36MHz，但挂在上面的 TIM2~TIM7 实际时钟是 72MHz。按 36MHz 算会得到一半的频率。
+- **PWM 引脚没配复用**：配成 `GPIO_MODE_OUTPUT_PP` 时引脚是死的，必须是 `GPIO_MODE_AF_PP`。
+- **高级定时器没开 MOE**：TIM1/TIM8 配了一切却没波形，九成是主输出未使能。
+- **分辨率与频率互相挤压**：计数频率固定时，PWM 频率越高、ARR 越小、可用的占空比档位越少。想要 20kHz + 1000 级分辨率，就得要求计数时钟至少 20MHz。
+- **改占空比用重新 Init**：应该直接写 CCR（`__HAL_TIM_SET_COMPARE`），重新初始化会让波形出现毛刺。
+- **中断标志没清**：手写 IRQHandler 时忘了清 `UIF`，会不停重入中断，程序像卡死。
+- **电机 PWM 频率落在音频段**：几百 Hz~十几 kHz 会让电机/变压器发出啸叫，通常选 20kHz 以上避开听觉范围。
+
+## 练习
+
+1. 推导并配置一个精确 500Hz 的 PWM（系统时钟自定），用示波器测量实际频率，误差控制在 1% 以内。
+2. 用输入捕获模式测量另一路 PWM 的频率与占空比，与设定值对比。
+3. 呼吸灯用线性占空比会显得"中间变化快、两头变化慢"，改成 Gamma 校正（占空比取平方）后对比视觉效果。
+4. 用一个定时器同时输出 4 路不同占空比的 PWM，驱动 RGB LED 混色。
+
+## 小结
+
+定时器的全部秘密就是 `PSC / ARR / CCR` 三个寄存器加一条周期公式。先用它替换掉所有 `HAL_Delay`，让程序变成非阻塞；再用 PWM 把数字量变成"可调的模拟效果"。定时器同时也是 ADC 触发、DMA 搬运、电机换相的节拍源，是往后所有精确时序应用的地基。
+
+## 延伸阅读
+
+- 上一篇：[GPIO 与中断](/docs/嵌入式开发/单片机MCU/GPIO与中断)
+- 下一篇：[ADC 采样](/docs/嵌入式开发/单片机MCU/ADC采样)
+- 前置基础：[STM32 与 HAL 库入门](/docs/嵌入式开发/单片机MCU/STM32与HAL库入门)
+- 用定时器做低功耗唤醒源：[低功耗模式](/docs/嵌入式开发/单片机MCU/低功耗模式)
+- 波形验证：[示波器与万用表使用](/docs/嵌入式开发/硬件与电路基础/示波器与万用表使用)
+- 多任务时基替代方案：[FreeRTOS 任务与调度](/docs/嵌入式开发/RTOS与固件/FreeRTOS任务与调度)
