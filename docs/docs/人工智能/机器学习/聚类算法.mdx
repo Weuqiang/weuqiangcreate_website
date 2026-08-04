@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: 聚类算法
+description: "从无标签数据的划分出发，理解K-Means、层次聚类与DBSCAN的假设与适用。"
 ---
 
 聚类算法被广泛应用于数据搜索、样本分类中。想象你要在一个有100万本书的图书馆里，找到与你手中这本书最相似的5本书。如果一本一本地比较，你需要比较100万次。
@@ -12,6 +13,31 @@ title: 聚类算法
 当然，聚类对于边界模糊的数据效果不佳，例如你想找《明朝哪些年》，它既是小说，又是历史。很可能在某一层级距离计算错误，导致结果不准确。虽然可以通过分层聚类解决，但计算量会大大增加。
 
 此外，聚类结构是基于当前数据快照构建的。当有新数据不断加入或旧数据被删除时，原有的聚类结构可能不再最优甚至失效。增量式更新聚类结构通常比全量重新聚类更复杂且效果可能打折扣。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解聚类是无标签学习，目标是把相似样本聚成一簇、把不相似的分开
+- 掌握 K-Means 的迭代（指派-更新）、K 的选择与初始化敏感性
+- 认识层次聚类与 DBSCAN 对簇形状/密度的不同假设与适用边界
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [分类算法](../分类算法) 对照有标签与无标签两种范式
+- 距离度量依赖 [向量空间与基](/docs/数学基础/线性代数/向量空间与基)
+
+## 核心概念
+
+聚类在「没有标准答案」的数据里自己找结构。K-Means 假定簇是球状、靠质心迭代收敛；层次聚类不预设 K、用树状合并看不同粒度；DBSCAN 换思路，按密度连通性把稠密区连成簇、把孤立点当噪声，因此能找任意形状且不要求指定簇数。选哪种，取决于你的簇是球形、嵌套还是密度不均。
+
+本章主线：
+- K-Means 原理与 K 的选择
+- 初始化敏感与收敛
+- 层次聚类的粒度
+- DBSCAN 与密度假设
 
 ## K 均值算法
 
@@ -232,7 +258,6 @@ function KMeansAnimation() {
 ```
 </details>
 
-
 ### 简单示例
 
 import Tabs from '@theme/Tabs';
@@ -391,7 +416,6 @@ plt.show()
 
 我们知道，随着集群数量的增加，总平方和会减少。但是如果用总平方和对 K 作图，你会发现在某个 K 值之前总平方和急速减少，但在这个 K 值之后减少的幅度大大降低，这个值就是最佳的集群数。
 
-
 ```python showLineNumbers
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
@@ -467,7 +491,6 @@ t0 = time()
 labels = kmeans.predict(image_array)
 print("done in %0.3fs." % (time() - t0))
 
-
 codebook_random = shuffle(image_array, random_state=0)[:n_colors]
 print("Predicting color indices on the full image (random)")
 t0 = time()
@@ -475,7 +498,6 @@ labels_random = pairwise_distances_argmin(codebook_random,
                                           image_array,
                                           axis=0)
 print("done in %0.3fs." % (time() - t0))
-
 
 def recreate_image(codebook, labels, w, h):
     """Recreate the (compressed) image from the code book & labels"""
@@ -654,10 +676,21 @@ y_pred = dbscan.fit_predict(X_scaled)
   </TabItem>
 </Tabs>
 
+## 小结
+
+聚类是无标签下的结构发现。K-Means 简单但怕非球、怕 K 难定；DBSCAN 擅任意形状与噪声却依赖密度参数；层次聚类适合要看多粒度关系的场景。先画数据分布再选方法。
+
+## 练习
+
+动手检验一下自己：
+
+1. K-Means 对初始化敏感会怎样？用什么手段缓解（如多次重启取最优）？
+2. 什么数据形状下 K-Means 永远分不好、而 DBSCAN 能轻松搞定？
+3. DBSCAN 的 minPts 和 eps 该怎么定，调错会分别发生什么？
 
 ## 延伸阅读
 
-- 上一篇：[回归算法](../回归算法) · 下一篇：[降维算法](../降维算法)
+- 上一篇：[回归算法](../../机器学习/回归算法) · 下一篇：[降维算法](../降维算法)
 - 返回：[本栏目总览](../)
 - 相关：[深度学习·序列处理](../../深度学习/序列处理/) · [深度学习·网格数据](../../深度学习/网格数据/)
 - 返回：[人工智能总览](../../)

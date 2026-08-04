@@ -14,6 +14,23 @@ description: "把提示词当代码来管：结构化模板、结构化输出、
 - 搭建一个最小的提示词回归测试框架，让改动可度量。
 - 识别并防御提示注入，控制 token 成本。
 
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 建议先读 [上下文工程](../上下文工程) 理解提示在上下文里的位置
+- 与 [Agent开发](../Agent开发) 衔接：Agent 是把提示工程跑成循环
+
+## 核心概念
+
+把提示当成代码来对待：它有输入契约、输出契约、边界条件和失败模式。好的系统级提示明确「你是谁、任务是什么、输出格式长什么样、什么情况要说不知道」，并用少量示例锚定风格。把它版本化、配回归用例，才能在大模型频繁更新时不被悄悄拖垮。
+
+本章主线：
+- 提示作为任务规格书
+- 角色、结构与输出约束
+- 少样本示例的写法
+- 提示的版本化与回归
+
 ## 核心直觉
 
 ### 提示词是程序，不是咒语
@@ -89,13 +106,11 @@ USER_TMPL = Template("""请从下面这段文字中抽取信息。
 待抽取输入：$text
 输出：""")
 
-
 def build_messages(text: str):
     return [
         {"role": "system", "content": SYSTEM},
         {"role": "user", "content": USER_TMPL.substitute(text=text)},
     ]
-
 
 def parse_json_safely(raw: str):
     """容错解析：剥围栏 → 截取首个 JSON 对象 → 解析"""
@@ -105,7 +120,6 @@ def parse_json_safely(raw: str):
     if not match:
         raise ValueError(f"未找到 JSON: {raw[:80]}")
     return json.loads(match.group(0))
-
 
 # 模拟三种常见的「不听话」返回，验证解析器的鲁棒性
 for bad in [

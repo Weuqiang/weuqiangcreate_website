@@ -18,6 +18,23 @@ description: 把图像切成 patch 当作 token，用纯 Transformer 做图像�
 - 从零实现一个完整的 ViT 并在 CIFAR-10 上训练。
 - 知道 DeiT、Swin 等后续工作分别补上了 ViT 的哪块短板。
 
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [网格数据/AlexNet](../../网格数据/AlexNet) 看卷积路线
+- 注意力骨架见 [Transformer](../Transformer)（同目录）
+
+## 核心概念
+
+Vision Transformer 把图片切成一排小方块（patch），每个 patch 当成一个「词」送进 Transformer，于是图像分类变成「给一串 patch token 做注意力」。它证明只要数据够多，纯注意力也能打败精心设计的卷积网络；但小数据下 CNN 的归纳偏置（局部性、平移不变）更管用，所以 ViT 强在数据大、CNN 强在数据少。
+
+本章主线：
+- patch 化与 token
+- ViT 结构
+- 对数据量的依赖
+- 与 CNN 的取舍
+
 ## 核心直觉
 
 ### 把图像变成句子

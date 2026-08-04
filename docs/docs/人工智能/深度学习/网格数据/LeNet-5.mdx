@@ -1,12 +1,37 @@
 ---
 sidebar_position: 1
 title: LeNet-5
+description: "回到最早的卷积网络雏形，理解权值共享与局部连接为何适合图像。"
 ---
 
 LeNet-5被认为是卷积神经网络（CNN）的开山之作，主要用于手写数字识别。它包含了卷积层、池化层和全连接层，是现代CNN的雏形。
 
-## 卷积
+## 学习目标
 
+学完本章，你应该能够：
+
+- 理解 LeNet-5 作为最早成型的 CNN 与其卷积动机
+- 掌握权值共享、局部连接与池化带来的两大收益
+- 认识它受算力所限未爆发、却是结构范式起点的地位
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [深度学习/经典神经网络](../../经典神经网络) 打底
+- 现代延伸见 [AlexNet](../AlexNet)（同目录）
+
+## 核心概念
+
+LeNet-5 是 1998 年用于手写数字识别的卷积网络，比 AlexNet 早十几年。它已经包含了现代 CNN 的全部基因：卷积提取局部特征、池化提供平移不变、全连接做分类。受限于数据与算力，它当时没火，却是「用局部连接+权值共享代替全连接」这一想法的起点，证明了卷积适合图像。
+
+本章主线：
+- 卷积动机与权值共享
+- 网络层结构
+- 手写数字识别
+- 历史地位
+
+## 卷积
 
 卷积神经网络(convolutional neural network)简称CNN。卷积神经网络的核心是卷积核，卷积核在图像处理领域可以用来提取图像的纵向和横向特征。
 
@@ -27,8 +52,6 @@ a_{61} & a_{62} & a_{63} & a_{64} & a_{65} & a_{66} \\
 \end{bmatrix}
 $$
 
-
-
 我们的卷积核是一个3x3的矩阵：
 
 $$
@@ -38,7 +61,6 @@ k_{21} & k_{22} & k_{23} \\
 k_{31} & k_{32} & k_{33} \\
 \end{bmatrix}
 $$
-
 
 我们假设卷积核位于原始矩阵的左上角，覆盖的区域如下：
 
@@ -134,7 +156,6 @@ function example(props) {
 ```
 </details>
 
-
 最终输出矩阵$\mathbf{O}$为：
 
 $$
@@ -151,7 +172,6 @@ $$
 通过这个例子，可以清晰地看到卷积核是如何对矩阵进行操作并生成输出的。
 
 ### 常见卷积核
-
 
 1. **水平边缘检测**：
    $$
@@ -342,7 +362,6 @@ plt.show()
 
 ## 池化
 
-
 池化（Pooling）是一种用于减少卷积神经网络（CNN）中特征图大小的操作。它通过将特征图上的局部区域进行聚合，得到一个更小的特征图。
 
 池化操作类似卷积操作，使用的也是一个很小的矩阵，叫做池化核，但是池化核本身没有参数，只是通过对输入特征矩阵本身进行运算，它的大小通常是2x2、3x3、4x4等，然后将池化核在卷积得到的输出特征图中进行池化操作，需要注意的是，池化的过程中也有Padding方式以及步长的概念，与卷积不同的是，池化的步长往往等于池化核的大小。
@@ -475,7 +494,6 @@ kernel = np.array([
  [0.   2.   0.]]
 '''
 
-
 # 对输入图像进行填充
 # array: 需要填充的数组
 # pad_width: 填充的宽度(上下左右都填充)
@@ -488,7 +506,6 @@ inputs = np.pad(
     mode='constant',
     constant_values=0
 )
-
 
 # 卷积操作
 out_put = np.zeros((inputs.shape[0] - kernel.shape[0] + 1, inputs.shape[1] - kernel.shape[1] + 1))
@@ -508,7 +525,6 @@ print(out_put)
  [510.   2.   4.]]
 '''
 ```
-
 
 ## 步幅
 
@@ -609,9 +625,7 @@ if __name__ == "__main__":
 '''
 ```
 
-
 ## 手写数字识别
-
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -646,7 +660,6 @@ X_val = torch.tensor(X_val).permute(0, 3, 1, 2)
 y_train = torch.tensor(y_train, dtype=torch.long)
 y_val = torch.tensor(y_val, dtype=torch.long)
 
-
 # 定义模型
 class SimpleConvNet(nn.Module):
     def __init__(self):
@@ -663,7 +676,6 @@ class SimpleConvNet(nn.Module):
         x = x.reshape(x.shape[0], -1)
         x = self.fc(x)  # 全连接层
         return x
-
 
 # 创建模型、损失函数和优化器
 model = SimpleConvNet()
@@ -731,7 +743,6 @@ import numpy as np
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 
-
 # 卷积层前向传播
 def conv2d_forward(x, w, b):
     # x: 输入数据，形状为(N,H,W,C)
@@ -761,7 +772,6 @@ def conv2d_forward(x, w, b):
 
     cache = (x, w, b, x_pad)  # 缓存用于反向传播
     return y, cache
-
 
 # 卷积层反向传播
 def conv2d_backward(dy, cache):
@@ -798,13 +808,11 @@ def conv2d_backward(dy, cache):
     dx = dx_pad[:, padding:-padding, padding:-padding, :]
     return dx, dw, db
 
-
 # ReLU激活函数前向传播
 def relu_forward(x):
     # x: 输入数据
     y = np.maximum(0, x)  # ReLU激活函数：max(0,x)
     return y, x  # 返回输出和缓存(输入x)
-
 
 # ReLU激活函数反向传播
 def relu_backward(dy, cache):
@@ -813,7 +821,6 @@ def relu_backward(dy, cache):
     x = cache
     # ReLU梯度：当x>0时为1，否则为0
     return dy * (x > 0)
-
 
 # 最大池化前向传播
 def maxpool_forward(x):
@@ -845,7 +852,6 @@ def maxpool_forward(x):
 
     return y, (x, mask)  # 返回输出和缓存
 
-
 # 最大池化反向传播
 def maxpool_backward(dy, cache):
     # dy: 输出梯度
@@ -867,13 +873,11 @@ def maxpool_backward(dy, cache):
 
     return dx
 
-
 # 展平层前向传播
 def flatten_forward(x):
     # x: 输入数据，形状为(N,H,W,C)
     # 将输入展平为(N, H*W*C)的二维张量
     return x.reshape(x.shape[0], -1), x.shape
-
 
 # 展平层反向传播
 def flatten_backward(dy, cache):
@@ -882,7 +886,6 @@ def flatten_backward(dy, cache):
     # 将梯度重塑回原始输入形状
     return dy.reshape(cache)
 
-
 # 全连接层前向传播
 def dense_forward(x, w, b):
     # x: 输入数据，形状为(N, Din)
@@ -890,7 +893,6 @@ def dense_forward(x, w, b):
     # b: 偏置，长度为Dout
     y = x.dot(w) + b  # 线性变换：y = x·w + b
     return y, (x, w, b)  # 返回输出和缓存
-
 
 # 全连接层反向传播
 def dense_backward(dy, cache):
@@ -904,7 +906,6 @@ def dense_backward(dy, cache):
     db = dy.sum(axis=0)  # 偏置梯度：每个批次梯度的和
 
     return dx, dw, db
-
 
 # Softmax交叉熵损失前向传播
 def softmax_crossentropy_forward(logits, labels):
@@ -921,14 +922,12 @@ def softmax_crossentropy_forward(logits, labels):
 
     return loss, (proba, labels, N)  # 返回损失和缓存
 
-
 # Softmax交叉熵损失反向传播
 def softmax_crossentropy_backward(cache):
     # cache: 前向传播缓存
     proba, labels, N = cache  # 解包缓存
     # 计算梯度：(softmax概率 - 真实标签) / 样本数
     return (proba - labels) / N
-
 
 # 加载数据集
 digits = load_digits()
@@ -1005,6 +1004,18 @@ for ep in range(epochs):
   </TabItem>
 
 </Tabs>
+
+## 小结
+
+LeNet-5 是最早成型的 CNN，用权值共享和局部连接处理图像，虽受算力所限未爆发，却奠定了后来所有卷积网络的结构范式。
+
+## 练习
+
+动手检验一下自己：
+
+1. 权值共享相对全连接给 CNN 带来了哪两个好处（参数、平移不变）？
+2. 为什么 LeNet 当年没像 AlexNet 那样引爆领域？
+3. 池化层除了降维还提供了什么不变性？
 
 ## 延伸阅读
 

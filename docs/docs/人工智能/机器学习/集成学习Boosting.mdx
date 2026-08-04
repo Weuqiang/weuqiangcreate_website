@@ -14,6 +14,23 @@ description: "从 Bagging 到 Boosting：AdaBoost 如何加权样本、GBDT 如�
 - 知道 XGBoost / LightGBM / CatBoost 各自的工程改进点。
 - 掌握学习率与树数量的联动，以及调参的推荐顺序。
 
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [随机森林](../随机森林) 对照 bagging 思路
+- 直觉助益见 [梯度与方向导数](/docs/数学基础/微积分/梯度与方向导数)
+
+## 核心概念
+
+Boosting 和 bagging 相反：它不是并行种树，而是串行地「让下一棵树专攻上一棵树的错误」。AdaBoost 给错分样本加权，梯度提升（GBDT）则让新树去拟合当前模型的残差梯度。XGBoost/LightGBM 在此基础上做工程极致优化（稀疏感知、直方图、并行），成为表格数据竞赛的霸主。代价是串行、易过拟合，要靠早停和深度限制守着。
+
+本章主线：
+- 串行纠错思想
+- AdaBoost 与样本加权
+- 梯度提升 GBDT
+- XGBoost/LightGBM 与早停
+
 ## 核心直觉
 
 ### Bagging 降方差，Boosting 降偏差
