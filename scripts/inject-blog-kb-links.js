@@ -53,13 +53,14 @@ function injectRecs(filepath, recs) {
   const marker = '## 延伸阅读（知识库）';
   const markerIdx = content.indexOf(marker);
 
-  // 取「延伸阅读」节之前的内容（无则取全文），并去掉末尾可能存在的分隔线与空行，
-  // 避免每次构建重复追加 ---（幂等 & 自愈历史残留的重复分隔线）
+  // 取「延伸阅读」节之前的内容（无则取全文），并切断末尾可能的分隔线块
+  // （--- 及其前后空白），再规范尾部空白 —— 幂等 & 自愈历史残留的重复分隔线/空行。
   let prefix = markerIdx >= 0 ? content.substring(0, markerIdx) : content;
-  prefix = prefix.replace(/\s+$/, '');              // 去掉末尾空白
-  prefix = prefix.replace(/(?:\n-{3,}\s*)+$/, ''); // 去掉末尾残留的 --- 分隔线
+  // 从最后一个独立成行的 --- 分隔线整块切断（含其前后空行），避免少吞换行导致每次构建累加空行
+  prefix = prefix.replace(/\n[ \t]*-{3,}[ \t]*(?:\n[ \t]*)*$/, '');
+  prefix = prefix.replace(/\s+$/, ''); // 去掉末尾残留空白
 
-  // 追加新推荐
+  // 追加新推荐（固定为 body + 一空行 + --- + 一空行 + 节，全程幂等）
   const newSection = buildRecSection(recs);
   content = prefix + '\n\n---\n\n' + newSection + '\n';
   fs.writeFileSync(filepath, content, 'utf-8');
