@@ -609,6 +609,57 @@
     opacity: 1 !important;
   }
 }
+/* 移动端卡片网格（<560px 显示，替代 SVG 图谱） */
+.kgMobileGrid {
+  display: none;
+}
+.kgMobileCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--gc, var(--ifm-color-emphasis-300));
+  background: var(--ifm-background-surface-color);
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.kgMobileCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+.kgMobileCard:active {
+  transform: translateY(0);
+}
+.kgMobileLabel {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ifm-color-content);
+}
+.kgMobileCount {
+  font-size: 0.78rem;
+  color: var(--ifm-color-content);
+  opacity: 0.55;
+}
+.kgMobileSub {
+  font-size: 0.7rem;
+  color: var(--ifm-color-content);
+  opacity: 0.45;
+  line-height: 1.45;
+}
 @media (max-width: 560px) {
-  .kgLabel { font-size: 10px; }
+  .kgStage { display: none; }
+  .kgMobileGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+    max-width: 960px;
+    margin: 0.6rem auto 0;
+  }
+}
+@media (max-width: 380px) {
+  .kgMobileGrid {
+    grid-template-columns: 1fr;
+  }
 }

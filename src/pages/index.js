@@ -222,6 +222,30 @@ function KnowledgeGraph() {
           </g>
         </svg>
       </div>
+      {/* 移动端：6 领域卡片网格替代 SVG 图谱（纯 CSS 切换，<560px 显示） */}
+      <div className={styles.kgMobileGrid}>
+        {l1.map((n) => {
+          const children = nodes.filter((c) => c.parent === n.id);
+          return (
+            <Link
+              key={n.id}
+              to={n.to}
+              className={styles.kgMobileCard}
+              style={{ ["--gc"]: groups[n.group].color }}
+            >
+              <span className={styles.kgMobileLabel}>{n.label}</span>
+              {typeof n.count === "number" && n.count > 0 && (
+                <span className={styles.kgMobileCount}>{n.count} 篇</span>
+              )}
+              {children.length > 0 && (
+                <span className={styles.kgMobileSub}>
+                  {children.map((c) => c.label).join(" · ")}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
     </section>
   );
 }
