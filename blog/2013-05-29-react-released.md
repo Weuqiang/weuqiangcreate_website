@@ -49,6 +49,14 @@ Virtual DOM 是另一个被误解的点。它不是为了「快」而存在的�
 
 ---
 
+---
+
+---
+
+---
+
+---
+
 ## 延伸阅读（知识库）
 
 - [对象](/docs/编程语言/Web前端/JavaScript/types/object) — 对象（object）是 JavaScript 语言的核心概念，也是最重要的数据类型。
