@@ -1,6 +1,7 @@
 ---
 sidebar_position: 10
 title: 存储类别、链接和内存管理
+description: "static、extern、auto、register 四种存储类别与链接属性，进程地址空间中的栈与堆，以及 malloc、calloc、realloc、free 的用法与陷阱"
 ---
 
 ## 存储类修饰符
@@ -245,6 +246,64 @@ void sum_n(int n) {
 
 
 ## 内存管理
+
+C 程序运行时，操作系统为其分配一整块线性虚拟地址空间，按用途划分为若干区域（从低地址到高地址大致为：代码段 → 常量区 → 全局/静态区 → 堆 → 栈）。
+
+- **代码段（text）**：存放编译后的机器指令，只读、可共享。
+- **常量区（rodata）**：存放字符串字面量、`const` 全局常量等只读数据。
+- **全局/静态区（data + bss）**：存放全局变量与 `static` 变量；已初始化的在 data 段，未初始化的在 bss 段（启动时自动清零）。
+- **堆（heap）**：动态内存区，由程序员用 `malloc`/`calloc`/`realloc` 申请、`free` 释放，向高地址增长，空间大但需手动管理。
+- **栈（stack）**：存放局部变量、函数参数、返回地址，由系统自动分配释放，向低地址增长，大小有限（默认数 MB），溢出即崩溃。
+
+`malloc`/`calloc`/`realloc`/`free` 的语义差异（各函数细节见下文小节）：
+
+- `malloc(size)`：申请 `size` 字节，**不初始化**，内容是随机垃圾值。
+- `calloc(n, size)`：申请 `n` 个 `size` 字节并**全部清零**，适合数组。
+- `realloc(ptr, size)`：把 `ptr` 指向的内存块调整为 `size` 字节，可能搬迁数据；`ptr` 为 `NULL` 时等价于 `malloc`。
+- `free(ptr)`：释放 `ptr` 指向的堆内存，必须与申请成对出现。
+
+这四个函数都来自 `<stdlib.h>`，`malloc`/`calloc`/`realloc` 失败时返回 `NULL`，**一定要先检查返回值再解引用**，否则会段错误：
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+    int *p = malloc(sizeof(int) * 10);
+    if (p == NULL) {            // 必须检查，否则空指针解引用崩溃
+        fprintf(stderr, "out of memory\n");
+        return 1;
+    }
+    p[0] = 1;
+    free(p);
+    return 0;
+}
+```
+
+常见内存错误：
+
+- **内存泄漏**：申请后忘记 `free`，长期运行耗尽内存。
+- **野指针**：`free` 后未置 `NULL` 又解引用，或指针未初始化就使用。
+- **重复释放**：对同一指针 `free` 两次，破坏堆结构。
+- **越界写**：访问超出申请长度，踩坏相邻内存或堆元数据。
+- **realloc 失败丢原指针**：写成 `p = realloc(p, size)`，若失败 `p` 被赋 `NULL`，原内存块既泄漏又无法再释放——应先存到临时变量：
+
+```c showLineNumbers
+#include <stdlib.h>
+
+int *grow(int *p, size_t new_size) {
+    int *tmp = realloc(p, new_size);
+    if (tmp == NULL) {
+        return p;   // 失败：保留原指针，仍可正常 free
+    }
+    return tmp;     // 成功：使用新指针
+}
+```
+
+排查工具：
+
+- **Valgrind**：Linux 下经典的内存错误检测器，能定位泄漏、越界、非法释放，无需重新编译（`valgrind ./a.out`）。
+- **AddressSanitizer（ASan）**：GCC/Clang 内置，编译时加 `-fsanitize=address -g`，运行期捕获越界、泄漏、UAF（use-after-free），开销比 Valgrind 小、速度更快。
 
 ## 进程空间
 

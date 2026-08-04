@@ -1,6 +1,6 @@
 ---
 title: "其他标签"
-description: "本章介绍一些最新引入标准的标签。"
+description: "dialog 对话框与 details/summary 折叠面板：open 属性、showModal 与 close 方法、::backdrop 透明层样式，以及 close、cancel、toggle 事件的监听写法。"
 sidebar_position: 18
 ---
 # 其他标签

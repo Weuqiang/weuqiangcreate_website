@@ -75,13 +75,13 @@
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
       "title": "Transformer",
       "url": "/docs/人工智能/深度学习/序列处理/Transformer",
-      "description": "",
+      "description": "Transformer 的推理循环与词嵌入落地：分词、构建词表与嵌入矩阵初始化，独热编码和 nn.Embedding 查表两种取向量方式对比，并叠加位置编码。",
       "category": "人工智能/深度学习/序列处理"
     }
   ],
@@ -95,7 +95,7 @@
     {
       "title": "分类算法",
       "url": "/docs/人工智能/机器学习/分类算法",
-      "description": "",
+      "description": "KNN、朴素贝叶斯与支持向量机三种分类算法：距离投票、拉普拉斯平滑防零概率、核函数与数据标准化，配 sklearn 示例、准确率评估与过拟合学习曲线。",
       "category": "机器学习"
     },
     {
@@ -109,7 +109,7 @@
     {
       "title": "Transformer",
       "url": "/docs/人工智能/深度学习/序列处理/Transformer",
-      "description": "",
+      "description": "Transformer 的推理循环与词嵌入落地：分词、构建词表与嵌入矩阵初始化，独热编码和 nn.Embedding 查表两种取向量方式对比，并叠加位置编码。",
       "category": "人工智能/深度学习/序列处理"
     },
     {
@@ -199,7 +199,7 @@
     {
       "title": "模型社区",
       "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "",
+      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -251,7 +251,7 @@
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -279,13 +279,13 @@
     {
       "title": "本地部署",
       "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "",
+      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
       "category": "大模型（LLM）与应用"
     },
     {
       "title": "模型社区",
       "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "",
+      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -323,7 +323,7 @@
     {
       "title": "Transformer",
       "url": "/docs/人工智能/深度学习/序列处理/Transformer",
-      "description": "",
+      "description": "Transformer 的推理循环与词嵌入落地：分词、构建词表与嵌入矩阵初始化，独热编码和 nn.Embedding 查表两种取向量方式对比，并叠加位置编码。",
       "category": "人工智能/深度学习/序列处理"
     }
   ],
@@ -337,13 +337,13 @@
     {
       "title": "本地部署",
       "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "",
+      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
       "category": "大模型（LLM）与应用"
     },
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -363,7 +363,7 @@
     {
       "title": "本地部署",
       "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "",
+      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -375,7 +375,7 @@
     {
       "title": "模型社区",
       "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "",
+      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -407,7 +407,7 @@
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -433,7 +433,7 @@
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -535,7 +535,7 @@
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     }
   ],
@@ -549,25 +549,25 @@
     {
       "title": "本地部署",
       "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "",
+      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
       "category": "大模型（LLM）与应用"
     },
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
       "title": "模型社区",
       "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "",
+      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
       "category": "大模型（LLM）与应用"
     },
     {
       "title": "Transformer",
       "url": "/docs/人工智能/深度学习/序列处理/Transformer",
-      "description": "",
+      "description": "Transformer 的推理循环与词嵌入落地：分词、构建词表与嵌入矩阵初始化，独热编码和 nn.Embedding 查表两种取向量方式对比，并叠加位置编码。",
       "category": "人工智能/深度学习/序列处理"
     }
   ],
@@ -575,13 +575,13 @@
     {
       "title": "本地部署",
       "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "",
+      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
       "category": "大模型（LLM）与应用"
     },
     {
       "title": "模型社区",
       "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "",
+      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -627,7 +627,7 @@
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -653,7 +653,7 @@
     {
       "title": "本地部署",
       "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "",
+      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -665,7 +665,7 @@
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -685,13 +685,13 @@
     {
       "title": "本地部署",
       "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "",
+      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
       "category": "大模型（LLM）与应用"
     },
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -703,7 +703,7 @@
     {
       "title": "模型社区",
       "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "",
+      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -755,7 +755,7 @@
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {
@@ -775,7 +775,7 @@
     {
       "title": "模型评测",
       "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "",
+      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
       "category": "大模型（LLM）与应用"
     },
     {

@@ -21,6 +21,7 @@ date: 2015-11-09
 
 
 
+
 ---
 
 ## 延伸阅读（知识库）
@@ -28,5 +29,5 @@ date: 2015-11-09
 - [AlexNet](/docs/人工智能/深度学习/网格数据/AlexNet) — 2012 年引爆深度学习的卷积网络——ReLU、Dropout、GPU 训练三件套的开端，含逐层尺寸推导与可运行训练代码。
 - [ResNet](/docs/人工智能/深度学习/网格数据/ResNet) — 用残差连接让网络“想深就深”——从退化现象、恒等映射到 BasicBlock/Bottleneck 的完整推导与可运行实现。
 - [经典神经网络](/docs/人工智能/深度学习/经典神经网络)
-- [模型评测](/docs/人工智能/大模型LLM与应用/模型评测)
-- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer)
+- [模型评测](/docs/人工智能/大模型LLM与应用/模型评测) — 大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。
+- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer) — Transformer 的推理循环与词嵌入落地：分词、构建词表与嵌入矩阵初始化，独热编码和 nn.Embedding 查表两种取向量方式对比，并叠加位置编码。

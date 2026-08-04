@@ -1,6 +1,7 @@
 ---
 sidebar_position: 14
 title: C预处理器和C库
+description: "条件编译与模块化编程、头文件与源文件分离、项目目录组织与 Makefile，静态库和动态库的制作，以及 vcpkg 管理第三方依赖"
 ---
 
 
@@ -183,7 +184,7 @@ gcc main.c math_utils.c -lm -o calculator
 
 ### 推荐的项目结构
 
-```
+```text
 project/
 ├── src/                 # 源文件目录
 │   ├── main.c
@@ -395,7 +396,7 @@ cmake -B build -S . \
 
 ### 项目结构
 
-```
+```text
 student_manager/
 ├── src/
 │   ├── main.c
@@ -479,7 +480,69 @@ int db_load_from_file(StudentDB* db, const char* filename);
 
 ## CMake构建系统
 
+手写 `gcc` 命令或维护 Makefile，在跨平台、多目录、多依赖的项目里很快会失控：Windows 上要用 MSVC，Linux/macOS 上要用 gcc/clang，编译参数与链接库各不相同。CMake 是一个**元构建系统**（build generator）：它本身不直接编译代码，而是根据一份平台无关的 `CMakeLists.txt` 生成 Visual Studio、Makefile、Ninja 等原生构建文件，再由原生工具去真正编译。
+
+最小可运行的 `CMakeLists.txt` 只需三行：指定最低版本、声明项目名、登记要编译的可执行文件。
+
+```cmake
+cmake_minimum_required(VERSION 3.10)
+project(hello)
+
+add_executable(hello main.c)
+```
+
+把 `add_executable(hello main.c)` 换成 `add_library(math_utils math_utils.c)` 即改为生成库；再用 `target_link_libraries(hello math_utils)` 把库链接进可执行文件。常用指令分工如下：
+
+- `add_executable(<目标名> 源文件...)`：登记一个可执行文件目标。
+- `add_library(<库名> 源文件...)`：登记一个库目标（默认静态库，加 `SHARED` 关键字生成动态库）。
+- `target_link_libraries(<目标> 库...)`：把库链接到某目标，自动处理链接顺序与传递依赖。
+- `include_directories(<目录>...)`：为目标添加头文件搜索路径（现代写法更推荐用 `target_include_directories(<目标> PRIVATE <目录>)` 精确控制作用域）。
+
+CMake 强烈推荐 **out-of-source（源外）构建**，即编译产物不污染源码目录。标准三步命令如下：
+
+```bash
+cmake -B build      # 在 build/ 目录生成原生构建文件（-B 指定构建目录）
+cmake --build build # 调用原生工具真正编译
+./build/hello       # 运行产物
+```
+
+多目录项目通常用「顶层 + 子目录」组织：顶层 `CMakeLists.txt` 用 `add_subdirectory(src)` 把子目录纳入构建，子目录里再各自写一份 `CMakeLists.txt` 用 `add_library` / `add_executable` 登记自己的目标，目录之间通过 `target_link_libraries` 和 `target_include_directories` 建立依赖。这样每个模块只关心自己的源文件，扩展新功能时只需新增子目录并在顶层登记，避免了巨型单文件的维护噩梦。
+
 ## 单元测试
+
+单元测试的目标是**用代码验证每个函数的最小行为**：给定已知输入，断言得到预期输出。C 语言没有内置测试框架，做法分两派。
+
+轻量方案直接复用标准库 `<assert.h>` 的 `assert()` 宏：条件为假时打印错误并 `abort()`。适合快速验证、零依赖，但缺点明显——所有用例写在一个 `main` 里、失败即整体中止、无法统计通过率、不支持 mock。
+
+```c showLineNumbers
+#include <assert.h>
+
+int add(int a, int b) { return a + b; }
+
+int main(void) {
+    assert(add(2, 3) == 5);   // 断言不成立，程序直接中止
+    assert(add(-1, 1) == 0);
+    return 0;
+}
+```
+
+当项目变大、需要分组与统计时，应引入真正的测试框架：
+
+- **Unity**：纯 C 写成、单头文件即可引入，极致轻量，常用于嵌入式。
+- **CMocka**：支持 mock 函数、可独立运行每个用例，适合需要打桩的中大型项目。
+- **Check**：较早的框架，提供测试套件与 fork 隔离，但依赖相对重。
+
+取舍原则：嵌入式或快速验证选 Unity；需要 mock 外部依赖（如硬件、网络）选 CMocka；想要成熟套件机制且能接受额外依赖可选 Check。
+
+将测试接入 CMake 的标准做法是启用 CTest：在 `CMakeLists.txt` 里 `enable_testing()`，再为每个测试可执行文件登记 `add_test(NAME <名字> COMMAND <可执行文件>)`。
+
+```cmake
+enable_testing()
+add_executable(test_math test_math.c math_utils.c)
+add_test(NAME test_add COMMAND test_math)
+```
+
+之后用 `cmake -B build && cmake --build build && ctest --test-dir build` 即可一键跑全部测试，`ctest` 会汇总每个用例的通过与失败。
 
 
 ## 延伸阅读

@@ -1,6 +1,6 @@
 ---
 title: "iframe"
-description: "<iframe标签用于在网页里面嵌入其他网页。"
+description: "iframe 嵌入外部网页：src、width、name、referrerpolicy 等属性，sandbox 沙箱逐项权限的取值含义与组合风险，以及 loading 懒加载的三个值和失效场景。"
 sidebar_position: 15
 ---
 # iframe

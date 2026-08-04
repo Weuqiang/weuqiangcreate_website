@@ -22,10 +22,11 @@ Gemini 2.5 给我的启发，和 Deep Think 的名字一样直白：有时候答
 
 
 
+
 ---
 
 ## 延伸阅读（知识库）
 
 - [Agent开发](/docs/人工智能/大模型LLM与应用/Agent开发)
-- [模型评测](/docs/人工智能/大模型LLM与应用/模型评测)
+- [模型评测](/docs/人工智能/大模型LLM与应用/模型评测) — 大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。
 - [经典神经网络](/docs/人工智能/深度学习/经典神经网络)

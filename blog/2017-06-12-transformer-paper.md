@@ -23,10 +23,11 @@ date: 2017-06-12
 
 
 
+
 ---
 
 ## 延伸阅读（知识库）
 
-- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer)
+- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer) — Transformer 的推理循环与词嵌入落地：分词、构建词表与嵌入矩阵初始化，独热编码和 nn.Embedding 查表两种取向量方式对比，并叠加位置编码。
 - [Vision Transformer](/docs/人工智能/深度学习/序列处理/Vision Transformer) — 把图像切成 patch 当作 token，用纯 Transformer 做图像分类——含完整可运行实现、归纳偏置分析与 CIFAR-10 训练脚本。
 - [LSTM](/docs/人工智能/深度学习/序列处理/LSTM)

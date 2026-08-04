@@ -1,14 +1,8 @@
 ---
 sidebar_position: 11
 title: 文件输入输出
+description: "文件的打开与关闭、按字符、按行、按块三种读写方式，结构体的二进制存取，fseek/ftell/rewind 等操作函数，以及一个行程长度编码的压缩程序实战"
 ---
-
-## 与文件进行通信
-
-## 标准I/O
-
-## 一个简单的文件压缩程序
-
 
 ## 文件基本概念
 
@@ -956,6 +950,103 @@ int main()
     return 0;
 }
 ```
+
+
+## 一个简单的文件压缩程序
+
+把前面的按块读写用起来，写一个能真正跑的小程序：**行程长度编码**（RLE，Run-Length Encoding）。
+
+它的思路极其朴素——把连续重复的字节压成「重复次数 + 字节本身」两个字节。例如 `aaaaaaa` 七个字符，压缩后只占 `7 a` 两个字节。
+
+### 编码格式与边界
+
+用一个字节存计数，所以一段最多只能表示 255 次重复；超过就拆成多段。这决定了压缩循环里必须有 `count < 255` 的判断。
+
+```c showLineNumbers
+#include <stdio.h>
+#include <stdlib.h>
+
+// 压缩：把 in 中连续重复的字节写成 [计数][字节] 到 out
+int rle_compress(const char *in_path, const char *out_path)
+{
+    FILE *in = fopen(in_path, "rb");
+    if (in == NULL) { perror("打开输入文件失败"); return -1; }
+
+    FILE *out = fopen(out_path, "wb");
+    if (out == NULL) { perror("打开输出文件失败"); fclose(in); return -1; }
+
+    int cur = fgetc(in);
+    while (cur != EOF) {
+        unsigned char count = 1;
+        int next;
+        // 一直向后看，统计与 cur 相同的连续字节
+        // 计数上限 255，因为只用一个字节存计数
+        while ((next = fgetc(in)) == cur && count < 255) {
+            count++;
+        }
+        fputc(count, out);
+        fputc(cur, out);
+        cur = next;   // next 要么是不同的字节，要么是 EOF
+    }
+
+    fclose(in);
+    fclose(out);
+    return 0;
+}
+
+// 解压：读 [计数][字节] 对，把字节重复写出 count 次
+int rle_decompress(const char *in_path, const char *out_path)
+{
+    FILE *in = fopen(in_path, "rb");
+    if (in == NULL) { perror("打开输入文件失败"); return -1; }
+
+    FILE *out = fopen(out_path, "wb");
+    if (out == NULL) { perror("打开输出文件失败"); fclose(in); return -1; }
+
+    int count;
+    while ((count = fgetc(in)) != EOF) {
+        int ch = fgetc(in);
+        if (ch == EOF) break;          // 文件损坏：计数后面没有配对的字节
+        for (int i = 0; i < count; i++) {
+            fputc(ch, out);
+        }
+    }
+
+    fclose(in);
+    fclose(out);
+    return 0;
+}
+
+int main(void)
+{
+    rle_compress("raw.txt", "raw.rle");
+    rle_decompress("raw.rle", "restored.txt");
+    printf("压缩与解压完成\n");
+    return 0;
+}
+```
+
+### 编译与验证
+
+```bash
+gcc rle.c -o rle
+
+# 造一个重复度很高的测试文件
+python3 -c "open('raw.txt','w').write('a'*1000 + 'b'*500 + 'xyz')"
+
+./rle
+
+# 比较解压结果与原文件，无输出即完全一致
+cmp raw.txt restored.txt
+```
+
+用 `ls -l` 看一眼：1503 字节的 `raw.txt` 压缩后只剩 8 字节左右。
+
+:::warning 朴素算法的局限
+RLE 只对**连续重复**有效。如果输入是随机数据或普通英文文本（几乎没有连续重复字符），每个字节都会被写成「1 + 字节」两个字节，**压缩后反而比原文件大一倍**。
+
+真实的压缩格式因此不会单用 RLE：ZIP 用 DEFLATE（LZ77 找重复片段 + Huffman 按频率编码），PNG 在 DEFLATE 前还会先做逐行差分预测。RLE 只在传真、简单位图这类大片同色的场景里还有一席之地。
+:::
 
 
 ## 延伸阅读

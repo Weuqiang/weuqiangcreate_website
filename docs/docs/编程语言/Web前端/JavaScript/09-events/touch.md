@@ -1,6 +1,6 @@
 ---
 title: "触摸事件"
-description: "浏览器的触摸 API 由三个部分组成。"
+description: "触摸 API 三件套：Touch 触摸点的坐标、半径与压力属性，TouchList 集合，TouchEvent 的 touches、targetTouches、changedTouches，以及四类触摸事件的触发时机。"
 ---
 
 # 触摸事件

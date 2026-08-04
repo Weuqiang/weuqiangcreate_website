@@ -1,6 +1,6 @@
 ---
 title: "多媒体标签"
-description: "除了图像，网页还可以放置视频和音频。"
+description: "video 与 audio 的常用属性、自动播放静音封面写法，source 多格式回退，track 挂载 WebVTT 字幕，以及 embed、object 与 param 嵌入插件资源的差别。"
 sidebar_position: 14
 ---
 # 多媒体标签

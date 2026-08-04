@@ -1,7 +1,7 @@
 ---
 sidebar_position: 6
 title: Nginx
-description: 深入理解Nginx配置与企业级实战
+description: "Nginx 配置文件结构与 Context 作用域，静态资源、SPA 部署、反向代理、负载均衡与 HTTPS 实战配置，附性能优化、故障排查和安全加固"
 ---
 
 import Tabs from '@theme/Tabs';
@@ -948,7 +948,7 @@ server {
 
 :::tip 配置文件组织
 1. **模块化配置**：将不同功能拆分到独立文件
-   ```
+   ```text
    /etc/nginx/
    ├── nginx.conf           # 主配置
    ├── conf.d/             # 通用配置

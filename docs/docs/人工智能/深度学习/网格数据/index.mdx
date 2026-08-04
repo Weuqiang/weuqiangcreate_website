@@ -1129,7 +1129,110 @@ plt.show()
 ## 边缘与轮廓
 
 ### 边缘检测cv2.Canny
+
+Canny 是目前最常用、效果最稳健的边缘检测算法，核心分为四步：
+
+1. **高斯降噪**：先用高斯滤波平滑图像，抑制噪声带来的伪边缘。
+2. **梯度计算**：用 Sobel 算子分别计算 x、y 方向梯度，得到每点的梯度幅值与方向。
+3. **非极大值抑制（NMS）**：沿梯度方向只保留幅值最大的点，把粗边「细化」为单像素宽。
+4. **双阈值与滞后连接**：用低、高两个阈值分类——强边缘（幅值 > 高阈值）直接保留；弱边缘（低阈值 < 幅值 < 高阈值）仅当与强边缘连通时才保留，其余丢弃，从而兼顾完整性与抗噪性。
+
+函数签名：`cv2.Canny(image, threshold1, threshold2, apertureSize, L2gradient) -> edges`
+
+参数说明：
+
+- `image`：输入图像，建议先转灰度（`cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)`）。
+- `threshold1`：低阈值，用于标记弱边缘。
+- `threshold2`：高阈值，用于标记强边缘。
+- `apertureSize`：Sobel 算子孔径，默认 3。
+- `L2gradient`：是否用更精确的 L2 范数计算梯度幅值，默认 False（用 L1）。
+
+**双阈值怎么调**：经验比例是 `threshold2 ≈ 2 ~ 3 × threshold1`，例如 `(100, 200)` 或 `(50, 150)`。高阈值越大，保留的边缘越少、越干净；越低则边缘越多但更易混入噪声。一般先用 `(100, 200)` 试，再根据结果上调或下调。
+
+```python showLineNumbers
+import cv2
+
+# 读取并转灰度（Canny 对灰度图效果最好）
+img = cv2.imread("xxx.png")
+if img is None:
+    raise FileNotFoundError("找不到图片 xxx.png")
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+# 先做高斯降噪，减少伪边缘
+blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+# 低阈值 100、高阈值 200
+edges = cv2.Canny(blurred, threshold1=100, threshold2=200)
+
+cv2.imshow("Original", img)
+cv2.imshow("Canny Edges", edges)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+# 边缘是二值图：白(255)为边缘，黑(0)为其他
+print("边缘图尺寸:", edges.shape, "非零点数:", cv2.countNonZero(edges))
+```
+
 ### 获取轮廓cv2.findContours
+
+轮廓是图像中连通的边界像素集合，常用于目标计数、形状分析、物体定位。OpenCV 通过 `cv2.findContours` 从二值图（通常先经 Canny 或阈值得到）中提取轮廓。
+
+函数签名：`cv2.findContours(image, mode, method) -> contours, hierarchy`
+
+参数说明：
+
+- `image`：输入的**二值单通道**图像（函数会找白色区域的边界）。
+- `mode`（检索模式 `RETR_*`）：
+  - `cv2.RETR_EXTERNAL`：只取最外层轮廓。
+  - `cv2.RETR_LIST`：提取所有轮廓，不建立层级关系。
+  - `cv2.RETR_CCOMP`：提取所有轮廓，组织为两层层级。
+  - `cv2.RETR_TREE`：提取所有轮廓并建立完整的树状层级（父子嵌套）。
+- `method`（近似方法 `CHAIN_APPROX_*`）：
+  - `cv2.CHAIN_APPROX_NONE`：保存轮廓上的每一个点。
+  - `cv2.CHAIN_APPROX_SIMPLE`：压缩水平/垂直/对角线段，只保留端点（如矩形只留 4 个角），更省内存。
+
+返回值：
+
+- `contours`：轮廓列表，每个轮廓是形状为 `(N, 1, 2)` 的 `numpy` 数组，存放该轮廓上各点的 `(x, y)` 坐标。
+- `hierarchy`：轮廓的层级关系数组，描述父子嵌套（OpenCV 4 仍返回此值）。
+
+配合 `cv2.drawContours` 可把轮廓画回图像；进一步可用 `cv2.contourArea` 求面积、`cv2.arcLength` 求周长、`cv2.boundingRect` 求外接矩形。
+
+```python showLineNumbers
+import cv2
+
+img = cv2.imread("xxx.png")
+if img is None:
+    raise FileNotFoundError("找不到图片 xxx.png")
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+# 先二值化，得到黑白分明的图（白=前景）
+_, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+
+# 提取所有轮廓并建立层级；SIMPLE 只保留关键点
+contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+print("检测到轮廓数量:", len(contours))
+
+# 画轮廓：-1 表示画全部轮廓，颜色 (0,0,255) 红，线宽 2
+cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
+
+# 取面积最大的轮廓做后处理
+if contours:
+    c = max(contours, key=cv2.contourArea)
+    area = cv2.contourArea(c)              # 面积（像素数）
+    peri = cv2.arcLength(c, True)          # 周长，True 表示闭合
+    x, y, w, h = cv2.boundingRect(c)       # 外接矩形（左上角 + 宽高）
+    print(f"最大轮廓: 面积={area:.1f} 周长={peri:.1f} 外接矩形=({x},{y},{w},{h})")
+    cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+cv2.imshow("Contours", img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+
+:::info
+轮廓的层级关系在处理「嵌套形状」（如圆环、带孔零件）时特别有用：`RETR_TREE` 返回的 `hierarchy` 能区分外轮廓与内孔，配合 `cv2.contourArea` 用「外轮廓面积 − 内孔面积」即可得到环形区域的真实面积。
+:::
 ### 轮廓属性cv2.contourArea、cv2.arcLength
 
 ```python showLineNumbers

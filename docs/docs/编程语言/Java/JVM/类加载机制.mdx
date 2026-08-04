@@ -33,7 +33,7 @@ Java 代码编译成 `.class` 字节码后，由 JVM 在运行时**按需加载*
 
 JVM 有三层类加载器，加载时**先委托父加载器**，父找不到才自己加载：
 
-```
+```text
 Bootstrap  → 核心类库(rt.jar / modules)
   ↑
 Extension  → 扩展包

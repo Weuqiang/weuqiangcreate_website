@@ -21,6 +21,7 @@ Sora 刚露面那批 demo，我反反复复看了好几遍。不是因为它美�
 
 
 
+
 ---
 
 ## 延伸阅读（知识库）
@@ -29,4 +30,4 @@ Sora 刚露面那批 demo，我反反复复看了好几遍。不是因为它美�
 - [Agent开发](/docs/人工智能/大模型LLM与应用/Agent开发)
 - [上下文工程](/docs/人工智能/大模型LLM与应用/上下文工程)
 - [经典神经网络](/docs/人工智能/深度学习/经典神经网络)
-- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer)
+- [Transformer](/docs/人工智能/深度学习/序列处理/Transformer) — Transformer 的推理循环与词嵌入落地：分词、构建词表与嵌入矩阵初始化，独热编码和 nn.Embedding 查表两种取向量方式对比，并叠加位置编码。

@@ -9,7 +9,7 @@ sidebar_position: 1
 
 ## 1. 编译总览
 
-```
+```text
 源代码 → 词法 → 语法 → 语义 → 中间代码 → 优化 → 目标代码
 ```
 
@@ -17,7 +17,7 @@ sidebar_position: 1
 
 把字符流切成一个个**记号（token）**：
 
-```
+```text
 输入:  if (x > 0) { ... }
 输出:  IF  LPAREN  ID(x)  GT  NUM(0)  RPAREN  LBRACE ...
 ```
@@ -29,7 +29,7 @@ sidebar_position: 1
 
 根据**文法**把 token 序列构造成**抽象语法树（AST）**：
 
-```
+```text
         if
        /  \
   条件(x>0)  语句块
@@ -40,7 +40,7 @@ sidebar_position: 1
 
 ## 4. 文法示例
 
-```
+```text
 Stmt  → "if" "(" Expr ")" Stmt
 Expr  → Expr ">" Term | Term
 Term  → ID | NUM

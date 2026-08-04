@@ -446,7 +446,7 @@ form.noValidate = true;
 
 假定表单有两个字段，分别是`foo`和`baz`，其中`foo`字段的值等于`bar`，`baz`字段的值是一个分为两行的字符串。
 
-```
+```text
 The first line.
 The second line.
 ```

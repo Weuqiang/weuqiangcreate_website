@@ -1,6 +1,6 @@
 ---
 title: "RegExp 对象"
-description: "RegExp对象提供正则表达式的功能。"
+description: "正则的两种创建方式与实例属性，test、exec 及字符串的 match、search、replace、split 方法，元字符、字符类、预定义模式、量词符、贪婪模式、修饰符与组匹配规则。"
 ---
 
 # RegExp 对象

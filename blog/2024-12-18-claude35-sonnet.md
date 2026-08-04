@@ -22,11 +22,12 @@ Anthropic 这家公司的调性也挺特别：最爱对外讲「安全」「对�
 
 
 
+
 ---
 
 ## 延伸阅读（知识库）
 
 - [Agent开发](/docs/人工智能/大模型LLM与应用/Agent开发)
-- [模型评测](/docs/人工智能/大模型LLM与应用/模型评测)
+- [模型评测](/docs/人工智能/大模型LLM与应用/模型评测) — 大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。
 - [上下文工程](/docs/人工智能/大模型LLM与应用/上下文工程)
 - [模型微调](/docs/人工智能/大模型LLM与应用/模型微调)
