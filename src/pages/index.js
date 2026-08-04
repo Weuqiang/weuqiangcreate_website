@@ -6,88 +6,44 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import recentPosts from "@site/src/data/recent-posts.json";
 import recentBooks from "@site/src/data/recent-books.json";
+import kgData from "@site/src/data/knowledge-graph.json";
 import styles from "./index.module.css";
 
-/* ---------- 真实知识图谱：节点 + 连线（对应站点实际结构） ---------- */
-const GROUPS = {
-  root:  { color: "var(--ifm-color-primary)" },
-  ai:    { color: "#c1654b" },
-  lang:  { color: "#d99a4e" },
-  embed: { color: "#8a9a5b" },
-  math:  { color: "#5b9aa0" },
-  cs:    { color: "#9a6b8c" },
-  be:    { color: "#6b7faa" },
-};
+/* ---------- 知识图谱：数据由 scripts/gen-knowledge-graph.js 从真实目录树生成 ---------- */
+const { groups, nodes, edges } = kgData;
+const nodeById = {};
+nodes.forEach((n) => (nodeById[n.id] = n));
 
-const NODES = [
-  { id: "root", label: "知识花园", to: "/", layer: 0, group: "root" },
-  // 六大领域（环一）
-  { id: "cs",    label: "计算机科学基础", to: "/docs/计算机科学基础/", layer: 1, group: "cs" },
-  { id: "math",  label: "数学基础",     to: "/docs/数学基础/",     layer: 1, group: "math" },
-  { id: "ai",    label: "人工智能",     to: "/docs/人工智能/",     layer: 1, group: "ai" },
-  { id: "lang",  label: "编程语言",     to: "/docs/编程语言/",     layer: 1, group: "lang" },
-  { id: "be",    label: "软件工程与后端", to: "/docs/软件工程与后端/", layer: 1, group: "be" },
-  { id: "embed", label: "嵌入式开发",   to: "/docs/嵌入式开发/",   layer: 1, group: "embed" },
-  // 子主题（环二）
-  { id: "cs-cs",    label: "计算机科学导论", to: "/docs/计算机科学基础/计算机科学导论/", layer: 2, group: "cs", parent: "cs", side: -1 },
-  { id: "cs-dsa",   label: "数据结构与算法", to: "/docs/计算机科学基础/数据结构与算法/", layer: 2, group: "cs", parent: "cs", side: 0 },
-  { id: "cs-tool",  label: "开发工具链",     to: "/docs/计算机科学基础/开发工具链/",     layer: 2, group: "cs", parent: "cs", side: 1 },
-  { id: "math-la",  label: "线性代数",       to: "/docs/数学基础/线性代数/",   layer: 2, group: "math", parent: "math", side: -1 },
-  { id: "math-ps",  label: "概率与统计",     to: "/docs/数学基础/概率与统计/", layer: 2, group: "math", parent: "math", side: 1 },
-  { id: "ai-ml",    label: "机器学习",       to: "/docs/人工智能/机器学习/",   layer: 2, group: "ai", parent: "ai", side: -1 },
-  { id: "ai-llm",   label: "大模型",         to: "/docs/人工智能/大模型LLM与应用/", layer: 2, group: "ai", parent: "ai", side: 1 },
-  { id: "lang-py",  label: "Python",        to: "/docs/编程语言/Python/",   layer: 2, group: "lang", parent: "lang", side: -1 },
-  { id: "lang-rust",label: "Rust",          to: "/docs/编程语言/Rust/",     layer: 2, group: "lang", parent: "lang", side: 1 },
-  { id: "be-back",  label: "后端通识",       to: "/docs/软件工程与后端/后端通识/", layer: 2, group: "be", parent: "be", side: -1 },
-  { id: "be-arch",  label: "架构",           to: "/docs/软件工程与后端/",     layer: 2, group: "be", parent: "be", side: 1 },
-  { id: "embed-mcu",label: "单片机MCU",      to: "/docs/嵌入式开发/单片机MCU/", layer: 2, group: "embed", parent: "embed", side: -1 },
-  { id: "embed-net",label: "通信协议",       to: "/docs/嵌入式开发/通信协议/", layer: 2, group: "embed", parent: "embed", side: 1 },
-];
-
-const EDGES = [
-  ["root", "cs"], ["root", "math"], ["root", "ai"], ["root", "lang"], ["root", "be"], ["root", "embed"],
-  ["cs", "cs-cs"], ["cs", "cs-dsa"], ["cs", "cs-tool"],
-  ["math", "math-la"], ["math", "math-ps"],
-  ["ai", "ai-ml"], ["ai", "ai-llm"],
-  ["lang", "lang-py"], ["lang", "lang-rust"],
-  ["be", "be-back"], ["be", "be-arch"],
-  ["embed", "embed-mcu"], ["embed", "embed-net"],
-  // 跨领域关联：让它成为「图」而非树
-  ["ai", "math"],   // 机器学习依赖数学
-  ["lang", "ai"],   // AI 多用 Python
-  ["lang", "be"],   // 后端用编程语言
-  ["embed", "lang"],// 嵌入式用 C/固件
-  ["cs", "be"],     // 计算机基础支撑后端
-  ["cs-dsa", "math"], // 算法依赖数学
-  ["cs-dsa", "lang"], // 算法用语言实现
-];
-
-/* 布局：中心 + 两环（确定性，无需依赖） */
-const GW = 960, GH = 680, GCX = 480, GCY = 340, R1 = 158, R2 = 286;
-const domainIds = NODES.filter((n) => n.layer === 1).map((n) => n.id);
-const pos = {};
-NODES.forEach((n) => {
-  if (n.layer === 0) { pos[n.id] = { x: GCX, y: GCY }; return; }
-  if (n.layer === 1) {
-    const i = domainIds.indexOf(n.id);
-    const ang = ((-90 + i * 60) * Math.PI) / 180;
-    pos[n.id] = { x: GCX + R1 * Math.cos(ang), y: GCY + R1 * Math.sin(ang) };
-    return;
-  }
-  const p = pos[n.parent];
-  const base = Math.atan2(p.y - GCY, p.x - GCX);
-  const ang = base + (n.side || 0) * 0.32;
-  pos[n.id] = { x: GCX + R2 * Math.cos(ang), y: GCY + R2 * Math.sin(ang) };
+/* 布局：中心 + 两环（确定性放射，支持任意子节点数，无需依赖） */
+const GW = 980, GH = 760, GCX = 490, GCY = 380, R1 = 156, R2 = 320;
+const l1 = nodes.filter((n) => n.layer === 1);
+const pos = { root: { x: GCX, y: GCY } };
+l1.forEach((n, i) => {
+  const ang = (-90 + i * (360 / l1.length)) * (Math.PI / 180);
+  pos[n.id] = { x: GCX + R1 * Math.cos(ang), y: GCY + R1 * Math.sin(ang) };
+});
+l1.forEach((parent) => {
+  const children = nodes.filter((n) => n.parent === parent.id);
+  if (!children.length) return;
+  const base = Math.atan2(pos[parent.id].y - GCY, pos[parent.id].x - GCX);
+  const span = Math.min(52, 360 / l1.length - 10) * (Math.PI / 180);
+  children.forEach((c, j) => {
+    const t = children.length === 1 ? 0 : (j / (children.length - 1) - 0.5) * 2;
+    const ang = base + t * span;
+    pos[c.id] = { x: GCX + R2 * Math.cos(ang), y: GCY + R2 * Math.sin(ang) };
+  });
 });
 
 const adj = {};
-NODES.forEach((n) => (adj[n.id] = new Set()));
-EDGES.forEach(([a, b]) => { adj[a].add(b); adj[b].add(a); });
+nodes.forEach((n) => (adj[n.id] = new Set()));
+edges.forEach(([a, b]) => {
+  adj[a].add(b);
+  adj[b].add(a);
+});
 
 function edgePath(a, b) {
   const p1 = pos[a], p2 = pos[b];
-  const isCross =
-    NODES.find((n) => n.id === a).layer === 1 && NODES.find((n) => n.id === b).layer === 1;
+  const isCross = nodeById[a].layer === 1 && nodeById[b].layer === 1;
   if (!isCross) return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
   const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
   const dx = p2.x - p1.x, dy = p2.y - p1.y;
@@ -199,10 +155,9 @@ function KnowledgeGraph() {
           aria-label="知识图谱：中心为知识花园，连接六大领域及其子主题"
         >
           <g className={styles.kgEdges}>
-            {EDGES.map(([a, b], i) => {
+            {edges.map(([a, b], i) => {
               const isCross =
-                NODES.find((n) => n.id === a).layer === 1 &&
-                NODES.find((n) => n.id === b).layer === 1;
+                nodeById[a].layer === 1 && nodeById[b].layer === 1;
               const on = !hover || a === hover || b === hover;
               return (
                 <path
@@ -216,9 +171,9 @@ function KnowledgeGraph() {
             })}
           </g>
           <g>
-            {NODES.map((n, i) => {
+            {nodes.map((n, i) => {
               const p = pos[n.id];
-              const color = GROUPS[n.group].color;
+              const color = groups[n.group].color;
               const isActive = !hover || (active && active.has(n.id));
               const r = n.layer === 0 ? 46 : n.layer === 1 ? 34 : 25;
               const onRoot = n.layer === 0;
