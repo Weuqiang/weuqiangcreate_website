@@ -53,14 +53,15 @@ function injectRecs(filepath, recs) {
   const marker = '## 延伸阅读（知识库）';
   const markerIdx = content.indexOf(marker);
 
-  if (markerIdx >= 0) {
-    // 已存在：替换该节及之后内容
-    content = content.substring(0, markerIdx).trimEnd();
-  }
+  // 取「延伸阅读」节之前的内容（无则取全文），并去掉末尾可能存在的分隔线与空行，
+  // 避免每次构建重复追加 ---（幂等 & 自愈历史残留的重复分隔线）
+  let prefix = markerIdx >= 0 ? content.substring(0, markerIdx) : content;
+  prefix = prefix.replace(/\s+$/, '');              // 去掉末尾空白
+  prefix = prefix.replace(/(?:\n-{3,}\s*)+$/, ''); // 去掉末尾残留的 --- 分隔线
 
   // 追加新推荐
   const newSection = buildRecSection(recs);
-  content = content + '\n\n---\n\n' + newSection + '\n';
+  content = prefix + '\n\n---\n\n' + newSection + '\n';
   fs.writeFileSync(filepath, content, 'utf-8');
 }
 
