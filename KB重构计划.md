@@ -162,6 +162,11 @@ description: 一句话说明本文解决什么、学完能做什么
   - Deploy to GitHub Pages 工作流 **success**；线上冒烟：首页 / docs / read / blog + 6 个枢纽页全部 200，「跨主题关联」区已渲染，空字节 0。
   - ⚠️ 验证中文路由须用 Python `urllib.parse.quote` 编码；Git Bash 直接 curl 中文 URL 会因参数编码错乱产生**假 404**。
 
+- [✅] 6.7 书架 ↔ 知识库 主题桥接（打通 `docs/read` 与 `docs/docs` 两个内容插件，消除双孤岛）
+  - 书评 → 知识库（新增 `## 📖 关联知识库` 区块，站点绝对路径 `/docs/...`）：编码→计算机科学导论；Python神经网络编程→人工智能+Python；白帽子讲Web安全→HTTP与网络安全+Web前端；弹性网页设计→Web前端；黑客与画家→编程语言+Web前端。
+  - 知识库 → 书评（核心页 `## 延伸阅读` 补 📖 链接 `/read/...`）：人工智能 index、计算机科学导论 index、HTTP与网络安全、Web前端 index、编程语言 index。
+  - 共 12 条跨插件双向链接；跨插件用站点绝对路径（Docusaurus 自动加 baseUrl），`onBrokenLinks:throw` 校验；build / check:links / content-audit --gate 全绿。
+
 ---
 
 ## 六、进度看板（每次执行后更新）
@@ -210,6 +215,7 @@ description: 一句话说明本文解决什么、学完能做什么
 | 2026-08-03 | Phase 6.5d | 抽象/接口枢纽闭环：工程实践/设计模式 ↔ Java 接口与多态·Go 方法与接口·Rust 泛型与Trait·Python 类与对象·JS 原型继承（中枢发散 5 + 反向回链 5 + 横向对照 9，共 19 条；补链前 Python类与对象/JS prototype 零跨分类出链）；19 条链接写入前脚本模拟路由解析全部命中，build 一次过 | ✅ commit de1e044（本地领先 10 未推） |
 | 2026-08-03 | Phase 6.5e | 网络/HTTP 枢纽闭环（**6.5 收官**）：CS网络分层与TCP/IP + HTTP与网络安全 ↔ C/18网络编程(socket)·Go/HTTP服务与Web开发·Nginx·接口开发·JS/bom/xmlhttprequest·Python/urllib，共 13 条跨分类互链，纵深「理论分层→socket 系统调用→语言 HTTP 库→工程 Nginx/接口」贯通 4 个一级分类；JS xhr 页(828行)原零延伸阅读区，新建之。审计否定原「状态机」枢纽（仅 5 处顺带提及，无主题页）。脚本预校验 13/13 命中，build 一次过 | ✅ commit d993210（已上线） |
 | 2026-08-03 | Phase 6.6 | **推送部署上线**：rebase 到远端 5 个 CI 日报提交之上（`-X theirs` 免手工解冲突）→ 重跑 build 刷新 blog-summary → push `0c0964d..1fdbb23` → Deploy to GitHub Pages success；线上冒烟首页/docs/read/blog + 6 枢纽页全 200、跨主题关联区已渲染、空字节 0 | ✅ Phase 6 全部成果已上线 |
+| 2026-08-03 | Phase 6.7 | 书架 ↔ 知识库主题桥接：5 书评新增「关联知识库」区块（→KB 核心页）+ 5 知识库核心页「延伸阅读」补书评链接，共 12 条跨插件双向链接；三道门禁全绿 | ✅ 双插件孤岛打通，未推（按约定等 PAT） |
 
 ---
 
