@@ -1,11 +1,38 @@
 ---
 title: select 与 sync
 sidebar_position: 2
+description: "掌握 select 多路复用与 sync 原语（WaitGroup/Mutex/Once），处理多 channel 与共享状态。"
 ---
 
 # select 与 sync
 
 当需要处理多个 channel 或需要传统锁时，Go 提供 `select` 与 `sync` 包。本篇是 [goroutine 与 channel](../goroutine与channel) 的补充。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 select 同时等待多个 channel，理解 default 与超时
+- 用 sync.WaitGroup 等待一组 goroutine 结束
+- 用 sync.Mutex/RWMutex 保护共享状态，用 Once 保证只执行一次
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 必须先读 [goroutine 与 channel](../goroutine与channel)
+- 理解调度背景可看 [进程、线程与调度](/docs/计算机科学基础/计算机科学导论/操作系统/进程线程与调度)
+
+## 核心概念
+
+`select` 让一个 goroutine 同时等待多个 channel 操作，类似网络 IO 多路复用；配合 `time.After` 可做超时，带 `default` 则非阻塞。当确实需要共享状态时，用 `sync` 包的原语：`WaitGroup` 等待一组任务、`Mutex`/`RWMutex` 互斥、 `Once` 保证初始化只跑一次。
+
+本章主线：
+- select：多路复用、default、超时
+- sync.WaitGroup：等待 goroutine 组
+- sync.Mutex / RWMutex：保护共享状态
+- sync.Once：一次性初始化
+- channel 与 mutex 的取舍
 
 ## 1. select：多路复用
 
@@ -90,6 +117,10 @@ for w := 0; w < 3; w++ {       // 3 个常驻 worker
 | 一次性初始化 | `Once` |
 
 > 优先用 channel；只有"保护一小段共享状态"才上锁。
+
+## 小结
+
+select 用于“等多路 channel”，sync 原语用于“保护共享状态”。能走 channel 就优先 channel（通信而非共享），仅在必要时用锁。
 
 ## 易错点
 

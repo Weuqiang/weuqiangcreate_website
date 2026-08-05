@@ -1,11 +1,38 @@
 ---
 title: goroutine 与 channel
 sidebar_position: 1
+description: "理解 CSP 并发模型：用 goroutine 执行、用 channel 通信，写出无锁竞争的并发程序。"
 ---
 
 # goroutine 与 channel
 
 Go 的并发模型是"CSP（通信顺序进程）"：用 `goroutine` 执行、用 `channel` 通信。本篇是 Go 并发的核心。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 goroutine 的轻量与启动成本
+- 掌握无缓冲/有缓冲 channel 的同步语义
+- 用 channel 构建流水线，理解 close 与 for-range 收尾
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 需先掌握 [切片、映射与函数](/docs/编程语言/Go/语言基础/切片映射与函数)
+- 想看进程/线程底层可对照 [进程、线程与调度](/docs/计算机科学基础/计算机科学导论/操作系统/进程线程与调度)
+
+## 核心概念
+
+Go 并发遵循 CSP（通信顺序进程）哲学：“不要通过共享内存来通信，而要通过通信来共享内存”。goroutine 是极轻的协程（初始仅几 KB 栈），`go f()` 立即返回不等待；channel 是 goroutine 间类型安全的管道，发送/接收可同步握手（无缓冲）或异步（有缓冲）。
+
+本章主线：
+- goroutine：轻量协程与启动成本
+- channel：无缓冲 vs 有缓冲
+- 用 channel 做流水线
+- for-range 与 close 收尾
+- 方向限定的 channel（只收/只发）
 
 ## 1. goroutine：轻量协程
 

@@ -1,6 +1,7 @@
 ---
 title: Java 语言入门
 sidebar_position: 1
+description: "从零认识 Java：JVM 跨平台、基础类型、类与 main 方法，建立静态强类型直觉。"
 ---
 
 # Java 语言入门
@@ -17,6 +18,16 @@ Java 是一门**面向对象、跨平台**的语言：源码编译成字节码�
 
 - 了解 [C 语言基础](../../../C/) 有助于对比"指针 vs 引用""手动内存 vs GC"；
 - 已学过 [Go](../../../Go/) 的话，可对照两者"如何管理内存与并发"。
+
+## 核心概念
+
+Java 是静态强类型、面向对象语言，源代码编译为字节码后在 JVM 上运行，因此“一次编写、到处运行”。类型分两类：基本类型（`int`/`double`/`boolean` 等，存值）与引用类型（对象/数组，存引用）。一切代码都写在类里，`public static void main(String[] args)` 是程序入口。
+
+本章主线：
+- JVM 与跨平台：字节码 vs 机器码
+- 基本类型与引用类型
+- 变量、运算符与数组
+- 类与 main 入口
 
 ## 1. Hello World
 
@@ -63,6 +74,10 @@ class Dog extends Animal {        // 继承
 
 - 并发：`Thread`、`Runnable`、线程池 `ExecutorService`、`synchronized` 与 `java.util.concurrent`。
 - 生态：Spring（Web/企业级）、Maven/Gradle（构建）、JUnit（测试）。
+
+## 小结
+
+Java 靠 JVM 实现跨平台，类型静态强类型；代码都在类中，`main` 是入口。理解“值类型 vs 引用类型”是后续学对象、GC 的基石。
 
 ## 易错点
 

@@ -1,11 +1,38 @@
 ---
 title: HTTP 服务与 Web 开发
 sidebar_position: 2
+description: "用标准库 net/http 搭建 HTTP 服务，理解路由、中间件与请求生命周期。"
 ---
 
 # HTTP 服务与 Web 开发
 
 Go 标准库 `net/http` 就能起一个生产级 HTTP 服务，无需框架。本篇从原生到常用框架。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 `net/http` 起一个 HTTP 服务并注册路由
+- 理解 Handler / HandlerFunc 与中间件的组合
+- 知道如何解析请求体、返回 JSON，并做基本的错误处理
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 需掌握 [goroutine 与 channel](/docs/编程语言/Go/并发模型/goroutine与channel)（服务天然并发）
+- HTTP 协议背景见 [网络分层与 TCP/IP](/docs/计算机科学基础/计算机科学导论/计算机网络/网络分层与TCP与IP)
+
+## 核心概念
+
+Go 标准库 `net/http` 即可生产级 Web 服务：每个请求由一个 goroutine 处理，天然并发。核心是 `http.Handler` 接口（一个 `ServeHTTP` 方法），`HandlerFunc` 把它适配成普通函数；中间件本质是“包装 Handler 的 Handler”，用函数组合层层包裹。
+
+本章主线：
+- net/http 起服务与注册路由
+- Handler / HandlerFunc 模型
+- 中间件：函数组合的洋葱模型
+- 解析请求、返回 JSON
+- 并发与超时控制
 
 ## 1. 原生 HTTP 服务
 

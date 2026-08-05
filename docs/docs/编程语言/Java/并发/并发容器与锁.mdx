@@ -1,6 +1,7 @@
 ---
 title: 并发容器与锁
 sidebar_position: 2
+description: "掌握 synchronized、Lock 与并发容器，写出线程安全的 Java 代码。"
 ---
 
 # 并发容器与锁
@@ -17,6 +18,16 @@ sidebar_position: 2
 
 - 已读完 [线程与线程池](../线程与线程池)；
 - 集合选型基础见 [集合框架](../../生态/集合框架)。
+
+## 核心概念
+
+共享状态需要同步：`synchronized` 基于监视器锁，保证互斥与可见性；`ReentrantLock` 更灵活（可中断、超时、公平锁），`ReadWriteLock` 在读多写少时提升并发。并发容器（如 `ConcurrentHashMap`）内部用分段/无锁结构，比“普通集合 + 外部锁”吞吐更高、语义更清晰。
+
+本章主线：
+- synchronized：锁对象与可见性
+- ReentrantLock 与条件变量
+- ReadWriteLock：读写分离
+- 并发容器：ConcurrentHashMap 等
 
 ## 1. 内置锁 synchronized
 
@@ -79,6 +90,10 @@ latch.await();   // 阻塞直到计数归零
 ```
 
 其他常用：`CyclicBarrier`（循环等待）、`Semaphore`（限流）、`Future`/`CompletableFuture`（异步结果）。
+
+## 小结
+
+优先用并发容器而非“集合+synchronized”；需要灵活控制时用 ReentrantLock。读多写少场景用读写锁，能显著放大并发度。
 
 ## 易错点
 

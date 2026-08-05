@@ -1,6 +1,7 @@
 ---
 title: 面向对象与核心语法
 sidebar_position: 2
+description: "系统梳理 Java 面向对象核心：封装、继承、多态、接口、泛型与异常处理。"
 ---
 
 # 面向对象与核心语法
@@ -17,6 +18,17 @@ sidebar_position: 2
 
 - 已完成 [Java 语言入门](../Java语言入门)；
 - 想对比"所有权 vs 引用"可看 [Rust 语言入门](../../../Rust/所有权/Rust语言入门)。
+
+## 核心概念
+
+OOP 三支柱：封装（private 隐藏细节、getter/setter 受控访问）、继承（extends 复用、implements 实现多接口）、多态（父类引用指向子类对象、运行时动态绑定）。接口只定义契约，`default` 方法让接口演进不破坏实现；泛型把类型检查前移到编译期；异常分受检（必须处理）与运行时（可不捕获但最好处理）。
+
+本章主线：
+- 类与对象：封装
+- 继承与多态：extends / implements
+- 接口与 default 方法
+- 泛型：编译期类型安全
+- 异常处理：try/catch/finally
 
 ## 1. 类与对象
 
@@ -82,6 +94,10 @@ try {
 ```
 
 - 受检异常（`IOException`）必须 `try/catch` 或声明 `throws`；运行时异常（`RuntimeException`）可不捕获，但最好处理。
+
+## 小结
+
+Java 用封装/继承/多态组织代码，接口定义契约、泛型确保安全、异常分离正常与错误路径。掌握这些即可读懂绝大多数 Java 业务代码。
 
 ## 易错点
 

@@ -1,6 +1,7 @@
 ---
 title: 集合框架
 sidebar_position: 1
+description: "梳理 Java 集合框架的体系：List/Set/Map 与常见实现的选择依据。"
 ---
 
 # 集合框架
@@ -17,6 +18,17 @@ Java 集合框架（Java Collections Framework）统一了容器操作，几乎�
 
 - 已掌握 [面向对象与核心语法](../../语言基础/面向对象与核心语法) 的泛型；
 - 下文涉及的内存回收背景见 [JVM 内存模型与 GC](../../JVM/JVM内存模型与GC)。
+
+## 核心概念
+
+集合框架以接口分层：`Collection` 下分 `List`（有序可重复）、`Set`（无序唯一）、`Queue`（队列）；`Map` 独立存放键值对。实现选择：随机访问多用 `ArrayList`、头尾频繁增删用 `LinkedList`、哈希查找用 `HashMap`、需要有序键用 `TreeMap`。迭代时结构被修改会抛 `ConcurrentModificationException`（fail-fast）。
+
+本章主线：
+- 集合体系：Collection 与 Map
+- List：ArrayList vs LinkedList
+- Set：HashSet / TreeSet
+- Map：HashMap / TreeMap / ConcurrentHashMap
+- fail-fast 与并发修改
 
 ## 1. 整体结构
 
@@ -103,6 +115,10 @@ Queue<Integer> q2 = new ConcurrentLinkedQueue<>();
 List<String> consts = List.of("a", "b", "c");
 Map<String, Integer> m2 = Map.of("x", 1, "y", 2);
 ```
+
+## 小结
+
+集合框架按“接口—实现”分层；选型看访问模式（随机/顺序/查找/有序）。并发场景优先选并发容器，避免边遍历边修改触发 fail-fast。
 
 ## 易错点
 

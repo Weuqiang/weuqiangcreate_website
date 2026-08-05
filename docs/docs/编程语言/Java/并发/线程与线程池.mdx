@@ -1,6 +1,7 @@
 ---
 title: 线程与线程池
 sidebar_position: 1
+description: "理解 Java 线程模型、创建方式与线程池，避免无节制创建线程带来的资源耗尽。"
 ---
 
 # 线程与线程池
@@ -17,6 +18,16 @@ sidebar_position: 1
 
 - 已了解 [类加载机制](../../JVM/类加载机制)（类初始化是线程安全的）；
 - 想对比并发模型可看 [Go 的 goroutine 与 channel](../../../Go/并发模型/goroutine与channel)。
+
+## 核心概念
+
+Java 并发基于 OS 线程：`Thread` 是执行单元，`Runnable`/`Callable` 描述任务。直接无节制创建线程成本高且难管理，因此用线程池（`ExecutorService`）复用线程：核心参数有核心线程数、最大线程数、空闲存活时间、任务队列、拒绝策略。
+
+本章主线：
+- 线程创建：Thread / Runnable / Callable
+- 线程状态与调度
+- 线程池核心参数与队列
+- 优雅关闭：shutdown vs shutdownNow
 
 ## 1. 创建线程
 
@@ -78,6 +89,10 @@ new ThreadPoolExecutor(
 - 不用 `Executors.newCachedThreadPool()`（可能无限线程），显式构造 `ThreadPoolExecutor`。
 - CPU 密集：线程数 ≈ 核数；IO 密集：可更大（如核数 × 2）。
 - 业务用 `submit()` 拿 `Future` 取结果/异常。
+
+## 小结
+
+用线程池而非裸 `new Thread`：通过核心/最大线程数与队列平衡吞吐与资源；下线时用 `shutdown` 等任务跑完或 `shutdownNow` 强停。
 
 ## 易错点
 
