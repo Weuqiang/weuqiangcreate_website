@@ -15,8 +15,15 @@ description: "大 O 的严格定义、五条化简规则、循环与递归的分
 - 会用主定理（Master Theorem）秒算常见分治递归式。
 - 知道大 O 在什么情况下会**误导**你。
 
-## 核心直觉
+## 前置知识
 
+在阅读下面的内容前，建议先掌握：
+
+- 写过程序并体会过「数据量大了就变慢」——可参考 [C 语言基础](/docs/编程语言/C/0基础语法) 或 [Python 基础](/docs/编程语言/Python/0基础语法)。
+- 了解循环与递归的执行次数概念。
+- 基本代数（对数、幂次）即可。
+
+## 核心概念
 ### 严格定义
 
 $$
@@ -75,14 +82,12 @@ $$
 def constant(arr):
     return arr[0] + arr[-1]
 
-
 # ② O(n) —— 单层循环
 def linear(arr):
     total = 0
     for x in arr:               # n 次
         total += x              # O(1)
     return total
-
 
 # ③ O(n²) —— 嵌套循环，内层次数与 n 相关
 def quadratic(arr):
@@ -93,7 +98,6 @@ def quadratic(arr):
     return pairs
 # 精确次数 = n(n-1)/2 = n²/2 - n/2 → 去常数、留最高阶 → O(n²)
 
-
 # ④ O(log n) —— 每次问题规模减半
 def log_time(n):
     count = 0
@@ -102,7 +106,6 @@ def log_time(n):
         count += 1
     return count
 # n → n/2 → n/4 → ... → 1，共 log₂n 步
-
 
 # ⑤ O(n log n) —— 外层线性，内层对数
 def n_log_n(arr):
@@ -113,7 +116,6 @@ def n_log_n(arr):
             k //= 2
             total += 1
     return total
-
 
 # ⑥ 陷阱：看起来是 O(n²)，其实是 O(n)
 def actually_linear(n):
@@ -155,7 +157,6 @@ def merge_sort(arr):
     left = merge_sort(arr[:mid])        # T(n/2)
     right = merge_sort(arr[mid:])       # T(n/2)
     return merge(left, right)           # O(n)
-
 
 def merge(a, b):
     res, i, j = [], 0, 0
@@ -214,16 +215,13 @@ $$
 ```python
 import time
 
-
 def measure(func, n):
     start = time.perf_counter()
     func(n)
     return time.perf_counter() - start
 
-
 def o_n(n):
     return sum(range(n))
-
 
 def o_n2(n):
     c = 0
@@ -231,7 +229,6 @@ def o_n2(n):
         for j in range(n):
             c += 1
     return c
-
 
 print(f"{'n':>8} {'O(n) 耗时':>12} {'倍数':>6} {'O(n²) 耗时':>12} {'倍数':>6}")
 prev1 = prev2 = None

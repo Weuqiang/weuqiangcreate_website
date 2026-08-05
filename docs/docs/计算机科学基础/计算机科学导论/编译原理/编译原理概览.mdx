@@ -1,6 +1,7 @@
 ---
 title: 编译原理概览
 sidebar_position: 3
+description: "从整体视角看编译器把源码变成机器码的各个阶段。"
 ---
 
 # 编译原理概览
@@ -14,8 +15,15 @@ sidebar_position: 3
 - 说清编译型、解释型、JIT 三种执行模型的取舍。
 - 亲手用 `gcc -E/-S/-c` 观察每一阶段的真实产物。
 
-## 核心直觉
+## 前置知识
 
+在阅读下面的内容前，建议先掌握：
+
+- 写过至少一门编程语言，如 [C](/docs/编程语言/C/0基础语法) 或 [Python](/docs/编程语言/Python/0基础语法)。
+- 知道「源码」和「可执行程序」不是一回事。
+- 了解一点点正则与文法的直觉即可。
+
+## 核心概念
 ### 完整流水线
 
 ```text
@@ -199,7 +207,6 @@ class SymbolTable:
                 return scope[name]
         raise NameError(f"未声明的标识符: {name}")
 
-
 def type_check(op, left, right):
     """极简类型规则：int 可隐式提升为 float，其余不兼容"""
     numeric = {"int", "float"}
@@ -208,7 +215,6 @@ def type_check(op, left, right):
     if left == right == "str" and op == "+":
         return "str"
     raise TypeError(f"类型不兼容: {left} {op} {right}")
-
 
 st = SymbolTable()
 st.declare("x", "int")
