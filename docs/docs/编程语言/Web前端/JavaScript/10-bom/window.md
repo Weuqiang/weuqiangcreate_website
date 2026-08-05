@@ -5,6 +5,29 @@ description: "浏览器里面，window对象（注意，w为小写）指当前�
 
 # window 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 window 是全局对象
+- 掌握视口尺寸与滚动
+- 认识 setTimeout 等全局方法
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+window 是最顶层的全局对象，全局变量与函数都是它的属性。它也提供视口信息（innerWidth/scrollY）与对话框、定时器等方法。
+
+本章主线：
+- 全局对象
+- 视口与滚动
+- 全局方法
+
 ## 概述
 
 浏览器里面，`window`对象（注意，`w`为小写）指当前的浏览器窗口。它也是当前页面的顶层对象，即最高一层的对象，所有其他对象都是它的下属。一个变量如果未声明，那么默认就是顶层对象的属性。
@@ -832,6 +855,17 @@ frames.myframe === myFrame // true
 ```
 
 另外，`name`属性的值会自动成为子窗口的名称，可以用在`window.open`方法的第二个参数，或者`<a>`和`<frame>`标签的`target`属性。
+
+## 小结
+
+window 是全局作用域与 BOM 入口；视口尺寸用 innerWidth/innerHeight，滚动用 scrollTo。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 innerWidth/innerHeight 判断视口大小。
+2. 说明全局变量与 window 属性的关系。
 
 ## 延伸阅读
 - [ArrayBuffer 对象，Blob 对象](../arraybuffer)

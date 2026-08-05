@@ -5,6 +5,30 @@ description: "表单（<form）用来收集用户提交的数据，发送到服�
 
 # 表单，FormData 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 FormData 收集表单字段
+- 掌握 append/foreach
+- 认识与 fetch 配合上传
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [HTML 表单](/docs/编程语言/Web前端/HTML/form)
+- [fetch/XMLHttpRequest](/docs/编程语言/Web前端/JavaScript/bom/xmlhttprequest)
+
+## 核心概念
+
+FormData 把表单字段序列化为键值对，可直接作为 fetch 的 body 上传（自动设 multipart 类型），也能手动 append 文件或字段。
+
+本章主线：
+- 收集表单字段
+- append 与遍历
+- 配合 fetch 上传
+
 ## 表单概述
 
 表单（`<form>`）用来收集用户提交的数据，发送到服务器。比如，用户提交用户名和密码，让服务器验证，就要通过表单。表单提供多种控件，让开发者使用，具体的控件种类和用法请参考 HTML 语言的教程。本章主要介绍 JavaScript 与表单的交互。
@@ -629,6 +653,17 @@ xhr.send(file);
 ## 参考链接
 
 - [HTML5 Form Validation With the “pattern” Attribute](https://webdesign.tutsplus.com/tutorials/html5-form-validation-with-the-pattern-attribute--cms-25145), Thoriq Firdaus
+
+## 小结
+
+FormData 简化表单上传；作为 fetch body 时自动用 multipart 编码。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 FormData 收集表单并提交。
+2. 手动 append 一个文件字段。
 
 ## 延伸阅读
 

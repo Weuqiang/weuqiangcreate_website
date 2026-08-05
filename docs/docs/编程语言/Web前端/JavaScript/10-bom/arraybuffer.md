@@ -5,6 +5,29 @@ description: "ArrayBuffer 对象表示一段二进制数据，用来模拟内存
 
 # ArrayBuffer 对象，Blob 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 ArrayBuffer 是原始二进制
+- 掌握 TypedArray 视图
+- 认识 DataView
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+
+## 核心概念
+
+ArrayBuffer 表示一段固定长度的原始二进制内存，本身不可直接读写；需通过 TypedArray（如 Uint8Array）或 DataView 建立视图来操作。
+
+本章主线：
+- ArrayBuffer 原始内存
+- TypedArray 视图
+- DataView 灵活视图
+
 ## ArrayBuffer 对象
 
 ArrayBuffer 对象表示一段二进制数据，用来模拟内存里面的数据。通过这个对象，JavaScript 可以读写二进制数据。这个对象可以看作内存数据的表达。
@@ -216,6 +239,16 @@ function typefile(file) {
 }
 ```
 
+## 小结
+
+ArrayBuffer 是裸二进制，必须通过 TypedArray 或 DataView 视图读写；视图决定解释方式。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 Uint8Array 写入再读出字节。
+2. 说明视图与底层 buffer 的关系。
 
 ## 延伸阅读
 

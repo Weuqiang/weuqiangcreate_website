@@ -7,6 +7,29 @@ description: "URL 是互联网的基础设施之一。浏览器提供了一些�
 
 URL 是互联网的基础设施之一。浏览器提供了一些原生对象，用来管理 URL。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握 location 各部件（href/pathname/search）
+- 理解赋值跳转
+- 认识 reload/replace
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+location 描述当前文档的 URL，可读取协议、主机、路径、查询等片段，也可整体赋值实现跳转；replace 跳转不留下历史记录。
+
+本章主线：
+- URL 各部件
+- 赋值跳转
+- reload/replace
+
 ## Location 对象
 
 `Location`对象是浏览器提供的原生对象，提供 URL 相关的信息和操作方法。通过`window.location`和`document.location`属性，可以拿到这个对象。
@@ -576,6 +599,17 @@ for (var p of params.entries()) {}
 - [URL](https://developer.mozilla.org/en-US/docs/Web/API/URL), by MDN
 - [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams), by MDN
 - [Easy URL Manipulation with URLSearchParams](https://developers.google.com/web/updates/2016/01/urlsearchparams?hl=en), by Eric Bidelman
+
+## 小结
+
+location 读写当前 URL；赋值 href 跳转，replace 不进历史，reload 刷新。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 search 解析查询参数。
+2. 用 replace 跳转且不留历史。
 
 ## 延伸阅读
 

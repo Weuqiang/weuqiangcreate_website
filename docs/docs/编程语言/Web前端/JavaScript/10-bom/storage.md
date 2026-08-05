@@ -5,6 +5,29 @@ description: "Storage 接口用于脚本在浏览器保存数据。两个对象�
 
 # Storage 接口
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分 localStorage 与 sessionStorage
+- 掌握 key/setItem/getItem
+- 认识容量与序列化
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+Web Storage 提供简单的键值字符串存储。localStorage 持久且同源共享，sessionStorage 仅限当前标签页会话。
+
+本章主线：
+- 两种存储的区别
+- 基本 API
+- 容量与序列化
+
 ## 概述
 
 Storage 接口用于脚本在浏览器保存数据。两个对象部署了这个接口：`window.sessionStorage`和`window.localStorage`。
@@ -142,6 +165,17 @@ window.addEventListener('storage', onStorageChange);
 - Ben Summers, [Inter-window messaging using localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
 - Stack Overflow, [Why does Internet Explorer fire the window “storage” event on the window that stored the data?](https://stackoverflow.com/questions/18265556/why-does-internet-explorer-fire-the-window-storage-event-on-the-window-that-st)
 - Stack Overflow, [localStorage eventListener is not called](https://stackoverflow.com/questions/5370784/localstorage-eventlistener-is-not-called)
+
+## 小结
+
+localStorage 持久同源共享，sessionStorage 随标签会话；只能存字符串，需 JSON 序列化。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 localStorage 记住用户偏好。
+2. 说明两种存储的生命周期差异。
 
 ## 延伸阅读
 

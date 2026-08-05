@@ -5,6 +5,29 @@ description: "随着浏览器的功能不断增强，越来越多的网站开始
 
 # IndexedDB API
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 IndexedDB 是事务型 NoSQL
+- 掌握库/表/事务
+- 认识异步回调
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+IndexedDB 提供大容量、结构化的客户端存储，数据以对象仓库形式组织，所有操作在事务中进行，接口基于事件或 Promise 封装。
+
+本章主线：
+- 库/对象仓库/事务
+- 键值与索引
+- 异步本质
+
 ## 概述
 
 随着浏览器的功能不断增强，越来越多的网站开始考虑，将大量数据储存在客户端，这样可以减少从服务器获取数据，直接从本地获取数据。
@@ -1054,6 +1077,17 @@ keyRangeValue.includes('W') // false
 - Tiffany Brown, [An Introduction to IndexedDB](https://web.archive.org/web/2019/http://dev.opera.com/articles/introduction-to-indexeddb/)
 - David Fahlander, [Breaking the Borders of IndexedDB](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/)
 - TutorialsPoint, [HTML5 - IndexedDB](https://www.tutorialspoint.com/html5/html5_indexeddb.htm)
+
+## 小结
+
+IndexedDB 是客户端事务型数据库；操作在事务内完成，适合离线大数据。
+
+## 练习
+
+动手检验一下自己：
+
+1. 打开一个数据库并建对象仓库。
+2. 在事务中写入并读取一条记录。
 
 ## 延伸阅读
 - [ArrayBuffer 对象，Blob 对象](../arraybuffer)

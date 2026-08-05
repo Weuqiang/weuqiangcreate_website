@@ -5,6 +5,29 @@ description: "window.history属性指向 History 对象，它表示当前窗口�
 
 # History 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 History 与 URL 的关系
+- 掌握 pushState/replaceState
+- 认识 popstate
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+History API 允许在不刷新页面的情况下改变地址栏（pushState/replaceState），是现代前端路由的基础；popstate 在用户前进后退时触发。
+
+本章主线：
+- pushState/replaceState
+- popstate
+- 与路由的关系
+
 ## 概述
 
 `window.history`属性指向 History 对象，它表示当前窗口的浏览历史。
@@ -168,6 +191,17 @@ var currentState = history.state;
 ```
 
 注意，页面第一次加载的时候，浏览器不会触发`popstate`事件。
+
+## 小结
+
+History API 实现无刷新改 URL；pushState 入栈、popstate 响应后退。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 pushState 改变 URL 而不刷新。
+2. 监听 popstate 恢复视图。
 
 ## 延伸阅读
 

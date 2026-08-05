@@ -5,6 +5,29 @@ description: "Cookie 是服务器保存在浏览器的一小段文本信息，�
 
 # Cookie
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 cookie 的用途与生命周期
+- 掌握关键属性（expires/path/domain）
+- 认识安全标记
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [same-origin 策略](/docs/编程语言/Web前端/JavaScript/bom/same-origin)
+
+## 核心概念
+
+cookie 由服务器通过 Set-Cookie 下发、浏览器随请求回传，用于会话保持。HttpOnly/Secure/SameSite 等属性影响可读性与安全性。
+
+本章主线：
+- 用途与生命周期
+- 关键属性
+- 安全标记
+
 ## 概述
 
 Cookie 是服务器保存在浏览器的一小段文本信息，一般大小不能超过4KB。浏览器每次向服务器发出请求，就会自动附上这段信息。
@@ -243,9 +266,9 @@ Set-Cookie:id=a3fWa;
 
 Cookie 的`SameSite`属性用来限制第三方 Cookie，从而减少安全风险。它可以设置三个值。
 
-> - Strict
-> - Lax
-> - None
+`>` - Strict
+`>` - Lax
+`>` - None
 
 **（1）Strict**
 
@@ -380,6 +403,16 @@ document.cookie = 'fontSize=;expires=Thu, 01-Jan-1970 00:00:01 GMT';
 - [Tough Cookies](https://scotthelme.co.uk/tough-cookies/), Scott Helme
 - [Cross-Site Request Forgery is dead!](https://scotthelme.co.uk/csrf-is-dead/), Scott Helme
 
+## 小结
+
+cookie 随请求自动回传；用 HttpOnly/Secure/SameSite 收紧安全；容量仅约 4KB。
+
+## 练习
+
+动手检验一下自己：
+
+1. 说明 HttpOnly 如何防止 XSS 读取。
+2. 解释 SameSite 对跨站请求的作用。
 
 ## 延伸阅读
 

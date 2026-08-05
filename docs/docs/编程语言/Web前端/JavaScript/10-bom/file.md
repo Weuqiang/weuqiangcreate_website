@@ -5,6 +5,29 @@ description: "File 对象代表一个文件，用来读写文件信息。它继�
 
 # File 对象，FileList 对象，FileReader 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 File 继承自 Blob
+- 掌握 FileReader
+- 认识拖拽获取文件
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+File 对象描述用户选中的文件，继承自 Blob（不可变二进制）。FileReader 或 Blob 的 arrayBuffer/text 方法可异步读取内容。
+
+本章主线：
+- File 与 Blob
+- FileReader
+- 读取与拖拽
+
 ## File 对象
 
 File 对象代表一个文件，用来读写文件信息。它继承了 Blob 对象，或者说是一种特殊的 Blob 对象，所有可以使用 Blob 对象的场合都可以使用它。
@@ -167,6 +190,17 @@ function previewFile() {
 ```
 
 上面代码中，用户选中图片文件以后，脚本会自动读取文件内容，然后作为一个 Data URL 赋值给`<img>`元素的`src`属性，从而把图片展示出来。
+
+## 小结
+
+File 继承自 Blob；用 FileReader 或 Blob 方法异步读取，避免阻塞主线程。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 input 选择文件并读取文本。
+2. 用拖拽读取文件内容。
 
 ## 延伸阅读
 

@@ -7,6 +7,29 @@ description: "CORS 是一个 W3C 标准，全称是“跨源资源共享”（Cr
 
 CORS 是一个 W3C 标准，全称是“跨源资源共享”（Cross-origin resource sharing），或者通俗地称为“跨域资源共享”。它允许浏览器向跨源的服务器，发出`XMLHttpRequest`请求，从而克服了 AJAX 只能同源使用的限制。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解同源策略下的跨域限制
+- 掌握 CORS 响应头
+- 认识预检请求
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [same-origin 策略](/docs/编程语言/Web前端/JavaScript/bom/same-origin)
+
+## 核心概念
+
+CORS 让服务器声明哪些跨域请求被允许。简单请求直接放行，带凭据或非简单方法的请求先发 OPTIONS 预检。
+
+本章主线：
+- 同源限制
+- CORS 响应头
+- 预检流程
+
 ## 简介
 
 CORS 需要浏览器和服务器同时支持。目前，所有浏览器都支持该功能。
@@ -21,17 +44,17 @@ CORS 请求分成两类：简单请求（simple request）和非简单请求（n
 
 （1）请求方法是以下三种方法之一。
 
-> - HEAD
-> - GET
-> - POST
+`>` - HEAD
+`>` - GET
+`>` - POST
 
 （2）HTTP 的头信息不超出以下几种字段。
 
-> - Accept
-> - Accept-Language
-> - Content-Language
-> - Last-Event-ID
-> - Content-Type：只限于三个值`application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain`
+`>` - Accept
+`>` - Accept-Language
+`>` - Content-Language
+`>` - Last-Event-ID
+`>` - Content-Type：只限于三个值`application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain`
 
 凡是不同时满足上面两个条件，就属于非简单请求。一句话，简单请求就是简单的 HTTP 方法与简单的 HTTP 头信息的结合。
 
@@ -255,6 +278,17 @@ CORS 与 JSONP 的使用目的相同，但是比 JSONP 更强大。JSONP 只支�
 - [HTTP access control (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS), MDN
 - [CORS](https://frontendian.co/cors), Ryan Miller
 - [Do You Really Know CORS?](https://web.archive.org/web/2019/http://performantcode.com/web/do-you-really-know-cors), Grzegorz Mirek
+
+## 小结
+
+CORS 由服务端响应头授权跨域；带 cookie 需 Access-Control-Allow-Credentials 与显式源。
+
+## 练习
+
+动手检验一下自己：
+
+1. 说明何时触发 OPTIONS 预检。
+2. 解释带凭据跨域为何不能写通配源。
 
 ## 延伸阅读
 

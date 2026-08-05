@@ -5,6 +5,30 @@ description: "JavaScript 语言采用的是单线程模型，也就是说，所�
 
 # Web Worker
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 Worker 脱离主线程
+- 掌握消息通信
+- 认识限制（无 DOM）
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [异步概览](/docs/编程语言/Web前端/JavaScript/async/general)
+
+## 核心概念
+
+Web Worker 在独立线程执行脚本，避免阻塞 UI。主线程与 Worker 通过 postMessage 通信，Worker 内不能访问 DOM 与部分 BOM。
+
+本章主线：
+- 线程隔离
+- postMessage 通信
+- Worker 的限制
+
 ## 概述
 
 JavaScript 语言采用的是单线程模型，也就是说，所有任务只能在一个线程上完成，一次只能做一件事。前面的任务没做完，后面的任务只能等着。随着电脑计算能力的增强，尤其是多核 CPU 的出现，单线程带来很大的不便，无法充分发挥计算机的计算能力。
@@ -390,6 +414,17 @@ Worker 线程有一些自己的全局属性和方法。
 - self.importScripts()：加载 JS 脚本。
 
 （完）
+
+## 小结
+
+Worker 把重计算移出主线程；通过消息传递数据，且无法直接操作 DOM。
+
+## 练习
+
+动手检验一下自己：
+
+1. 创建 Worker 并在其中计算后回传结果。
+2. 说明 Worker 为何不能访问 document。
 
 ## 延伸阅读
 

@@ -7,6 +7,29 @@ description: "浏览器安全的基石是“同源政策”（[sameorigin policy
 
 浏览器安全的基石是“同源政策”（[same-origin policy](https://en.wikipedia.org/wiki/Same-origin_policy)）。很多开发者都知道这一点，但了解得不全面。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解同源的判定
+- 掌握策略限制了什么
+- 认识放宽手段
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+同源要求协议、主机、端口三者一致。同源策略限制一个源读取另一个源的 DOM、Cookie 与请求响应，是 Web 安全的基石。
+
+本章主线：
+- 三元组判定
+- 策略限制范围
+- 放宽手段
+
 ## 概述
 
 ### 含义
@@ -15,9 +38,9 @@ description: "浏览器安全的基石是“同源政策”（[sameorigin policy
 
 最初，它的含义是指，A 网页设置的 Cookie，B 网页不能打开，除非这两个网页“同源”。所谓“同源”指的是“三个相同”。
 
-> - 协议相同
-> - 域名相同
-> - 端口相同（这点可以忽略，详见下文）
+`>` - 协议相同
+`>` - 域名相同
+`>` - 端口相同（这点可以忽略，详见下文）
 
 举例来说，`http://www.example.com/dir/page.html`这个网址，协议是`http://`，域名是`www.example.com`，端口是`80`（默认端口可以省略），它的同源情况如下。
 
@@ -41,11 +64,11 @@ description: "浏览器安全的基石是“同源政策”（[sameorigin policy
 
 随着互联网的发展，同源政策越来越严格。目前，如果非同源，共有三种行为受到限制。
 
-> （1） 无法读取非同源网页的 Cookie、LocalStorage 和 IndexedDB。
->
-> （2） 无法接触非同源网页的 DOM。
->
-> （3） 无法向非同源地址发送 AJAX 请求（可以发送，但浏览器会拒绝接受响应）。
+`>` （1） 无法读取非同源网页的 Cookie、LocalStorage 和 IndexedDB。
+`>`
+`>` （2） 无法接触非同源网页的 DOM。
+`>`
+`>` （3） 无法向非同源地址发送 AJAX 请求（可以发送，但浏览器会拒绝接受响应）。
 
 另外，通过 JavaScript 脚本可以拿到其他窗口的`window`对象。如果是非同源的网页，目前允许一个窗口可以接触其他网页的`window`对象的九个属性和四个方法。
 
@@ -131,8 +154,8 @@ window.parent.document.body
 
 对于完全不同源的网站，目前有两种方法，可以解决跨域窗口的通信问题。
 
-> - 片段识别符（fragment identifier）
-> - 跨文档通信API（Cross-document messaging）
+`>` - 片段识别符（fragment identifier）
+`>` - 跨文档通信API（Cross-document messaging）
 
 ### 片段识别符
 
@@ -198,9 +221,9 @@ window.addEventListener('message', function (e) {
 
 `message`事件的参数是事件对象`event`，提供以下三个属性。
 
-> - `event.source`：发送消息的窗口
-> - `event.origin`: 消息发送者的源（origin），即协议、域名、端口。
-> - `event.data`: 消息内容
+`>` - `event.source`：发送消息的窗口
+`>` - `event.origin`: 消息发送者的源（origin），即协议、域名、端口。
+`>` - `event.data`: 消息内容
 
 下面的例子是，子窗口通过`event.source`属性引用父窗口，然后发送消息。
 
@@ -305,9 +328,9 @@ window.onmessage = function(e) {
 
 除了架设服务器代理（浏览器请求同源服务器，再由后者请求外部服务），有三种方法规避这个限制。
 
-> - JSONP
-> - WebSocket
-> - CORS
+`>` - JSONP
+`>` - WebSocket
+`>` - CORS
 
 ### JSONP
 
@@ -398,6 +421,17 @@ CORS 是跨源资源分享（Cross-Origin Resource Sharing）的缩写。它是 
 - Mozilla Developer Network, [Window.postMessage](https://developer.mozilla.org/en-US/docs/Web/API/window.postMessage)
 - Jakub Jankiewicz, [Cross-Domain LocalStorage](https://jcubic.wordpress.com/2014/06/20/cross-domain-localstorage/)
 - David Baron, [setTimeout with a shorter delay](http://dbaron.org/log/20100309-faster-timeouts): 利用 window.postMessage 可以实现0毫秒触发回调函数
+
+## 小结
+
+同源策略按协议、主机、端口隔离；跨域需用 CORS 或 postMessage 等显式放宽。
+
+## 练习
+
+动手检验一下自己：
+
+1. 判断两个 URL 是否同源。
+2. 说明同源策略保护了什么。
 
 ## 延伸阅读
 

@@ -7,6 +7,29 @@ description: "window.navigator属性指向一个包含浏览器和系统信息�
 
 `window.navigator`属性指向一个包含浏览器和系统信息的 Navigator 对象。脚本通过这个属性了解用户的环境信息。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 navigator 提供环境信息
+- 掌握 userAgent/online
+- 认识能力 API
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+navigator 暴露浏览器与设备信息，如 userAgent、language、onLine，以及 geolocation、clipboard、mediaDevices 等能力接口。
+
+本章主线：
+- 环境与能力
+- userAgent/language
+- 能力 API
+
 ## Navigator 对象的属性
 
 ### Navigator.userAgent
@@ -239,6 +262,16 @@ if ((screen.width <= 800) && (screen.height <= 600)) {
 }
 ```
 
+## 小结
+
+navigator 描述运行环境；优先用能力 API 而非解析 userAgent 做特性判断。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 onLine 监听网络状态。
+2. 说明为何不应依赖 userAgent 做特性检测。
 
 ## 延伸阅读
 

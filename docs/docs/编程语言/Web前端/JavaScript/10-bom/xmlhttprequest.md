@@ -5,6 +5,29 @@ description: "浏览器与服务器之间，采用 HTTP 协议通信。用户在
 
 # XMLHttpRequest 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 XHR 的生命周期
+- 掌握 open/send/onreadystatechange
+- 认识与 fetch 的差异
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [异步概览](/docs/编程语言/Web前端/JavaScript/async/general)
+
+## 核心概念
+
+XMLHttpRequest 是早期发起 HTTP 请求的 API，通过 readyState 与事件跟踪进度。现代更推荐 fetch，但 XHR 在上传进度等场景仍有用。
+
+本章主线：
+- 生命周期与 readyState
+- 发送与回调
+- 与 fetch 对比
+
 ## 简介
 
 浏览器与服务器之间，采用 HTTP 协议通信。用户在浏览器地址栏键入一个网址，或者通过网页表单向服务器提交内容，这时浏览器就会向服务器发出 HTTP 请求。
@@ -826,8 +849,18 @@ navigator.sendBeacon('/log', blob));
 
 这个方法的优先级较低，不会占用页面资源。一般是在浏览器空闲的时候，才会发送。
 
+## 小结
+
+XHR 是经典异步请求方式；fetch 更现代，但 XHR 支持上传进度事件。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 XHR 发起 GET 并读取响应。
+2. 对比 XHR 与 fetch 的写法差异。
+
 ## 延伸阅读
 
 - 跨主题关联：[HTTP 与网络安全](../../../../../计算机科学基础/计算机科学导论/计算机网络/HTTP与网络安全)（XHR 发出的正是 HTTP 报文；同源策略与 CORS 在此生效）
 - 跨语言对照：[Python urllib](../../../../Python/Python标准库/13网络和进程间通信/urllib)（同一件事的脚本端做法：发请求、读响应、处理异常）
-
