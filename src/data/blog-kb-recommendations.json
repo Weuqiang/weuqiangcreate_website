@@ -1,82 +1,10 @@
 {
-  "docker-released": [
-    {
-      "title": "容器化与 Docker",
-      "url": "/docs/软件工程与后端/工程实践/容器化与Docker",
-      "description": "容器化与 Docker 工程实践：容器与虚拟机差异、镜像分层与构建缓存、Dockerfile 多阶段构建、compose 编排与镜像优化实战坑",
-      "category": "工程实践"
-    },
-    {
-      "title": "Docker",
-      "url": "/docs/计算机科学基础/开发工具链/Docker",
-      "description": "Docker 容器技术实战：安装与快速上手、镜像容器仓库三大概念、常用命令、数据卷与网络、docker-compose 多服务编排与 k8s 定位",
-      "category": "开发工具链"
-    },
-    {
-      "title": "持续集成与部署",
-      "url": "/docs/软件工程与后端/工程实践/持续集成与部署",
-      "description": "持续集成与部署实践：CI/CD 概念辨析、GitHub Actions 流水线实战、蓝绿与金丝雀部署策略、质量门禁与密钥配置管理",
-      "category": "工程实践"
-    }
-  ],
-  "react-released": [
-    {
-      "title": "对象",
-      "url": "/docs/编程语言/Web前端/JavaScript/types/object",
-      "description": "对象（object）是 JavaScript 语言的核心概念，也是最重要的数据类型。",
-      "category": "编程语言/Web前端/JavaScript/02-types"
-    },
-    {
-      "title": "Promise 对象",
-      "url": "/docs/编程语言/Web前端/JavaScript/async/promise",
-      "description": "Promise 对象是 JavaScript 的异步操作解决方案，为异步操作提供统一接口。它起到代理",
-      "category": "编程语言/Web前端/JavaScript/07-async"
-    }
-  ],
-  "kubernetes-released": [
-    {
-      "title": "容器化与 Docker",
-      "url": "/docs/软件工程与后端/工程实践/容器化与Docker",
-      "description": "容器化与 Docker 工程实践：容器与虚拟机差异、镜像分层与构建缓存、Dockerfile 多阶段构建、compose 编排与镜像优化实战坑",
-      "category": "工程实践"
-    },
-    {
-      "title": "微服务与分布式架构",
-      "url": "/docs/软件工程与后端/工程实践/微服务与分布式架构",
-      "description": "微服务与分布式架构：单体与微服务取舍、服务拆分原则、同步异步通信、服务发现与网关、数据一致性与可观测性",
-      "category": "工程实践"
-    },
-    {
-      "title": "持续集成与部署",
-      "url": "/docs/软件工程与后端/工程实践/持续集成与部署",
-      "description": "持续集成与部署实践：CI/CD 概念辨析、GitHub Actions 流水线实战、蓝绿与金丝雀部署策略、质量门禁与密钥配置管理",
-      "category": "工程实践"
-    }
-  ],
   "tensorflow-released": [
-    {
-      "title": "AlexNet",
-      "url": "/docs/人工智能/深度学习/网格数据/AlexNet",
-      "description": "2012 年引爆深度学习的卷积网络——ReLU、Dropout、GPU 训练三件套的开端，含逐层尺寸推导与可运行训练代码。",
-      "category": "人工智能/深度学习/网格数据"
-    },
-    {
-      "title": "ResNet",
-      "url": "/docs/人工智能/深度学习/网格数据/ResNet",
-      "description": "用残差连接让网络“想深就深”——从退化现象、恒等映射到 BasicBlock/Bottleneck 的完整推导与可运行实现。",
-      "category": "人工智能/深度学习/网格数据"
-    },
     {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
     },
     {
       "title": "Transformer",
@@ -89,7 +17,7 @@
     {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
     },
     {
@@ -97,12 +25,6 @@
       "url": "/docs/人工智能/机器学习/分类算法",
       "description": "KNN、朴素贝叶斯与支持向量机三种分类算法：距离投票、拉普拉斯平滑防零概率、核函数与数据标准化，配 sklearn 示例、准确率评估与过拟合学习曲线。",
       "category": "机器学习"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
     }
   ],
   "transformer-paper": [
@@ -121,61 +43,19 @@
     {
       "title": "LSTM",
       "url": "/docs/人工智能/深度学习/序列处理/LSTM",
-      "description": "",
+      "description": "从RNN的长依赖困境到LSTM/GRU门控，理解序列记忆是怎么被显式管理起来的。",
       "category": "人工智能/深度学习/序列处理"
     }
   ],
   "openai-gpt-released": [
     {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
     }
   ],
   "github-copilot-launch": [
-    {
-      "title": "Git 与版本控制",
-      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
-      "category": "工程实践"
-    },
-    {
-      "title": "Git",
-      "url": "/docs/计算机科学基础/开发工具链/Git",
-      "description": "Git 版本控制实战：四区模型、本地工作流与远程协作、分支管理与版本回退、标签与 commit 规范、GitHub Actions 自动化",
-      "category": "开发工具链"
-    },
-    {
-      "title": "代码规范与重构",
-      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
-      "category": "工程实践"
-    },
-    {
-      "title": "自动化测试与 TDD",
-      "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
-      "description": "自动化测试与 TDD 实践：测试金字塔分层策略、pytest 基础与参数化、Mock 使用时机、红绿重构循环与覆盖率的正确用法",
-      "category": "工程实践"
-    },
     {
       "title": "函数",
       "url": "/docs/编程语言/Python/10函数",
@@ -187,73 +67,11 @@
     {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
-    },
-    {
-      "title": "ResNet",
-      "url": "/docs/人工智能/深度学习/网格数据/ResNet",
-      "description": "用残差连接让网络“想深就深”——从退化现象、恒等映射到 BasicBlock/Bottleneck 的完整推导与可运行实现。",
-      "category": "人工智能/深度学习/网格数据"
-    },
-    {
-      "title": "模型社区",
-      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "Git 与版本控制",
-      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
-      "category": "工程实践"
-    }
-  ],
-  "chatgpt-released": [
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
     }
   ],
   "gpt4-released": [
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
     {
       "title": "手写多模态大模型",
       "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
@@ -265,59 +83,15 @@
     {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
-    },
-    {
-      "title": "ResNet",
-      "url": "/docs/人工智能/深度学习/网格数据/ResNet",
-      "description": "用残差连接让网络“想深就深”——从退化现象、恒等映射到 BasicBlock/Bottleneck 的完整推导与可运行实现。",
-      "category": "人工智能/深度学习/网格数据"
-    }
-  ],
-  "llama-2-open-source": [
-    {
-      "title": "本地部署",
-      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型社区",
-      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
     }
   ],
   "openai-sora-released": [
     {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
     },
     {
@@ -329,75 +103,25 @@
   ],
   "deepseek-chinese-ai": [
     {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "本地部署",
-      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "代码规范与重构",
-      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
-      "category": "工程实践"
-    },
-    {
       "title": "函数",
       "url": "/docs/编程语言/Python/10函数",
       "description": "",
       "category": "Python"
-    }
-  ],
-  "llama31-opensource": [
-    {
-      "title": "本地部署",
-      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
-      "category": "大模型（LLM）与应用"
     },
     {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
+      "title": "集合逻辑与证明",
+      "url": "/docs/数学基础/离散数学/集合逻辑与证明",
+      "description": "建立集合、命题逻辑与基本证明方法的思维工具。",
+      "category": "离散数学"
     },
     {
-      "title": "模型社区",
-      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "Git 与版本控制",
-      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
-      "category": "工程实践"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
+      "title": "线性代数入门",
+      "url": "/docs/数学基础/线性代数/线性代数入门",
+      "description": "建立向量、矩阵与线性变换的几何直觉。",
+      "category": "线性代数"
     }
   ],
   "gemini15-pro": [
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
     {
       "title": "手写多模态大模型",
       "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
@@ -405,75 +129,13 @@
       "category": "人工智能/深度学习/序列处理"
     },
     {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
-    },
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    }
-  ],
-  "claude35-sonnet": [
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
     }
   ],
   "github-copilot-free": [
-    {
-      "title": "Git 与版本控制",
-      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
-      "category": "工程实践"
-    },
-    {
-      "title": "Git",
-      "url": "/docs/计算机科学基础/开发工具链/Git",
-      "description": "Git 版本控制实战：四区模型、本地工作流与远程协作、分支管理与版本回退、标签与 commit 规范、GitHub Actions 自动化",
-      "category": "开发工具链"
-    },
-    {
-      "title": "代码规范与重构",
-      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
-      "category": "工程实践"
-    },
-    {
-      "title": "自动化测试与 TDD",
-      "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
-      "description": "自动化测试与 TDD 实践：测试金字塔分层策略、pytest 基础与参数化、Mock 使用时机、红绿重构循环与覆盖率的正确用法",
-      "category": "工程实践"
-    },
     {
       "title": "函数",
       "url": "/docs/编程语言/Python/10函数",
@@ -483,87 +145,19 @@
   ],
   "gpt4o-breakthrough": [
     {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
       "title": "手写多模态大模型",
       "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
       "description": "从零搭一个能“看图说话”的视觉语言模型（VLM）：视觉编码器 + 投影层 + 语言模型的完整实现、两阶段训练与数据构造。",
       "category": "人工智能/深度学习/序列处理"
     },
     {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
     }
   ],
-  "openai-o3-breakthrough": [
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    }
-  ],
   "deepseek-v3-open-source": [
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "本地部署",
-      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型社区",
-      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
-      "category": "大模型（LLM）与应用"
-    },
     {
       "title": "Transformer",
       "url": "/docs/人工智能/深度学习/序列处理/Transformer",
@@ -571,107 +165,19 @@
       "category": "人工智能/深度学习/序列处理"
     }
   ],
-  "meta-llama-4-coming": [
-    {
-      "title": "本地部署",
-      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型社区",
-      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    }
-  ],
   "ai-coding-tools-2025": [
-    {
-      "title": "代码规范与重构",
-      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
-      "category": "工程实践"
-    },
-    {
-      "title": "自动化测试与 TDD",
-      "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
-      "description": "自动化测试与 TDD 实践：测试金字塔分层策略、pytest 基础与参数化、Mock 使用时机、红绿重构循环与覆盖率的正确用法",
-      "category": "工程实践"
-    },
     {
       "title": "函数",
       "url": "/docs/编程语言/Python/10函数",
       "description": "",
       "category": "Python"
-    },
-    {
-      "title": "Git 与版本控制",
-      "url": "/docs/软件工程与后端/工程实践/Git与版本控制",
-      "description": "Git 与版本控制实践：快照模型与核心概念、常用命令与日常工作流、分支模型与冲突解决、.gitignore 与团队协作规范",
-      "category": "工程实践"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    }
-  ],
-  "grok3-reasoning-revolution": [
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "检索增强",
-      "url": "/docs/人工智能/大模型LLM与应用/检索增强",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
     }
   ],
   "gemma3-multimodal-opensource": [
     {
-      "title": "本地部署",
-      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
     },
     {
@@ -683,61 +189,19 @@
   ],
   "llama4-multimodal-breakthrough": [
     {
-      "title": "本地部署",
-      "url": "/docs/人工智能/大模型LLM与应用/本地部署",
-      "description": "Ollama 与 vLLM 的对比选型：性能、支持硬件、部署难度与适用场景差异，并给出量化模型加载、多卡张量并行、指定 GPU 与端口的可直接复用启动命令。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型社区",
-      "url": "/docs/人工智能/大模型LLM与应用/模型社区",
-      "description": "开源模型的架构优化、参数规格、微调与量化四条演化路径，三代架构划分到 MoE 与 Agent 范式，以及 Hugging Face、魔搭社区的模型与数据集调用示例。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
       "title": "手写多模态大模型",
       "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
       "description": "从零搭一个能“看图说话”的视觉语言模型（VLM）：视觉编码器 + 投影层 + 语言模型的完整实现、两阶段训练与数据构造。",
       "category": "人工智能/深度学习/序列处理"
+    },
+    {
+      "title": "Transformer",
+      "url": "/docs/人工智能/深度学习/序列处理/Transformer",
+      "description": "Transformer 的推理循环与词嵌入落地：分词、构建词表与嵌入矩阵初始化，独热编码和 nn.Embedding 查表两种取向量方式对比，并叠加位置编码。",
+      "category": "人工智能/深度学习/序列处理"
     }
   ],
   "claude4-programming-breakthrough": [
-    {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "代码规范与重构",
-      "url": "/docs/软件工程与后端/工程实践/代码规范与重构",
-      "description": "代码规范与重构实践：命名与风格、代码评审要点、常见坏味道识别、提取函数等重构手法、静态分析工具自动化检查",
-      "category": "工程实践"
-    },
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "自动化测试与 TDD",
-      "url": "/docs/软件工程与后端/工程实践/自动化测试与TDD",
-      "description": "自动化测试与 TDD 实践：测试金字塔分层策略、pytest 基础与参数化、Mock 使用时机、红绿重构循环与覆盖率的正确用法",
-      "category": "工程实践"
-    },
     {
       "title": "函数",
       "url": "/docs/编程语言/Python/10函数",
@@ -747,54 +211,24 @@
   ],
   "gemini25-deep-think": [
     {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
     }
   ],
   "gpt5-revolutionary-ai": [
     {
-      "title": "Agent开发",
-      "url": "/docs/人工智能/大模型LLM与应用/Agent开发",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型评测",
-      "url": "/docs/人工智能/大模型LLM与应用/模型评测",
-      "description": "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客观题基准，BLEU、ROUGE、METEOR 生成质量指标，FID、CLIP Score、CIDEr、SPICE 文生图指标及各自局限。",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "模型微调",
-      "url": "/docs/人工智能/大模型LLM与应用/模型微调",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
-      "title": "上下文工程",
-      "url": "/docs/人工智能/大模型LLM与应用/上下文工程",
-      "description": "",
-      "category": "大模型（LLM）与应用"
-    },
-    {
       "title": "经典神经网络",
       "url": "/docs/人工智能/深度学习/经典神经网络",
-      "description": "",
+      "description": "从感知机到多层网络，讲清激活函数、反向传播与梯度消失，奠定深度学习直觉。",
       "category": "深度学习"
+    },
+    {
+      "title": "手写多模态大模型",
+      "url": "/docs/人工智能/深度学习/序列处理/手写多模态大模型",
+      "description": "从零搭一个能“看图说话”的视觉语言模型（VLM）：视觉编码器 + 投影层 + 语言模型的完整实现、两阶段训练与数据构造。",
+      "category": "人工智能/深度学习/序列处理"
     }
   ]
 }

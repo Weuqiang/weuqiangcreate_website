@@ -1,0 +1,243 @@
+---
+sidebar_position: 15
+title: "多模态应用"
+description: "把视觉语言模型用起来：文档解析、图文检索、UI 自动化与视频理解的落地配方，含 CLIP 图文检索可运行示例。"
+---
+
+[手写多模态大模型](/docs/人工智能/深度学习/序列处理/手写多模态大模型) 讲了 VLM 的内部结构。本篇站在应用侧：**手上有了一个能看图的模型，究竟能做什么产品、怎么做才不翻车。**
+
+## 学习目标
+
+- 区分「理解型」「生成型」「对齐型」三类多模态模型的能力边界。
+- 掌握四类高频落地场景的技术配方与坑位。
+- 会用 CLIP 类模型做图文互检，并理解共享嵌入空间的原理。
+- 知道多模态 RAG 与纯文本 RAG 的关键差异。
+- 建立多模态应用的评测与成本意识。
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [大模型与应用/检索增强](../检索增强) 的模态扩展部分
+- 图像侧基础见 [深度学习·计算机视觉/AlexNet](/docs/人工智能/深度学习/计算机视觉/AlexNet)
+
+## 核心概念
+
+多模态的关键不是「模型能同时看到图和字」，而是「图和字被投影到同一个可比较的空间」。对比学习（如图文对）让「一张猫的图片」和它的文字描述在向量里彼此靠近，于是检索、问答、生成都能跨模态进行。原生多模态（统一 Transformer 吃多种 token）比「图模型+文模型后融合」更连贯，但训练成本更高。
+
+本章主线：
+- 模态对齐：把图/文/音频映入同一空间
+- 跨模态检索与视觉问答
+- 原生多模态 vs 后融合
+- 在 Agent 与 RAG 中的落地
+
+## 核心直觉
+
+### 三类模型，别用错工具
+
+| 类型 | 代表 | 能力 | 典型误用 |
+| --- | --- | --- | --- |
+| **对齐型** | CLIP、SigLIP、BGE-VL | 图文映射到同一空间，算相似度 | 让它「描述图片内容」——它做不到 |
+| **理解型** | GPT-4o、Qwen-VL、InternVL | 看图回答、OCR、推理 | 让它输出精确像素坐标框——精度有限 |
+| **生成型** | Stable Diffusion、Flux | 文生图、图生图 | 让它做图像理解 |
+
+**最常见的架构错误，是用理解型模型做检索。** 让 VLM 逐张描述 10 万张图再检索，成本是 CLIP 方案的几百倍，效果还更差。正确做法：**CLIP 负责召回，VLM 负责精读**。
+
+### 共享嵌入空间：CLIP 为什么能图文互搜
+
+CLIP 用对比学习训练：一个 batch 里有 $N$ 对图文，计算 $N \times N$ 的相似度矩阵，让对角线（正确配对）的相似度尽量高、其余尽量低。
+
+$$
+L = \frac{1}{2}\left[\mathrm{CE}(\text{logits}, \text{diag}) + \mathrm{CE}(\text{logits}^\top, \text{diag})\right]
+$$
+
+训练完成后，**图片向量和文本向量落在同一个空间里**，于是可以直接用内积比较。这就实现了「用文字搜图」和「用图搜文字」。它本质上是[向量数据库](/docs/人工智能/大模型与应用/向量数据库)的跨模态版本。
+
+### 四类落地场景
+
+**1. 文档智能（最高价值场景）**
+
+传统 OCR 只给你文字和坐标，表格结构、阅读顺序、图表含义全丢了。VLM 可以直接「看懂」版面。
+
+```text
+PDF/扫描件 → 版面分析（切出表格/图表/正文区块）
+          → 表格区用专用模型转 Markdown/HTML
+          → 图表区用 VLM 描述趋势与数值
+          → 正文区走常规 OCR（更快更准）
+          → 按阅读顺序拼装 → 送入 RAG 索引
+```
+
+**关键经验：不要指望一个 VLM 端到端搞定整页。** 分区域用专用工具，成本和准确率都好几倍。
+
+**2. 图文检索与电商搜索**
+
+CLIP 编码全量图片入向量库 → 用户文字查询 → 召回 top-100 → 可选：用 VLM 对 top-20 精排或过滤。加上属性过滤（价格、品类）就是完整的电商视觉搜索。
+
+**3. GUI 自动化 / 视觉 Agent**
+
+给 VLM 一张屏幕截图，让它输出「点击哪里」。这是 Computer Use 类产品的核心。难点在**坐标精度**：多数 VLM 对精确像素定位不擅长。
+
+**工程解法**：先用无障碍树（Accessibility Tree）或 DOM 拿到所有可交互元素及其坐标，给它们编号叠在截图上（Set-of-Mark 标注），然后让 VLM **只输出编号**而不是坐标。这一招能把成功率从 50% 拉到 90% 以上。
+
+**4. 视频理解**
+
+视频 = 抽帧 + 时序。朴素做法是均匀抽帧送 VLM，但 1 小时视频抽 1 帧/秒就是 3600 帧，token 爆炸。
+
+**分层配方**：先用轻量模型做镜头分割 → 每个镜头抽关键帧 → VLM 描述每个镜头 → 把描述文本 + 时间戳存进向量库 → 提问时先检索相关镜头再精读。**把视频问题转化成文本 RAG 问题，是目前性价比最高的路子。**
+
+### 多模态 RAG 的三种索引策略
+
+| 策略 | 做法 | 优点 | 缺点 |
+| --- | --- | --- | --- |
+| 图转文 | 用 VLM 给每张图生成描述，只索引文本 | 复用现有文本 RAG，简单 | 描述有信息损失 |
+| 统一向量 | 用 CLIP 把图文都编码进同一空间 | 真正跨模态检索 | 长文本表达力弱于纯文本模型 |
+| 双路混合 | 文本走文本模型，图走 CLIP，结果用 RRF 融合 | 效果最好 | 两套索引，工程复杂 |
+
+生产环境推荐**图转文 + 保留原图引用**：检索命中描述后，把原图一并送给 VLM 生成最终答案，兼顾检索精度与信息完整。
+
+## 最小示例
+
+### 手写一个 CLIP 风格的对比学习，验证共享空间
+
+```python showLineNumbers
+import numpy as np
+
+rng = np.random.default_rng(0)
+N, D = 8, 32          # 8 对图文，32 维共享空间
+
+def l2n(x):
+    return x / (np.linalg.norm(x, axis=-1, keepdims=True) + 1e-12)
+
+# 模拟：图像与文本编码器各自输出，但配对样本有共同的语义分量
+concept = rng.normal(size=(N, D))
+img = l2n(concept + 0.3 * rng.normal(size=(N, D)))
+txt = l2n(concept + 0.3 * rng.normal(size=(N, D)))
+
+temperature = 0.07
+logits = img @ txt.T / temperature       # N×N 相似度矩阵
+
+def softmax(z):
+    z = z - z.max(axis=-1, keepdims=True)
+    e = np.exp(z)
+    return e / e.sum(axis=-1, keepdims=True)
+
+p_i2t = softmax(logits)
+p_t2i = softmax(logits.T)
+labels = np.arange(N)
+loss = -(np.log(p_i2t[labels, labels] + 1e-12).mean()
+         + np.log(p_t2i[labels, labels] + 1e-12).mean()) / 2
+
+print("对比损失 =", round(float(loss), 4))
+print("图搜文 top-1 命中率 =", (logits.argmax(axis=1) == labels).mean())
+print("文搜图 top-1 命中率 =", (logits.argmax(axis=0) == labels).mean())
+print("对角线平均相似度 =", round(float(np.diag(img @ txt.T).mean()), 4))
+print("非对角平均相似度 =",
+      round(float((img @ txt.T)[~np.eye(N, dtype=bool)].mean()), 4))
+```
+
+输出会显示**对角线相似度显著高于非对角线**，命中率接近 1.0——这就是共享嵌入空间生效的证据。把噪声系数从 0.3 调到 1.5，命中率会明显下降，说明编码器质量直接决定检索效果。
+
+### 温度系数的作用
+
+```python showLineNumbers
+for t in (1.0, 0.2, 0.07, 0.01):
+    p = softmax(img @ txt.T / t)
+    print(f"temperature={t:<5} 正确配对平均概率 = {p[labels, labels].mean():.4f}")
+```
+
+温度越低，softmax 越尖锐，模型被迫把正负样本拉得更开。CLIP 用可学习的温度并初始化在 0.07 附近，正是这个道理。
+
+### 用真实 CLIP 做图文检索（需要安装依赖）
+
+```python showLineNumbers
+# pip install torch transformers pillow
+from transformers import CLIPModel, CLIPProcessor
+from PIL import Image
+import torch
+
+model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+proc = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+images = [Image.open(p) for p in ["cat.jpg", "dog.jpg", "car.jpg"]]
+queries = ["一只正在睡觉的猫", "一辆红色跑车"]
+
+with torch.no_grad():
+    inputs = proc(text=queries, images=images, return_tensors="pt", padding=True)
+    out = model(**inputs)
+    img_emb = out.image_embeds / out.image_embeds.norm(dim=-1, keepdim=True)
+    txt_emb = out.text_embeds / out.text_embeds.norm(dim=-1, keepdim=True)
+
+sim = (txt_emb @ img_emb.T) * 100          # 放大便于阅读
+for q, row in zip(queries, sim):
+    best = int(row.argmax())
+    print(f"「{q}」最匹配第 {best} 张图，得分 {row[best]:.1f}")
+```
+
+**注意**：原版 CLIP 的中文能力很弱，中文场景请换用 Chinese-CLIP 或 BGE-VL。
+
+### Set-of-Mark：让 VLM 输出编号而非坐标
+
+```python showLineNumbers
+elements = [
+    {"id": 1, "role": "button", "text": "登录", "bbox": (820, 40, 900, 72)},
+    {"id": 2, "role": "input", "text": "用户名", "bbox": (400, 200, 700, 240)},
+    {"id": 3, "role": "input", "text": "密码", "bbox": (400, 260, 700, 300)},
+    {"id": 4, "role": "link", "text": "忘记密码", "bbox": (620, 320, 700, 340)},
+]
+
+def build_prompt(task, elements):
+    lines = [f"[{e['id']}] {e['role']}: {e['text']}" for e in elements]
+    return (f"任务：{task}\n"
+            f"当前页面可交互元素：\n" + "\n".join(lines) +
+            "\n请只输出要操作的元素编号和动作，格式：编号|动作|内容")
+
+print(build_prompt("用账号 alice 登录", elements))
+
+def execute(reply, elements):
+    eid, action, content = reply.split("|")
+    el = next(e for e in elements if e["id"] == int(eid))
+    x = (el["bbox"][0] + el["bbox"][2]) // 2
+    y = (el["bbox"][1] + el["bbox"][3]) // 2
+    return f"在坐标 ({x}, {y}) 执行 {action}，内容={content!r}"
+
+print(execute("2|type|alice", elements))
+```
+
+**精确坐标由程序从元素树算出，模型只负责「选哪个」这一决策**——把模型不擅长的事交给程序，是多模态 Agent 的核心工程原则。
+
+## 易错点
+
+- **用 VLM 做大规模检索**：成本高出两个数量级。**召回用 CLIP，精读用 VLM。**
+- **图片分辨率盲目拉高**：视觉 token 数通常随分辨率平方增长，1024×1024 可能是 512×512 的 4 倍成本，而准确率提升有限。**先测出你任务的分辨率甜点。**
+- **指望 VLM 精确读取密集表格**：复杂表格（合并单元格、跨页）依然是难点，应交给专用表格识别模型。
+- **忽视图像预处理**：扫描件的倾斜、阴影、低对比度会显著掉点。**先做去偏斜和二值化增强，比换更大的模型划算。**
+- **多图输入不加标记**：同时传多张图时，务必在提示词里标明「图1」「图2」，否则模型会张冠李戴。
+- **敏感图像直接送第三方 API**：身份证、病历、合同涉及隐私合规，应优先本地部署，参见[本地部署](/docs/人工智能/大模型与应用/本地部署)。
+- **视频逐帧全送**：token 成本爆炸且大量冗余。**按镜头切分 + 关键帧**是必需的。
+- **用文本评测方法评多模态**：需要专门的评测集，覆盖 OCR 准确率、幻觉率（图中不存在的物体）、坐标精度等维度。
+
+## 练习
+
+1. 把对比学习示例中的噪声系数从 0.1 扫到 2.0，绘制「噪声—top-1 命中率」曲线，理解编码器质量的影响。
+2. 把 batch 大小 $N$ 从 8 增加到 128，观察对比损失的变化，解释为什么 CLIP 训练需要超大 batch。
+3. 用 Chinese-CLIP 对 50 张本地图片建索引，实现一个中文「以文搜图」的命令行工具。
+4. 找一份带表格的 PDF，分别用「整页丢给 VLM」和「先版面分析再分区处理」两种方式提取，对比准确率与 token 消耗。
+5. 用 Set-of-Mark 的思路，为一个真实网页构造元素列表并让 VLM 完成一次表单填写，统计成功率。
+6. 设计一个多模态幻觉评测集：准备 20 张图，每张配一个「图中不存在的物体」的问题，统计模型的错误肯定率。
+
+## 小结
+
+多模态应用的工程原则可以浓缩成三句话：
+
+1. **分工明确**——对齐型模型做召回，理解型模型做精读，生成型模型做创作。
+2. **化繁为简**——把视频变成文本、把坐标变成编号、把整页变成分区，尽量转化成已经解决好的问题。
+3. **成本先行**——视觉 token 很贵，分辨率、帧数、图片数量都是需要调优的超参数。
+
+## 延伸阅读
+
+- [手写多模态大模型](/docs/人工智能/深度学习/序列处理/手写多模态大模型) — VLM 的内部结构与训练。
+- [Vision Transformer](</docs/人工智能/深度学习/序列处理/Vision Transformer>) — 视觉编码器的原理。
+- [向量数据库](/docs/人工智能/大模型与应用/向量数据库) — 图文向量的存储与检索。
+- [检索增强](/docs/人工智能/大模型与应用/检索增强) — 多模态 RAG 的基础链路。
+- [Agent开发](/docs/人工智能/大模型与应用/Agent开发) — 视觉 Agent 的工具调用框架。
+- [推理加速：量化与蒸馏](/docs/人工智能/大模型与应用/推理加速) — 多模态模型同样需要量化。

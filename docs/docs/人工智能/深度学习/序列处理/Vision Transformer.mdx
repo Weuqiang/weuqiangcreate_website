@@ -22,7 +22,7 @@ description: 把图像切成 patch 当作 token，用纯 Transformer 做图像�
 
 在阅读下面的内容前，建议先掌握：
 
-- 先读 [网格数据/AlexNet](../../网格数据/AlexNet) 看卷积路线
+- 先读 [计算机视觉/AlexNet](../../计算机视觉/AlexNet) 看卷积路线
 - 注意力骨架见 [Transformer](../Transformer)（同目录）
 
 ## 核心概念
@@ -278,7 +278,7 @@ for ep in range(epochs):
     print(f"epoch {ep+1:>2}  loss={loss.item():.4f}  test_acc={correct/total:.4f}")
 ```
 
-30 个 epoch 后准确率大约在 **0.80~0.85**。同等规模的 [ResNet](/docs/人工智能/深度学习/网格数据/ResNet)-18 通常能到 0.93 以上——**这个差距就是「归纳偏置」的价值，也是 ViT 数据饥渴的实证**。想缩小差距，要么加数据增强，要么用预训练权重。
+30 个 epoch 后准确率大约在 **0.80~0.85**。同等规模的 [ResNet](/docs/人工智能/深度学习/计算机视觉/ResNet)-18 通常能到 0.93 以上——**这个差距就是「归纳偏置」的价值，也是 ViT 数据饥渴的实证**。想缩小差距，要么加数据增强，要么用预训练权重。
 
 ### 可视化注意力：模型在看哪里
 
@@ -331,8 +331,8 @@ ViT 的核心贡献不是某个精巧的模块，而是**证明了「架构统�
 ## 延伸阅读
 
 - [Transformer](/docs/人工智能/深度学习/序列处理/Transformer) — ViT 的骨架来源，注意力机制的完整推导。
-- [ResNet](/docs/人工智能/深度学习/网格数据/ResNet) — CNN 时代的里程碑，残差连接同样是 ViT 的基础。
-- [AlexNet](/docs/人工智能/深度学习/网格数据/AlexNet) — 归纳偏置与数据量关系的早期例证。
+- [ResNet](/docs/人工智能/深度学习/计算机视觉/ResNet) — CNN 时代的里程碑，残差连接同样是 ViT 的基础。
+- [AlexNet](/docs/人工智能/深度学习/计算机视觉/AlexNet) — 归纳偏置与数据量关系的早期例证。
 - [手写多模态大模型](/docs/人工智能/深度学习/序列处理/手写多模态大模型) — 把 ViT 当视觉编码器接进语言模型。
-- [Adam 与 BatchNorm](/docs/人工智能/深度学习/网格数据/Adam与BatchNorm) — 为什么 ViT 用 LayerNorm 和 AdamW。
-- [多模态应用](/docs/人工智能/大模型LLM与应用/多模态应用) — ViT 系模型在产品中的落地方式。
+- [Adam 与 BatchNorm](/docs/人工智能/深度学习/计算机视觉/Adam与BatchNorm) — 为什么 ViT 用 LayerNorm 和 AdamW。
+- [多模态应用](/docs/人工智能/大模型与应用/多模态应用) — ViT 系模型在产品中的落地方式。
