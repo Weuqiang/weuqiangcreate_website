@@ -7,6 +7,30 @@ sidebar_position: 13
 
 `<script>`标签用于在网页插入脚本，`<noscript>`标签用于指定浏览器不支持脚本时的显示内容。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分内联脚本与外链脚本（`<script src>`）
+- 理解 `async` / `defer` 对加载与执行时机的影响
+- 知道 `<noscript>` 的降级用途
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [HTML 入门](/docs/编程语言/Web前端/HTML/intro)
+- JS 语言本身见 [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+
+## 核心概念
+
+`<script>` 把 JavaScript 引入页面：内联写在标签内，外链用 `<script src>`。默认脚本会阻塞解析；`async` 异步加载、加载完立即执行（顺序不保），`defer` 异步加载、等文档解析完再按序执行。无 JS 时用 `<noscript>` 提供降级内容。
+
+本章主线：
+- `<script>`：内联与外链
+- 执行时机：普通 / async / defer
+- `<noscript>` 与降级方案
+
 ## `<script>`
 
 `<script>`用于加载脚本代码，目前主要是加载 JavaScript 代码。
@@ -67,6 +91,17 @@ console.log('hello world');
 
 上面这段代码，只有浏览器不能执行 JavaScript 代码时才会显示，否则就不会显示。
 
+## 小结
+
+脚本可内联或外链；`defer` 等解析完再按序执行、`async` 加载完就跑；`<noscript>` 为禁用 JS 的环境提供兜底。
+
+## 练习
+
+动手检验一下自己：
+
+1. 分别用 `async` 与 `defer` 引入同一个脚本，观察执行顺序差异。
+2. 说明把 `<script>` 放在 `</body>` 前的效果与 `defer` 是否等价。
+3. 写一个 `<noscript>` 提示用户启用 JavaScript。
 
 ## 延伸阅读
 

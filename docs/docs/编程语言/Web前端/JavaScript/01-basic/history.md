@@ -5,6 +5,29 @@ description: "JavaScript 因为互联网而生，紧跟着浏览器的出现而�
 
 # JavaScript 语言的历史
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 了解 JS 的诞生背景与 10 天设计的故事
+- 说清 JavaScript 与 Java、与 ECMAScript 的关系
+- 理解 ES6（ES2015）为何是里程碑
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+
+## 核心概念
+
+JavaScript 于 1995 年由 Brendan Eich 在网景公司十天内设计出来，名字借势 Java 营销，但两者毫无关系。ECMAScript 是其官方标准，浏览器实现该标准；我们说的“ES6/ES2015”是 2015 年的重大更新，引入 `let/const`、箭头函数、Promise、class 等，奠定了现代 JS 的基础。
+
+本章主线：
+- 诞生：网景与 10 天设计
+- 与 Java、与 ECMAScript 的关系
+- 版本演进与 ES6 里程碑
+
 ## 诞生
 
 JavaScript 因为互联网而生，紧跟着浏览器的出现而问世。回顾它的历史，就要从浏览器的历史讲起。
@@ -190,6 +213,18 @@ JavaScript 伴随着互联网的发展一起发展。互联网周边技术的快
 - John Dalziel, [The race for speed part 4: The future for JavaScript](http://creativejs.com/2013/06/the-race-for-speed-part-4-the-future-for-javascript/)
 - Axel Rauschmayer, [Basic JavaScript for the impatient programmer](https://www.2ality.com/2013/06/basic-javascript.html)
 - balena.io, [Happy 18th Birthday JavaScript! A look at an unlikely past and bright future](https://www.balena.io/blog/happy-18th-birthday-javascript/)
+
+## 小结
+
+JS 1995 年诞生、与 Java 无关；ECMAScript 是其标准，ES6(2015) 引入现代语法，是语言发展的关键转折点。
+
+## 练习
+
+动手检验一下自己：
+
+1. 解释“JavaScript 与 Java 的关系”并纠正常见误解。
+2. 列出 ES6 带来的三个重要新特性。
+3. 说明 ECMAScript 与浏览器实现（如 V8）的区别。
 
 ## 延伸阅读
 

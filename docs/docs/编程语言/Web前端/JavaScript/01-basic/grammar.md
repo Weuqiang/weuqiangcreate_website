@@ -5,6 +5,30 @@ description: "JavaScript 程序的执行单位为行（line），也就是一行
 
 # JavaScript 的基本语法
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握语句、变量声明（var/let/const）与标识符规则
+- 理解注释、区块与作用域初步
+- 会用条件与循环控制流程
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+
+## 核心概念
+
+JS 语法类 C：`;` 结束语句（可省略，由自动分号插入 ASI 补全），用 `var/let/const` 声明变量（`let/const` 有块级作用域，`const` 不可重新赋值）。`{}` 形成区块并划定作用域；条件用 `if/else`、`switch`，循环用 `for/while`。理解作用域与声明方式能避开大多数初学坑。
+
+本章主线：
+- 语句与自动分号插入
+- 变量：var / let / const 与作用域
+- 标识符、注释与区块
+- 条件语句与循环语句
+
 ## 语句
 
 JavaScript 程序的执行单位为行（line），也就是一行一行地执行。一般情况下，每一行就是一个语句。
@@ -733,6 +757,18 @@ top:
 ## 参考链接
 
 - Axel Rauschmayer, [Basic JavaScript for the impatient programmer](https://2ality.com/2013/06/basic-javascript.html)
+
+## 小结
+
+JS 语法类 C：`let/const` 提供块级作用域，`{}` 划定作用域；条件与循环控制流程，理解作用域是写好 JS 的第一步。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 `let` 与 `const` 分别声明变量，观察重新赋值的差异。
+2. 写一个 `for` 循环计算 1..100 的和。
+3. 说明 `var` 与 `let` 在循环中的闭包差异。
 
 ## 延伸阅读
 

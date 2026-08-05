@@ -5,6 +5,30 @@ description: "JavaScript 语言的每一个值，都属于某一种数据类型�
 
 # 数据类型概述
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 说清原始类型与对象类型的划分
+- 理解 JS 的“动态弱类型”含义
+- 知道 typeof 的边界与常见隐式转换陷阱
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+- 对比静态类型可看 [Go 语言入门](/docs/编程语言/Go/语言基础/Go语言入门)
+
+## 核心概念
+
+JS 类型分两类：**原始类型**（`number/string/boolean/null/undefined/symbol/bigint`，不可变、按值比较）与**对象类型**（`object`，包括数组、函数，按引用比较）。JS 是动态弱类型：变量无固定类型、运算时不同类型会隐式转换（如 `1 + '1' === '11'`），这既是灵活之源也是 Bug 之源。`typeof` 可探类型，但 `typeof null === 'object'` 是著名的历史坑。
+
+本章主线：
+- JS 类型全景：原始 vs 对象
+- 动态弱类型与隐式转换
+- typeof 运算符与常见陷阱
+
 ## 简介
 
 JavaScript 语言的每一个值，都属于某一种数据类型。JavaScript 的数据类型，共有六种。（ES6 又新增了 Symbol 和 BigInt 数据类型，本教程不涉及。）
@@ -117,6 +141,18 @@ typeof null // "object"
 ## 参考链接
 
 - Axel Rauschmayer, [Improving the JavaScript typeof operator](https://www.2ality.com/2011/11/improving-typeof.html)
+
+## 小结
+
+JS 类型分原始与对象；动态弱类型让 `1+'1'='11'`，灵活但易坑；`typeof` 好用但要记住 `null` 被误判为 object。
+
+## 练习
+
+动手检验一下自己：
+
+1. 列出全部 7 种原始类型并各举一例。
+2. 预测 `[] + {}` 与 `{}` + `[]` 的结果并解释。
+3. 说明 `typeof null` 的返回值及其历史原因。
 
 ## 延伸阅读
 

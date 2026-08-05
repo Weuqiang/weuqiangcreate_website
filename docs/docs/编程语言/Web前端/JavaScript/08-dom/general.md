@@ -5,6 +5,30 @@ description: "DOM 是 JavaScript 操作网页的接口，全称为“文档对�
 
 # DOM 概述
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 DOM 是 HTML 的对象化表示
+- 掌握节点、节点树与基本关系（父子/兄弟）
+- 知道 JS 如何“增删改查”页面元素
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [HTML 入门](/docs/编程语言/Web前端/HTML/intro)
+- 语言基础见 [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+
+## 核心概念
+
+DOM（文档对象模型）把 HTML 文档映射成一棵**节点树**：每个标签是一个元素节点，文本是文本节点，整棵树从 `document` 根节点展开。JS 通过 `document.querySelector` 等 API找到节点，再读写属性、增删子节点，从而动态改变页面——这正是“行为层”操作“结构层”的桥梁。
+
+本章主线：
+- DOM：HTML 的对象表示
+- 节点类型与节点树结构
+- JS 操作 DOM 的基本方式
+
 ## DOM
 
 DOM 是 JavaScript 操作网页的接口，全称为“文档对象模型”（Document Object Model）。它的作用是将网页转为一个 JavaScript 对象，从而可以用脚本进行各种操作（比如增删内容）。
@@ -49,6 +73,18 @@ document
 - 同级节点关系（sibling）：拥有同一个父节点的节点
 
 DOM 提供操作接口，用来获取这三种关系的节点。比如，子节点接口包括`firstChild`（第一个子节点）和`lastChild`（最后一个子节点）等属性，同级节点接口包括`nextSibling`（紧邻在后的那个同级节点）和`previousSibling`（紧邻在前的那个同级节点）属性。
+
+## 小结
+
+DOM 把 HTML 变成可操作的节点树，JS 借它由 `document` 出发查询并修改节点，实现页面动态更新。
+
+## 练习
+
+动手检验一下自己：
+
+1. 画出一段简单 HTML 对应的节点树。
+2. 用 `querySelector` 选中一个元素并修改其文本。
+3. 说明“DOM 操作”与“直接改 HTML 源码”的区别。
 
 ## 延伸阅读
 

@@ -9,6 +9,30 @@ JavaScript 是浏览器的内置脚本语言。也就是说，浏览器内置了
 
 本章开始介绍浏览器提供的各种 JavaScript 接口。首先，介绍 JavaScript 代码嵌入网页的方法。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解浏览器的组成（渲染引擎 + JS 引擎）
+- 知道 JS 代码嵌入网页的常见方式
+- 了解 V8 等引擎“编译执行”的大致流程
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- 先读 [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+- 编译背景见 [编译原理概览](/docs/计算机科学基础/计算机科学导论/编译原理/编译原理概览)
+
+## 核心概念
+
+现代浏览器由渲染引擎（解析 HTML/CSS、绘制页面）与 JavaScript 引擎（执行 JS）协作构成。JS 引擎（如 Chrome 的 V8）并非简单“解释”，而是把 JS 编译为机器码再执行，因此很快。JS 通过 `<script>` 嵌入网页，引擎读取后编译运行，并通过 DOM/BOM API 与页面和浏览器交互。
+
+本章主线：
+- 浏览器的组成：渲染引擎 vs JS 引擎
+- JS 代码嵌入网页的方式
+- 引擎如何编译执行 JS（以 V8 为例）
+
 ## 代码嵌入网页的方法
 
 网页中嵌入 JavaScript 代码，主要有四种方法。
@@ -442,6 +466,18 @@ JavaScript 是一种解释型语言，也就是说，它不需要编译，由解
 - Daniel Imms, [async vs defer attributes](https://www.growingwiththeweb.com/2014/02/async-vs-defer-attributes.html)
 - Craig Buckler, [Load Non-blocking JavaScript with HTML5 Async and Defer](https://www.sitepoint.com/non-blocking-async-defer/)
 - Domenico De Felice, [How browsers work](https://domenicodefelice.blogspot.com/2015/08/how-browsers-work.html)
+
+## 小结
+
+浏览器 = 渲染引擎 + JS 引擎；V8 等把 JS 编译为机器码高效执行，代码经 `<script>` 嵌入后由引擎运行并与 DOM/BOM 交互。
+
+## 练习
+
+动手检验一下自己：
+
+1. 画出“HTML 解析 → JS 引擎编译 → 操作 DOM”的协作简图。
+2. 说明渲染引擎与 JS 引擎各自的职责边界。
+3. 对比“解释执行”与 V8“编译执行”的性能差异直觉。
 
 ## 延伸阅读
 
