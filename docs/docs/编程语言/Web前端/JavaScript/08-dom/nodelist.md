@@ -9,6 +9,30 @@ description: "节点都是单个对象，有时需要一种数据结构，能够
 
 这两种集合都属于接口规范。许多 DOM 属性和方法，返回的结果是`NodeList`实例或`HTMLCollection`实例。主要区别是，`NodeList`可以包含各种类型的节点，`HTMLCollection`只能包含 HTML 元素节点。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分 NodeList 与 HTMLCollection
+- 掌握遍历方式
+- 理解 live 与 static
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [Node 接口](/docs/编程语言/Web前端/JavaScript/dom/node)
+
+## 核心概念
+
+查询返回的集合可能是 NodeList（节点）或 HTMLCollection（元素）。部分集合是 live（随 DOM 变化），部分是 static（快照），遍历要注意。
+
+本章主线：
+- NodeList vs HTMLCollection
+- live 与 static
+- 遍历方式
+
 ## NodeList 接口
 
 ### 概述
@@ -196,6 +220,16 @@ document.images.namedItem('pic') === pic // true
 
 `Collection.namedItem('value')`等同于`Collection['value']`。
 
+## 小结
+
+查询集合可能是实时的 live 或静态快照；遍历前注意它是否会随 DOM 改变。
+
+## 练习
+
+动手检验一下自己：
+
+1. 说明 getElementsByTagName 返回的 live 集合的坑。
+2. 把 NodeList 转为真数组再处理。
 
 ## 延伸阅读
 

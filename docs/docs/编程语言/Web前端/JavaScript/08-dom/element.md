@@ -5,6 +5,30 @@ description: "Element节点对象对应网页的 HTML 元素。每一个 HTML �
 
 # Element 节点
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 Element 在节点体系中的位置
+- 掌握 tagName/children
+- 掌握插入替换移除方法
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [Node 接口](/docs/编程语言/Web前端/JavaScript/dom/node)
+
+## 核心概念
+
+Element 继承自 Node，代表元素节点。它提供 tagName、className、children 以及插入、替换、移除等方法，是日常操作最频繁的类型。
+
+本章主线：
+- 继承与节点体系
+- 标签与类名
+- 增删改方法
+
 ## 简介
 
 `Element`节点对象对应网页的 HTML 元素。每一个 HTML 元素，在 DOM 树上都会转化成一个`Element`节点对象（以下简称元素节点）。
@@ -851,6 +875,17 @@ function getFocus() {
 ## 参考链接
 
 - Craig Buckler，[How to Translate from DOM to SVG Coordinates and Back Again](https://www.sitepoint.com/how-to-translate-from-dom-to-svg-coordinates-and-back-again/)
+
+## 小结
+
+Element 是元素节点，提供标签名与子元素集合；多数 DOM 操作围绕它展开。
+
+## 练习
+
+动手检验一下自己：
+
+1. 说明 children 与 childNodes 的差异（元素 vs 节点）。
+2. 用 insertAdjacentHTML 在元素前插入内容。
 
 ## 延伸阅读
 - [属性的操作](../attributes)

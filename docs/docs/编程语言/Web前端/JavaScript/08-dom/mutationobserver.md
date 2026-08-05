@@ -5,6 +5,29 @@ description: "Mutation Observer API 用来监视 DOM 变动。DOM 的任何变�
 
 # Mutation Observer API
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解监听 DOM 变更的场景
+- 掌握 observe/takeRecords
+- 认识微任务时机
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+MutationObserver 异步监听子树、属性或文本的变动，回调在微任务中执行，避免频繁重排。常见于响应式框架的底层同步。
+
+本章主线：
+- 监听配置
+- observe 与 disconnect
+- 微任务时机
+
 ## 概述
 
 Mutation Observer API 用来监视 DOM 变动。DOM 的任何变动，比如节点的增减、属性的变动、文本内容的变动，这个 API 都可以得到通知。
@@ -273,6 +296,17 @@ ready('.foo', function(element){
 - Jeff Griffiths, [DOM MutationObserver – reacting to DOM changes without killing browser performance](https://hacks.mozilla.org/2012/05/dom-mutationobserver-reacting-to-dom-changes-without-killing-browser-performance/)
 - Addy Osmani, [Detect, Undo And Redo DOM Changes With Mutation Observers](http://addyosmani.com/blog/mutation-observers/)
 - Ryan Morr, [Using Mutation Observers to Watch for Element Availability](https://ryanmorr.com/using-mutation-observers-to-watch-for-element-availability/)
+
+## 小结
+
+MutationObserver 异步批量上报 DOM 变动；比旧式 MutationEvent 高效，适合框架底层。
+
+## 练习
+
+动手检验一下自己：
+
+1. 监听一个容器子节点的增减并打印变化。
+2. 说明回调为何在微任务而非立即执行。
 
 ## 延伸阅读
 

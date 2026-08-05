@@ -7,6 +7,29 @@ description: "所有 DOM 节点对象都继承了 Node 接口，拥有一些共�
 
 所有 DOM 节点对象都继承了 Node 接口，拥有一些共同的属性和方法。这是 DOM 操作的基础。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 Node 是所有节点的父接口
+- 掌握节点类型常量
+- 掌握 parentNode/childNodes 遍历
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+Node 是文档中所有节点（元素、文本、注释等）的基础接口，定义节点类型、父子兄弟关系以及增删替换方法。
+
+本章主线：
+- 节点类型与常量
+- 父子兄弟关系
+- 遍历与增删
+
 ## 属性
 
 ### Node.prototype.nodeType
@@ -577,6 +600,17 @@ document.body.firstChild.getRootNode() === document.body.firstChild.ownerDocumen
 document.getRootNode() // document
 document.ownerDocument // null
 ```
+
+## 小结
+
+Node 是一切节点的基类；通过 parentNode/childNodes 在节点树中导航。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 nodeType 区分元素与文本节点。
+2. 遍历一个元素的直接子节点。
 
 ## 延伸阅读
 

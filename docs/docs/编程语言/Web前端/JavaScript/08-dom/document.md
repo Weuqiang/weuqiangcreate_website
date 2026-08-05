@@ -5,6 +5,29 @@ description: "document节点对象代表整个文档，每张网页都有自己�
 
 # Document 节点
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 document 是 DOM 根
+- 掌握 querySelector/getElementById
+- 掌握 createElement
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+document 是 DOM 树的根，提供查询（getElementById/querySelector/querySelectorAll）与创建（createElement/createTextNode）节点的入口。
+
+本章主线：
+- 文档根与查询
+- createElement 与插入
+- 事件委托
+
 ## 概述
 
 `document`节点对象代表整个文档，每张网页都有自己的`document`对象。`window.document`属性就指向这个对象。只要浏览器开始载入 HTML 文档，该对象就存在了，可以直接使用。
@@ -277,10 +300,10 @@ document.referrer
 
 它的值有四种可能。
 
-> - `visible`：页面可见。注意，页面可能是部分可见，即不是焦点窗口，前面被其他窗口部分挡住了。
-> - `hidden`：页面不可见，有可能窗口最小化，或者浏览器切换到了另一个 Tab。
-> - `prerender`：页面处于正在渲染状态，对于用户来说，该页面不可见。
-> - `unloaded`：页面从内存里面卸载了。
+`>` - `visible`：页面可见。注意，页面可能是部分可见，即不是焦点窗口，前面被其他窗口部分挡住了。
+`>` - `hidden`：页面不可见，有可能窗口最小化，或者浏览器切换到了另一个 Tab。
+`>` - `prerender`：页面处于正在渲染状态，对于用户来说，该页面不可见。
+`>` - `unloaded`：页面从内存里面卸载了。
 
 这个属性可以用在页面加载时，防止加载某些资源；或者页面不可见时，停掉一些页面功能。
 
@@ -960,6 +983,17 @@ function copyText(text) {
 ### document.getSelection()
 
 这个方法指向`window.getSelection()`，参见`window`对象一节的介绍。
+
+## 小结
+
+document 是操作 DOM 的入口；querySelector 灵活、getElementById 最快，委托事件提升性能。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 querySelectorAll 选中所有按钮并批量绑定。
+2. 用 createElement 创建节点并插入到列表。
 
 ## 延伸阅读
 - [属性的操作](../attributes)

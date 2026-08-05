@@ -7,6 +7,29 @@ description: "CSS 与 JavaScript 是两个有着明确分工的领域，前者�
 
 CSS 与 JavaScript 是两个有着明确分工的领域，前者负责页面的视觉效果，后者负责与用户的行为互动。但是，它们毕竟同属网页开发的前端，因此不可避免有着交叉和互相配合。本章介绍如何通过 JavaScript 操作 CSS。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握 element.style 读写
+- 掌握 classList 增删切换
+- 理解 getComputedStyle
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+element.style 直接读写内联样式（驼峰命名）；classList 安全地增删切换类名；getComputedStyle 读取最终计算样式（含外部样式表）。
+
+本章主线：
+- style 内联样式
+- classList 类名
+- getComputedStyle
+
 ## HTML 元素的 style 属性
 
 操作 CSS 样式最简单的方法，就是使用网页元素节点的`getAttribute()`方法、`setAttribute()`方法和`removeAttribute()`方法，直接读写或删除网页元素的`style`属性。
@@ -851,6 +874,16 @@ function mqCallback(e) {
 
 注意，`MediaQueryList.removeListener()`方法不能撤销`MediaQueryList.onchange`属性指定的监听函数。
 
+## 小结
+
+优先用 classList 切换类名，而非直接拼 style；需要最终值时用 getComputedStyle。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 classList.toggle 实现高亮切换。
+2. 用 getComputedStyle 读取某元素的实际宽度。
 
 ## 延伸阅读
 

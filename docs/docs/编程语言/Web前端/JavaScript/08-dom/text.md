@@ -5,6 +5,30 @@ description: "文本节点（Text）代表元素节点（Element）和属性节�
 
 # Text 节点和 DocumentFragment 节点
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解文本也是节点
+- 掌握 textContent/innerText
+- 掌握创建文本节点
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [Node 接口](/docs/编程语言/Web前端/JavaScript/dom/node)
+
+## 核心概念
+
+文本内容以 Text 节点存在于元素内。textContent 读写所有后代文本（含隐藏），innerText 近似渲染可见文本；createTextNode 创建独立文本节点。
+
+本章主线：
+- Text 节点的存在
+- textContent vs innerText
+- 创建与拼接
+
 ## Text 节点的概念
 
 文本节点（`Text`）代表元素节点（`Element`）和属性节点（`Attribute`）的文本内容。如果一个节点只包含一段文本，那么它就有一个文本子节点，代表该节点的文本内容。
@@ -213,6 +237,17 @@ function reverse(n) {
 - `firstElementChild`：返回当前`DocumentFragment`对象的第一个子元素节点，如果没有则返回`null`。
 - `lastElementChild`：返回当前`DocumentFragment`对象的最后一个子元素节点，如果没有则返回`null`。
 - `childElementCount`：返回当前`DocumentFragment`对象的所有子元素数量。
+
+## 小结
+
+文本也是节点；textContent 取全部文本，innerText 近似可见文本，赋值时二者都会转义。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 textContent 设置文本并说明为何安全（防 XSS）。
+2. 对比 textContent 与 innerHTML 的差异。
 
 ## 延伸阅读
 

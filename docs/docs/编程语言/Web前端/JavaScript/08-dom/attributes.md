@@ -17,6 +17,29 @@ HTML 元素包括标签名和若干个键值对，这个键值对就称为“属
 
 属性本身是一个对象（`Attr`对象），但是实际上，这个对象极少使用。一般都是通过元素节点对象（`HTMlElement`对象）来操作属性。本章介绍如何操作这些属性。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 HTML 属性与 DOM property 的区别
+- 掌握 get/set/removeAttribute
+- 认识 dataset 访问 data-*
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+attribute 是 HTML 标签上的字符串，property 是 DOM 对象上的 JS 属性。多数属性有对应 property，但值类型与同步时机不同；data-* 通过 dataset 访问。
+
+本章主线：
+- attribute vs property
+- get/set/removeAttribute
+- dataset 与 data-*
+
 ## Element.attributes 属性
 
 元素对象有一个`attributes`属性，返回一个类似数组的动态对象，成员是该元素标签的所有属性节点对象，属性的实时变化都会反映在这个节点对象上。其他类型的节点对象，虽然也有`attributes`属性，但返回的都是`null`，因此可以把这个属性视为元素对象独有的。
@@ -263,6 +286,17 @@ delete document.getElementById('myDiv').dataset.foo;
 注意，`data-`后面的属性名有限制，只能包含字母、数字、连词线（`-`）、点（`.`）、冒号（`:`）和下划线（`_`)。而且，属性名不应该使用`A`到`Z`的大写字母，比如不能有`data-helloWorld`这样的属性名，而要写成`data-hello-world`。
 
 转成`dataset`的键名时，连词线后面如果跟着一个小写字母，那么连词线会被移除，该小写字母转为大写字母，其他字符不变。反过来，`dataset`的键名转成属性名时，所有大写字母都会被转成连词线+该字母的小写形式，其他字符不变。比如，`dataset.helloWorld`会转成`data-hello-world`。
+
+## 小结
+
+属性是 HTML 字符串，property 是 DOM 属性；优先用 property，特殊场景用 attribute API。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 setAttribute 设置 disabled 并观察对应 property 的变化。
+2. 用 dataset 读写 data-user-id。
 
 ## 延伸阅读
 

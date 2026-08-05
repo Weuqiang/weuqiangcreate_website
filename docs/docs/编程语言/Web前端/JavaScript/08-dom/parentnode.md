@@ -7,6 +7,30 @@ description: "节点对象除了继承 Node 接口以外，还拥有其他接口
 
 节点对象除了继承 Node 接口以外，还拥有其他接口。`ParentNode`接口表示当前节点是一个父节点，提供一些处理子节点的方法。`ChildNode`接口表示当前节点是一个子节点，提供一些相关方法。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 ParentNode 混入接口
+- 掌握 children/firstElementChild
+- 区分元素与节点集合
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [Node 接口](/docs/编程语言/Web前端/JavaScript/dom/node)
+
+## 核心概念
+
+ParentNode 是 Element/Document 等实现的混入，提供只含元素的便捷集合：children、firstElementChild、lastElementChild，以及 querySelector 系列。
+
+本章主线：
+- children 与元素集合
+- first/lastElementChild
+- 与 childNodes 区别
+
 ## ParentNode 接口
 
 如果当前节点是父节点，就会混入了（mixin）`ParentNode`接口。由于只有元素节点（element）、文档节点（document）和文档片段节点（documentFragment）拥有子节点，因此只有这三类节点会拥有`ParentNode`接口。
@@ -151,6 +175,16 @@ el.replaceWith(span);
 
 上面代码中，`el`节点将被`span`节点替换。
 
+## 小结
+
+ParentNode 提供仅含元素的便捷访问；与 childNodes（含文本/注释）区分使用。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 firstElementChild 取首个元素子节点（跳过文本）。
+2. 对比 children 与 childNodes 的差异。
 
 ## 延伸阅读
 
