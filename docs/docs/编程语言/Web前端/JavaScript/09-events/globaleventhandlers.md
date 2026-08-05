@@ -21,6 +21,29 @@ div.onclick = clickHandler;
 
 `HTMLElement`、`Document`和`Window`都继承了这个接口，也就是说，各种 HTML 元素、`document`对象、`window`对象上面都可以使用`GlobalEventHandlers`接口提供的属性。下面就列出这个接口提供的主要的事件属性。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 on* 属性处理器
+- 掌握其与 addEventListener 的差异
+- 认识覆盖问题
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [事件基础](/docs/编程语言/Web前端/JavaScript/events/common)
+
+## 核心概念
+
+全局事件处理器如 onclick 是定义在元素上的属性，赋值时只能有一个处理器且会覆盖；addEventListener 可叠加多个。
+
+本章主线：
+- on* 属性处理器
+- 与 addEventListener 差异
+- 覆盖问题
+
 ## GlobalEventHandlers.onabort
 
 某个对象的`abort`事件（停止加载）发生时，就会调用`onabort`属性指定的回调函数。
@@ -168,6 +191,17 @@ document.oncontextmenu = function () {
 
 - oncancel
 - onclose
+
+## 小结
+
+on* 属性只能挂一个处理器且易被覆盖；现代代码优先用 addEventListener。
+
+## 练习
+
+动手检验一下自己：
+
+1. 演示 onclick 两次赋值后者覆盖前者。
+2. 说明 addEventListener 为何能叠加多个。
 
 ## 延伸阅读
 

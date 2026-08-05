@@ -5,6 +5,29 @@ description: "鼠标事件主要有下面这些，所有事件都继承了MouseE
 
 # 鼠标事件
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解鼠标事件序列
+- 掌握 clientX/clientY 等坐标
+- 认识按钮区分
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [事件基础](/docs/编程语言/Web前端/JavaScript/events/common)
+
+## 核心概念
+
+鼠标按下 mousedown、松开 mouseup、两者在同元素上构成 click。坐标有 clientX/clientY（视口）、pageX/pageY（文档）、offsetX/offsetY（目标内）。
+
+本章主线：
+- mousedown/up/click 序列
+- 坐标体系
+- 按钮与修饰键
+
 ## 鼠标事件的种类
 
 鼠标事件主要有下面这些，所有事件都继承了`MouseEvent`接口（详见后文）。
@@ -402,6 +425,16 @@ var wheelEvent = new WheelEvent(type, options);
 - `WheelEvent.deltaZ`：数值，表示滚轮的 Z 轴滚动量。
 - `WheelEvent.deltaMode`：数值，表示上面三个属性的单位，`0`是像素，`1`是行，`2`是页。
 
+## 小结
+
+click 由 down+up 组成；不同坐标体系对应视口、文档、目标，按需选用。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 mousedown+mouseup 判断是否为一次 click。
+2. 用 clientX/clientY 实现拖拽跟随。
 
 ## 延伸阅读
 

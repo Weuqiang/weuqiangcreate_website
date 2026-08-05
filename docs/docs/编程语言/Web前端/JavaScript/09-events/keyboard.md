@@ -5,6 +5,29 @@ description: "键盘事件由用户击打键盘触发，主要有keydown、keypr
 
 # 键盘事件
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解键盘事件序列
+- 区分 key 与 code
+- 掌握修饰键
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [事件基础](/docs/编程语言/Web前端/JavaScript/events/common)
+
+## 核心概念
+
+按下时触发 keydown，松开触发 keyup。key 是字符（随布局变化），code 是物理键位（稳定）；修饰键用 shiftKey/ctrlKey 等判断。
+
+本章主线：
+- keydown/keyup 序列
+- key vs code
+- 修饰键
+
 ## 键盘事件的种类
 
 键盘事件由用户击打键盘触发，主要有`keydown`、`keypress`、`keyup`三个事件，它们都继承了`KeyboardEvent`接口。
@@ -130,6 +153,17 @@ if (
 ```
 
 上面代码表示，只要`Control`、`Alt`、`Meta`里面，同时按下任意两个或两个以上的键就返回。
+
+## 小结
+
+key 随输入法或布局变，code 表示物理键；组合键看 shiftKey/ctrlKey/metaKey。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 keydown 实现回车提交。
+2. 区分 key 与 code 的适用场景。
 
 ## 延伸阅读
 

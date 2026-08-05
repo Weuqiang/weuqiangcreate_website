@@ -5,6 +5,30 @@ description: "触摸 API 三件套：Touch 触摸点的坐标、半径与压力�
 
 # 触摸事件
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解触摸事件序列
+- 掌握 touches/targetTouches
+- 认识与鼠标事件的差异
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [事件基础](/docs/编程语言/Web前端/JavaScript/events/common)
+- [鼠标事件](/docs/编程语言/Web前端/JavaScript/events/mouse)
+
+## 核心概念
+
+触摸触发 touchstart、touchmove、touchend。touches 为当前所有触点，targetTouches 为当前目标上的触点；每个触点含 clientX/clientY。
+
+本章主线：
+- 触摸事件序列
+- touches 与 targetTouches
+- 坐标
+
 ## 触摸操作概述
 
 浏览器的触摸 API 由三个部分组成。
@@ -240,6 +264,17 @@ function handleMove(evt) {
   }
 }
 ```
+
+## 小结
+
+触摸支持多点；touches 是所有触点，targetTouches 限定目标；移动端优先 Pointer 事件更佳。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 touchmove 实现单指拖动。
+2. 说明 touches 与 targetTouches 的区别。
 
 ## 延伸阅读
 

@@ -9,6 +9,29 @@ description: "事件的本质是程序各个组成部分之间的一种通信方
 
 介绍具体的事件之前，先来看看如何让 DOM 节点监听事件。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 EventTarget 是事件的来源
+- 掌握监听的增删
+- 认识一次性监听与 dispatchEvent
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [事件基础](/docs/编程语言/Web前端/JavaScript/events/common)
+
+## 核心概念
+
+EventTarget 是能接收事件的对象（元素、document、window 均实现它）。提供 addEventListener/removeEventListener 管理监听，dispatchEvent 手动派发事件。
+
+本章主线：
+- 监听的增删
+- once 选项
+- dispatchEvent
+
 ## 概述
 
 DOM 节点的事件操作（监听和触发），都定义在`EventTarget`接口。所有节点对象都部署了这个接口，其他一些需要事件通信的浏览器内置对象（比如，`XMLHttpRequest`、`AudioNode`、`AudioContext`）也部署了这个接口。
@@ -62,10 +85,10 @@ buttonElement.addEventListener('click', {
 
 其次，第三个参数除了布尔值`useCapture`，还可以是一个监听器配置对象，定制事件监听行为。该对象有以下属性。
 
-> - `capture`：布尔值，如果设为`true`，表示监听函数在捕获阶段触发，默认为`false`，在冒泡阶段触发。
-> - `once`：布尔值，如果设为`true`，表示监听函数执行一次就会自动移除，后面将不再监听该事件。该属性默认值为`false`。
-> - `passive`：布尔值，设为`true`时，表示禁止监听函数调用`preventDefault()`方法。如果调用了，浏览器将忽略这个要求，并在控制台输出一条警告。该属性默认值为`false`。
-> - `signal`：该属性的值为一个 AbortSignal 对象，为监听器设置了一个信号通道，用来在需要时发出信号，移除监听函数。
+`>` - `capture`：布尔值，如果设为`true`，表示监听函数在捕获阶段触发，默认为`false`，在冒泡阶段触发。
+`>` - `once`：布尔值，如果设为`true`，表示监听函数执行一次就会自动移除，后面将不再监听该事件。该属性默认值为`false`。
+`>` - `passive`：布尔值，设为`true`时，表示禁止监听函数调用`preventDefault()`方法。如果调用了，浏览器将忽略这个要求，并在控制台输出一条警告。该属性默认值为`false`。
+`>` - `signal`：该属性的值为一个 AbortSignal 对象，为监听器设置了一个信号通道，用来在需要时发出信号，移除监听函数。
 
 下面是`once`属性的例子，让监听函数只执行一次。
 
@@ -171,6 +194,17 @@ if (canceled) {
   console.log('事件未取消');
 }
 ```
+
+## 小结
+
+EventTarget 统一了事件的注册与派发；once 让监听只触发一次，dispatchEvent 用于主动触发。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 once 选项让点击只生效一次。
+2. 用 dispatchEvent 手动触发一个自定义事件。
 
 ## 延伸阅读
 - [其他常见事件](../common)

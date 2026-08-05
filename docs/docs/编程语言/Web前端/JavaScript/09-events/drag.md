@@ -5,6 +5,30 @@ description: "拖拉（drag）指的是，用户在某个对象上按下鼠标�
 
 # 拖拉事件
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解拖拽事件序列
+- 掌握 dataTransfer
+- 认识默认行为阻止
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [事件基础](/docs/编程语言/Web前端/JavaScript/events/common)
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+拖拽触发 dragstart、drag、dragover、drop 等序列。dataTransfer 在拖拽源与目标间传递数据，drop 前需阻止 dragover 默认行为。
+
+本章主线：
+- 拖拽事件序列
+- dataTransfer
+- 阻止默认行为
+
 ## 拖拉事件的种类
 
 拖拉（drag）指的是，用户在某个对象上按下鼠标键不放，拖动它到另一个位置，然后释放鼠标键，将该对象放在那里。
@@ -477,6 +501,17 @@ div.addEventListener('dragstart', function (e) {
   e.dataTransfer.setDragImage(img, 0, 0);
 }, false);
 ```
+
+## 小结
+
+拖拽靠 dataTransfer 传数据；drop 生效前必须 preventDefault dragover。
+
+## 练习
+
+动手检验一下自己：
+
+1. 实现把一个元素拖到容器中并读取数据。
+2. 说明为何要阻止 dragover 默认行为。
 
 ## 延伸阅读
 

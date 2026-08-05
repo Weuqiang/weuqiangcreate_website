@@ -5,6 +5,29 @@ description: "事件发生以后，会产生一个事件对象，作为参数传
 
 # Event 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握 type/target/timeStamp
+- 掌握 preventDefault/stopPropagation
+- 认识 composedPath
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [事件基础](/docs/编程语言/Web前端/JavaScript/events/common)
+
+## 核心概念
+
+Event 是所有事件对象的基类，提供 type、target、currentTarget、timeStamp，以及 preventDefault（阻止默认行为）、stopPropagation（停止传播）、composedPath（路径）。
+
+本章主线：
+- 通用属性
+- preventDefault
+- stopPropagation 与路径
+
 ## 概述
 
 事件发生以后，会产生一个事件对象，作为参数传给监听函数。浏览器原生提供一个`Event`对象，所有的事件都是这个对象的实例，或者说继承了`Event.prototype`对象。
@@ -309,6 +332,17 @@ div.addEventListener('click', function (e) {
 ```
 
 上面代码中，`click`事件的最底层节点是`p`，向上依次是`div`、`body`、`html`、`document`、`Window`。
+
+## 小结
+
+Event 提供事件元信息与控制方法；注意 stopPropagation 与 stopImmediatePropagation 的区别。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 preventDefault 阻止链接跳转。
+2. 用 stopPropagation 阻止事件冒泡。
 
 ## 延伸阅读
 

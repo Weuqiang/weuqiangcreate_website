@@ -5,6 +5,30 @@ description: "input事件当<input、<select、<textarea的值发生变化时触
 
 # 表单事件
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分 submit/input/change 时机
+- 掌握阻止默认提交
+- 认识表单校验
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [事件基础](/docs/编程语言/Web前端/JavaScript/events/common)
+- [HTML 表单](/docs/编程语言/Web前端/HTML/form)
+
+## 核心概念
+
+input 在每次输入时触发，change 在值提交时触发，submit 在表单提交时触发。拦截提交需 preventDefault，校验可用原生 validity 或自定义逻辑。
+
+本章主线：
+- input/change/submit 时机
+- 阻止默认提交
+- 校验
+
 ## 表单事件的种类
 
 ### input 事件
@@ -149,6 +173,17 @@ function myFunction(e) {
 **（3）InputEvent.dataTransfer**
 
 `InputEvent.dataTransfer`属性返回一个 DataTransfer 实例。该属性只在文本框接受粘贴内容（insertFromPaste）或拖拽内容（`insertFromDrop`）时才有效。
+
+## 小结
+
+input 实时、change 提交、submit 整体；阻止默认提交后用 JS 控制流程。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 submit 事件统一校验并阻止非法提交。
+2. 说明 input 与 change 的触发差异。
 
 ## 延伸阅读
 

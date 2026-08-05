@@ -5,6 +5,29 @@ description: "进度事件用来描述资源加载的进度，主要由 AJAX 请
 
 # 进度事件
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解资源加载事件
+- 掌握 load/error
+- 认识 progress 上传下载
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [事件基础](/docs/编程语言/Web前端/JavaScript/events/common)
+
+## 核心概念
+
+资源（图片、脚本、XHR/fetch）加载触发 load 或 error。progress 事件在上传下载过程中持续报告已传输字节。
+
+本章主线：
+- load/error
+- progress 报告
+- 资源监听
+
 ## 进度事件的种类
 
 进度事件用来描述资源加载的进度，主要由 AJAX 请求、`<img>`、`<audio>`、`<video>`、`<style>`、`<link>`等外部资源的加载触发，继承了`ProgressEvent`接口。它主要包含以下几种事件。
@@ -155,6 +178,17 @@ xhr.upload.addEventListener('abort', transferCanceled, false);
 
 xhr.open();
 ```
+
+## 小结
+
+资源就绪触发 load，失败触发 error；progress 用于展示上传下载进度。
+
+## 练习
+
+动手检验一下自己：
+
+1. 给图片绑定 load 与 error 处理。
+2. 用 progress 事件显示上传百分比。
 
 ## 延伸阅读
 

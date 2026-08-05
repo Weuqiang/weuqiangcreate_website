@@ -5,6 +5,29 @@ description: "beforeunload事件在窗口、文档、各种资源将要卸载前
 
 # 其他常见事件
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解事件流三阶段
+- 掌握 addEventListener
+- 认识 event 对象常用属性
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+
+## 核心概念
+
+事件从 window 向下捕获、到达目标、再冒泡回去。addEventListener 注册监听，event 对象携带 target/currentTarget/type 等信息。
+
+本章主线：
+- 捕获/目标/冒泡
+- addEventListener
+- event 对象
+
 ## 资源事件
 
 ### beforeunload 事件
@@ -407,6 +430,17 @@ el.dispatchEvent(myEvent);
 ```
 
 上面代码也说明，CustomEvent 的事件实例，除了具有 Event 接口的实例属性，还具有`detail`属性。
+
+## 小结
+
+事件经历捕获、目标再到冒泡；addEventListener 注册，event 对象描述事件本身。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 addEventListener 给按钮绑定点击。
+2. 说明 target 与 currentTarget 的区别。
 
 ## 延伸阅读
 - [拖拉事件](../drag)
