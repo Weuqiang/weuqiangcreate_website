@@ -103,6 +103,41 @@ for(var i = 0; i < button.labels.length; i++) {
 
 `HTMLButtonElement.willValidate`属性是一个布尔值，表示该按钮提交表单时是否将被校验，默认为`false`。该属性只读。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 `<button>` 的三种 type
+- 掌握 disabled/form/value 属性
+- 认识与表单提交的关系
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [HTML 表单](../form)
+
+## 核心概念
+
+`<button>` 是通用按钮控件。type 决定它的行为：submit 提交表单、reset 重置表单、button 仅作脚本按钮。HTMLButtonElement 暴露 disabled、form、value 等属性与 click() 方法。
+
+本章主线：
+- type 的三种取值
+- disabled 与表单关联
+- value 与 click()
+
+## 小结
+
+`<button>` 的 type 决定语义（提交/重置/普通）；disabled 禁用交互，form 指向所属表单。
+
+## 练习
+
+动手检验一下自己：
+
+1. 比较 submit 与 button 类型按钮的行为差异。
+2. 用 JS 禁用并再启用一个按钮。
+
 ## 延伸阅读
 
 - [a 元素](../a)

@@ -5,6 +5,30 @@ description: "<img元素用于插入图片，主要继承了 HTMLImageElement �
 
 # img 元素
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 `<img>` 的 src/alt 语义
+- 掌握加载事件（load/error）
+- 认识响应式属性 srcset/sizes
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [HTML 图像](/docs/编程语言/Web前端/HTML/image)
+
+## 核心概念
+
+`<img>` 用于嵌入图片。HTMLImageElement 暴露 src、alt、width/height 等属性，并支持 load 与 error 事件来感知加载结果；srcset/sizes 让浏览器按屏幕选择最合适的图。
+
+本章主线：
+- src 与 alt
+- load/error 事件
+- srcset 响应式
+
 ## 概述
 
 `<img>`元素用于插入图片，主要继承了 HTMLImageElement 接口。
@@ -204,6 +228,17 @@ function myFunction() {
   console.log('There is something wrong');
 }
 ```
+
+## 小结
+
+`<img>` 通过 src 取图、alt 提供无障碍文本；load/error 反映结果；srcset 实现响应式图片。
+
+## 练习
+
+动手检验一下自己：
+
+1. 监听 img 的 error 事件并给出占位图。
+2. 说明 alt 在图片加载失败时的作用。
 
 ## 延伸阅读
 

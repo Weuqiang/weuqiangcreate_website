@@ -7,6 +7,31 @@ description: "<form元素代表了表单，继承了 HTMLFormElement 接口。"
 
 `<form>`元素代表了表单，继承了 HTMLFormElement 接口。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 `<form>` 组织表单字段
+- 掌握 submit/reset 与事件
+- 认识 elements 集合与序列化
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [HTML 表单](/docs/编程语言/Web前端/HTML/form)
+- [Fetch 上传](/docs/编程语言/Web前端/JavaScript/bom/xmlhttprequest)
+
+## 核心概念
+
+`<form>` 把若干输入控件聚合成一个可提交单元。HTMLFormElement 提供 elements 集合、submit()/reset() 方法，以及 submit 事件——可在提交前用 preventDefault() 拦截并改用异步上传。
+
+本章主线：
+- elements 集合
+- submit 与 reset
+- 提交拦截
+
 ## HTMLFormElement 的实例属性
 
 - `elements`：返回一个类似数组的对象，成员是属于该表单的所有控件元素。该属性只读。
@@ -35,6 +60,17 @@ f.action = '/cgi-bin/some.cgi';
 f.method = 'POST';
 f.submit();
 ```
+
+## 小结
+
+`<form>` 是字段容器；elements 集合按名称访问控件；监听 submit 事件可用 preventDefault 改为异步提交。
+
+## 练习
+
+动手检验一下自己：
+
+1. 遍历 form.elements 收集所有字段值。
+2. 用 submit 事件配合 fetch 异步提交。
 
 ## 延伸阅读
 

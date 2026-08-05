@@ -7,6 +7,30 @@ description: "<option元素表示下拉框（<select，<optgroup或<datalist）�
 
 `<option>`元素表示下拉框（`<select>`，`<optgroup>`或`<datalist>`）里面的一个选项。它是 HTMLOptionElement 接口的实例。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 `<option>` 在 select 中的角色
+- 掌握 value/selected/text
+- 认识动态增删选项
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [input 元素](../input)
+
+## 核心概念
+
+`<option>` 表示一个可选项，通常位于 `<select>` 内。HTMLOptionElement 的 value 是提交值、text 是显示文本、selected 表示是否被选中；可调用 Option 构造器动态创建选项。
+
+本章主线：
+- value 与 text
+- selected 状态
+- 动态创建选项
+
 ## 属性
 
 除了继承 HTMLElement 接口的属性和方法，HTMLOptionElement 接口具有下面的属性。
@@ -45,6 +69,17 @@ newOption.selected // false
 ```
 
 上面代码中，`newOption`的`defaultSelected`属性为`true`，但是它没有被选中（即`selected`属性为`false`）。
+
+## 小结
+
+`<option>` 是下拉项；value 提交、text 显示、selected 选中；可用 Option() 动态插入。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 Option 构造器向 select 添加一个选项。
+2. 读取当前选中项的 value。
 
 ## 延伸阅读
 

@@ -7,6 +7,30 @@ description: "<a元素用来设置链接。除了网页元素的通用接口（N
 
 `<a>`元素用来设置链接。除了网页元素的通用接口（`Node`接口、`Element`接口、`HTMLElement`接口），它还继承了`HTMLAnchorElement`接口和`HTMLHyperlinkElementUtils`接口。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 `<a>` 元素创建超链接
+- 掌握 URL 相关属性（href/host/pathname）
+- 认识 download/target/rel 等常用属性
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [HTML 链接](/docs/编程语言/Web前端/HTML/a)
+
+## 核心概念
+
+`<a>` 元素定义超链接，把当前文档与目标资源（或锚点）关联起来。除了网页元素通用接口，它还继承 HTMLAnchorElement 与 HTMLHyperlinkElementUtils，从而可直接读写 href、host、pathname 等 URL 片段。
+
+本章主线：
+- URL 相关属性
+- download 与 target
+- rel 与 referrerPolicy
+
 ## 属性
 
 ### URL 相关属性
@@ -162,6 +186,17 @@ a.type // "video/mp4"
 - `blur()`：从当前元素移除键盘焦点，详见`HTMLElement`接口的介绍。
 - `focus()`：当前元素得到键盘焦点，详见`HTMLElement`接口的介绍。
 - `toString()`：返回当前`<a>`元素的 HTML 属性`href`。
+
+## 小结
+
+`<a>` 元素通过 href 指向目标；URL 各部件（host/pathname/hash）均可读写；download 触发下载、target 控制打开方式。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 JS 读取某链接的 pathname 与 hash。
+2. 说明 target='_blank' 与 rel='noopener' 的关系。
 
 ## 延伸阅读
 - [button 元素](../button)

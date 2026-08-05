@@ -7,6 +7,30 @@ description: "<input元素主要用于表单组件，它继承了 HTMLInputEleme
 
 `<input>`元素主要用于表单组件，它继承了 HTMLInputElement 接口。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 input 的 type 决定控件形态
+- 掌握 value/checked/disabled
+- 认识事件（input/change）
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [HTML 表单](/docs/编程语言/Web前端/HTML/form)
+
+## 核心概念
+
+`<input>` 是最常用的表单控件，type 决定它是文本框、复选框、单选还是文件选择器等。HTMLInputElement 的 value、checked、disabled 反映其状态，input/change 事件在用户操作时触发。
+
+本章主线：
+- type 与控件形态
+- value/checked
+- input 与 change 事件
+
 ## HTMLInputElement 的实例属性
 
 ### 特征属性
@@ -149,6 +173,17 @@ field.oninput = (event) => {
 ```
 
 上面代码中，输入框必须输入一个4位的十六进制数。如果不满足条件（比如输入`xxx`），按下回车键以后，就会提示自定义的报错信息。一旦自定义了报错信息，输入框就会一直处于校验失败状态，因此重新输入时，必须把自定义报错信息设为空字符串。另外，为了避免自动补全提示框遮住报错信息，必须将输入框的`autocomplete`属性关闭。
+
+## 小结
+
+`<input>` 的 type 决定形态；value 取文本值、checked 取勾选态；input 实时、change 失焦提交。
+
+## 练习
+
+动手检验一下自己：
+
+1. 区分 input 与 change 事件的触发时机。
+2. 用 JS 读取一个复选框的 checked。
 
 ## 延伸阅读
 

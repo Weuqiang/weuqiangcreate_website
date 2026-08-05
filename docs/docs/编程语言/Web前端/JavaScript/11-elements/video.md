@@ -5,6 +5,30 @@ description: "<video元素用来加载视频，是HTMLVideoElement对象的实�
 
 # video audio
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 `<video>` 嵌入与播放控制
+- 掌握 play/pause 与 currentTime
+- 认识事件（play/pause/ended）
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [DOM 概览](/docs/编程语言/Web前端/JavaScript/dom/general)
+- [HTML 媒体](/docs/编程语言/Web前端/HTML/multimedia)
+
+## 核心概念
+
+`<video>` 用于嵌入视频。HTMLVideoElement 提供 play()/pause()、currentTime、volume 等控制接口，并触发 play、pause、ended、timeupdate 等事件，便于实现自定义播放器。
+
+本章主线：
+- 播放控制方法
+- currentTime 与 volume
+- 播放事件
+
 ## 概述
 
 `<video>`元素用来加载视频，是`HTMLVideoElement`对象的实例。`<audio>`元素用来加载音频，是`HTMLAudioElement`对象的实例。而`HTMLVideoElement`和`HTMLAudioElement`都继承了`HTMLMediaElement`，所以这两个 HTML 元素有许多共同的属性和方法，可以放在一起介绍。
@@ -157,6 +181,16 @@ if (a.canPlayType('audio/wav')) {
 - error：网络或其他原因导致媒体文件无法加载时触发。
 - emptied：由于`error`或`abort`事件导致`networkState`属性变成无法获取数据时触发。
 
+## 小结
+
+`<video>` 用 play/pause 控制；currentTime 定位、volume 调音量；事件可驱动进度条与状态显示。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 play()/pause() 切换播放状态。
+2. 监听 ended 事件自动播放下一个。
 
 ## 延伸阅读
 
