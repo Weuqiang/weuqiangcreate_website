@@ -5,6 +5,29 @@ description: "字符串就是零个或多个排在一起的字符，放在单引
 
 # 字符串
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解字符串不可变（修改返回新串）
+- 掌握截取、查找、大小写等常用方法
+- 会用模板字面量与标签函数
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [类型概览](/docs/编程语言/Web前端/JavaScript/types/general)
+
+## 核心概念
+
+字符串是 UTF-16 码元序列，所有修改方法都返回新字符串而非改动原串。模板字面量用反引号支持插值与多行。
+
+本章主线：
+- 不可变与码元/码点
+- 截取/查找/大小写转换
+- 模板字面量与标签函数
+
 ## 概述
 
 ### 定义
@@ -288,6 +311,17 @@ b64Decode('JUU0JUJEJUEwJUU1JUE1JUJE') // "你好"
 - Mathias Bynens, [JavaScript’s internal character encoding: UCS-2 or UTF-16?](https://mathiasbynens.be/notes/javascript-encoding)
 - Mathias Bynens, [JavaScript has a Unicode problem](https://mathiasbynens.be/notes/javascript-unicode)
 - Mozilla Developer Network, [Window.btoa](https://developer.mozilla.org/en-US/docs/Web/API/Window.btoa)
+
+## 小结
+
+字符串不可变，方法皆返回新串；优先用模板字面量做插值。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 slice 截取子串并说明原串是否改变。
+2. 用模板字面量拼接姓名与年龄。
 
 ## 延伸阅读
 

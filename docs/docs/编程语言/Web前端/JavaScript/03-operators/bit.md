@@ -5,6 +5,29 @@ description: "或、与、否、异或与三种移位运算符的规则：32 位
 
 # 二进制位运算符
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解按位与/或/异或/取反
+- 掌握左移与右移（含无符号右移）
+- 认识 32 位有符号整数限制
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [JavaScript 语法基础](/docs/编程语言/Web前端/JavaScript/basic/grammar)
+
+## 核心概念
+
+位运算先把操作数转为 32 位有符号整数再逐位计算，常用于权限位掩码、奇偶判断与变量交换等技巧。
+
+本章主线：
+- & | ^ ~ 的含义
+- `<< >> >>>` 移位
+- 位掩码与标志位技巧
+
 ## 概述
 
 二进制位运算符用于直接对二进制位进行计算，一共有7个。
@@ -361,6 +384,17 @@ flags = ~flags;
 - Michal Budzynski, [JavaScript: The less known parts. Bitwise Operators](https://michalbe.blogspot.com/2013/03/javascript-less-known-parts-bitwise.html)
 - Axel Rauschmayer, [Basic JavaScript for the impatient programmer](https://www.2ality.com/2013/06/basic-javascript.html)
 - Mozilla Developer Network, [Bitwise Operators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_Operators)
+
+## 小结
+
+位运算在 32 位整数上逐位进行，适合掩码与标志位场景。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 & 1 判断奇偶。
+2. 用异或交换两个变量（不借助临时变量）。
 
 ## 延伸阅读
 - [算术运算符](../arithmetic)

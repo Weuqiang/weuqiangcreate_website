@@ -5,6 +5,29 @@ description: "null与undefined都可以表示“没有”，含义非常相似�
 
 # null, undefined 和布尔值
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分 null 与 undefined 的设计意图
+- 记住布尔上下文中的假值集合
+- 掌握 == 与 === 的差异并避免隐式转换
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [类型概览](/docs/编程语言/Web前端/JavaScript/types/general)
+
+## 核心概念
+
+undefined 表示「未赋值/不存在」，null 表示「有意留空」。二者 == 相等但 === 不等。假值包括 false、0、''、null、undefined、NaN。
+
+本章主线：
+- null 与 undefined 的语义差异
+- 假值表与 Boolean() 转换
+- == 与 === 的隐式转换
+
 ## null 和 undefined
 
 ### 概述
@@ -135,6 +158,17 @@ if ({}) {
 ## 参考链接
 
 - Axel Rauschmayer, [Categorizing values in JavaScript](https://www.2ality.com/2013/01/categorizing-values.html)
+
+## 小结
+
+undefined 是缺失，null 是空；比较一律用 === 避免隐式转换陷阱。
+
+## 练习
+
+动手检验一下自己：
+
+1. 列出 JS 中的所有假值。
+2. 解释为何 null == undefined 为 true，而 null === undefined 为 false。
 
 ## 延伸阅读
 - [数组](../array)

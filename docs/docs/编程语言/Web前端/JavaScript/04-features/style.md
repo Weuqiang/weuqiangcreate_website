@@ -5,6 +5,29 @@ description: "“编程风格”（programming style）指的是编写代码的�
 
 # 编程风格
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 'use strict' 的约束
+- 识别常见反模式
+- 认识分号自动插入（ASI）的陷阱
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [JavaScript 语法基础](/docs/编程语言/Web前端/JavaScript/basic/grammar)
+
+## 核心概念
+
+'use strict' 开启严格模式，禁用八进制字面量、隐式全局变量等危险写法，提升安全性。ASI 在少数情形（如行首为 ( 或 [）会误判，建议显式写分号。
+
+本章主线：
+- 严格模式的约束
+- ASI 陷阱
+- 风格一致性
+
 ## 概述
 
 “编程风格”（programming style）指的是编写代码的样式规则。不同的程序员，往往有不同的编程风格。
@@ -495,6 +518,17 @@ function doAction(action) {
 - Axel Rauschmayer, [A meta style guide for JavaScript](https://www.2ality.com/2013/07/meta-style-guide.html)
 - Axel Rauschmayer, [Automatic semicolon insertion in JavaScript](https://www.2ality.com/2011/05/semicolon-insertion.html)
 - Rod Vagg, [JavaScript and Semicolons](http://dailyjs.com/2012/04/19/semicolons/)
+
+## 小结
+
+用严格模式规避危险特性；注意 ASI 在行首括号处的陷阱。
+
+## 练习
+
+动手检验一下自己：
+
+1. 举一个严格模式下报错而普通模式不报的例子。
+2. 说明 return 后换行触发 ASI 的问题。
 
 ## 延伸阅读
 

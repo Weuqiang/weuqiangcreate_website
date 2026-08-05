@@ -5,6 +5,30 @@ description: "JavaScript 是一种动态类型语言，变量没有类型限制�
 
 # 数据类型的转换
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解显式转换（String/Number/Boolean）
+- 认识隐式转换规则
+- 掌握 ToPrimitive 流程
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [JavaScript 语法基础](/docs/编程语言/Web前端/JavaScript/basic/grammar)
+- [类型概览](/docs/编程语言/Web前端/JavaScript/types/general)
+
+## 核心概念
+
+显式转换用 String()/Number()/Boolean() 明确意图。隐式转换发生在运算与比较时，遵循 ToPrimitive 与 ToNumber 规则，容易踩坑。
+
+本章主线：
+- 显式三函数
+- ToPrimitive 流程
+- 宽松相等的转换
+
 ## 概述
 
 JavaScript 是一种动态类型语言，变量没有类型限制，可以随时赋予任意值。
@@ -473,6 +497,17 @@ undefined + 1 // NaN
 - Axel Rauschmayer, [What is {} + {} in JavaScript?](https://www.2ality.com/2012/01/object-plus-object.html)
 - Axel Rauschmayer, [JavaScript quirk 1: implicit conversion of values](https://www.2ality.com/2013/04/quirk-implicit-conversion.html)
 - Benjie Gillam, [Quantum JavaScript?](https://www.benjiegillam.com/2013/06/quantum-javascript/)
+
+## 小结
+
+优先显式转换；隐式转换依赖 ToPrimitive，能避免就避免。
+
+## 练习
+
+动手检验一下自己：
+
+1. 对比 String(1) 与 1+'' 的结果。
+2. 用 ToPrimitive 解释 `[] == 0` 与 `{} == 0` 的差异。
 
 ## 延伸阅读
 

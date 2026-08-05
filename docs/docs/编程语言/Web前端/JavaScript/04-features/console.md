@@ -5,6 +5,29 @@ description: "console对象是 JavaScript 的原生对象，它有点像 Unix �
 
 # console 对象与控制台
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握常用 console 方法
+- 理解占位符与分组
+- 认识生产环境应移除调试输出
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+
+## 核心概念
+
+console 是浏览器/Node 提供的调试接口。log/info/warn/error 输出不同级别，table 适合表格数据，time/timeEnd 用于计时。
+
+本章主线：
+- 各级别方法
+- 占位符与分组
+- 性能计时
+
 ## console 对象
 
 `console`对象是 JavaScript 的原生对象，它有点像 Unix 系统的标准输出`stdout`和标准错误`stderr`，可以输出各种信息到控制台，并且还提供了很多有用的辅助方法。
@@ -495,6 +518,17 @@ for(var i = 0; i < 5; i++){
 - Axel Rauschmayer, [The JavaScript console API](https://www.2ality.com/2013/10/console-api.html)
 - Marius Schulz, [Advanced JavaScript Debugging with console.table()](https://developer.mozilla.org/en-US/docs/Web/API/Console/table)
 - Google Developer, [Command Line API Reference](https://developers.google.com/chrome-developer-tools/docs/commandline-api)
+
+## 小结
+
+console 是调试利器，但生产构建应清理以避免泄露信息。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 console.table 打印一个对象数组。
+2. 用 time/timeEnd 测量一段循环的耗时。
 
 ## 延伸阅读
 

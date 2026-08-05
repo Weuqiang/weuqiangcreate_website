@@ -5,6 +5,29 @@ description: "JavaScript 解析或运行时，一旦发生错误，引擎就会�
 
 # 错误处理机制
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握 try/catch/finally 结构
+- 理解 throw 任意值与抛 Error 实例
+- 认识异步错误（Promise/await）的处理
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [JavaScript 语法基础](/docs/编程语言/Web前端/JavaScript/basic/grammar)
+
+## 核心概念
+
+用 try/catch 捕获同步异常，finally 无论是否出错都执行（常用于释放资源）。建议抛 Error 实例以保留堆栈，而非原始值。
+
+本章主线：
+- try/catch/finally
+- throw 与 Error 子类
+- 异步错误：Promise.catch 与 await
+
 ## Error 实例对象
 
 JavaScript 解析或运行时，一旦发生错误，引擎就会抛出一个错误对象。JavaScript 原生提供`Error`构造函数，所有抛出的错误都是这个构造函数的实例。
@@ -458,6 +481,17 @@ try {
 ## 参考连接
 
 - Jani Hartikainen, [JavaScript Errors and How to Fix Them](https://davidwalsh.name/fix-javascript-errors)
+
+## 小结
+
+用 try/catch 兜同步异常，finally 做清理；抛 Error 保留堆栈。
+
+## 练习
+
+动手检验一下自己：
+
+1. 写 try/catch/finally 验证 finally 总会执行。
+2. 用 throw new TypeError 抛出带堆栈的错误。
 
 ## 延伸阅读
 

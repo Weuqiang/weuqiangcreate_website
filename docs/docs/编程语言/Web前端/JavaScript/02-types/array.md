@@ -5,6 +5,30 @@ description: "数组（array）是按次序排列的一组值。每个值的位�
 
 # 数组
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握数组的增删改查与多种遍历方式
+- 区分会修改原数组与返回新数组的方法
+- 理解类数组对象与迭代协议
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+- [类型概览](/docs/编程语言/Web前端/JavaScript/types/general)
+
+## 核心概念
+
+数组是按索引排列的有序集合，底层为带 length 与整数键的对象。方法大致分两类：原地修改（如 push/sort）与返回新数组（如 map/filter），混用容易出错。
+
+本章主线：
+- 增删改：push/pop/splice
+- 遍历：forEach/map/filter/reduce
+- 不可变：slice/concat 与展开
+
 ## 定义
 
 数组（array）是按次序排列的一组值。每个值的位置都有编号（从0开始），整个数组用方括号表示。
@@ -505,6 +529,17 @@ arr.forEach(function (chr) {
 - Axel Rauschmayer, [JavaScript: sparse arrays vs. dense arrays](https://www.2ality.com/2012/06/dense-arrays.html)
 - Felix Bohm, [What They Didn’t Tell You About ES5′s Array Extras](http://net.tutsplus.com/tutorials/javascript-ajax/what-they-didnt-tell-you-about-es5s-array-extras/)
 - Juriy Zaytsev, [How ECMAScript 5 still does not allow to subclass an array](https://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/)
+
+## 小结
+
+数组是有序集合；mutating 与 non-mutating 方法要严格区分，优先使用返回新数组的写法以保持数据不可变。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 map 把数字数组每项平方，并说明原数组是否改变。
+2. 用 filter 筛选出大于 10 的元素组成新数组。
 
 ## 延伸阅读
 

@@ -5,6 +5,29 @@ description: "对象（object）是 JavaScript 语言的核心概念，也是最
 
 # 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解对象为引用类型（赋值共享内存）
+- 掌握属性增删、计算键与解构
+- 区分浅拷贝与深拷贝
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [类型概览](/docs/编程语言/Web前端/JavaScript/types/general)
+
+## 核心概念
+
+对象是无序键值集合，赋值时传递的是引用而非副本。展开运算符 `{…obj}` 做浅拷贝，嵌套对象仍需深拷贝。
+
+本章主线：
+- 引用语义 vs 值语义
+- 属性增删与计算属性键
+- 解构赋值与浅/深拷贝
+
 ## 概述
 
 ### 生成方法
@@ -504,6 +527,17 @@ console.log(temp.p1 + temp.p2);
 - Lakshan Perera, [Revisiting JavaScript Objects](https://www.laktek.com/2012/12/29/revisiting-javascript-objects/)
 - Angus Croll, [The Secret Life of JavaScript Primitives](https://javascriptweblog.wordpress.com/2010/09/27/the-secret-life-of-javascript-primitives/)
 - Dr. Axel Rauschmayer, [JavaScript’s with statement and why it’s deprecated](https://www.2ality.com/2011/06/with-statement.html)
+
+## 小结
+
+对象是引用类型，赋值共享同一块内存；拷贝时务必注意深浅之分。
+
+## 练习
+
+动手检验一下自己：
+
+1. 证明两个同名对象字面量不相等（引用不同）。
+2. 用展开运算符浅拷贝后修改嵌套属性，观察原对象是否变化。
 
 ## 延伸阅读
 - [数组](../array)

@@ -5,6 +5,29 @@ description: "JavaScript 内部，所有数字都是以64位浮点数形式储�
 
 # 数值
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 Number 为双精度浮点（整数与小数同源）
+- 识别 0.1+0.2 类浮点精度问题
+- 掌握取整、边界值与 BigInt
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [类型概览](/docs/编程语言/Web前端/JavaScript/types/general)
+
+## 核心概念
+
+JS 数字均为 IEEE-754 双精度浮点。浮点误差导致 0.1+0.2 不等于 0.3；超大整数应使用 BigInt 以避免精度丢失。
+
+本章主线：
+- 浮点精度与表示范围
+- 取整：Math.floor/round/trunc/ceil
+- NaN、Infinity 与 BigInt
+
 ## 概述
 
 ### 整数和浮点数
@@ -665,6 +688,17 @@ isFinite(-1) // true
 
 - Dr. Axel Rauschmayer, [How numbers are encoded in JavaScript](https://www.2ality.com/2012/04/number-encoding.html)
 - Humphry, [JavaScript 中 Number 的一些表示上/下限](https://segmentfault.com/a/1190000000407658)
+
+## 小结
+
+数字即双精度浮点；涉及金额比较用整数分或 decimal 库，避免直接比较浮点。
+
+## 练习
+
+动手检验一下自己：
+
+1. 验证 0.1+0.2 === 0.3 的结果并解释原因。
+2. 用 Math 方法对 -3.7 分别向下、向上取整。
 
 ## 延伸阅读
 - [数组](../array)
