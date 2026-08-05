@@ -7,6 +7,30 @@ sidebar_position: 18
 
 本章介绍一些最新引入标准的标签。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分块级元素与行内元素的外联与排版差异
+- 识别空元素（void）并理解其不可含子节点
+- 理解嵌套合法性与可替代元素概念
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [HTML 概览](/docs/编程语言/Web前端/HTML/intro)
+- [语义化 HTML](/docs/编程语言/Web前端/HTML/semantic)
+
+## 核心概念
+
+HTML 元素按默认排版分为块级（独占一行）与行内（随文本流动）。空元素（如 `<br>`、`<img>`、`<input>`）没有结束标签也不能包含子内容。可替代元素（如 `<img>`、`<video>`）的内容由外部资源决定。
+
+本章主线：
+- 块级 vs 行内：默认显示与包含关系
+- 空元素与嵌套合法性
+- 可替代元素与外部资源
+
 ## `<dialog>`
 
 ### 基本用法
@@ -187,7 +211,6 @@ summary:before {
 }
 ```
 
-
 ### JavaScript API
 
 `Details`元素的`open`属性返回`<details>`当前是打开还是关闭。
@@ -220,6 +243,16 @@ details.addEventListener('toggle', event => {
 - [The dialog element: The way to create tomorrow’s modal windows](https://blog.logrocket.com/the-dialog-element-the-way-to-create-tomorrows-modal-windows-f1d4ab14380b), Abhishek Jakhar
 - [Details/Summary is the Easiest Way Ever to Make an Accordion](https://css-tricks.com/quick-reminder-that-details-summary-is-the-easiest-way-ever-to-make-an-accordion/), Chris Coyier
 
+## 小结
+
+元素是 HTML 的“词”。块级/行内决定排版，空元素不可包含内容，可替代元素把外部资源嵌入文档。
+
+## 练习
+
+动手检验一下自己：
+
+1. 列举 3 个空元素，并说明为何它们没有闭合标签。
+2. 解释为何 `<a>` 内不能再嵌套 `<a>`，以及行内元素内不能放块级元素的约定。
 
 ## 延伸阅读
 

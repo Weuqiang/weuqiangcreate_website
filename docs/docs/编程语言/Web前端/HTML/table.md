@@ -7,6 +7,30 @@ sidebar_position: 16
 
 表格（table）以行（row）和列（column）的形式展示数据。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握表格语义结构（表头/表体/标题）
+- 理解 th 的 scope 与 caption 的可访问性作用
+- 会用 colspan/rowspan 合并单元格
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [HTML 概览](/docs/编程语言/Web前端/HTML/intro),
+- [语义化 HTML](/docs/编程语言/Web前端/HTML/semantic)
+
+## 核心概念
+
+`<table>` 用于表达二维关系数据，而非页面布局。thead/tbody 区分表头与主体，th 标记表头单元格并可用 scope 指明方向，caption 提供表格标题。
+
+本章主线：
+- thead/tbody/tfoot 结构
+- th、scope 与 caption 的可访问性
+- colspan/rowspan 合并
+
 ## `<table>`，`<caption>`
 
 `<table>`是一个块级容器标签，所有表格内容都要放在这个标签里面。
@@ -236,37 +260,47 @@ sidebar_position: 16
 
 渲染结果就是下面的样子。
 
-<table>
-  <thead>
-    <tr>
+`<table>`
+  `<thead>`
+    `<tr>`
       <th scope="col">海报名称</th>
       <th scope="col">颜色</th>
       <th colspan="3" scope="colgroup">尺寸</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
+    `</tr>`
+  `</thead>`
+  `<tbody>`
+    `<tr>`
       <th rowspan="3" scope="rowgroup">Zodiac</th>
       <th scope="row">Full color</th>
       <td>A2</td>
       <td>A3</td>
       <td>A4</td>
-    </tr>
-    <tr>
+    `</tr>`
+    `<tr>`
       <th scope="row">Black and white</th>
       <td>A1</td>
       <td>A2</td>
       <td>A3</td>
-    </tr>
-    <tr>
+    `</tr>`
+    `<tr>`
       <th scope="row">Sepia</th>
       <td>A3</td>
       <td>A4</td>
       <td>A5</td>
-    </tr>
-  </tbody>
-</table>
+    `</tr>`
+  `</tbody>`
+`</table>`
 
+## 小结
+
+表格只用于关系数据：用 th+scope 标定维度，caption 给标题，colspan/rowspan 控制合并。请勿用表格做页面排版。
+
+## 练习
+
+动手检验一下自己：
+
+1. 构造一个带 caption 与表头的成绩单表格，并用 scope 标注行/列表头。
+2. 解释为何不应用 `<table>` 做整体页面布局。
 
 ## 延伸阅读
 

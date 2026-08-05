@@ -7,6 +7,30 @@ sidebar_position: 10
 
 图片是互联网的重要组成部分，让网页变得丰富多彩。本章介绍如何在网页插入图片。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握 src 与 alt 的必填与可访问性意义
+- 理解 srcset 与 sizes 的响应式选择
+- 了解 loading="lazy" 的懒加载作用
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [HTML 概览](/docs/编程语言/Web前端/HTML/intro)
+- [HTML 元素分类](/docs/编程语言/Web前端/HTML/elements)
+
+## 核心概念
+
+`<img>` 是可替代元素，通过 src 指向下载并显示的图像。alt 提供替代文本，对可访问性与加载失败至关重要。srcset/sizes 让浏览器按设备选择最合适分辨率。
+
+本章主线：
+- src 与 alt 的语义
+- srcset/sizes 响应式图像
+- loading 懒加载与解码
+
 ## `<img>`
 
 `<img>`标签用于插入图片。它是单独使用的，没有闭合标签。
@@ -292,6 +316,16 @@ sidebar_position: 10
 - [Responsive images](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images), MDN
 - [Native lazy-loading for the web](https://web.dev/native-lazy-loading), Houssein Djirdeh
 
+## 小结
+
+`<img>` 用 src 取图、alt 兜底；srcset 适配分辨率，loading=lazy 延迟加载。alt 永远不要省略。
+
+## 练习
+
+动手检验一下自己：
+
+1. 为一个装饰性图片与一个重要图表分别写合适的 alt，说明差异。
+2. 用 srcset 为同一图片提供 1x 与 2x 两种分辨率。
 
 ## 延伸阅读
 

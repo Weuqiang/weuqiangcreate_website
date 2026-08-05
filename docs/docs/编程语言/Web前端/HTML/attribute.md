@@ -5,6 +5,30 @@ sidebar_position: 6
 ---
 # 网页元素的属性
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分全局属性与元素专有属性
+- 理解布尔属性的“出现即真”语义
+- 掌握 data-* 与 aria-* 的用途
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [HTML 概览](/docs/编程语言/Web前端/HTML/intro)
+- [语义化 HTML](/docs/编程语言/Web前端/HTML/semantic)
+
+## 核心概念
+
+属性写在开始标签内，形如 name="value"，用于配置元素行为。全局属性（如 id、class、title、lang）适用于所有元素；布尔属性（如 disabled、checked）只要出现就为真，无需赋值。
+
+本章主线：
+- 全局属性 vs 专有属性
+- 布尔属性的特殊语义
+- data-* 自定义数据 与 aria-* 可访问性
+
 ## 简介
 
 网页元素的属性（attribute）可以定制元素的行为，不同的属性会导致元素有不同的行为。元素属性的写法是 HTML 标签内部的“键值对”。
@@ -256,6 +280,17 @@ div[data-role="mobile"] {
 除了上面这些属性，全局属性还包括事件处理属性（event handler），用来响应用户的动作。这些属性的值都是 JavaScript 代码，请参考 JavaScript 教程，这里只列出这些属性的名单。
 
 > onabort, onautocomplete, onautocompleteerror, onblur, oncancel, oncanplay, oncanplaythrough, onchange, onclick, onclose, oncontextmenu, oncuechange, ondblclick, ondrag, ondragend, ondragenter, ondragexit, ondragleave, ondragover, ondragstart, ondrop, ondurationchange, onemptied, onended, onerror, onfocus, oninput, oninvalid, onkeydown, onkeypress, onkeyup, onload, onloadeddata, onloadedmetadata, onloadstart, onmousedown, onmouseenter, onmouseleave, onmousemove, onmouseout, onmouseover, onmouseup, onmousewheel, onpause, onplay, onplaying, onprogress, onratechange, onreset, onresize, onscroll, onseeked, onseeking, onselect, onshow, onsort, onstalled, onsubmit, onsuspend, ontimeupdate, ontoggle, onvolumechange, onwaiting
+
+## 小结
+
+属性是元素的“配置项”：全局属性通用，布尔属性看“是否存在”，data-* 承载自定义数据，aria-* 向辅助技术暴露语义。
+
+## 练习
+
+动手检验一下自己：
+
+1. 指出 disabled 与 disabled="false" 在解析上有无区别，并解释原因。
+2. 给一个 `<div>` 添加 data-user-id 与 aria-label，说明各自作用。
 
 ## 延伸阅读
 - [a](../a)

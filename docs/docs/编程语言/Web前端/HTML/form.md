@@ -9,6 +9,30 @@ sidebar_position: 17
 
 表单由一种或多种的小部件组成，比如输入框、按钮、单选框或复选框。这些小部件称为控件（controls）。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握表单控件的常用类型与取值方式
+- 理解 name 属性在提交数据中的角色
+- 区分 GET 与 POST 提交语义
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [HTML 概览](/docs/编程语言/Web前端/HTML/intro)
+- [HTML 元素分类](/docs/编程语言/Web前端/HTML/elements)
+
+## 核心概念
+
+`<form>` 是收集用户输入并提交的容器。每个控件通过 name 提供键、通过 value 提供值，提交时按 method（GET/POST）与 action 目标发送。控件需在 `<form>` 内才会随表单提交。
+
+本章主线：
+- 控件类型：text/password/radio/checkbox/select/textarea
+- name 与 value 如何组成提交数据
+- GET 与 POST 的差异
+
 ## `<form>`
 
 ### 简介
@@ -918,6 +942,17 @@ Chrome 浏览器使用三种颜色，表示指示条所处的位置。较好情�
 ## 参考链接
 
 - [HTML Interactive Form Validation](https://webkit.org/blog/7099/html-interactive-form-validation/), by Chris Dumez
+
+## 小结
+
+表单用 name=value 收集输入，method 决定数据如何送达 action。未设置 name 的控件不会被提交。
+
+## 练习
+
+动手检验一下自己：
+
+1. 设计一个含用户名与密码的登录表单，指出提交时发送了哪些键值对。
+2. 说明 GET 与 POST 在提交敏感信息时的取舍。
 
 ## 延伸阅读
 - [a](../a)

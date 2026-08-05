@@ -5,6 +5,30 @@ sidebar_position: 12
 ---
 # link
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 `<link>` 在 `<head>` 中声明外部资源关系的作用
+- 掌握 rel=stylesheet 引入 CSS 的写法
+- 了解 rel=preload/preconnect 的性能优化用途
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [HTML 概览](/docs/编程语言/Web前端/HTML/intro)
+- [URL 与编码](/docs/编程语言/Web前端/HTML/url)
+
+## 核心概念
+
+`<link>` 声明当前文档与外部资源的关系，最常见是引入样式表（rel=stylesheet）。它也能提示浏览器提前获取关键资源（preload/preconnect），改善加载性能。
+
+本章主线：
+- rel 的取值与资源关系
+- stylesheet 引入样式
+- preload/preconnect 性能提示
+
 ## 简介
 
 `<link>`标签主要用于将当前网页与相关的外部资源联系起来，通常放在`<head>`元素里面。最常见的用途就是加载 CSS 样式表。
@@ -239,6 +263,17 @@ sidebar_position: 12
 - `type`：外部资源的 MIME 类型，目前仅用于`rel="preload"`或`rel="prefetch"`的情况。
 - `title`：加载样式表时，用来标识样式表的名称。
 - `sizes`：用来声明图标文件的尺寸，比如加载苹果手机的图标文件。
+
+## 小结
+
+`<link>` 是“关系声明器”：把 CSS、图标、字体等外部资源与文档关联，并用 preload 等提示提前获取。
+
+## 练习
+
+动手检验一下自己：
+
+1. 写出引入主样式表并用 preconnect 提前连到 CDN 的 `<link>`。
+2. 说明 rel=stylesheet 与 `<style>` 内联样式的取舍。
 
 ## 延伸阅读
 - [a](../a)
