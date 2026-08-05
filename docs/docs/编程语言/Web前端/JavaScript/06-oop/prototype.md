@@ -11,6 +11,29 @@ description: "面向对象编程很重要的一个方面，就是对象的继承
 
 ES6 引入了 class 语法，基于 class 的继承不在这个教程介绍，请参阅《ES6 标准入门》一书的相关章节。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 prototype 与 __proto__ 的区别
+- 掌握原型链查找
+- 认识方法共享
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [对象类型](/docs/编程语言/Web前端/JavaScript/types/object)
+
+## 核心概念
+
+每个函数有 prototype 属性，每个对象有 __proto__ 指向其构造器的 prototype。属性查找沿 __proto__ 链向上，直到 null。
+
+本章主线：
+- prototype vs __proto__
+- 查找链
+- 方法共享
+
 ## 原型对象概述
 
 ### 构造函数的缺点
@@ -643,6 +666,17 @@ var module1 = (function ($, YAHOO) {
 ## 参考链接
 
 - [JavaScript Modules: A Beginner’s Guide](https://www.freecodecamp.org/news/javascript-modules-a-beginner-s-guide-783f7d7a5fcc), by Preethi Kasireddy
+
+## 小结
+
+方法放在 prototype 上供实例共享；查找沿 __proto__ 链向上直至 null。
+
+## 练习
+
+动手检验一下自己：
+
+1. 画出数组实例的 __proto__ 链。
+2. 说明在原型上添加方法为何被所有实例共享。
 
 ## 延伸阅读
 

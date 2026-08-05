@@ -5,6 +5,29 @@ description: "this关键字是一个非常重要的语法点。毫不夸张地�
 
 # this 关键字
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 this 的四种绑定（默认/隐式/显式/new）
+- 掌握 call/apply/bind
+- 认识箭头函数无自身 this
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [函数类型](/docs/编程语言/Web前端/JavaScript/types/function)
+
+## 核心概念
+
+this 的值由调用方式决定：普通调用为默认（严格模式 undefined），对象调用为隐式，call/apply/bind 为显式，new 为实例。箭头函数没有自己的 this，继承外层。
+
+本章主线：
+- 四种绑定规则
+- call/apply/bind
+- 箭头函数例外
+
 ## 涵义
 
 `this`关键字是一个非常重要的语法点。毫不夸张地说，不理解它的含义，大部分开发任务都无法完成。
@@ -939,6 +962,17 @@ bind(f, o)() // 123
 - Jonathan Creamer, [Avoiding the "this" problem in JavaScript](https://web.archive.org/web/2019/http://tech.pro/tutorial/1192/avoiding-the-this-problem-in-javascript)
 - Erik Kronberg, [Bind, Call and Apply in JavaScript](https://variadic.me/posts/2013-10-22-bind-call-and-apply-in-javascript.html)
 - Axel Rauschmayer, [JavaScript’s this: how it works, where it can trip you up](https://www.2ality.com/2014/05/this.html)
+
+## 小结
+
+this 取决于调用方；箭头函数继承外层 this，不受调用方式影响。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 bind 固定一个回调的 this。
+2. 说明箭头函数内 this 的来源。
 
 ## 延伸阅读
 

@@ -5,6 +5,29 @@ description: "Promise 对象是 JavaScript 的异步操作解决方案，为异�
 
 # Promise 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 Promise 三态
+- 掌握 then/catch/finally
+- 理解链式与错误冒泡
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [异步概览](/docs/编程语言/Web前端/JavaScript/async/general)
+
+## 核心概念
+
+Promise 表示一个尚未完成的可能结果，状态为 pending/fulfilled/rejected。then 注册回调并返回新 Promise，错误沿链向下冒泡到 catch。
+
+本章主线：
+- 三态与流转
+- then/catch/finally
+- 链式与错误冒泡
+
 ## 概述
 
 Promise 对象是 JavaScript 的异步操作解决方案，为异步操作提供统一接口。它起到代理作用（proxy），充当异步操作与回调函数之间的中介，使得异步操作具备同步操作的接口。Promise 可以让异步操作写起来，就像在写同步操作的流程，而不必一层层地嵌套回调函数。
@@ -286,6 +309,13 @@ console.log(3);
 - Bryan Klimt, [What’s so great about JavaScript Promises?](https://web.dev/articles/promises)
 - Jake Archibald, [JavaScript Promises There and back again](https://web.dev/articles/promises)
 - Mikito Takada, [7. Control flow, Mixu's Node book](http://book.mixu.net/node/ch7.html)
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 Promise 包装 setTimeout。
+2. 写一段 then 链并说明错误如何被 catch 捕获。
 
 ## 延伸阅读
 - [异步操作概述](../general)

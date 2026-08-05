@@ -7,6 +7,30 @@ description: "JavaScript 在Object对象上面，提供了很多相关方法，�
 
 JavaScript 在`Object`对象上面，提供了很多相关方法，处理面向对象编程的相关操作。本章介绍这些方法。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解基于原型的继承
+- 掌握 class/extends 语法糖
+- 区分实例方法与原型方法
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [对象类型](/docs/编程语言/Web前端/JavaScript/types/object)
+- [prototype 页](/docs/编程语言/Web前端/JavaScript/oop/prototype)
+
+## 核心概念
+
+JS 的面向对象基于原型：对象通过原型链共享方法。class/extends 是原型继承的语法糖，让结构更接近传统 OOP。
+
+本章主线：
+- 原型继承
+- class 与 extends
+- 实例 vs 原型方法
+
 ## Object.getPrototypeOf()
 
 `Object.getPrototypeOf`方法返回参数对象的原型。这是获取原型对象的标准方法。
@@ -435,6 +459,17 @@ function copyObject(orig) {
 ## 参考链接
 
 - Dr. Axel Rauschmayer, [JavaScript properties: inheritance and enumerability](https://www.2ality.com/2011/07/js-properties.html)
+
+## 小结
+
+JS 用原型链实现复用；class 是语法糖，底层仍是原型。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 class 定义一个带方法的类。
+2. 说明 extends 之后的原型链关系。
 
 ## 延伸阅读
 

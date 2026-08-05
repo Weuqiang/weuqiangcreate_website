@@ -9,6 +9,29 @@ description: "除了正常的运行模式，JavaScript 还有第二种运行模�
 
 同样的代码，在正常模式和严格模式中，可能会有不一样的运行结果。一些在正常模式下可以运行的语句，在严格模式下将不能运行。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解严格模式禁用的特性
+- 掌握其对 this 的影响
+- 认识它如何提前暴露错误
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [this 绑定](/docs/编程语言/Web前端/JavaScript/oop/this)
+
+## 核心概念
+
+'use strict' 在严格模式下禁用隐式全局变量、八进制、with 等，并把普通函数调用中的 this 设为 undefined（非严格模式为全局对象）。
+
+本章主线：
+- 禁用的危险特性
+- this 在严格模式下的变化
+- 提前报错
+
 ## 设计目的
 
 早期的 JavaScript 语言有很多设计不合理的地方，但是为了兼容以前的代码，又不能改变老的语法，只能不断添加新的语法，引导程序员使用新语法。
@@ -450,6 +473,17 @@ function package(protected) { // 语法错误
 - Dr. Axel Rauschmayer，[JavaScript’s strict mode: a summary](https://www.2ality.com/2011/01/javascripts-strict-mode-summary.html)
 - Douglas Crockford, [Strict Mode Is Coming To Town](https://web.archive.org/web/2019/https://www.yuiblog.com/blog/2010/12/14/strict-mode-is-coming-to-town/)
 - [JavaScript Strict Mode Support](https://web.archive.org/web/2019/https://java-script.limewebs.com/strictMode/test_hosted.html)
+
+## 小结
+
+严格模式让 this 不再默认指向全局，并禁用危险写法，更易发现 bug。
+
+## 练习
+
+动手检验一下自己：
+
+1. 对比严格与非严格模式下普通函数调用的 this。
+2. 举一个严格模式会提前报错的例子。
 
 ## 延伸阅读
 
