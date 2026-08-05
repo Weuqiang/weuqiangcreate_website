@@ -1,6 +1,7 @@
 ---
 title: "无线通信 WiFi / BLE / LoRa"
 sidebar_position: 4
+description: "WiFi、BLE、LoRa 的物理层差异、协议栈与嵌入式接入方式。"
 ---
 
 # 无线通信 WiFi / BLE / LoRa
@@ -16,8 +17,14 @@ sidebar_position: 4
 - 掌握 LoRa 的扩频因子（SF）取舍与占空比法规限制。
 - 知道天线布局的硬性要求：净空区、匹配、地平面。
 
-## 核心直觉
+## 前置知识
 
+在阅读下面的内容前，建议先掌握：
+
+- 无线与总线：[CAN 总线与无线通信](../CAN总线与无线通信)
+- 板级总线：[UART / SPI / I2C 详解](../UART_SPI_I2C详解)
+
+## 核心概念
 ### 直觉一：没有最好的无线，只有最匹配的三角约束
 
 ```text
