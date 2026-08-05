@@ -5,6 +5,29 @@ description: "JSON 格式（JavaScript Object Notation 的缩写）是一种用�
 
 # JSON 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握 JSON.parse/stringify
+- 理解序列化限制（函数/undefined/循环）
+- 会用 replacer 与 space
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [对象类型](/docs/编程语言/Web前端/JavaScript/types/object)
+
+## 核心概念
+
+JSON 是轻量数据交换格式。JSON.stringify 把值序列化为字符串，JSON.parse 还原；函数、undefined、循环引用无法被序列化。
+
+本章主线：
+- parse/stringify 基础
+- 序列化限制
+- replacer 与 space
+
 ## JSON 格式
 
 JSON 格式（JavaScript Object Notation 的缩写）是一种用于数据交换的文本格式，2001年由 Douglas Crockford 提出，目的是取代繁琐笨重的 XML 格式。
@@ -15,15 +38,15 @@ JSON 格式（JavaScript Object Notation 的缩写）是一种用于数据交换
 
 JSON 对值的类型和格式有严格的规定。
 
-> 1. 复合类型的值只能是数组或对象，不能是函数、正则表达式对象、日期对象。
->
-> 1. 原始类型的值只有四种：字符串、数值（必须以十进制表示）、布尔值和`null`（不能使用`NaN`, `Infinity`, `-Infinity`和`undefined`）。
->
-> 1. 字符串必须使用双引号表示，不能使用单引号。
->
-> 1. 对象的键名必须放在双引号里面。
->
-> 1. 数组或对象最后一个成员的后面，不能加逗号。
+`>` 1. 复合类型的值只能是数组或对象，不能是函数、正则表达式对象、日期对象。
+`>`
+`>` 1. 原始类型的值只有四种：字符串、数值（必须以十进制表示）、布尔值和`null`（不能使用`NaN`, `Infinity`, `-Infinity`和`undefined`）。
+`>`
+`>` 1. 字符串必须使用双引号表示，不能使用单引号。
+`>`
+`>` 1. 对象的键名必须放在双引号里面。
+`>`
+`>` 1. 数组或对象最后一个成员的后面，不能加逗号。
 
 以下都是合法的 JSON。
 
@@ -416,6 +439,17 @@ JSON.parse(JSON.stringify(obj))
 - Dr. Axel Rauschmayer, [JavaScript’s JSON API](https://www.2ality.com/2011/08/json-api.html)
 - Jim Cowart, [What You Might Not Know About JSON.stringify()](https://web.archive.org/web/2019/https://freshbrewedcode.com/jimcowart/2013/01/29/what-you-might-not-know-about-json-stringify/)
 - Marco Rogers, [What is JSON?](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON)
+
+## 小结
+
+JSON 只承载数据；stringify 丢弃函数与 undefined，循环引用会抛错。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 stringify 带 space 美化输出。
+2. 解释为何函数字段在序列化后消失。
 
 ## 延伸阅读
 

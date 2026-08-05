@@ -5,6 +5,29 @@ description: "JavaScript 原生提供Object对象（注意起首的O是大写）
 
 # Object 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 掌握 Object.keys/values/entries
+- 理解 Object.assign 浅拷贝
+- 了解冻结与密封
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [对象类型](/docs/编程语言/Web前端/JavaScript/types/object)
+
+## 核心概念
+
+Object 提供一系列静态方法操作任意对象：keys/values/entries 读取属性，assign 做浅合并，freeze/seal 控制可变性。
+
+本章主线：
+- 读取：keys/values/entries
+- 合并：assign
+- 控制：freeze/seal
+
 ## 概述
 
 JavaScript 原生提供`Object`对象（注意起首的`O`是大写），本章介绍该对象原生的各种方法。
@@ -116,7 +139,7 @@ isObject(true) // false
 var obj = new Object();
 ```
 
-> 注意，通过`var obj = new Object()`的写法生成新对象，与字面量的写法`var obj = {}`是等价的。或者说，后者只是前者的一种简便写法。
+`>` 注意，通过`var obj = new Object()`的写法生成新对象，与字面量的写法`var obj = {}`是等价的。或者说，后者只是前者的一种简便写法。
 
 `Object`构造函数的用法与工具方法很相似，几乎一模一样。使用时，可以接受一个参数，如果该参数是一个对象，则直接返回这个对象；如果是一个原始类型的值，则返回该值对应的包装对象（详见《包装对象》一章）。
 
@@ -463,6 +486,17 @@ obj.hasOwnProperty('toString') // false
 - Javier Márquez, [JavaScript properties are enumerable, writable and configurable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty)
 - Sella Rafaeli, [Native JavaScript Data-Binding](https://www.sellarafaeli.com/blog/native_javascript_data_binding): 使用存取函数实现model与view的双向绑定
 - Lea Verou, [Copying object properties, the robust way](https://lea.verou.me/2015/08/copying-properties-the-robust-way/)
+
+## 小结
+
+Object 静态方法是对象操作的瑞士军刀；assign 为浅拷贝，freeze 可防篡改。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 entries 与 fromEntries 反转对象的键值。
+2. 用 assign 合并两个对象并说明其为浅拷贝。
 
 ## 延伸阅读
 - [Array 对象](../array)

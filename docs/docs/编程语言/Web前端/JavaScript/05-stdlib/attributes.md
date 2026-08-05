@@ -5,6 +5,29 @@ description: "JavaScript 提供了一个内部数据结构，用来描述对象�
 
 # 属性描述对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解数据描述符与访问器描述符
+- 掌握 Object.defineProperty 与 getOwnPropertyDescriptor
+- 了解可枚举/可配置/可写三个开关
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [对象类型](/docs/编程语言/Web前端/JavaScript/types/object)
+
+## 核心概念
+
+对象属性由描述符控制：value/writable/enumerable/configurable 为数据描述符，get/set 为访问器描述符。Object.defineProperty 可精细控制属性行为。
+
+本章主线：
+- 数据 vs 访问器描述符
+- defineProperty 与 descriptor
+- 可写/可枚举/可配置
+
 ## 概述
 
 JavaScript 提供了一个内部数据结构，用来描述对象的属性，控制它的行为，比如该属性是否可写、可遍历等等。这个内部数据结构称为“属性描述对象”（attributes object）。每个属性都有自己对应的属性描述对象，保存该属性的一些元信息。
@@ -787,6 +810,17 @@ obj.bar // ["a", "b", "c"]
 ```
 
 上面代码中，`obj.bar`属性指向一个数组，`obj`对象被冻结以后，这个指向无法改变，即无法指向其他值，但是所指向的数组是可以改变的。
+
+## 小结
+
+属性描述符决定属性的可写、可枚举、可配置；defineProperty 用于精细元编程。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 defineProperty 定义一个只读属性。
+2. 说明 enumerable 对 for-in 与 Object.keys 的影响。
 
 ## 延伸阅读
 

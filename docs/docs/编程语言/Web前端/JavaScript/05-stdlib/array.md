@@ -5,6 +5,29 @@ description: "Array是 JavaScript 的原生对象，同时也是一个构造函�
 
 # Array 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分 Array 构造器与字面量
+- 掌握静态方法 from/of/isArray
+- 了解实例方法的分类
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [数组类型](/docs/编程语言/Web前端/JavaScript/types/array)
+
+## 核心概念
+
+Array 是内置构造器，既提供 Array.from/Array.of 等静态方法，也定义所有数组实例共享的原型方法。多数实例方法区分为改变原数组与返回新数组两类。
+
+本章主线：
+- 构造器与字面量
+- 静态方法 from/of/isArray
+- 原型方法分类
+
 ## 构造函数
 
 `Array`是 JavaScript 的原生对象，同时也是一个构造函数，可以用它生成新的数组。
@@ -823,6 +846,17 @@ users
 ## 参考链接
 
 - Nicolas Bevacqua, [Fun with JavaScript Native Array Functions](http://flippinawesome.org/2013/11/25/fun-with-javascript-native-array-functions/)
+
+## 小结
+
+Array 既是构造器也是方法仓库；优先字面量创建，方法注意是否改变原数组。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 Array.from 把类数组对象转为真正的数组。
+2. 说明 Array.of(3) 与 new Array(3) 的区别。
 
 ## 延伸阅读
 

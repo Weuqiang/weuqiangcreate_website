@@ -7,6 +7,29 @@ description: "Date对象是 JavaScript 原生的时间库。它以国际标准�
 
 `Date`对象是 JavaScript 原生的时间库。它以国际标准时间（UTC）1970年1月1日00:00:00作为时间的零点，可以表示的时间范围是前后各1亿天（单位为毫秒）。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解时间戳（毫秒）与 Date 实例
+- 掌握 now/parse/UTC
+- 了解时区陷阱
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [JavaScript 简介](/docs/编程语言/Web前端/JavaScript/basic/introduction)
+
+## 核心概念
+
+Date 封装自 1970-01-01 UTC 起的毫秒数。new Date() 无参取当前时间，传入字符串或数字按规则解析，月份为 0 基。
+
+本章主线：
+- 时间戳与构造
+- 静态 now/parse
+- get/set 与 UTC
+
 ## 普通函数的用法
 
 `Date`对象可以作为普通函数直接调用，返回一个代表当前时间的字符串。
@@ -552,6 +575,17 @@ d // Sun Jan 06 2013 06:00:00 GMT+0800 (CST)
 
 - Rakhitha Nimesh，[Getting Started with the Date Object](https://www.sitepoint.com/beginners-guide-to-javascript-date-and-time/)
 - Ilya Kantor, [Date/Time functions](https://javascript.info/date)
+
+## 小结
+
+Date 围绕毫秒时间戳；月份 0 基、时区易错，推荐用 UTC 方法或日期库。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 Date.now 计算一段代码的耗时。
+2. 说明 getMonth 返回 0-11 的坑。
 
 ## 延伸阅读
 

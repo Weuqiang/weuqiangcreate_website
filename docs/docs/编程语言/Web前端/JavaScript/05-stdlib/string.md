@@ -5,6 +5,29 @@ description: "String对象是 JavaScript 原生提供的三个包装对象之一
 
 # String 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分 String() 与原始字符串
+- 掌握 fromCharCode/raw
+- 了解编码相关方法
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [字符串类型](/docs/编程语言/Web前端/JavaScript/types/string)
+
+## 核心概念
+
+String 是原始字符串的包装对象，提供 fromCharCode/fromCodePoint 等静态方法。多数文本处理用实例方法（已在字符串类型页讲解）。
+
+本章主线：
+- String() 转换
+- fromCharCode/fromCodePoint
+- 编码与码点
+
 ## 概述
 
 `String`对象是 JavaScript 原生提供的三个包装对象之一，用来生成字符串对象。
@@ -432,6 +455,17 @@ matches.input // "cat, bat, sat, fat"
 ## 参考链接
 
 - Ariya Hidayat, [JavaScript String: substring, substr, slice](http://ariya.ofilabs.com/2014/02/javascript-string-substring-substr-slice.html)
+
+## 小结
+
+String 包装对象提供字符与码点转换；日常处理优先用字符串实例方法。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用 fromCharCode 把码点数组变成字符串。
+2. 说明码元与码点的区别。
 
 ## 延伸阅读
 

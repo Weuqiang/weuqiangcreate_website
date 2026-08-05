@@ -7,6 +7,29 @@ description: "正则的两种创建方式与实例属性，test、exec 及字符
 
 `RegExp`对象提供正则表达式的功能。
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解正则字面量与 new RegExp
+- 掌握标志 g/i/m
+- 会用捕获组与量词
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [字符串类型](/docs/编程语言/Web前端/JavaScript/types/string)
+
+## 核心概念
+
+正则用于模式匹配。字面量 /pat/flags 或 new RegExp(src, flags) 创建。g 表示全局、i 忽略大小写、捕获组用括号，量词星号加号问号控制重复次数。
+
+本章主线：
+- 字面量 vs 构造器
+- 标志 g/i/m
+- 分组与量词
+
 ## 概述
 
 正则表达式（regular expression）是一种表达文本模式（即字符串结构）的方法，有点像字符串的模板，常常用来按照“给定模式”匹配文本。比如，正则表达式给出一个 Email 地址的模式，然后用它来确定一个字符串是否为 Email 地址。JavaScript 的正则表达式体系是参照 Perl 5 建立的。
@@ -568,7 +591,7 @@ s.match(/yes[^]*day/) // [ 'yes\nmake my day']
 
 上面代码中，字符串`s`含有一个换行符，点号不包括换行符，所以第一个正则表达式匹配失败；第二个正则表达式`[^]`包含一切字符，所以匹配成功。
 
-> 注意，脱字符只有在字符类的第一个位置才有特殊含义，否则就是字面含义。
+`>` 注意，脱字符只有在字符类的第一个位置才有特殊含义，否则就是字面含义。
 
 **（2）连字符（-）**
 
@@ -970,6 +993,17 @@ m // ['b']
 - Mozilla Developer Network, [Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions)
 - Axel Rauschmayer, [The flag /g of JavaScript’s regular expressions](https://www.2ality.com/2013/08/regexp-g.html)
 - Sam Hughes, [Learn regular expressions in about 55 minutes](http://qntm.org/files/re/re.html)
+
+## 小结
+
+正则通过模式匹配文本；注意 g 标志在 test/exec 上的状态共享。
+
+## 练习
+
+动手检验一下自己：
+
+1. 用正则提取字符串中的数字。
+2. 写一个忽略大小写匹配邮箱前缀的模式。
 
 ## 延伸阅读
 

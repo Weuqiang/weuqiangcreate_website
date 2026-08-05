@@ -5,6 +5,29 @@ description: "Boolean对象是 JavaScript 的三个包装对象之一。作为�
 
 # Boolean 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 理解 Boolean 作为函数与构造器的区别
+- 掌握 Boolean() 转换
+- 认识 new Boolean 的包装对象陷阱
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [null/undefined/boolean 类型](/docs/编程语言/Web前端/JavaScript/types/null-undefined-boolean)
+
+## 核心概念
+
+Boolean(value) 作为函数返回原始布尔值；new Boolean(value) 返回包装对象，而对象永远为真，容易踩坑。
+
+本章主线：
+- Boolean() 函数转换
+- new Boolean 包装对象陷阱
+- 假值表
+
 ## 概述
 
 `Boolean`对象是 JavaScript 的三个包装对象之一。作为构造函数，它主要用于生成布尔值的包装对象实例。
@@ -89,6 +112,17 @@ if (new Boolean(null)) {
   console.log('true');
 } // true
 ```
+
+## 小结
+
+用 Boolean() 转原始布尔；避免 new Boolean 产生恒真的包装对象。
+
+## 练习
+
+动手检验一下自己：
+
+1. 预测 new Boolean(false) 在 if 中的真假。
+2. 用 Boolean() 把一个非空字符串转为布尔值。
 
 ## 延伸阅读
 

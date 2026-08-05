@@ -5,6 +5,29 @@ description: "Number对象是数值对应的包装对象，可以作为构造函
 
 # Number 对象
 
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分 Number() 与 parseInt/parseFloat
+- 掌握 Number.isNaN/isInteger
+- 了解 EPSILON 容差
+
+## 前置知识
+
+在阅读下面的内容前，建议先掌握：
+
+- [Number 类型](/docs/编程语言/Web前端/JavaScript/types/number)
+
+## 核心概念
+
+Number 既是包装对象也提供静态方法。Number.isNaN 只认数字 NaN（优于全局 isNaN），Number.isInteger 判断整数，Number.EPSILON 用于浮点容差比较。
+
+本章主线：
+- Number() vs parseInt/parseFloat
+- isNaN/isInteger
+- EPSILON 容差
+
 ## 概述
 
 `Number`对象是数值对应的包装对象，可以作为构造函数使用，也可以作为工具函数使用。
@@ -256,6 +279,17 @@ n.x // undefined
 ```
 
 上面代码中，`n`是一个原始类型的数值。直接在它上面新增一个属性`x`，不会报错，但毫无作用，总是返回`undefined`。这是因为一旦被调用属性，`n`就自动转为`Number`的实例对象，调用结束后，该对象自动销毁。所以，下一次调用`n`的属性时，实际取到的是另一个对象，属性`x`当然就读不出来。
+
+## 小结
+
+用 Number.isNaN 避免全局 isNaN 的隐式转换；浮点比较用 EPSILON 做容差。
+
+## 练习
+
+动手检验一下自己：
+
+1. 对比 Number.isNaN('x') 与全局 isNaN('x')。
+2. 写一个浮点相等函数 abs(a-b) 小于 Number.EPSILON。
 
 ## 延伸阅读
 
