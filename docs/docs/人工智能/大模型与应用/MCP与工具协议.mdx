@@ -1,0 +1,121 @@
+---
+title: "MCP 与工具协议"
+description: "Model Context Protocol 的定位：为何需要统一的模型↔工具/数据源接口，其 Host/Client/Server 架构与 Tools/Resources/Prompts 原语，以及与 Agent 开发的关系"
+sidebar_position: 25
+---
+
+# MCP 与工具协议
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 说清 MCP（Model Context Protocol）解决什么痛点：模型接工具的“碎片化”集成
+- 描述其 Host / Client / Server 三层架构与基于 JSON-RPC 的通信
+- 区分三大原语 Tools / Resources / Prompts 各自的职责
+- 理解 MCP 与 [Agent 开发](/docs/人工智能/大模型与应用/Agent开发) 的关系（互补而非替代）
+
+## 前置知识
+
+- 先读 [Agent 开发](/docs/人工智能/大模型与应用/Agent开发)（为什么 Agent 需要工具、规划与记忆）
+- 以及 [上下文工程](/docs/人工智能/大模型与应用/上下文工程)（外部知识检索、工具集成如何组织进上下文）
+
+## 核心概念
+
+**MCP（Model Context Protocol，模型上下文协议）**是 2024 年提出的开放标准，目标是**统一“大模型 ↔ 外部工具/数据源”的接口**。在它出现前，每个 Agent 要把模型接到数据库、文件系统、API、浏览器……都得各自写一套适配：参数格式、鉴权、错误处理、传输方式全不一样，换个模型或换个工具就要重写——这就是“M×N 集成灾难”。
+
+MCP 的思路是：定义一套**通用协议**，让“模型侧”（Host/Client）和“工具侧”（Server）都按同一套规则对话。于是集成变成 **M+N**：每个工具实现一次 Server，每个应用实现一次 Client，彼此就能任意组合。
+
+它与 Agent 的关系要分清：
+
+- [Agent 开发](/docs/人工智能/大模型与应用/Agent开发) 讲的是**为什么**需要工具、怎么规划与反思（方法论）；
+- MCP 讲的是**用什么标准**把工具接进来（工程协议）。
+
+两者互补：Agent 框架负责“思考与决策”，MCP 负责“标准化的手脚”。
+
+本章主线：
+- 痛点：工具集成的碎片化
+- 架构：Host / Client / Server 与传输方式
+- 原语：Tools / Resources / Prompts
+- 安全与生态边界
+
+## 架构：三层 + 两种传输
+
+```text
+┌──────────────────────────────┐
+│ Host（如 IDE / 桌面客户端）    │  持有模型、管理多个 Client
+│   ┌──────────┐               │
+│   │ Client A │◄─┐            │
+│   └──────────┘  │  JSON-RPC  │
+│   ┌──────────┐  │            │
+│   │ Client B │◄─┼──► Server 1（暴露工具/数据）│
+│   └──────────┘  │     Server 2（文件系统）   │
+└─────────────────┼────────────┴──────────────┘
+                  │
+      传输：本地 stdio  或  远程 SSE/HTTP（Streamable）
+```
+
+- **Host**：运行模型的应用（如 Claude 桌面端、某 IDE 插件），它创建并管理多个 **Client**。
+- **Client**：Host 内与单个 Server 一对一连接的组件，负责协议握手与消息收发。
+- **Server**：独立进程/服务，封装具体能力（查数据库、读文件、调 API），通过标准接口暴露。
+- **传输**：本地场景用 `stdio`（标准输入输出，进程间）；远程场景用 `SSE`/`HTTP`（Streamable HTTP），便于跨网络。
+
+## 三大原语
+
+MCP 把“能喂给模型的东西”分成三类清晰的原语：
+
+- **Tools（工具）**：模型可以**主动调用**的函数（带 schema 描述参数），如“搜索网页”“执行 SQL”。这是 Agent 行动的能力。
+- **Resources（资源）**：作为**上下文数据**被动提供给模型的内容（如文件、数据库记录、配置），模型读取但不“执行”。
+- **Prompts（提示模板）**：预先定义的可复用提示工作流（如“把这个 diff 总结成提交信息”），由用户触发而非模型自发调用。
+
+> 这种划分呼应了 [上下文工程](/docs/人工智能/大模型与应用/上下文工程) 里“外部知识检索 / 工具集成 / 提示模板”的分类，只不过 MCP 把它**标准化成了协议层**。
+
+## 示例：一个最小 MCP Server（伪结构）
+
+```python
+# 概念骨架：用 MCP SDK 暴露一个"查天气"工具
+# server.py
+from mcp import Server, Tool
+
+app = Server("weather")
+
+@app.tool(
+    name="get_weather",
+    description="根据城市名返回当前天气",
+    input_schema={"type": "object",
+                  "properties": {"city": {"type": "string"}},
+                  "required": ["city"]},
+)
+def get_weather(city: str):
+    # 真实实现里这里调用天气 API，并做鉴权/限流/错误处理
+    return {"temperature": 23, "condition": "晴", "city": city}
+
+# Host 端的 Client 发现该工具后，
+# 模型即可在合适时机输出调用 {tool: "get_weather", args: {city: "北京"}}，
+# 由 Host 执行并把结果回填给模型——无需为每个 API 单独写适配。
+```
+
+## 易错点
+
+- **不是银弹**：MCP 标准化了“接口”，但鉴权、限流、幂等、错误恢复仍要在 Server 里认真做；接外部命令的 Server 更要防命令注入。
+- **Server 安全边界**：一个暴露“执行 shell / 读写任意文件”的 Server 若被滥用，等同把主机权限交给模型——最小权限原则是底线。
+- **过度抽象**：小项目里直接调 API 可能比引入 MCP 更省事；只有当“多模型 × 多工具”真的出现时才值得上协议。
+- **版本与兼容**：协议仍在演进，Client/Server 版本错配会导致原语不可用；需约定最低兼容版本。
+- **与 Agent 框架的关系**：MCP 负责“接工具”，不负责“怎么决策用工具”——后者仍是 Agent 框架的职责，二者叠加而非替换。
+
+## 练习
+
+1. 画一个 `M×N` 集成 vs `M+N` 集成的对比图，说明 MCP 如何削减重复适配代码。
+2. 为你的一个内部 API 设计 MCP Server 的 Tool schema（参数、描述、返回），并标注需要哪些安全控制。
+3. 说明为什么“模型决定调用哪个 Tool”仍属于 Agent 框架职责，而不是 MCP 的职责。
+
+## 小结
+
+MCP 把“模型接工具/数据源”从各自为政的碎片化集成，收敛为一套开放协议：Host 管模型与 Client、Server 封装能力、JSON-RPC 传输、Tools/Resources/Prompts 三类原语分工清晰。它与 [Agent 开发](/docs/人工智能/大模型与应用/Agent开发) 互补——后者教模型“为何及如何决策用工具”，前者提供“标准化的手脚”。落地时务必守住 Server 的最小权限与安全边界。
+
+## 延伸阅读
+
+- [Agent 开发](/docs/人工智能/大模型与应用/Agent开发)
+- [上下文工程](/docs/人工智能/大模型与应用/上下文工程)
+- [检索增强](/docs/人工智能/大模型与应用/检索增强)
+- Model Context Protocol 官方文档（Anthropic, 2024）

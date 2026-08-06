@@ -1,0 +1,122 @@
+---
+title: "混合专家模型（MoE）"
+description: "MoE 的稀疏激活动机、路由与负载均衡、代表模型（Mixtral/Switch），以及与稠密模型在参数量/推理/训练上的权衡"
+sidebar_position: 24
+---
+
+# 混合专家模型（MoE）
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 说清 MoE 为什么能“参数很多却推理便宜”
+- 解释路由（gating）、Top-k 专家、专家容量与负载均衡损失的作用
+- 对比 MoE 与稠密（dense）模型在参数量、激活量、显存、训练稳定性上的差异
+- 识别 MoE 落地的典型坑（负载不均、显存仍大、专家并行通信）
+
+## 前置知识
+
+- 先读 [大模型训练与对齐](/docs/人工智能/大模型与应用/大模型训练与对齐)（FFN、预训练与缩放定律）
+- 以及 [推理加速](/docs/人工智能/大模型与应用/推理加速)（MoE 对推理吞吐的影响）
+
+## 核心概念
+
+**混合专家（Mixture of Experts, MoE）**是一种“用很多参数、但每次只激活一小部分”的架构。传统稠密模型对每个 token 都跑全部参数；MoE 把前馈层（FFN）换成**多个并行专家**，再加一个**路由器（router/gating）** 决定每个 token 交给哪几个专家。于是：
+
+- **总参数量**可以很大（容纳知识容量），
+- **每个 token 实际激活的参数量**却很小（推理成本低）。
+
+直觉：与其让一个“全能但庞大”的网络处理所有输入，不如养一支“各有所长的专家团队”，来活儿时只叫相关几位。代表模型有 Switch Transformer、GLaM、Mixtral 8×7B、DeepSeekMoE 等。
+
+本章主线：
+- 为什么 MoE：参数与算力的解耦
+- 结构：router + Top-k 专家 + 容量
+- 负载均衡：auxiliary loss 与噪声路由
+- 与稠密模型的全面权衡
+
+## 结构：路由决定“叫哪几位专家”
+
+```text
+输入 token
+   │
+   ▼
+Router（一个小型线性层 + softmax）
+   │  输出对每个专家的得分
+   ▼
+Top-k 选择（如选得分最高的 2 个专家）
+   │
+   ├─► Expert_3  (FFN) ─┐
+   ├─► Expert_7  (FFN) ─┤
+   │                    ▼
+   └─ 加权求和（按 router 权重组合专家输出）
+```
+
+关键点：
+
+- **Top-k 稀疏激活**：每个 token 只走 k 个专家（常见 k=1 或 2），其余专家“闲置”，所以 FLOPs 只随激活参数增长，不随总参数增长。
+- **专家容量（expert capacity）**：为防止某个专家被挤爆，限定每个专家最多处理固定数量的 token；超容量的 token 被丢弃或走“残差/溢出”路径。
+- **负载均衡损失（auxiliary loss）**：如果 router 总是挑同一两个专家，其余变“哑巴”。训练时额外加一个鼓励“各专家被均匀使用”的损失，强制分散。
+- **噪声路由（noisy top-k）**：在 router 打分里加一点噪声，帮助探索、避免早期锁定，提升均衡。
+
+## 示例：一个最小 router
+
+```python
+import torch, torch.nn as nn
+
+class Top2Router(nn.Module):
+    def __init__(self, d_model, n_experts):
+        super().__init__()
+        self.gate = nn.Linear(d_model, n_experts, bias=False)
+
+    def forward(self, x):
+        # x: [tokens, d_model]
+        logits = self.gate(x)                 # 对每个专家的得分
+        probs = torch.softmax(logits, dim=-1)
+        top2 = torch.topk(probs, k=2, dim=-1) # 选 2 个专家
+        # 用选中的权重对专家输出做加权求和（此处略去专家 FFN 调用）
+        weights, indices = top2.values, top2.indices
+        return indices, weights
+
+# 训练时还要算 load-balancing loss：
+#   aux = n_experts * sum(f_i * P_i)，f_i=该专家被选中比例，P_i=router 平均概率
+# 目标是让 f 与 P 都趋于 1/n_experts（均匀使用）。
+```
+
+## MoE vs 稠密：全面权衡
+
+| 维度 | 稠密 Dense | MoE |
+|------|-----------|-----|
+| 总参数量 | = 激活量 | 远大于激活量（如 8×7B 总 46B，激活 ~13B） |
+| 单 token 算力 | 高 | 低（只跑 Top-k 专家） |
+| 显存占用 | 权重即激活量 | **总权重仍要驻留显存**，显存大 |
+| 训练稳定性 | 稳 | 路由震荡、负载不均，需 aux loss |
+| 并行方式 | 数据/张量并行 | 还需**专家并行**（专家分布到不同设备） |
+| 微调 | 直接训 | 易“专家退化”，需小心正则 |
+
+## 易错点
+
+- **负载不均（expert collapse）**：router 偷懒只挑少数专家，多数专家不更新——靠负载均衡损失 + 噪声路由缓解，但仍需监控专家利用率。
+- **显存并不小**：MoE 省的是“算力”不是“显存”，总权重都要加载；部署时要算总参数量的显存，而非激活量。
+- **训练震荡**：路由是离散选择，梯度信号不稳，学习率与 aux loss 权重要调；否则训练曲线跳动。
+- **微调时专家退化**：小数据微调可能让 router 塌缩到某几个专家，破坏稀疏优势；可冻结 router 或加约束。
+- **专家并行通信开销**：专家跨设备分布时，token 路由带来大量 all-to-all 通信，硬件拓扑与批量设计很关键。
+
+## 练习
+
+1. 一个 MoE 标称 “8×7B”、Top-2 路由，估算其总参数与每 token 激活参数，并说明为何“推理便宜但显存贵”。
+2. 写一个负载均衡损失的 PyTorch 片段（提示：统计各专家被选中频率 `f` 与 router 平均概率 `P`，最小化 `n * sum(f*P)`）。
+3. 对比“稠密 13B”与“MoE 总 46B/激活 13B”在相同激活算力下的知识容量差异，讨论何时选 MoE。
+
+## 小结
+
+MoE 通过“router + 稀疏激活专家”把**总参数（知识容量）** 与 **每 token 激活量（推理成本）** 解耦，让模型既能大又能快。代价是显存仍随总参数增长、训练需负载均衡与防震荡、部署需专家并行通信。它是当前大模型“低成本扩容”的主流路线之一，与 [长上下文](/docs/人工智能/大模型与应用/长上下文与位置编码扩展)、[新架构](/docs/人工智能/大模型与应用/状态空间模型与新架构) 共同构成扩展大模型能力的三驾马车。
+
+## 延伸阅读
+
+- [大模型训练与对齐](/docs/人工智能/大模型与应用/大模型训练与对齐)
+- [推理加速](/docs/人工智能/大模型与应用/推理加速)
+- [状态空间模型与新架构](/docs/人工智能/大模型与应用/状态空间模型与新架构)
+- "Switch Transformers: Scaling to Trillion Parameter Models" (Google)
+- "Mixtral of Experts" (Mistral AI)
+- "DeepSeekMoE: Towards Ultimate Expert Specialization"
