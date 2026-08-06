@@ -1,0 +1,138 @@
+---
+title: "关系模型与 SQL"
+sidebar_position: 2
+description: "数据库的逻辑层——关系、键与约束、关系代数与 SQL 的对应、范式与规范化，以及为什么「设计好表」比「写好查询」更基础。"
+---
+
+# 关系模型与 SQL
+
+数据库不只是「存数据的箱子」，它首先是一种**数据建模语言**。关系模型用「表（关系）」这种简单结构统一表达实体与联系，再用 SQL 这种声明式语言查询。本章先建立关系模型的概念（键、约束、代数），再落到 SQL 与规范化——**表结构设计得对，后面的查询、性能、一致性才站得住**。
+
+## 学习目标
+
+- 说清关系、属性、元组、键（超键/候选键/主键/外键）的定义与区别。
+- 把自然语言查询翻译成关系代数（$\sigma,\pi,\bowtie,\cup,-,\times$），并理解它与 SQL 的对应。
+- 用函数依赖判断范式（1NF/2NF/3NF/BCNF），并能做无损分解消除冗余。
+- 指出 SQL 中 NULL 与三值逻辑带来的常见陷阱。
+
+## 前置知识
+
+- 数据如何被程序组织，见 [数据结构与算法](/docs/计算机科学基础/数据结构与算法)。
+- 集合与逻辑基础见 [集合逻辑与证明](/docs/数学基础/离散数学/集合逻辑与证明)。
+- 后续物理实现见 [存储引擎与索引](/docs/计算机科学基础/数据库系统/存储引擎与索引)。
+
+## 核心概念
+
+### 关系模型的基本对象
+
+- **关系（Relation）** = 一张表；**属性（Attribute）** = 列；**元组（Tuple）** = 行。
+- **超键（Superkey）**：能唯一标识元组的属性集。**候选键** = 最小的超键（去掉任一属性就不唯一）。**主键** = 被选定的候选键。
+- **外键（Foreign Key）**：本表某属性引用另一表的主键，表达「联系」，由系统强制引用完整性。
+
+### 关系代数与 SQL 的对应
+
+关系代数是 SQL 的理论内核，SQL 是它的声明式外壳：
+
+| 关系代数 | 含义 | SQL 对应 |
+|---------|------|---------|
+| $\sigma_C(R)$ | 选择（按条件过滤行） | `WHERE` |
+| $\pi_A(R)$ | 投影（取某些列） | `SELECT` 列 |
+| $R\bowtie S$ | 连接（按匹配条件拼行） | `JOIN` |
+| $R\cup S,\ R-S$ | 并、差 | `UNION`, `EXCEPT` |
+| $R\times S$ | 笛卡尔积 | 多表 `FROM` 无连接条件 |
+
+关键区别：代数描述「**做什么**」，SQL 也描述「做什么」但**不指定怎么做**——「怎么做」留给优化器（见 [查询处理与优化](/docs/计算机科学基础/数据库系统/查询处理与优化)）。这正是声明式语言的力量：你只管意图，引擎找最优路径。
+
+### 范式与规范化
+
+**函数依赖** $A\to B$：知道 $A$ 的值就能确定 $B$ 的值。范式用函数依赖消除冗余与更新异常：
+
+- **1NF**：每个属性原子不可再分（无重复组、无多值字段）。
+- **2NF**：满足 1NF，且**非主属性完全函数依赖**于候选键（消除对「键的一部分」的部分依赖）。
+- **3NF**：满足 2NF，且**非主属性不传递依赖**于候选键（消除 $A\to B\to C$ 的传递）。
+- **BCNF**：更强的 3NF——**任何非平凡依赖的左侧都含候选键**，彻底消除所有冗余。
+
+规范化不是「越高越好」：过度范式化会引入大量 `JOIN`，有时为查询性能会**故意反范式化**（冗余换读性能）。设计是权衡。
+
+### SQL 示例
+
+```sql
+-- 建表：主键 + 外键 + 约束
+CREATE TABLE department (
+    dept_id   INT PRIMARY KEY,
+    name      VARCHAR(50) NOT NULL,
+    location  VARCHAR(50)
+);
+
+CREATE TABLE employee (
+    emp_id    INT PRIMARY KEY,
+    name      VARCHAR(50) NOT NULL,
+    dept_id   INT REFERENCES department(dept_id),   -- 外键
+    salary    NUMERIC(10,2) CHECK (salary > 0)
+);
+
+-- 查询：投影 + 选择 + 连接 + 分组
+SELECT d.name AS dept, COUNT(*) AS headcount, AVG(e.salary) AS avg_salary
+FROM employee e
+JOIN department d ON e.dept_id = d.dept_id
+WHERE e.salary > 5000
+GROUP BY d.name
+HAVING COUNT(*) > 3
+ORDER BY avg_salary DESC;
+```
+
+## 最小示例
+
+以下用 Python（sqlite3）演示「函数依赖导致的更新异常」以及规范化如何消除它：
+
+```python
+import sqlite3
+
+con = sqlite3.connect(":memory:")
+cur = con.cursor()
+# 反范式：把部门位置冗余进员工表 -> (emp_id) 是键，但 location 依赖 dept_id 而非 emp_id
+cur.execute("CREATE TABLE emp_bad (emp_id INT PRIMARY KEY, name TEXT, dept TEXT, location TEXT)")
+cur.executemany("INSERT INTO emp_bad VALUES (?,?,?,?)", [
+    (1, "Alice", "Sales", "NY"), (2, "Bob", "Sales", "NY"), (3, "Cara", "Eng", "SF"),
+])
+
+# 异常1：Sales 搬家到 LA，需要改 2 行；漏改一行就产生矛盾（更新异常）
+cur.execute("UPDATE emp_bad SET location='LA' WHERE dept='Sales' AND emp_id=1")  # 只改了一行！
+
+# 规范化：拆成 employee 和 department 两张表，location 只存一次
+cur.execute("CREATE TABLE dept (dept TEXT PRIMARY KEY, location TEXT)")
+cur.execute("CREATE TABLE emp  (emp_id INT PRIMARY KEY, name TEXT, dept TEXT REFERENCES dept(dept))")
+cur.executemany("INSERT INTO dept VALUES (?,?)", [("Sales","NY"),("Eng","SF")])
+cur.executemany("INSERT INTO emp  VALUES (?,?,?)", [(1,"Alice","Sales"),(2,"Bob","Sales"),(3,"Cara","Eng")])
+
+# 现在 Sales 搬家只需改 dept 表 1 行，根除更新/插入/删除异常
+cur.execute("UPDATE dept SET location='LA' WHERE dept='Sales'")
+print("规范化后 Sales 位置:", cur.execute("SELECT location FROM dept WHERE dept='Sales'").fetchone()[0])
+con.close()
+```
+
+## 易错点
+
+- **以为主键必须是单一列**。复合主键（多列联合唯一）很常见；选键要看「业务上什么能唯一标识」，而非方便。
+- **NULL 的三值逻辑陷阱**。SQL 里 `NULL = NULL` 的结果是「未知（UNKNOWN）」而非真，所以要用 `IS NULL`；`WHERE col != 5` 会**漏掉** `col IS NULL` 的行——这是最经典的查询 bug。
+- **混淆 `WHERE` 与 `HAVING`**。`WHERE` 在分组前过滤行，`HAVING` 在分组后过滤组；对聚合结果筛选必须用 `HAVING`。
+- **过度规范化**。3NF/BCNF 不是目标本身，有时为读性能需反范式冗余；设计要平衡写冗余与读 `JOIN` 成本。
+- **把 SQL 当命令式**。写 `JOIN`/`GROUP BY` 时想「我要什么集合」，而不是「先循环再判断」——否则写出的查询既难读又难被优化。
+
+## 练习
+
+1. 给定 `R(学号, 姓名, 课程, 成绩, 院系, 院系地址)`，函数依赖：`学号→姓名,院系`、`院系→院系地址`、`(学号,课程)→成绩`。它最高满足第几范式？如何无损分解为 BCNF？
+   *提示：`院系→院系地址` 的左侧不含候选键 `(学号,课程)`，违反 BCNF；拆出 `院系(院系,院系地址)` 与 `学籍(学号,姓名,院系)`、`成绩(学号,课程,成绩)`。*
+2. 用关系代数写出「找出工资高于其所在部门平均工资的员工」，再写成 SQL。
+3. 解释为什么 `SELECT * FROM t WHERE col <> 'x'` 可能漏掉 `col IS NULL` 的行。
+
+## 小结
+
+关系模型用表、键（候选键/主键/外键）与函数依赖表达数据与联系；关系代数（$\sigma,\pi,\bowtie,\cup,-,\times$）是 SQL 的理论内核，SQL 以声明式「描述意图」、把「怎么做」交给优化器。范式（1NF→BCNF）通过消除函数依赖中的冗余来避免更新/插入/删除异常，但工程上需权衡是否反范式化以换读性能。SQL 的 NULL 三值逻辑与 `WHERE`/`HAVING` 区分是最易踩的坑。逻辑模型设计好后，物理落地见 [存储引擎与索引](/docs/计算机科学基础/数据库系统/存储引擎与索引)。
+
+## 延伸阅读
+
+- 集合与逻辑基础见 [集合逻辑与证明](/docs/数学基础/离散数学/集合逻辑与证明)
+- 物理存储与索引见 [存储引擎与索引](/docs/计算机科学基础/数据库系统/存储引擎与索引)
+- 查询如何被高效执行见 [查询处理与优化](/docs/计算机科学基础/数据库系统/查询处理与优化)
+- 正确性与并发见 [事务并发与恢复](/docs/计算机科学基础/数据库系统/事务并发与恢复)
