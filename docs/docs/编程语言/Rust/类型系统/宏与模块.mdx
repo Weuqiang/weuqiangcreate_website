@@ -1,0 +1,140 @@
+---
+title: Rust 宏与模块系统（macro_rules/mod/crate）
+sidebar_position: 3
+description: "讲清 Rust 的声明宏 macro_rules! 与模块系统：mod 划分、crate 与 use 路径、可见性（pub），并概览过程宏，配示例与易错点。"
+---
+
+# Rust 宏与模块系统（macro_rules! / mod / crate）
+
+在掌握 [泛型与 Trait](/docs/编程语言/Rust/类型系统/泛型与Trait) 之后，本篇补上 Rust 的"代码生成"与"组织"两面：宏让你写可复用、可生成代码的规则；模块系统（`mod`/`crate`/`use`）让你把代码组织成可维护的单元。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 `macro_rules!` 写声明宏，理解匹配臂与重复（`$()`）；
+- 用 `mod` 划分模块，用 `pub` 控制可见性；
+- 用 `use` 引入路径，理解 `crate`/`super`/`self` 含义；
+- 区分声明宏与过程宏（derive 宏）的用途。
+
+## 前置知识
+
+- 先读 [泛型与 Trait](/docs/编程语言/Rust/类型系统/泛型与Trait) 理解 trait 与派生；
+- 错误类型常配合 [错误处理与 Result](/docs/编程语言/Rust/系统编程/错误处理与Result)。
+
+## 核心概念
+
+Rust 有两层"元编程"：**声明宏** `macro_rules!` 是编译期的模式匹配代码替换（类似但强于 C 宏）；**过程宏**（如 `#[derive(...)]`）则是接收 token 流、返回新代码的 Rust 函数。模块系统把代码分成 `crate`（包）与 `mod`（模块），`pub` 决定项是否对外可见，路径用 `crate`(根)/`self`(当前)/`super`(父) 锚定。
+
+本章主线：
+
+- `macro_rules!`：声明宏与重复
+- `mod` / `pub`：模块与可见性
+- `use` 与路径锚定
+- 过程宏概览
+
+## 1. 声明宏 macro_rules!
+
+```rust
+macro_rules! vec_of {
+    ($($x:expr),* $(,)?) => {{
+        let mut v = Vec::new();
+        $( v.push($x); )*
+        v
+    }};
+}
+
+fn main() {
+    let v = vec_of![1, 2, 3];
+    println!("{:?}", v);
+}
+```
+
+## 2. 模块与可见性
+
+```rust
+mod math {
+    pub fn add(a: i32, b: i32) -> i32 { a + b } // pub 才对外可见
+    fn secret() -> i32 { 42 }                  // 私有，模块外不可见
+}
+
+fn main() {
+    println!("{}", math::add(1, 2));
+}
+```
+
+## 3. use 与路径
+
+```rust
+mod util {
+    pub mod io {
+        pub fn log(msg: &str) { println!("[log] {}", msg); }
+    }
+}
+
+use util::io::log; // 引入路径，之后直接用 log
+
+fn main() {
+    log("hello");
+}
+```
+
+## 4. 过程宏概览
+
+```rust
+// 常见 derive 宏由标准库/第三方提供，自动实现 trait
+#[derive(Debug, Clone, PartialEq)]
+struct Point { x: i32, y: i32 }
+
+fn main() {
+    let p = Point { x: 1, y: 2 };
+    println!("{:?}", p);
+}
+```
+
+## 示例
+
+写一个声明宏 `hashmap!`，用 `key => value` 语法快速构造 `HashMap`：
+
+```rust
+use std::collections::HashMap;
+
+macro_rules! hashmap {
+    ($($k:expr => $v:expr),* $(,)?) => {{
+        let mut m = HashMap::new();
+        $( m.insert($k, $v); )*
+        m
+    }};
+}
+
+fn main() {
+    let m = hashmap!["a" => 1, "b" => 2];
+    println!("{:?}", m);
+}
+```
+
+## 易错点
+
+- **宏匹配臂顺序**：`macro_rules!` 自上而下匹配，更具体的臂要放前面，否则被通配臂抢先。
+- **`$()` 重复分隔符**：重复段必须明确分隔符（`,`/`;`/...），漏写会导致解析失败。
+- **模块可见性默认私有**：不加 `pub` 的项在模块外不可见；`pub(crate)` 则仅 crate 内可见。
+- **路径锚定混淆**：`crate::` 指当前 crate 根，`super::` 指父模块，`self::` 指当前模块——用错会找不到项。
+- **过程宏是独立 crate**：`derive` 宏通常来自 `serde`/`thiserror` 等过程宏 crate，需在 `Cargo.toml` 声明依赖，不是语言内建。
+
+## 练习
+
+1. 用 `macro_rules!` 写一个 `min!` 宏，支持任意数量参数返回最小值。
+2. 把一段代码拆成 `mod` 子模块（如 `math`/`io`），用 `pub` 暴露需要的部分，主函数通过 `use` 调用。
+3. 用 `#[derive(Debug, Default)]` 定义一个带默认值的配置结构体，并用 `Default::default()` 构造。
+
+## 小结
+
+- `macro_rules!` 是编译期模式匹配替换，用 `$()` 表达重复；匹配臂顺序、分隔符要写对。
+- 模块用 `mod` 划分，`pub` 控制可见性，路径靠 `crate`/`self`/`super` 锚定。
+- 过程宏（如 `#[derive]`）来自独立 crate，是 Rust 元编程的更强形态。
+
+## 延伸阅读
+
+- [泛型与 Trait](/docs/编程语言/Rust/类型系统/泛型与Trait)——derive 宏常用来实现 trait
+- [智能指针](/docs/编程语言/Rust/所有权/智能指针)——`Vec` 等集合的内部机制
+- 官方文档：[The Rust Macro Book](https://veykril.github.io/tlborm/)、[std::collections::HashMap](https://doc.rust-lang.org/std/collections/struct.HashMap.html)

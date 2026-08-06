@@ -1,0 +1,139 @@
+---
+title: Rust 智能指针（Box/Rc/RefCell/Arc）
+sidebar_position: 3
+description: "讲清 Rust 标准库常见智能指针：Box 堆分配、Rc 单线程引用计数、RefCell 运行时借用检查、Arc 多线程共享，以及它们如何突破所有权规则的边界。"
+---
+
+# Rust 智能指针（Box / Rc / RefCell / Arc）
+
+在掌握 [所有权](/docs/编程语言/Rust/所有权/Rust语言入门) 与 [借用与生命周期](/docs/编程语言/Rust/所有权/借用与生命周期) 之后，本篇讲一组"聪明"的指针类型：它们在编译期所有权规则之外，提供受控的堆分配与共享。理解它们是写出真实 Rust 程序的关键。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 `Box<T>` 做堆分配与递归类型；
+- 用 `Rc<T>` 在单线程内共享只读所有权；
+- 用 `RefCell<T>` 做"运行时借用检查"，实现内部可变性；
+- 用 `Arc<T>` 在线程间安全共享；
+- 区分 `Rc<RefCell<T>>` 与 `Arc<Mutex<T>>` 的适用场景。
+
+## 前置知识
+
+- 先读 [借用与生命周期](/docs/编程语言/Rust/所有权/借用与生命周期) 理解借用规则；
+- 错误处理见 [错误处理与 Result](/docs/编程语言/Rust/系统编程/错误处理与Result)。
+
+## 核心概念
+
+Rust 的所有权是编译期静态规则，但有些模式（共享、递归、内部可变性）它无法直接表达，于是标准库提供**智能指针**：它们实现 `Deref`/`Drop` 等 trait，在"值语义"包装里提供引用计数、运行时借用等能力。`Box` 最简单；`Rc`/`Arc` 用引用计数共享；`RefCell` 把借用检查推迟到运行时。
+
+本章主线：
+
+- `Box<T>`：堆分配
+- `Rc<T>`：单线程共享
+- `RefCell<T>`：内部可变性
+- `Arc<T>`：线程安全共享
+
+## 1. Box：堆分配与递归类型
+
+```rust
+fn main() {
+    let b = Box::new(5);
+    println!("{}", b); // 像普通值一样解引用
+
+    // 递归类型必须用 Box 间接持有，否则编译器算不出大小
+    #[derive(Debug)]
+    enum List { Cons(i32, Box<List>), Nil }
+    let list = List::Cons(1, Box::new(List::Cons(2, Box::new(List::Nil))));
+    println!("{:?}", list);
+}
+```
+
+## 2. Rc：单线程引用计数
+
+```rust
+use std::rc::Rc;
+
+fn main() {
+    let a = Rc::new(vec![1, 2, 3]);
+    let b = Rc::clone(&a); // 增加引用计数，不是深拷贝
+    println!("count = {}", Rc::strong_count(&a)); // 2
+    // a 和 b 离开作用域、计数归零后才会释放
+}
+```
+
+## 3. RefCell：内部可变性
+
+```rust
+use std::cell::RefCell;
+
+fn main() {
+    let data = RefCell::new(5);
+    *data.borrow_mut() += 10; // 运行时检查借用，可"在不可变引用后"修改
+    println!("{}", data.borrow()); // 15
+}
+```
+
+## 4. Arc：多线程共享
+
+```rust
+use std::sync::Arc;
+use std::thread;
+
+fn main() {
+    let a = Arc::new(vec![1, 2, 3]);
+    let mut handles = vec![];
+    for _ in 0..3 {
+        let a2 = Arc::clone(&a);
+        handles.push(thread::spawn(move || {
+            println!("len = {}", a2.len());
+        }));
+    }
+    for h in handles { h.join().unwrap(); }
+}
+```
+
+## 示例
+
+用 `Rc<RefCell<Vec<i32>>>` 在多处共享并可变地追加（单线程）：
+
+```rust
+use std::cell::RefCell;
+use std::rc::Rc;
+
+fn main() {
+    let shared = Rc::new(RefCell::new(vec![1]));
+    let a = Rc::clone(&shared);
+    let b = Rc::clone(&shared);
+
+    a.borrow_mut().push(2);
+    b.borrow_mut().push(3);
+    println!("{:?}", shared.borrow()); // [1, 2, 3]
+}
+```
+
+## 易错点
+
+- **`Rc` 不是线程安全的**：跨线程共享必须用 `Arc`，误用 `Rc` 编译不过。
+- **`RefCell` 运行时 panic**：同时持有两个 `borrow_mut` 会 panic（编译期发现不了），等价于编译期借用规则的"运行期版本"。
+- **循环引用内存泄漏**：`Rc` 互相持有会形成引用计数环，永远不释放；需要用 `Weak` 打破环。
+- **`Box::leak` 与手动管理**：多数情况 `Box` 会自动释放，别滥用 `leak` 制造真泄漏。
+- **`Arc<RefCell<T>>` 跨线程仍不安全**：`RefCell` 非 `Sync`，多线程要用 `Arc<Mutex<T>>` 或 `Arc<RwLock<T>>`。
+
+## 练习
+
+1. 用 `Box` 定义一个二叉树节点（`enum Tree { Node(Box<Tree>, Box<Tree>), Leaf(i32) }`）并构造一个示例树。
+2. 用 `Rc` 让两个变量共享同一个字符串，打印它们的强引用计数变化。
+3. 用 `Arc<Mutex<Vec<i32>>>` 起 4 个线程各自 push 一个数，最后主线程打印总和。
+
+## 小结
+
+- `Box` 做堆分配、支撑递归类型；`Rc` 单线程共享只读；`RefCell` 提供内部可变性（运行时借用检查）；`Arc` 线程安全共享。
+- 共享可变状态的单线程组合是 `Rc<RefCell<T>>`，多线程是 `Arc<Mutex<T>>`。
+- `Rc` 循环引用要用 `Weak` 打破，否则泄漏。
+
+## 延伸阅读
+
+- [借用与生命周期](/docs/编程语言/Rust/所有权/借用与生命周期)——编译期借用规则
+- [并发与 async](/docs/编程语言/Rust/系统编程/并发与async)——`Send`/`Sync` 与无畏并发
+- 官方文档：[std::rc::Rc](https://doc.rust-lang.org/std/rc/struct.Rc.html)、[std::cell::RefCell](https://doc.rust-lang.org/std/cell/struct.RefCell.html)

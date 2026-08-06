@@ -1,0 +1,179 @@
+---
+title: Go context 与超时控制
+sidebar_position: 6
+description: "讲清 context 包：为何需要它、WithCancel/WithTimeout/WithValue 各自的用途、如何沿调用链传播取消信号，以及它在 HTTP/gRPC 中的典型用法与易错点。"
+---
+
+# Go context 与超时控制
+
+在掌握 [时间与错误处理](/docs/编程语言/Go/语言基础/时间与错误处理) 之后，本篇讲 Go 并发里最关键的"取消与超时"原语：`context`。当你需要"用户断开连接就停掉后端所有查询"时，`context` 是标准答案。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 解释为什么 goroutine 不能靠共享变量随意取消；
+- 用 `context.WithCancel` 主动取消；
+- 用 `context.WithTimeout` / `WithDeadline` 做超时；
+- 用 `context.WithValue` 传递请求作用域的值（并知道它的边界）；
+- 在函数中正确接收并响应 `ctx.Done()`。
+
+## 前置知识
+
+- 先读 [goroutine 与 channel](/docs/编程语言/Go/并发模型/goroutine与channel) 理解并发基础；
+- 超时基础见 [时间与错误处理](/docs/编程语言/Go/语言基础/时间与错误处理) 的 `time.After`。
+
+## 核心概念
+
+`context.Context` 是一个贯穿调用链的"控制柄"：它携带取消信号、截止时间与请求范围的键值。父 context 被取消，所有派生的子 context 一起取消——这让"一取消全停"变得自然。它不替代函数参数，而是作为**第一个参数 `ctx`** 显式传递。
+
+本章主线：
+
+- 为什么需要 context（goroutine 泄漏问题）
+- `WithCancel`：主动取消
+- `WithTimeout` / `WithDeadline`：超时
+- `WithValue`：请求作用域数据
+- 正确姿势：`ctx` 作首参、及时 `cancel()`
+
+## 1. WithCancel：主动取消
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+)
+
+func worker(ctx context.Context, id int) {
+    for {
+        select {
+        case <-ctx.Done():
+            fmt.Printf("worker %d 退出: %v\n", id, ctx.Err())
+            return
+        default:
+            fmt.Printf("worker %d 工作中\n", id)
+            time.Sleep(200 * time.Millisecond)
+        }
+    }
+}
+
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    go worker(ctx, 1)
+    time.Sleep(1 * time.Second)
+    cancel() // 通知取消
+    time.Sleep(300 * time.Millisecond)
+}
+```
+
+## 2. WithTimeout：超时自动取消
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+)
+
+func main() {
+    ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+    defer cancel() // 即使提前返回也要释放定时器
+
+    select {
+    case <-time.After(800 * time.Millisecond):
+        fmt.Println("工作完成")
+    case <-ctx.Done():
+        fmt.Println("超时取消:", ctx.Err()) // context deadline exceeded
+    }
+}
+```
+
+## 3. WithValue：请求作用域数据
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+)
+
+type key string
+
+func main() {
+    ctx := context.WithValue(context.Background(), key("traceID"), "abc123")
+    handler(ctx)
+}
+
+func handler(ctx context.Context) {
+    if v, ok := ctx.Value(key("traceID")).(string); ok {
+        fmt.Println("traceID:", v)
+    }
+}
+```
+
+## 示例
+
+把超时 context 传给一个模拟的下游调用，超时即返回错误：
+
+```go
+package main
+
+import (
+    "context"
+    "errors"
+    "fmt"
+    "time"
+)
+
+func downstream(ctx context.Context) (string, error) {
+    select {
+    case <-time.After(1 * time.Second):
+        return "result", nil
+    case <-ctx.Done():
+        return "", ctx.Err()
+    }
+}
+
+func main() {
+    ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+    defer cancel()
+
+    r, err := downstream(ctx)
+    if err != nil {
+        fmt.Println("调用失败:", err)
+        return
+    }
+    fmt.Println(r)
+}
+```
+
+## 易错点
+
+- **把 context 存进结构体**：context 应作为函数第一个参数显式传递，不要塞进 struct，否则生命周期与取消链会变得混乱。
+- **忘记调用 `cancel()`**：`WithCancel`/`WithTimeout` 返回的 `cancel` 必须调用（通常 `defer cancel()`），否则关联的定时器/goroutine 不会释放，造成泄漏。
+- **`WithValue` 传可变对象**：context 的值应是不可变、请求作用域的（如 traceID），不要用它传可选参数或共享可变状态。
+- **`nil` context**：永远不要传 `nil` 给需要 context 的函数，没来源时用 `context.Background()`。
+- **context 不能取消已发生的 IO**：它只发信号，真正的资源释放取决于你是否在 `ctx.Done()` 上 `select` 并提前返回。
+
+## 练习
+
+1. 写一个函数 `fetch(ctx, url)`：用 `http.NewRequestWithContext(ctx, ...)` 发起请求，验证父 context 取消时请求立即中断。
+2. 用 `context.WithTimeout` 包裹一个 `time.Sleep(2s)` 的循环任务，确保 1 秒后退出，并打印 `ctx.Err()`。
+3. 设计一个两层调用：`parent → child(ctx)`，父取消后验证子也收到 `Done()`。
+
+## 小结
+
+- `context` 是 Go 中跨 API 边界传递取消、超时、请求数据的事实标准。
+- `WithCancel` 主动取消、`WithTimeout`/`WithDeadline` 超时取消，二者都务必 `defer cancel()`。
+- `WithValue` 只放请求作用域的不可变数据；context 作函数首参，绝不传 `nil`。
+
+## 延伸阅读
+
+- [goroutine 与 channel](/docs/编程语言/Go/并发模型/goroutine与channel)——并发基础
+- [select 与 sync](/docs/编程语言/Go/并发模型/select与sync)——多路选择与同步原语
+- 官方文档：[pkg.go.dev/context](https://pkg.go.dev/context)

@@ -1,0 +1,143 @@
+---
+title: Rust 集合与迭代器（Vec/HashMap/String/Iterator）
+sidebar_position: 3
+description: "梳理 Rust 标准库核心集合：Vec、HashMap、String 的常用操作，以及 Iterator trait 的惰性求值、map/filter/collect 链式写法与零成本抽象。"
+---
+
+# Rust 集合与迭代器（Vec / HashMap / String / Iterator）
+
+在掌握 [错误处理与 Result](/docs/编程语言/Rust/系统编程/错误处理与Result) 之后，本篇讲 Rust 标准库里最高频的数据容器与统一的遍历抽象：迭代器。它们与所有权密切配合，是写地道 Rust 的基础。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 `Vec`/`HashMap`/`String` 的增删查与容量管理；
+- 理解 `Iterator` trait 的惰性求值特性；
+- 用 `iter`/`map`/`filter`/`collect` 写链式变换；
+- 用 `into_iter`/`iter_mut` 区分"借用例 / 可变借用例 / 取得所有权"；
+- 自己为类型实现简单的 `Iterator`。
+
+## 前置知识
+
+- 先读 [错误处理与 Result](/docs/编程语言/Rust/系统编程/错误处理与Result) 处理集合操作中的失败；
+- 泛型与 trait 见 [泛型与 Trait](/docs/编程语言/Rust/类型系统/泛型与Trait)。
+
+## 核心概念
+
+Rust 的集合都遵循所有权：`Vec<T>` 拥有其元素，`HashMap<K,V>` 拥有键值。遍历有三种视角：`iter()` 借用例、`iter_mut()` 可变借用例、`into_iter()` 取得所有权。迭代器是惰性的——只有遇到 `collect`/`for` 等"消费"操作才真正执行，且编译器能把链式 `map`/`filter` 优化成无分配循环（零成本抽象）。
+
+本章主线：
+
+- 三大集合：`Vec` / `HashMap` / `String`
+- 迭代器与惰性
+- `map`/`filter`/`collect` 链式
+- 三种遍历视角
+
+## 1. Vec 与 String
+
+```rust
+fn main() {
+    let mut v = vec![1, 2, 3];
+    v.push(4);
+    v.extend_from_slice(&[5, 6]);
+    println!("{:?}", v);
+
+    let mut s = String::from("hello");
+    s.push_str(" rust");
+    println!("{} len={}", s, s.len());
+}
+```
+
+## 2. HashMap
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut map = HashMap::new();
+    map.insert("a", 1);
+    map.insert("b", 2);
+    // 取值返回 Option，安全处理缺失
+    if let Some(v) = map.get("a") {
+        println!("a = {}", v);
+    }
+    // 缺失则插入默认值
+    *map.entry("c").or_insert(0) += 1;
+    println!("{:?}", map);
+}
+```
+
+## 3. 迭代器链式
+
+```rust
+fn main() {
+    let nums = vec![1, 2, 3, 4, 5, 6];
+    let sum: i32 = nums.iter()
+                       .filter(|&&x| x % 2 == 0) // 留偶数
+                       .map(|&x| x * x)          // 平方
+                       .sum();                   // 消费并求和
+    println!("{}", sum); // 4 + 16 + 36 = 56
+}
+```
+
+## 4. 三种遍历视角
+
+```rust
+fn main() {
+    let v = vec![1, 2, 3];
+
+    for x in &v {            // iter：借用，x: &i32
+        println!("{}", x);
+    }
+    for x in &mut v {        // iter_mut：可变借用，x: &mut i32
+        *x *= 10;
+    }
+    for x in v {             // into_iter：取得所有权，x: i32
+        println!("{}", x);
+    }
+}
+```
+
+## 示例
+
+统计一段文本中各单词出现次数（用 `HashMap` + 迭代器）：
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let text = "the quick brown fox the lazy dog the cat";
+    let mut counts: HashMap<&str, usize> = HashMap::new();
+    for word in text.split_whitespace() {
+        *counts.entry(word).or_insert(0) += 1;
+    }
+    println!("{:?}", counts);
+}
+```
+
+## 易错点
+
+- **遍历时修改集合**：在 `for` 中 `push`/`remove` 会触发借用冲突（编译期报错），应收集结果或改用索引/迭代器。
+- **`HashMap` 遍历顺序不稳定**：不要依赖插入顺序；需要顺序用 `BTreeMap` 或 `IndexMap`。
+- **`String::len()` 是字节数**：中文等 UTF-8 多字节字符，`len()` 不等于"字符数"，数字符用 `chars().count()`。
+- **索引 `Vec` 返回 `Option` 而非越界异常**：`v.get(i)` 安全，`v[i]` 越界会 panic，优先 `get`。
+- **迭代器链不改变原集合**：`map` 等是惰性变换，必须 `collect` 成新集合才有结果。
+
+## 练习
+
+1. 用 `Vec` + 迭代器求 1..100 中能被 3 或 5 整除的数的和。
+2. 实现一个函数：接收 `&str`，返回去重后的单词 `Vec<String>`（保持首次出现顺序）。
+3. 给一个 `struct Counter` 实现 `Iterator`（每次 `next` 返回下一个平方数），并用 `take(5).collect()` 取前 5 个。
+
+## 小结
+
+- `Vec`/`HashMap`/`String` 均遵循所有权；`HashMap` 用 `entry` API 优雅处理"缺失即插入"。
+- 迭代器惰性、零成本：链式 `filter`/`map`/`collect` 是地道的 Rust 写法。
+- 三种遍历视角（`iter`/`iter_mut`/`into_iter`）对应借用、可变借用、取得所有权。
+
+## 延伸阅读
+
+- [智能指针](/docs/编程语言/Rust/所有权/智能指针)——`Vec` 底层是堆分配的智能指针
+- [泛型与 Trait](/docs/编程语言/Rust/类型系统/泛型与Trait)——为集合实现自己的 trait
+- 官方文档：[std::vec::Vec](https://doc.rust-lang.org/std/vec/struct.Vec.html)、[std::iter::Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)

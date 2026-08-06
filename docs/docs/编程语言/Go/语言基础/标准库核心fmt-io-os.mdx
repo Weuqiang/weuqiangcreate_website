@@ -1,0 +1,203 @@
+---
+title: Go 标准库核心（fmt/io/os/strings/strconv）
+sidebar_position: 3
+description: "梳理 Go 标准库里天天用到的基础包：格式化 fmt、文件与系统交互 os、缓冲 IO 与 bufio、字符串 strings、数值转换 strconv，配可运行示例与易错点。"
+---
+
+# Go 标准库核心（fmt / io / os / strings / strconv）
+
+在掌握 [Go 语言入门](/docs/编程语言/Go/语言基础/Go语言入门) 与 [切片、映射与函数](/docs/编程语言/Go/语言基础/切片映射与函数) 之后，本篇把 Go 标准库里"天天用"的几个基础包串起来：它们是你写任何真实程序都离不开的工具。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 `fmt` 做格式化打印与字符串构造（`Sprint` / `Sprintf`）；
+- 用 `os` 读写文件、读取环境变量与命令行参数；
+- 用 `bufio` 做带缓冲的逐行读取；
+- 用 `strings` 做分割、修剪、包含判断；
+- 用 `strconv` 在字符串与数值之间安全转换。
+
+## 前置知识
+
+- 先读 [Go 语言入门](/docs/编程语言/Go/语言基础/Go语言入门) 掌握包与基础语法；
+- 理解并发可看 [goroutine 与 channel](/docs/编程语言/Go/并发模型/goroutine与channel)。
+
+## 核心概念
+
+Go 标准库按"小接口、可组合"哲学设计：几乎所有读写都围绕 `io.Reader` / `io.Writer` 两个接口展开，文件、网络、缓冲、压缩都能互相拼接。`fmt` 负责格式化，`os` 负责与操作系统打交道，`strings` / `strconv` 负责文本与数值的基本变换。
+
+本章主线：
+
+- `fmt`：格式化输出与字符串构造
+- `os`：文件、环境变量、参数
+- `bufio`：缓冲 IO 与逐行扫描
+- `strings` / `strconv`：文本与数值转换
+
+## 1. fmt：格式化与字符串构造
+
+`fmt.Printf` 输出到标准输出，`fmt.Sprintf` 返回字符串，`fmt.Fprintf(w, ...)` 写到任意 `io.Writer`。
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    name := "Go"
+    age := 15
+    // %s 字符串，%d 十进制，%v 默认，%#v Go 语法表示
+    s := fmt.Sprintf("语言=%s 年龄=%d 原值=%#v", name, age, []int{1, 2, 3})
+    fmt.Println(s)
+}
+```
+
+常用动词：`%v` 默认、`%+v` 带字段名、`%#v` Go 语法、`%T` 类型、`%d`/`%b`/`%x` 整数、`%f`/`%.2f` 浮点、`%q` 带引号字符串、`%t` 布尔。
+
+## 2. os：文件、环境变量与参数
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+)
+
+func main() {
+    // 写文件：出错返回 error
+    err := os.WriteFile("hello.txt", []byte("hello go"), 0644)
+    if err != nil {
+        fmt.Println("写文件失败:", err)
+        return
+    }
+    data, err := os.ReadFile("hello.txt")
+    if err != nil {
+        fmt.Println("读文件失败:", err)
+        return
+    }
+    fmt.Println("读到:", string(data))
+
+    fmt.Println("PATH 前 20 字符:", os.Getenv("PATH")[:20])
+    fmt.Println("命令行参数:", os.Args)
+}
+```
+
+`os.WriteFile` / `os.ReadFile` 适合小文件一次性读写；大文件或流式处理用 `os.Open` + `bufio`。
+
+## 3. bufio：缓冲与逐行扫描
+
+```go
+package main
+
+import (
+    "bufio"
+    "fmt"
+    "os"
+    "strings"
+)
+
+func main() {
+    f, err := os.Open("hello.txt")
+    if err != nil {
+        return
+    }
+    defer f.Close() // 务必关闭，否则文件描述符泄漏
+
+    scanner := bufio.NewScanner(f)
+    for scanner.Scan() {
+        line := strings.TrimSpace(scanner.Text())
+        if line != "" {
+            fmt.Println("行:", line)
+        }
+    }
+    if err := scanner.Err(); err != nil {
+        fmt.Println("扫描出错:", err)
+    }
+}
+```
+
+## 4. strings 与 strconv
+
+```go
+package main
+
+import (
+    "fmt"
+    "strconv"
+    "strings"
+)
+
+func main() {
+    s := "  a,b,c  "
+    fmt.Println(strings.TrimSpace(s))            // "a,b,c"
+    fmt.Println(strings.Split("a,b,c", ","))     // [a b c]
+    fmt.Println(strings.Contains("golang", "go")) // true
+
+    n, err := strconv.Atoi("42")
+    if err != nil {
+        fmt.Println("转换失败:", err)
+    }
+    fmt.Println(n + 1)                // 43
+    fmt.Println(strconv.Itoa(99))     // "99"
+    f, _ := strconv.ParseFloat("3.14", 64)
+    fmt.Println(f * 2)                // 6.28
+}
+```
+
+## 示例
+
+一个按行读取标准输入、过滤空行并累计长度的小工具：
+
+```go
+package main
+
+import (
+    "bufio"
+    "fmt"
+    "os"
+    "strconv"
+    "strings"
+)
+
+func main() {
+    fmt.Println("输入若干行，输入空行结束：")
+    scanner := bufio.NewScanner(os.Stdin)
+    total := 0
+    for scanner.Scan() {
+        line := strings.TrimSpace(scanner.Text())
+        if line == "" {
+            break
+        }
+        total += len(line)
+        fmt.Println("->", line, "长度", len(line))
+    }
+    fmt.Println("累计长度:", strconv.Itoa(total))
+}
+```
+
+## 易错点
+
+- **忘记 `defer f.Close()`**：打开的文件/连接不关闭会泄漏文件描述符，长期服务会耗尽资源。
+- **`strconv.Atoi` 返回 `(int, error)`**：用 `_` 忽略错误会在非法输入时得到 `0`，掩盖 bug；生产代码必须处理 error。
+- **`os.Getenv` 取不到返回空串**：不要假设环境变量一定存在，缺失时应显式报错或用默认值。
+- **`bufio.Scanner` 默认行长度上限 64KB**：超长行会被截断，需用 `scanner.Buffer(buf, max)` 调大。
+- **热路径频繁 `fmt.Sprintf` 拼接**：高频字符串拼接优先用 `strings.Builder`，避免反复分配。
+
+## 练习
+
+1. 写程序：读取一个文件，统计非空行数与总行数，输出到标准输出。
+2. 用 `strings.Builder` 改写示例中的拼接逻辑，对比与 `fmt.Sprintf` 的性能差异（提示：`go test -bench`）。
+3. 用 `strconv.ParseBool` 解析 `"true"/"1"/"0"`，验证哪些输入返回错误。
+
+## 小结
+
+- `fmt` 格式化，`os` 系统交互，`bufio` 缓冲流式 IO，`strings`/`strconv` 文本数值变换。
+- Go 的 IO 世界以 `io.Reader` / `io.Writer` 为中心，学会组合它们就能应对绝大多数场景。
+- 任何可能失败的操作都返回 `error`，务必处理，不要一路 `_` 忽略。
+
+## 延伸阅读
+
+- [Go 时间与错误处理](/docs/编程语言/Go/语言基础/时间与错误处理)——`time` 包与错误包装
+- [序列化与编码](/docs/编程语言/Go/语言基础/序列化与编码)——`encoding/json` 等
+- 官方文档：[pkg.go.dev/fmt](https://pkg.go.dev/fmt)、[os](https://pkg.go.dev/os)、[strings](https://pkg.go.dev/strings)

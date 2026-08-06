@@ -1,0 +1,191 @@
+---
+title: Go 序列化与编码（encoding/json/xml/base64）
+sidebar_position: 5
+description: "讲清 Go 的 encoding 标准库：json 的 struct tag 映射、嵌套与忽略字段、流式编解码，以及 xml、base64/hex 等常用编码，配示例与易错点。"
+---
+
+# Go 序列化与编码（encoding/json / xml / base64）
+
+在掌握 [标准库核心](/docs/编程语言/Go/语言基础/标准库核心fmt-io-os) 与 [时间与错误处理](/docs/编程语言/Go/语言基础/时间与错误处理) 之后，本篇聚焦数据交换：把 Go 结构体变成 JSON / XML 文本、再解析回来，是写 Web 服务与配置读取的日常。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 `encoding/json` 在结构体与 JSON 之间互转；
+- 用 struct tag 控制字段名、忽略与嵌套；
+- 用 `json.Decoder` / `json.Encoder` 做流式读写；
+- 用 `encoding/base64` / `encoding/hex` 处理二进制文本化。
+
+## 前置知识
+
+- 先读 [标准库核心](/docs/编程语言/Go/语言基础/标准库核心fmt-io-os) 了解 `io.Reader` / `io.Writer`；
+- 结构体与字段知识见 [切片、映射与函数](/docs/编程语言/Go/语言基础/切片映射与函数)。
+
+## 核心概念
+
+`encoding/json` 是 Go 做数据交换的主力：结构体字段通过 `json:"name"` tag 映射到 JSON 键；只有**导出字段（首字母大写）**才能被序列化。对于大文件或网络流，用 `Decoder`/`Encoder` 边读边转，避免一次性载入内存。
+
+本章主线：
+
+- `json.Marshal` / `Unmarshal`：内存内互转
+- struct tag：`json:"name,omitempty"` 控制键名、省略空值
+- 流式：`json.NewEncoder` / `NewDecoder`
+- 其他编码：`xml` / `base64` / `hex`
+
+## 1. 基本 Marshal / Unmarshal
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+)
+
+type User struct {
+    Name  string `json:"name"`
+    Age   int    `json:"age"`
+    Email string `json:"email,omitempty"` // 空值省略
+}
+
+func main() {
+    u := User{Name: "Ada", Age: 30}
+    b, err := json.Marshal(u)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    fmt.Println(string(b)) // {"name":"Ada","age":30}
+
+    var got User
+    _ = json.Unmarshal(b, &got)
+    fmt.Println(got.Name, got.Age)
+}
+```
+
+## 2. 嵌套与 map
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+)
+
+type Profile struct {
+    Tags map[string]string `json:"tags"`
+    Role string            `json:"role"`
+}
+
+func main() {
+    raw := `{"tags":{"level":"pro","city":"BJ"},"role":"admin"}`
+    var p Profile
+    _ = json.Unmarshal([]byte(raw), &p)
+    fmt.Println(p.Tags["level"], p.Role)
+}
+```
+
+## 3. 流式编码
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "os"
+)
+
+func main() {
+    enc := json.NewEncoder(os.Stdout)
+    _ = enc.Encode(map[string]int{"a": 1, "b": 2})
+    // 输出: {"a":1,"b":2}\n
+}
+```
+
+## 4. base64 / hex
+
+```go
+package main
+
+import (
+    "encoding/base64"
+    "encoding/hex"
+    "fmt"
+)
+
+func main() {
+    data := []byte("hello")
+    s := base64.StdEncoding.EncodeToString(data)
+    fmt.Println(s) // aGVsbG8=
+    dec, _ := base64.StdEncoding.DecodeString(s)
+    fmt.Println(string(dec))
+
+    fmt.Println(hex.EncodeToString(data)) // 68656c6c6f
+}
+```
+
+## 示例
+
+读取一个 JSON 数组文件并打印每人年龄之和：
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "os"
+)
+
+type Person struct {
+    Name string `json:"name"`
+    Age  int    `json:"age"`
+}
+
+func main() {
+    f, err := os.Open("people.json")
+    if err != nil {
+        return
+    }
+    defer f.Close()
+
+    var people []Person
+    if err := json.NewDecoder(f).Decode(&people); err != nil {
+        fmt.Println("解析失败:", err)
+        return
+    }
+    sum := 0
+    for _, p := range people {
+        sum += p.Age
+    }
+    fmt.Println("年龄总和:", sum)
+}
+```
+
+## 易错点
+
+- **非导出字段不序列化**：首字母小写的字段 `json` 包看不到，结果里直接消失，调试时极易困惑。
+- **`omitempty` 对 0 值也生效**：`int` 为 0、`false`、空切片都会省略，若业务需要区分"零值"与"未设置"要用指针 `*int`。
+- **`Unmarshal` 要传指针**：`json.Unmarshal(b, &v)` 而不是 `v`，否则改不到原值。
+- **数字默认转 `float64`**：解码到 `interface{}` 时，JSON 数字会变成 `float64`，大整数可能丢精度，建议用 `json.Number` 或 `Decoder.UseNumber()`。
+- **时间字段默认 RFC3339**：`time.Time` 序列化默认 ISO8601，自定义格式需在结构体里实现 `MarshalJSON`。
+
+## 练习
+
+1. 定义一个 `Order` 结构体（含 `ID`、`Items []string`、`Total float64`），序列化成 JSON 并打印。
+2. 用 `json.Decoder` 从一个 `strings.NewReader` 里逐项解码多个 JSON 对象（注意循环 `Decode` 直到 `io.EOF`）。
+3. 用 `base64.URLEncoding` 编码一个含空格的字符串，解释与 `StdEncoding` 的区别。
+
+## 小结
+
+- `encoding/json` 用 struct tag 映射键名；只有导出字段参与序列化。
+- `omitempty` 会省略零值，需要区分零值与未设置时用指针。
+- 流式用 `Encoder`/`Decoder`，二进制文本化用 `base64`/`hex`。
+
+## 延伸阅读
+
+- [context 与超时控制](/docs/编程语言/Go/语言基础/context与超时)——Web 请求里的超时传播
+- [标准库核心](/docs/编程语言/Go/语言基础/标准库核心fmt-io-os)——`os`/`bufio` 文件读写
+- 官方文档：[pkg.go.dev/encoding/json](https://pkg.go.dev/encoding/json)

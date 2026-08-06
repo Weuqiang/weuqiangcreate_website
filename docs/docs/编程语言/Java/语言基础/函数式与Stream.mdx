@@ -1,0 +1,161 @@
+---
+title: Java 函数式与 Stream API
+sidebar_position: 5
+description: "讲清 Java 8+ 的函数式特性：Lambda、函数式接口、方法引用、Optional 防空，以及 Stream 流水线的 map/filter/reduce 与并行流，配示例与易错点。"
+---
+
+# Java 函数式与 Stream API
+
+在掌握 [面向对象与核心语法](/docs/编程语言/Java/语言基础/面向对象与核心语法) 之后，本篇讲 Java 8 引入的现代写法：Lambda 让代码更简洁，Stream 把集合处理变成声明式流水线。这是读现代 Java 代码（尤其 Spring 数据层）的必备能力。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 Lambda 简化匿名类，理解函数式接口（`@FunctionalInterface`）；
+- 用方法引用（`::`）进一步精简；
+- 用 `Optional` 显式表达"可能为空"、避免 `NullPointerException`；
+- 用 Stream 的 `map`/`filter`/`reduce`/`collect` 做集合变换；
+- 理解并行流的适用边界。
+
+## 前置知识
+
+- 先读 [面向对象与核心语法](/docs/编程语言/Java/语言基础/面向对象与核心语法) 理解接口与泛型；
+- 集合基础见 [集合框架](/docs/编程语言/Java/生态/集合框架)。
+
+## 核心概念
+
+函数式接口是"只有一个抽象方法"的接口（`Runnable`、`Comparator`、`Function` 等），Lambda 表达式就是它的简洁实现。Stream 不存储数据，而是对数据源（集合/数组）做"管道式"计算：源 → 中间操作（`filter`/`map`，惰性） → 终结操作（`collect`/`reduce`，触发）。`Optional<T>` 把"空"变成类型的一部分。
+
+本章主线：
+
+- Lambda 与函数式接口
+- 方法引用
+- `Optional` 防空
+- Stream 流水线
+- 并行流
+
+## 1. Lambda 与函数式接口
+
+```java
+import java.util.function.Predicate;
+
+public class LambdaDemo {
+    public static void main(String[] args) {
+        // 旧写法：匿名类
+        Predicate<Integer> isEvenOld = new Predicate<Integer>() {
+            public boolean test(Integer x) { return x % 2 == 0; }
+        };
+        // Lambda 写法
+        Predicate<Integer> isEven = x -> x % 2 == 0;
+        System.out.println(isEven.test(4));
+    }
+}
+```
+
+## 2. 方法引用与 Optional
+
+```java
+import java.util.Optional;
+
+public class OptionalDemo {
+    public static void main(String[] args) {
+        Optional<String> opt = Optional.ofNullable(maybeNull());
+        // 不为空才打印，避免 NPE
+        opt.ifPresent(System.out::println);
+
+        String v = opt.orElse("default");
+        System.out.println(v);
+    }
+
+    static String maybeNull() { return null; }
+}
+```
+
+## 3. Stream 流水线
+
+```java
+import java.util.*;
+import java.util.stream.*;
+
+public class StreamDemo {
+    public static void main(String[] args) {
+        List<Integer> nums = Arrays.asList(1, 2, 3, 4, 5, 6);
+        int sum = nums.stream()
+                      .filter(n -> n % 2 == 0)   // 中间操作：留偶数
+                      .map(n -> n * n)            // 中间操作：平方
+                      .reduce(0, Integer::sum);   // 终结操作：求和
+        System.out.println(sum); // 4 + 16 + 36 = 56
+    }
+}
+```
+
+## 4. 分组与收集
+
+```java
+import java.util.*;
+import java.util.stream.*;
+
+public class CollectDemo {
+    public static void main(String[] args) {
+        List<String> words = Arrays.asList("a", "bb", "cc", "ddd");
+        Map<Integer, List<String>> byLen = words.stream()
+            .collect(Collectors.groupingBy(String::length));
+        System.out.println(byLen);
+    }
+}
+```
+
+## 示例
+
+把一组订单按状态分组并统计每组的金额总额：
+
+```java
+import java.util.*;
+import java.util.stream.*;
+
+class Order { String status; double amount;
+    Order(String s, double a) { status = s; amount = a; }
+}
+
+public class Orders {
+    public static void main(String[] args) {
+        List<Order> orders = Arrays.asList(
+            new Order("PAID", 100), new Order("PAID", 50),
+            new Order("NEW", 30), new Order("PAID", 20));
+
+        Map<String, Double> total = orders.stream()
+            .collect(Collectors.groupingBy(
+                o -> o.status,
+                Collectors.summingDouble(o -> o.amount)));
+
+        System.out.println(total); // {PAID=170.0, NEW=30.0}
+    }
+}
+```
+
+## 易错点
+
+- **Stream 只能用一次**：stream 被终结操作消费后就不能再操作，重复用会抛 `IllegalStateException`。
+- **并行流不是万能**：`parallelStream()` 在共享可变状态或数据量小时反而更慢，且要注意线程安全。
+- **`Optional.get()` 仍可能 NPE**：没判空直接 `get()` 在为空时抛异常，应优先 `orElse`/`ifPresent`/`orElseThrow`。
+- **Lambda 里修改外部变量**：捕获的局部变量必须是 `final` 或"等效 final"，不能重新赋值。
+- **`forEach` 里抛异常会中断**：Stream 中 `peek`/`forEach` 不适合做有副作用且可能失败的逻辑，终结用 `collect` 更安全。
+
+## 练习
+
+1. 用 Stream 把一个 `List<String>` 过滤掉空串、转大写、收集成 `Set`。
+2. 用 `Collectors.toMap` 把 `List<Order>` 按 `status` 映射到该状态订单的 `List`。
+3. 用 `Optional.flatMap` 处理"用户→地址→城市"可能为空的链式取值，避免嵌套 `if`。
+
+## 小结
+
+- Lambda 是函数式接口的简洁实现，方法引用 `::` 进一步精简。
+- `Optional` 把"空"显式化，减少 `NullPointerException`。
+- Stream 是声明式集合处理：中间操作惰性、终结操作触发；并行流需谨慎使用。
+
+## 延伸阅读
+
+- [Java 反射与注解](/docs/编程语言/Java/语言基础/反射与注解)——运行时元编程
+- [Java 异常与日期时间](/docs/编程语言/Java/语言基础/异常与日期时间)——异常体系
+- 官方文档：[java.util.stream](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/stream/package-summary.html)

@@ -1,0 +1,163 @@
+---
+title: Java 反射与注解
+sidebar_position: 4
+description: "讲清 Java 反射（Class/Field/Method/Constructor 运行时探查与调用）与注解（内置注解、自定义注解、元注解、运行时处理），配示例与易错点。"
+---
+
+# Java 反射与注解
+
+在掌握 [面向对象与核心语法](/docs/编程语言/Java/语言基础/面向对象与核心语法) 之后，本篇讲 Java 的"元编程"两件套：反射让你在运行时查看并调用任意类，注解让你把元数据贴到代码上。框架（Spring、JUnit、ORM）几乎都建立在它们之上。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 `Class.forName` / `obj.getClass()` 拿到 `Class` 对象；
+- 用反射读取字段、调用方法、构造实例；
+- 定义自定义注解并用元注解（`@Target`/`@Retention`）约束；
+- 在运行时通过反射读取注解并据此执行逻辑。
+
+## 前置知识
+
+- 先读 [面向对象与核心语法](/docs/编程语言/Java/语言基础/面向对象与核心语法) 理解类、接口、继承；
+- 泛型基础见同篇的泛型小节。
+
+## 核心概念
+
+反射（Reflection）是 JVM 在运行时暴露类型信息的能力：每个加载的类都有对应的 `Class` 对象，从中可取到 `Field`/`Method`/`Constructor` 并绕过编译期访问限制去读写/调用。注解（Annotation）是附着在代码上的元数据，`@Retention(RetentionPolicy.RUNTIME)` 的注解能在运行时被反射读到，从而驱动框架行为。
+
+本章主线：
+
+- 获取 `Class` 的三种方式
+- 反射读字段、调方法
+- 自定义注解 + 元注解
+- 反射处理注解
+
+## 1. 获取 Class 与构造对象
+
+```java
+public class ReflectDemo {
+    public static void main(String[] args) throws Exception {
+        Class<?> clazz = Class.forName("java.util.ArrayList");
+        // 或用：ArrayList.class  /  obj.getClass()
+
+        Object list = clazz.getDeclaredConstructor().newInstance();
+        System.out.println(list.getClass().getSimpleName());
+    }
+}
+```
+
+## 2. 反射读写字段与调用方法
+
+```java
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+class Point {
+    public int x;
+    public int getX() { return x; }
+}
+
+public class FieldMethodDemo {
+    public static void main(String[] args) throws Exception {
+        Point p = new Point();
+        Class<?> c = p.getClass();
+
+        Field fx = c.getField("x");
+        fx.set(p, 10);                 // 写字段
+        System.out.println(fx.get(p)); // 读字段
+
+        Method m = c.getMethod("getX");
+        System.out.println(m.invoke(p)); // 调用方法
+    }
+}
+```
+
+## 3. 自定义注解
+
+```java
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.METHOD)            // 只能贴在方法上
+@Retention(RetentionPolicy.RUNTIME)    // 运行时可见
+public @interface TestCase {
+    String value() default "";
+}
+```
+
+## 4. 运行时处理注解
+
+```java
+public class AnnotationProcessor {
+    public static void main(String[] args) throws Exception {
+        for (Method m : Sample.class.getDeclaredMethods()) {
+            if (m.isAnnotationPresent(TestCase.class)) {
+                TestCase tc = m.getAnnotation(TestCase.class);
+                System.out.println("发现测试: " + m.getName() + " -> " + tc.value());
+                m.invoke(null);
+            }
+        }
+    }
+}
+```
+
+## 示例
+
+一个极简"路由"：用注解把 URL 映射到方法并反射调用：
+
+```java
+import java.lang.annotation.*;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@interface Route { String path(); }
+
+class Controller {
+    @Route(path = "/hello")
+    public static void hello() { System.out.println("Hello!"); }
+}
+
+public class MiniRouter {
+    public static void main(String[] args) throws Exception {
+        Map<String, Method> routes = new HashMap<>();
+        for (Method m : Controller.class.getDeclaredMethods()) {
+            if (m.isAnnotationPresent(Route.class)) {
+                routes.put(m.getAnnotation(Route.class).path(), m);
+            }
+        }
+        routes.get("/hello").invoke(null); // 输出 Hello!
+    }
+}
+```
+
+## 易错点
+
+- **反射破坏封装**：`setAccessible(true)` 可访问 `private` 成员，但会绕过安全检查，模块化（JPMS）下可能被拒绝，且不利于维护。
+- **性能开销**：反射调用比直接调用慢（含安全检查与装箱），高频路径应缓存 `Method`/`Field` 或用代码生成。
+- **`@Retention` 选错**：默认 `CLASS` 策略在运行时不可见，想被反射读到必须是 `RUNTIME`。
+- **泛型类型擦除**：运行时 `List<String>.class` 不存在，只能拿到原始 `List.class`，泛型信息需通过 `getGenericType` 等有限获取。
+- **`getMethod` 找不到抛异常**：方法名或参数类型不匹配会抛 `NoSuchMethodException`，需精确匹配签名。
+
+## 练习
+
+1. 写一个工具：传入对象，打印它所有 `public` 字段名与值。
+2. 定义一个 `@Column(name=...)` 注解，用反射把对象的字段值按注解映射成一个 SQL `INSERT` 片段。
+3. 用 `getDeclaredMethods` + 注解实现"只运行带 `@Test` 的方法"的迷你测试运行器。
+
+## 小结
+
+- 反射在运行时探查/调用类，是框架基石，但有性能与封装代价。
+- 注解是元数据，`@Retention(RUNTIME)` 才能在运行时被反射读到。
+- 二者结合可构建路由、ORM、测试框架等"声明式"能力。
+
+## 延伸阅读
+
+- [Java 函数式与 Stream API](/docs/编程语言/Java/语言基础/函数式与Stream)——现代 Java 另一面
+- [Java 异常与日期时间](/docs/编程语言/Java/语言基础/异常与日期时间)——异常体系
+- 官方文档：[java.lang.reflect](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/reflect/package-summary.html)

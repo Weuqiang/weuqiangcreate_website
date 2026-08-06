@@ -1,0 +1,184 @@
+---
+sidebar_position: 16
+title: C标准库核心函数
+description: "系统梳理 C 标准库最常用的头文件与函数：stdio 格式化与文件 IO、stdlib 内存与排序、string 字符串处理、math 数学函数、time 时间与 assert 断言，配示例与高频踩坑。"
+---
+
+# C 标准库核心函数
+
+在掌握 [变量](../1变量)、[数组和指针](../8数组和指针)、[字符串和字符串函数](../9字符串和字符串函数) 与 [文件输入输出](../11文件输入输出) 之后，本篇把 C 标准库里最高频的头文件串成一张"速查地图"：`stdio.h` / `stdlib.h` / `string.h` / `math.h` / `time.h` / `assert.h`。它们是写任何 C 程序的地基。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 `stdio.h` 做格式化输入输出与文件读写；
+- 用 `stdlib.h` 做动态内存分配（`malloc`/`free`）、排序（`qsort`）与数值转换；
+- 用 `string.h` 做字符串与内存块操作；
+- 用 `math.h` / `time.h` 做数学与计时；
+- 规避缓冲区溢出、`printf` 格式不匹配、`malloc` 未判空等高频错误。
+
+## 前置知识
+
+- 先读 [数组和指针](../8数组和指针) 理解指针与数组关系；
+- 字符串基础见 [字符串和字符串函数](../9字符串和字符串函数)；
+- 文件操作见 [文件输入输出](../11文件输入输出)。
+
+## 核心概念
+
+C 标准库是一组按头文件组织的函数集合：每个头文件声明一类功能。`stdio` 管输入输出，`stdlib` 管通用工具（内存、排序、转换），`string` 管字符串与内存拷贝，`math` 管数学，`time` 管时间，`assert` 管调试断言。它们不依赖面向对象，函数直接操作裸内存与指针——强大也危险。
+
+本章主线：
+
+- `stdio.h`：格式化与文件
+- `stdlib.h`：内存、排序、转换
+- `string.h`：字符串与内存块
+- `math.h` / `time.h` / `assert.h`
+
+## 1. stdio.h：格式化与文件
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int n;
+    printf("请输入一个整数：");
+    scanf("%d", &n);                 // 注意取地址 &
+    printf("你输入了 %d\n", n);
+
+    FILE *fp = fopen("log.txt", "w");
+    if (fp != NULL) {
+        fprintf(fp, "value=%d\n", n);
+        fclose(fp);
+    }
+    return 0;
+}
+```
+
+常用：`printf`/`scanf`（控制台）、`fprintf`/`fscanf`（文件）、`fopen`/`fclose`、`fgets`（安全读行）、`sprintf`（格式化到字符串）。
+
+## 2. stdlib.h：内存与排序
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int cmp(const void *a, const void *b) {
+    return (*(int *)a - *(int *)b);
+}
+
+int main(void) {
+    int *arr = (int *)malloc(5 * sizeof(int)); // 必须检查 NULL
+    if (arr == NULL) return 1;
+    for (int i = 0; i < 5; i++) arr[i] = 5 - i;
+
+    qsort(arr, 5, sizeof(int), cmp);           // 快速排序
+    for (int i = 0; i < 5; i++) printf("%d ", arr[i]);
+
+    free(arr);                                  // 用后释放，避免泄漏
+    return 0;
+}
+```
+
+常用：`malloc`/`calloc`/`realloc`/`free`、`qsort`、`atoi`/`atol`、`rand`/`srand`、`exit`。
+
+## 3. string.h：字符串与内存
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char buf[32];
+    strcpy(buf, "hello");          // 危险：不检查目标容量
+    strncat(buf, " world", 26);    // 较安全：限定长度
+    printf("%s len=%zu\n", buf, strlen(buf));
+
+    int r = strcmp("a", "b");      // <0 / ==0 / >0
+    printf("cmp=%d\n", r);
+
+    char src[4] = "abc";
+    memmove(buf, src, 3);          // 内存块拷贝，重叠安全
+    return 0;
+}
+```
+
+常用：`strcpy`/`strncpy`、`strcat`/`strncat`、`strcmp`、`strlen`、`memcpy`/`memmove`、`memset`。
+
+## 4. math.h / time.h / assert.h
+
+```c
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
+#include <assert.h>
+
+int main(void) {
+    printf("sqrt(2)=%.4f\n", sqrt(2.0));
+    printf("pow(2,10)=%.0f\n", pow(2, 10));
+
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    printf("year=%d\n", t->tm_year + 1900);
+
+    int x = 5;
+    assert(x > 0);                 // 调试期断言，条件为假则终止
+    return 0;
+}
+```
+
+注意：链接 `math.h` 的函数在 GCC 下通常要加 `-lm`（如 `gcc main.c -lm`）。
+
+## 示例
+
+一个把数组写入二进制文件再读回的小程序：
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+    int data[4] = {1, 2, 3, 4};
+    FILE *fp = fopen("data.bin", "wb");
+    if (!fp) return 1;
+    fwrite(data, sizeof(int), 4, fp);
+    fclose(fp);
+
+    int read[4];
+    fp = fopen("data.bin", "rb");
+    if (!fp) return 1;
+    size_t n = fread(read, sizeof(int), 4, fp);
+    fclose(fp);
+
+    for (size_t i = 0; i < n; i++) printf("%d ", read[i]);
+    return 0;
+}
+```
+
+## 易错点
+
+- **`scanf` 忘记 `&`**：基本类型必须传地址（`&n`），字符串/`char[]` 本身即地址，混用会崩溃。
+- **`strcpy` 缓冲区溢出**：目标数组容量不足会越界写，优先 `strncpy`/`snprintf` 并手动补 `\0`。
+- **`printf` 格式符与参数类型不匹配**：如 `%d` 配 `float` 或 `%s` 配非字符串，行为未定义，是经典 bug。
+- **`malloc` 不判 `NULL` 且漏 `free`**：内存不足时 `NULL` 解引用崩溃；用后不 `free` 则泄漏，且不要重复 `free`（double free）。
+- **`gets` 与无界读**：`gets` 不限制长度已被标准废弃，永远用 `fgets(buf, sizeof(buf), stdin)`。
+
+## 练习
+
+1. 用 `fgets` + `sscanf` 读取一行并解析出其中两个整数。
+2. 用 `qsort` 对一个 `double` 数组排序（注意 `cmp` 里做浮点减法会溢出，改用 `<`/`>` 返回 -1/0/1）。
+3. 写一个函数用 `memcpy` 把两个 `int` 数组拼接成新数组，返回前先 `malloc` 正确大小。
+
+## 小结
+
+- `stdio` 管 IO 与文件，`stdlib` 管内存/排序/转换，`string` 管字符串与内存块，`math`/`time`/`assert` 管数学、计时与调试断言。
+- C 标准库函数直接操作裸内存，高效但需手动保证边界与生命周期。
+- 高频坑集中在 `scanf` 取址、`strcpy` 溢出、`printf` 格式匹配、`malloc` 判空与 `free` 配对。
+
+## 延伸阅读
+
+- [文件输入输出](../11文件输入输出)——更深入的文件与流操作
+- [字符串和字符串函数](../9字符串和字符串函数)——字符串处理全解
+- [存储类别、链接和内存管理](../10存储类别、链接和内存管理)——作用域与动态内存
+- 参考：[C 标准库（cppreference）](https://en.cppreference.com/w/c/header)

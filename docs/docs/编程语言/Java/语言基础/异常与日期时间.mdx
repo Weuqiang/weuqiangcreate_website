@@ -1,0 +1,150 @@
+---
+title: Java 异常与日期时间
+sidebar_position: 6
+description: "梳理 Java 异常体系（受检/非受检、try-catch-finally、try-with-resources、自定义异常）与现代化的 java.time API（LocalDate/LocalDateTime、Duration、格式化与解析），配示例与易错点。"
+---
+
+# Java 异常与日期时间
+
+在掌握 [面向对象与核心语法](/docs/编程语言/Java/语言基础/面向对象与核心语法) 之后，本篇讲两块常被低估但极易踩坑的内容：异常处理范式，以及 Java 8 之后彻底重写、终于好用的日期时间 API（`java.time`）。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 区分受检异常（checked）与运行时异常（unchecked）；
+- 用 `try-catch-finally`、`try-with-resources` 正确释放资源；
+- 自定义异常并合理向上抛出；
+- 用 `java.time` 的 `LocalDate`/`LocalDateTime`/`Duration` 做日期计算；
+- 用 `DateTimeFormatter` 做格式化与解析。
+
+## 前置知识
+
+- 先读 [面向对象与核心语法](/docs/编程语言/Java/语言基础/面向对象与核心语法) 的异常小节；
+- IO 中的资源管理见 [Java IO 与 NIO](/docs/编程语言/Java/语言基础/IO与NIO)。
+
+## 核心概念
+
+Java 把异常分为：**受检异常**（编译期强制处理，如 `IOException`）和**非受检异常**（`RuntimeException` 及其子类，可不捕获，如 `NullPointerException`）。`java.time` 是不可变、线程安全的日期时间库，替代了设计糟糕的老 `Date`/`Calendar`。
+
+本章主线：
+
+- 异常分类与 `try-catch-finally`
+- 自定义异常与异常链
+- `java.time`：日期、时间、时长
+- 格式化与解析
+
+## 1. 异常处理
+
+```java
+public class ExceptionDemo {
+    static int divide(int a, int b) {
+        if (b == 0) {
+            throw new IllegalArgumentException("除数不能为 0");
+        }
+        return a / b;
+    }
+
+    public static void main(String[] args) {
+        try {
+            System.out.println(divide(10, 0));
+        } catch (IllegalArgumentException e) {
+            System.err.println("出错: " + e.getMessage());
+        } finally {
+            System.out.println("无论成败都执行");
+        }
+    }
+}
+```
+
+## 2. 自定义异常与异常链
+
+```java
+class BusinessException extends RuntimeException {
+    public BusinessException(String msg, Throwable cause) {
+        super(msg, cause); // 保留原始异常（异常链）
+    }
+}
+
+public class ChainDemo {
+    public static void main(String[] args) {
+        try {
+            throw new BusinessException("下单失败", new IllegalStateException("库存不足"));
+        } catch (BusinessException e) {
+            System.out.println(e.getMessage());
+            System.out.println("根因: " + e.getCause().getMessage());
+        }
+    }
+}
+```
+
+## 3. java.time 基础
+
+```java
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+
+public class TimeDemo {
+    public static void main(String[] args) {
+        LocalDate today = LocalDate.now();
+        LocalDate nextWeek = today.plusDays(7);
+        System.out.println(today + " -> " + nextWeek);
+
+        Duration d = Duration.between(
+            LocalDateTime.now(),
+            LocalDateTime.now().plusHours(3));
+        System.out.println("相差小时: " + d.toHours());
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        System.out.println(today.format(fmt));
+
+        LocalDate parsed = LocalDate.parse("2026/08/06", fmt);
+        System.out.println(parsed.getYear());
+    }
+}
+```
+
+## 示例
+
+计算两个日期之间隔了多少天，并格式化输出：
+
+```java
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+
+public class DaysBetween {
+    public static void main(String[] args) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate start = LocalDate.parse("2026-01-01", fmt);
+        LocalDate end = LocalDate.parse("2026-08-06", fmt);
+        long days = ChronoUnit.DAYS.between(start, end);
+        System.out.println("相隔 " + days + " 天");
+    }
+}
+```
+
+## 易错点
+
+- **吞掉异常**：空的 `catch (Exception e) {}` 让问题无声消失，排查时极痛苦；至少记录日志。
+- **finally 里的 return 掩盖异常**：`finally` 中的 `return`/`throw` 会覆盖 `try` 里的异常结果。
+- **`Date`/`Calendar` 仍是坑**：老 API 可变、月份从 0 开始、时区隐式；新项目一律用 `java.time`。
+- **`SimpleDateFormat` 线程不安全**：多线程共享会出错，应改用 `DateTimeFormatter`（不可变、线程安全）。
+- **时区混淆**：`LocalDateTime` 不含时区，跨时区业务用 `ZonedDateTime`/`OffsetDateTime`，存储建议统一 UTC。
+
+## 练习
+
+1. 自定义 `InsufficientBalanceException`，在转账逻辑余额不足时抛出并带根因。
+2. 用 `java.time` 计算"距离今年生日还有多少天"。
+3. 用 `DateTimeFormatter` 把当前时间格式化为 `"HH:mm:ss"` 并解析回 `LocalTime`，验证往返一致。
+
+## 小结
+
+- 受检异常强制处理，运行时异常可不捕获但最好防御性处理；异常链用构造器 `cause` 保留根因。
+- `finally` 用于清理，但其中的 `return` 会掩盖异常。
+- 日期时间一律用不可变、线程安全的 `java.time`，远离老 `Date`/`Calendar`/`SimpleDateFormat`。
+
+## 延伸阅读
+
+- [Java IO 与 NIO](/docs/编程语言/Java/语言基础/IO与NIO)——用 try-with-resources 管资源
+- [Java 反射与注解](/docs/编程语言/Java/语言基础/反射与注解)——运行时能力
+- 官方文档：[java.time](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/package-summary.html)

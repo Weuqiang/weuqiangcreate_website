@@ -1,0 +1,218 @@
+---
+title: Go 时间与错误处理（time/errors）
+sidebar_position: 4
+description: "讲清 Go 的 time 包（时间点、时长、格式化、定时器）与错误处理范式（error 接口、errors.New、fmt.Errorf 包装、errors.Is/As），配示例与易错点。"
+---
+
+# Go 时间与错误处理（time / errors）
+
+在掌握 [标准库核心](/docs/编程语言/Go/语言基础/标准库核心fmt-io-os) 之后，本篇聚焦两个高频主题：时间处理与错误处理。Go 的错误处理以"显式 `error` 返回值"著称，而 `time` 包的设计也处处体现"显式、无隐式时区"的克制哲学。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用 `time.Now` / `time.Parse` / `time.Format` 处理时间点与格式化；
+- 用 `time.Duration` 表示时长并做超时控制；
+- 用 `errors.New` / `fmt.Errorf` 构造与包装错误；
+- 用 `errors.Is` / `errors.As` 做错误判别与类型提取。
+
+## 前置知识
+
+- 先读 [标准库核心](/docs/编程语言/Go/语言基础/标准库核心fmt-io-os) 了解 `error` 的基础；
+- 理解接口可看 [切片、映射与函数](/docs/编程语言/Go/语言基础/切片映射与函数) 中的函数式写法。
+
+## 核心概念
+
+Go 没有异常机制，错误是普通的返回值：函数最后一个返回值通常是 `error`，为 `nil` 表示成功。标准库提供 `errors` 包做错误构造与判别。`time` 包则以 `time.Time` 表示时刻、`time.Duration` 表示时长，格式化必须用 Go 的"参考时间" `2006-01-02 15:04:05`。
+
+本章主线：
+
+- `time`：时刻、时长、格式化、定时器
+- `errors`：构造、包装、判别、类型提取
+
+## 1. time：时刻与时长
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    now := time.Now()
+    fmt.Println("现在:", now)
+
+    // 时长
+    d := 2 * time.Hour
+    later := now.Add(d)
+    fmt.Println("两小时后:", later)
+
+    // 格式化：必须用参考时间 2006-01-02 15:04:05
+    fmt.Println(now.Format("2006-01-02 15:04:05"))
+
+    // 解析
+    t, err := time.Parse("2006-01-02", "2026-08-06")
+    if err != nil {
+        fmt.Println("解析失败:", err)
+    }
+    fmt.Println("解析到:", t.Year())
+}
+```
+
+## 2. time：定时器与睡眠
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    // 睡眠
+    time.Sleep(100 * time.Millisecond)
+
+    // 一次性定时器
+    timer := time.NewTimer(500 * time.Millisecond)
+    <-timer.C
+    fmt.Println("定时器触发")
+
+    // 周期性 ticker
+    ticker := time.NewTicker(200 * time.Millisecond)
+    defer ticker.Stop()
+    for i := 0; i < 3; i++ {
+        fmt.Println(<-ticker.C)
+    }
+}
+```
+
+## 3. errors：构造与包装
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+var ErrNotFound = errors.New("not found")
+
+func find(id int) error {
+    if id <= 0 {
+        // 包装：保留底层错误，附加上下文
+        return fmt.Errorf("find %d: %w", id, ErrNotFound)
+    }
+    return nil
+}
+
+func main() {
+    err := find(-1)
+    if err != nil {
+        // errors.Is 判断链路中是否包含目标错误
+        if errors.Is(err, ErrNotFound) {
+            fmt.Println("确实是 not found:", err)
+        }
+    }
+}
+```
+
+## 4. errors.As：提取具体类型
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+type ValidationError struct{ Field string }
+
+func (e *ValidationError) Error() string { return "invalid field: " + e.Field }
+
+func validate() error {
+    return &ValidationError{Field: "age"}
+}
+
+func main() {
+    err := validate()
+    var ve *ValidationError
+    if errors.As(err, &ve) {
+        fmt.Println("校验错误字段:", ve.Field)
+    }
+}
+```
+
+## 示例
+
+用超时控制封装一次可能很慢的查询：
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+    "time"
+)
+
+func slowQuery() (string, error) {
+    time.Sleep(150 * time.Millisecond)
+    return "ok", nil
+}
+
+func queryWithTimeout() (string, error) {
+    type result struct {
+        v   string
+        err error
+    }
+    ch := make(chan result, 1)
+    go func() {
+        v, err := slowQuery()
+        ch <- result{v, err}
+    }()
+
+    select {
+    case r := <-ch:
+        return r.v, r.err
+    case <-time.After(100 * time.Millisecond):
+        return "", errors.New("查询超时")
+    }
+}
+
+func main() {
+    v, err := queryWithTimeout()
+    fmt.Println(v, err) // 超时返回 error
+}
+```
+
+## 易错点
+
+- **`time.Format` 用错布局**：Go 的布局必须用参考时间 `Mon Jan 2 15:04:05 MST 2006`，写 `"YYYY-MM-DD"` 会得到乱码，不是报错而是错值。
+- **时区陷阱**：`time.Now()` 带本地时区；跨时区存储建议统一转 `UTC`（`t.UTC()`）或存 Unix 时间戳。
+- **`%w` 才能被 `errors.Is` 识别**：用 `fmt.Errorf("...: %v", err)` 包装后，`errors.Is` 找不到底层错误，必须用 `%w`。
+- **`ticker.Stop()` 别忘了**：`time.NewTicker` 用完必须 `Stop`，否则底层 goroutine 泄漏。
+- **把 `error` 当异常吞掉**：`if err != nil { return }` 一路上抛比默默忽略更利于排查。
+
+## 练习
+
+1. 写一个函数，接收 `time.Duration` 超时参数，用 `select` + `time.After` 实现"带超时的 HTTP 风格请求"。
+2. 定义自己的错误类型 `RateLimitError`，用 `errors.As` 在调用方提取其 `RetryAfter` 字段。
+3. 用 `time.Parse` 解析 `"2026/08/06 10:16"` 格式（注意布局字符串必须匹配参考时间）。
+
+## 小结
+
+- `time.Time` 表示时刻、`time.Duration` 表示时长，格式化/解析依赖参考时间 `2006-01-02 15:04:05`。
+- Go 用显式 `error` 返回值而非异常；`fmt.Errorf("...: %w", err)` 包装，`errors.Is`/`As` 判别与提取。
+- 定时器/ ticker 用完要 `Stop`，超时控制优先用 `select` + `time.After`。
+
+## 延伸阅读
+
+- [context 与超时控制](/docs/编程语言/Go/语言基础/context与超时)——把超时沿调用链传播
+- [Go 标准库核心](/docs/编程语言/Go/语言基础/标准库核心fmt-io-os)——`fmt`/`os` 基础
+- 官方文档：[pkg.go.dev/time](https://pkg.go.dev/time)、[errors](https://pkg.go.dev/errors)

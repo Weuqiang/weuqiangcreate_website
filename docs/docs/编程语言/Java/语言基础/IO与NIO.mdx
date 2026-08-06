@@ -1,0 +1,141 @@
+---
+title: Java IO 与 NIO
+sidebar_position: 3
+description: "梳理 Java 输入输出体系：传统字节流/字符流、try-with-resources、Files 与 Path（NIO.2）、Channel 与 Buffer，配示例与易错点。"
+---
+
+# Java IO 与 NIO
+
+在掌握 [Java 语言入门](/docs/编程语言/Java/语言基础/Java语言入门) 与 [面向对象与核心语法](/docs/编程语言/Java/语言基础/面向对象与核心语法) 之后，本篇讲 Java 处理文件与流的两种方式：传统的 `java.io` 与更现代的 NIO（`java.nio`）。读写文件是日常开发最高频的操作之一。
+
+## 学习目标
+
+学完本章，你应该能够：
+
+- 用字节流（`InputStream`/`OutputStream`）与字符流（`Reader`/`Writer`）读写；
+- 用 `try-with-resources` 自动关闭资源，避免泄漏；
+- 用 NIO.2 的 `Files` / `Path` 做简洁的文件操作；
+- 理解 NIO 的 `Channel` + `Buffer` 模型与传统的区别。
+
+## 前置知识
+
+- 先读 [面向对象与核心语法](/docs/编程语言/Java/语言基础/面向对象与核心语法) 理解类与接口；
+- 集合知识见 [集合框架](/docs/编程语言/Java/生态/集合框架)。
+
+## 核心概念
+
+Java IO 分两代：**传统 IO（java.io）** 是面向流、阻塞式的字节/字符读写；**NIO（java.nio，含 NIO.2 的 `Files`/`Path`）** 引入通道、缓冲与异步，API 更现代。`try-with-resources` 让任何实现 `AutoCloseable` 的资源在块结束时自动关闭。
+
+本章主线：
+
+- 字节流 vs 字符流
+- `try-with-resources` 资源管理
+- NIO.2：`Path` / `Files`
+- NIO：`Channel` / `Buffer`
+
+## 1. 字符流读写
+
+```java
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class ReadFile {
+    public static void main(String[] args) throws IOException {
+        // try-with-resources：退出时自动关闭 reader
+        try (BufferedReader br = new BufferedReader(new FileReader("a.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+        }
+    }
+}
+```
+
+## 2. NIO.2：Files 与 Path
+
+```java
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+public class NioRead {
+    public static void main(String[] args) throws Exception {
+        Path path = Paths.get("a.txt");
+        // 一次性读全部行
+        List<String> lines = Files.readAllLines(path);
+        System.out.println(lines.size());
+
+        // 写文件（无则创建）
+        Files.writeString(path, "hello java nio\n");
+        String content = Files.readString(path);
+        System.out.println(content);
+    }
+}
+```
+
+## 3. NIO：Channel 与 Buffer
+
+```java
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+
+public class ChannelDemo {
+    public static void main(String[] args) throws Exception {
+        try (RandomAccessFile raf = new RandomAccessFile("a.txt", "rw");
+             FileChannel ch = raf.getChannel()) {
+            ByteBuffer buf = ByteBuffer.allocate(1024);
+            int n = ch.read(buf);
+            buf.flip(); // 切换为读模式
+            while (buf.hasRemaining()) {
+                System.out.print((char) buf.get());
+            }
+        }
+    }
+}
+```
+
+## 示例
+
+统计一个文本文件的行数（用 NIO.2 最简洁）：
+
+```java
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class CountLines {
+    public static void main(String[] args) throws Exception {
+        long count = Files.lines(Path.of("a.txt")).count();
+        System.out.println("行数: " + count);
+    }
+}
+```
+
+## 易错点
+
+- **不关流**：未关闭的流会占用文件句柄，长期运行的服务会耗尽句柄；务必用 `try-with-resources`。
+- **字节流读中文乱码**：字节流不处理字符编码，读文本要用 `Reader` 并指定 `Charset`（如 `new InputStreamReader(in, StandardCharsets.UTF_8)`）。
+- **`ByteBuffer` 忘 `flip()`**：写完后读不到数据，必须 `flip()` 把 limit 设为 position 并复位。
+- **`Files.readAllLines` 大文件 OOM**：它会一次性载入内存，超大文件应改用 `Files.lines()` 流式处理。
+- **相对路径基准是工作目录**：`Paths.get("a.txt")` 相对的是 JVM 启动目录，生产环境建议用绝对路径或 classpath 资源。
+
+## 练习
+
+1. 用 `Files.copy` 把一个文件复制到新路径，并捕获 `NoSuchFileException`。
+2. 用 `BufferedWriter` + `try-with-resources` 写入 1000 行随机整数。
+3. 用 NIO `Channel` 把一个文件的字节内容全部读进 `ByteBuffer` 并打印长度。
+
+## 小结
+
+- 传统 IO 面向流（字节/字符），NIO.2 的 `Files`/`Path` 更适合日常文件操作。
+- 任何 `AutoCloseable` 资源都用 `try-with-resources` 管理，杜绝句柄泄漏。
+- 中文务必指定字符集；大文件用流式 API 避免内存爆掉。
+
+## 延伸阅读
+
+- [Java 反射与注解](/docs/编程语言/Java/语言基础/反射与注解)——运行时探查类结构
+- [Java 异常与日期时间](/docs/编程语言/Java/语言基础/异常与日期时间)——异常处理范式
+- 官方文档：[java.nio.file.Files](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/nio/file/Files.html)
