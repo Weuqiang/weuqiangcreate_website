@@ -1,0 +1,90 @@
+---
+title: 智能体框架生态
+description: 从 LangChain 到 smolagents——主流智能体框架的定位、取舍与收敛趋势，以及何时该「不装框架」。
+sidebar_position: 31
+---
+
+## 学习目标
+
+- 理解智能体框架解决的四类问题：编排、记忆、工具、可观测性。
+- 掌握主流框架（LangGraph / LlamaIndex / AutoGen / CrewAI / Semantic Kernel / 轻量派）的定位差异。
+- 建立「何时用框架、何时裸写循环」的判断框架。
+
+## 前置知识
+
+- 先读 [Agent 开发](/docs/人工智能/大模型与应用/Agent开发)（agent 设计理论与工具调用方式）。
+- 再看 [MCP 与工具协议](/docs/人工智能/大模型与应用/MCP与工具协议)（工具如何被标准化暴露）。
+- 了解 [AI 智能体记忆与规划](/docs/人工智能/大模型与应用/AI智能体记忆与规划) 中的记忆/规划闭环。
+
+## 核心概念
+
+### 框架到底在解决什么
+
+一个能跑的 agent，最少只需要「**循环调用 LLM + 调工具 + 维护状态**」三件事。框架的价值在于把**生产级**需要的横切能力封装好：
+
+1. **编排（Orchestration）**：把「思考→行动→观察」串成可回放、可分支、可中断的恢复式流程。
+2. **记忆（Memory）**：短期上下文管理与长期向量/结构化记忆的接入（见 [记忆与规划](/docs/人工智能/大模型与应用/AI智能体记忆与规划)）。
+3. **工具（Tools）**：函数 schema 生成、参数校验、错误重试，以及和 [MCP](/docs/人工智能/大模型与应用/MCP与工具协议) 的对接。
+4. **可观测性（Observability）**：trace、token 成本、每一步的输入输出，便于调试与评测。
+
+### 主流框架定位
+
+| 框架 | 核心范式 | 适合场景 |
+|------|---------|---------|
+| **LangChain / LangGraph** | 图态编排（节点+边+状态） | 复杂有状态、需人工介入/分支恢复的多步流程 |
+| **LlamaIndex** | 数据/RAG 为中心 | 以检索增强为核心、需要丰富索引策略的知识型 agent |
+| **AutoGen** | 多智能体对话 | 多个 agent 互相问答、代码执行协作（如 AutoGen Studio） |
+| **CrewAI** | 角色化团队（Role + Task） | 把任务拆给「不同角色」的 agent 协作，业务叙事友好 |
+| **Semantic Kernel** | 企业级技能编排（Microsoft） | 已有 .NET/Java 企业栈、要插件式集成 LLM 能力 |
+| **轻量派（smolagents / Pydantic AI / DSPy）** | 代码即 agent / 声明式优化 | 想要最小依赖、可测试、可复现的研究或小规模生产 |
+
+> 趋势判断：2024–2026 年框架明显在**收敛**——重框架（LangChain 早期）因抽象过厚被诟病，社区转向「**少即是多**」：用裸 LLM API + 几十行循环就能覆盖 80% 场景，只在真正需要状态图/可观测性时才上 LangGraph 这类重编排。
+
+### 何时「不装框架」
+
+如果 agent 只是「调一次工具、拿结果」，直接写循环反而更清晰、更易调试、依赖更少。框架带来的认知负担与版本碎片化，往往超过它省下的样板代码。经验法则：**复杂度来自业务逻辑，而不是来自框架**；当你的流程需要分支、恢复、人工审批、长期状态时，才值得引入编排框架。
+
+## 示例
+
+一个「裸循环」最小 agent（不依赖任何框架），体会框架解决的是哪部分：
+
+```python
+def run_agent(task, tools, max_steps=10):
+    history = [{"role": "user", "content": task}]
+    for _ in range(max_steps):
+        # 1. LLM 决定下一步：直接回答，还是调用某个 tool
+        resp = llm.chat(history, tools=tools)
+        if resp.finish:                      # 框架帮你省掉的「终止判断」
+            return resp.text
+        # 2. 执行工具（框架帮你做 schema 校验/重试）
+        result = call_tool(resp.tool, resp.args)
+        history.append(resp.as_message())
+        history.append({"role": "tool", "content": str(result)})
+    return "超过最大步数"
+```
+
+当 `max_steps`、分支、失败恢复、人工审批变多，这种裸循环就会膨胀——那时 LangGraph 这类框架才体现出价值。
+
+## 易错点
+
+- **为用框架而用框架**：简单链路硬套 LangChain，反而被抽象层坑。先用裸循环验证可行性。
+- **框架版本碎片化**：LangChain 等生态迭代极快，示例代码常过时；优先看官方最新 docs。
+- **忽视可观测性**：agent 行为难复现，没有 trace 几乎无法调试；无论用不用框架，都要记录每一步输入输出。
+- **把框架当护城河**：框架是加速层，不是壁垒；业务状态模型与评测体系才是。
+
+## 练习
+
+1. 给你「一个会自动查数据库并生成周报的 agent」需求，选一个框架并说明为什么，再说明如果需求退化成「单次问答」你会怎么做。
+2. 对比 LangGraph（图态）与 AutoGen（对话）在「多 agent 协作写代码」任务上的取舍。
+3. 列举你会在裸循环里手动实现、而框架通常已封装好的三件事。
+
+## 小结
+
+智能体框架生态从「重封装」走向「**按需取用**」。LangGraph/LlamaIndex/AutoGen/CrewAI/Semantic Kernel 各有定位，轻量派（smolagents/DSPy）则主张用更少的抽象换取可控性。它与 [Agent 开发](/docs/人工智能/大模型与应用/Agent开发) 的设计理论、[MCP](/docs/人工智能/大模型与应用/MCP与工具协议) 的工具标准化、[记忆与规划](/docs/人工智能/大模型与应用/AI智能体记忆与规划) 的闭环共同构成现代 agent 工程的全景。选型铁律：**先裸写循环，复杂度上来再上框架**。
+
+## 延伸阅读
+
+- LangGraph 官方文档（状态图编排）。
+- LlamaIndex（RAG 与数据 agent）。
+- Microsoft AutoGen / Semantic Kernel。
+- Hugging Face smolagents、DSPy（声明式 LLM 编程）。
