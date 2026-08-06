@@ -1053,6 +1053,14 @@ server {
 
 Nginx 的一切都围绕「事件驱动 + 配置继承」两条主线。改配置前先想清楚指令在哪个 Context 生效，排障时先看 error_log 再猜原因。
 
+## 易错点
+
+- 改完配置不先验语法：直接 restart 或没跑 `nginx -t`，一句错全站 502；上线前先 test 再 reload。
+- `root` 与 `alias` 混用：`root` 是「拼接」location 路径，`alias` 是「替换」；用错会让请求落到错误目录，表现为 404。
+- `try_files` 末尾缺兜底：少写 `$uri/ ` 或 `index.php$is_args$args`，前端路由/伪静态直接失效。
+- upstream 写死 IP、不配健康检查：后端节点宕机仍被转发，雪崩时无法摘除。
+- 默认 `client_max_body_size 1m`：上传大文件被 413 拒，需按业务显式调大。
+
 ## 练习
 
 动手检验一下自己：
