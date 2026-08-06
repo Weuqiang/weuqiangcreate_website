@@ -83,6 +83,30 @@ int val = (Wire.read() << 8) | Wire.read();
 
 > 上拉电阻：I2C 的 SCL/SDA 必须外接上拉（通常 4.7kΩ）到 VCC。
 
+## 示例
+
+一个把三种总线串起来的实用例程：UART 回显、I2C 读温度传感器（地址 0x48）、SPI 读 ADC，覆盖"点对点 / 多设备省线 / 高速全双工"三种拓扑：
+
+```cpp
+// 1) UART 回显：收到什么发什么
+Serial.begin(115200);
+if (Serial.available()) Serial.write(Serial.read());
+
+// 2) I2C 读温度（TI TMP102，地址 0x48，2 字节补码）
+Wire.beginTransmission(0x48);
+Wire.write(0x00); Wire.endTransmission(false);   // 重复起始条件
+Wire.requestFrom(0x48, 2);
+int16_t raw = (Wire.read() << 8) | Wire.read();
+float temp = raw * 0.0625f;
+
+// 3) SPI 读 ADC（CS 拉低选中，发 0 收数据，用完拉高）
+digitalWrite(CS, LOW);
+SPI.transfer(0x80); uint16_t adc = SPI.transfer(0) << 8 | SPI.transfer(0);
+digitalWrite(CS, HIGH);
+```
+
+> I2C 的 SDA/SCL 必须外接 4.7kΩ 上拉；SPI 多从机时每个设备独立 CS，传完立即拉高避免误触发。
+
 ## 小结
 
 UART 交叉连接、SPI 管好片选、I2C 必接上拉；速度、线数、拓扑决定选型，三者覆盖绝大多数板级通信。

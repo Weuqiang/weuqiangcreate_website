@@ -111,6 +111,22 @@ build/
 新手记住三板斧即可起步：`git add -A` → `git commit -m "..."` → `git push`。
 :::
 
+## 示例
+
+把上文的命令串成一个真实的功能分支工作流：从 `main` 切出功能分支开发，合回前先变基保持历史线性，再用非快进合并保留功能边界。
+
+```bash
+git switch -c feat/login main     # 1. 基于最新 main 开分支
+# ... 写代码、多次 commit ...
+git fetch origin                  # 2. 拉取远端最新
+git rebase origin/main            # 3. 把本地提交接到最新 main 之上，历史保持线性
+git switch main
+git merge --no-ff feat/login      # 4. 保留合并记录，便于回溯功能边界
+git push origin main
+```
+
+变基让提交链「看起来像一直在 main 上开发」，合并时 `--no-ff` 又留下一个合并提交，二者结合既干净又可追溯，是多人协作的常见折中。
+
 ## 小结
 
 Git 的技术难点很少，协作约定才是重点：分支怎么开、commit 怎么写、合并前谁来审。工具只保证可回溯，规范才保证可协作。

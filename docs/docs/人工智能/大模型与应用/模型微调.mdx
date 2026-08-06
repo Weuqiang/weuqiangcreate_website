@@ -228,6 +228,29 @@ EETQ 特别适合对性能和实现复杂度都有较高要求的用户。
 
 大型算例平台例如：阿里云百炼，无需企业认证，但是200MB的训练语料就需要加载80分钟，数据还需要分割后再上传。200MB语料下，训练`Qwen2.5 7b`一轮训练就需要4小时，约18元。换算后：1个G的语料，训练`Qwen2.5 7b`一轮训练就需要20小时，约90元。成本是租算力1倍往上。
 
+## 示例
+
+量化解决了「装得下」，而 LoRA / QLoRA 解决了「训得起」。下面用 PEFT 把可训练参数限制为少量低秩矩阵，显存占用相比全量微调大幅下降。
+
+```python
+# 极简 LoRA 微调（需 pip install peft transformers）
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import LoraConfig, get_peft_model
+
+model_name = "Qwen/Qwen2.5-0.5B-Instruct"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
+
+lora_cfg = LoraConfig(
+    r=8, lora_alpha=16, lora_dropout=0.05,
+    target_modules=["q_proj", "v_proj"], task_type="CAUSAL_LM",
+)
+model = get_peft_model(model, lora_cfg)
+model.print_trainable_parameters()   # 仅训练少量低秩参数，显存占用大幅下降
+```
+
+配合上文的 4-bit 量化（bitsandbytes / HQQ），即可在单张消费级显卡上完成 QLoRA 微调；训练完成后用 `model.save_pretrained("lora-adapter")` 导出适配器，推理时再合并。
+
 ## 小结
 
 微调的第一性问题永远是「数据够不够好、非微调不可吗」。能靠提示和检索解决就别训；真要训，LoRA/QLoRA 是大多数人的最优起点。

@@ -87,6 +87,28 @@ $$
 
 下一篇「图论与组合基础」把这些结构用于建模网络与计数。
 
+## 示例
+
+**德·摩根定律用代码验证**（逻辑等式不止"看起来对"，还能枚举真值表）：
+
+```python
+for p in (True, False):
+    for q in (True, False):
+        left  = not (p and q)
+        right = (not p) or (not q)
+        assert left == right          # ¬(p∧q) ≡ ¬p∨¬q 对所有真值成立
+print("德·摩根定律验证通过")
+```
+
+**数学归纳法代码化**（验证 $1+2+\cdots+n=\frac{n(n+1)}{2}$）：
+
+```python
+def sum_formula(n): return n*(n+1)//2
+def sum_loop(n):    return sum(range(1, n+1))
+for n in range(1, 1001):
+    assert sum_loop(n) == sum_formula(n)   # 对 n=1..1000 全部成立
+```
+
 ## 小结
 
 集合与命题逻辑把「对象」和「推理」形式化，证明方法（直接、反证、归纳）把它们变成可靠结论。它是一切 [算法分析](/docs/数学基础/离散数学/复杂度初步) 与 [布尔代数](/docs/数学基础/离散数学/布尔代数) 的前提，也是 [自动机与形式语言](/docs/数学基础/离散数学/自动机与形式语言) 的底层词汇。

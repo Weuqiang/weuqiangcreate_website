@@ -78,6 +78,38 @@ description: "理解虚拟内存、分页、页面置换与抖动，建立地址
 - 大对象、缓存命中率直接影响性能；
 - 内存泄漏 = 虚拟页始终被占用、无法回收。
 
+## 示例
+
+**地址翻译**：页大小 4KB（0x1000 = 4096 字节），虚拟地址 `0x1234`：
+- `0x1234 = 4660`，页号 `4660 // 4096 = 1`，页内偏移 `4660 % 4096 = 564 = 0x234`。
+- 故虚拟地址 `0x1234` → 第 1 号页、页内偏移 `0x234`；查页表得物理页框号后加上偏移即得物理地址。
+
+**LRU 置换仿真**（用 Python 复现"最久未用"的直觉）：
+
+```python
+from collections import OrderedDict
+
+class LRU:
+    def __init__(self, cap):
+        self.cap = cap
+        self.cache = OrderedDict()
+    def get(self, k):
+        if k not in self.cache: return -1
+        self.cache.move_to_end(k)        # 访问即刷新"最近使用"
+        return self.cache[k]
+    def put(self, k, v):
+        if k in self.cache: self.cache.move_to_end(k)
+        self.cache[k] = v
+        if len(self.cache) > self.cap:   # 超出容量，淘汰最久未用
+            self.cache.popitem(last=False)
+
+l = LRU(2)
+for op in [("put",1,1),("put",2,2),("get",1),("put",3,3)]:
+    if op[0] == "put": l.put(op[1], op[2])
+    else: print("get", op[1], "->", l.get(op[1]))
+# 此时容量 2，put(3,3) 会淘汰最久未用的 key=2
+```
+
 ## 小结
 
 虚拟内存用"地址翻译 + 分页 + 置换"让有限物理内存服务无限需求。它是现代多任务系统的基石，也是性能调优的底层抓手。

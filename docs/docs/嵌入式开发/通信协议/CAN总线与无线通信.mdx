@@ -84,6 +84,39 @@ while (WiFi.status() != WL_CONNECTED) delay(500);
 
 > 实际项目常组合：CAN/Wireless 做采集，WiFi/LoRa 做回传，UART/SPI/I2C 做板级。
 
+## 示例
+
+CAN 发一帧（MCP2515）+ ESP32 连 WiFi 后通过 MQTT 上报数据的两个完整片段，覆盖"板级总线 → 无线回传"的典型组合：
+
+```cpp
+// CAN：标准帧 ID=0x100，发两个字节
+#include <SPI.h>
+#include <mcp2515.h>
+MCP2515 can(10);                       // CS 接 D10
+void can_send(uint8_t a, uint8_t b) {
+    struct can_frame f = {0};
+    f.can_id = 0x100; f.can_dlc = 2;
+    f.data[0] = a; f.data[1] = b;
+    can.sendMessage(&f);
+}
+```
+
+```cpp
+// WiFi + MQTT 上报（PubSubClient）
+#include <WiFi.h>
+#include <PubSubClient.h>
+WiFiClient wc; PubSubClient client(wc);
+void mqtt_report(const char *topic, int value) {
+    WiFi.begin("SSID", "password");
+    while (WiFi.status() != WL_CONNECTED) delay(500);
+    client.setServer("broker.hivemq.com", 1883);
+    client.connect("esp32_sensor");
+    client.publish(topic, String(value).c_str());
+}
+```
+
+> CAN 总线两端务必接 120Ω 终端电阻；MQTT broker 地址/端口按你的部署填写，上面是公共测试 broker。
+
 ## 小结
 
 CAN 靠优先级仲裁避免冲突且能容错，适合汽车与工业；蓝牙近距、WiFi 高速、LoRa 远距低速率，按场景选型。

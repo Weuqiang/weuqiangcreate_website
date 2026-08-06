@@ -85,6 +85,40 @@ description: "理解进程与线程、状态切换、调度算法与死锁。"
 - 按固定顺序加锁（破坏循环等待）；
 - 银行家算法做安全检测。
 
+## 示例
+
+**死锁现场**：两个线程各持一把锁、再去抢对方那把，且加锁顺序相反——四个必要条件全部满足时程序卡死：
+
+```python
+import threading, time
+A, B = threading.Lock(), threading.Lock()
+
+def t1():
+    with A:                      # 线程1 先拿 A
+        time.sleep(0.01)
+        with B:                  # 再拿 B（此时 B 可能被线程2拿着）
+            print("t1 done")
+
+def t2():
+    with B:                      # 线程2 先拿 B
+        time.sleep(0.01)
+        with A:                  # 再拿 A（此时 A 被线程1拿着）
+            print("t2 done")
+
+threading.Thread(target=t1).start()
+threading.Thread(target=t2).start()
+```
+
+**破坏"循环等待"**：两线程都按 `A → B` 同一顺序加锁，死锁即消失：
+
+```python
+def safe(lock_first, lock_second):
+    with lock_first:
+        with lock_second:
+            print("safe section")
+# t1、t2 都调用 safe(A, B)，顺序一致，不可能循环等待
+```
+
 ## 小结
 
 进程隔离、线程共享，调度决定响应与吞吐，死锁是并发的暗礁。理解这些，才能写出既快又稳的多线程程序。下一站：[内存管理](../内存管理)。

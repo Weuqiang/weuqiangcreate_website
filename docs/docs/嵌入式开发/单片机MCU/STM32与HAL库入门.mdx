@@ -79,6 +79,33 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 > 追求极致性能时可改用 LL 库或直接寄存器操作。
 
+## 示例
+
+一个典型的 STM32 HAL `main` 骨架：先初始化时钟与外设，再用定时器中断（而非 `HAL_Delay` 忙等）翻转 LED，体现"配置外设 + 处理中断"的套路：
+
+```cpp
+int main(void) {
+    HAL_Init();
+    SystemClock_Config();          // CubeMX 生成的时钟树配置
+    MX_GPIO_Init();                // 引脚与时钟使能（含 LED 引脚）
+    MX_TIM2_Init();
+    HAL_TIM_Base_Start_IT(&htim2); // 启动定时器溢出中断
+
+    while (1) {
+        // 主循环不阻塞，可并行处理其它任务
+    }
+}
+
+// 定时器每溢出一次（如 1s）翻转 LED，不占用 CPU 等待
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM2) {
+        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
+}
+```
+
+> `htim2`、`LED_GPIO_Port` 等符号由 CubeMX 生成；若 LED 不闪，先查 `__HAL_RCC_GPIOx_CLK_ENABLE()` 与定时器时钟是否已使能。
+
 ## 小结
 
 STM32 上手先配时钟树与引脚，HAL 库让你少写寄存器；想抠性能再下沉到 LL 库或裸寄存器。

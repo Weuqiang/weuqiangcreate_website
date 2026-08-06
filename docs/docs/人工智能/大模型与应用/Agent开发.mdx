@@ -281,6 +281,33 @@ MG
 
 常用于需要多个智能体协作的场景，例如：狼人杀、三国杀、斯坦福小镇等桌面游戏。
 
+## 示例
+
+下面用不到 20 行代码复现一个最朴素的 ReAct 风格智能体：循环「思考 → 调用工具 → 观察」，直到信息足够或达到步数上限。
+
+```python
+# 极简 ReAct 风格智能体：思考 -> 调用工具 -> 观察 -> 回答
+def search(query: str) -> str:
+    """模拟一个搜索工具，返回与问题相关的片段。"""
+    return f"关于「{query}」的摘要：它是一种常见的概念，核心要点有三。"
+
+tools = {"search": search}
+
+def agent(question: str, max_steps: int = 3) -> str:
+    context = ""
+    for _ in range(max_steps):
+        _thought = f"问题={question} 已知={context}\n下一步：调用 search 工具获取信息"
+        observation = tools["search"](question)
+        context += " " + observation
+        if len(context) > 60:        # 信息已足够，结束循环
+            return f"答案（依据：{context}）"
+    return f"暂未得到结论，已知：{context}"
+
+print(agent("量子纠缠是什么？"))
+```
+
+真实工程中，`search` 会替换为搜索引擎、向量数据库或函数调用（function calling），`thought` 由大模型生成，循环由 ReAct / Plan-and-Execute 等框架驱动。
+
 ## 小结
 
 Agent = 模型决策 + 宿主执行的可循环系统。价值在于把「会说话」变成「能办事」，代价是更多的可控性、成本与失败面。先想清楚动作边界与回退策略，再谈多 Agent 编排。

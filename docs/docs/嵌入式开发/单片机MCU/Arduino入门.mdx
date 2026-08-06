@@ -77,6 +77,36 @@ Serial.print("val="); Serial.println(v);
 
 Arduino 帮你建立「引脚→代码→现象」的直觉。进阶请移步「STM32 与 HAL 库入门」，接触更专业的定时器、中断与外设。
 
+## 示例
+
+一个不阻塞 `loop` 的完整草图：1Hz 闪灯的同时读取按键，并用 PWM 把电位器读数映射成 LED 亮度（综合了数字 IO、串口、`millis()` 计时与模拟输出）：
+
+```cpp
+const int LED = 9, BTN = 2, POT = A0;
+unsigned long lastBlink = 0;
+bool ledOn = false;
+
+void setup() {
+  pinMode(LED, OUTPUT);
+  pinMode(BTN, INPUT_PULLUP);
+  Serial.begin(9600);
+}
+
+void loop() {
+  // 非阻塞 1Hz 闪烁：不调用 delay，loop 随时可响应其它输入
+  if (millis() - lastBlink >= 500) {
+    lastBlink = millis();
+    ledOn = !ledOn;
+    digitalWrite(LED, ledOn);
+  }
+  // 电位器 -> PWM 亮度（0..1023 映射到 0..255）
+  int bright = analogRead(POT) >> 2;
+  analogWrite(LED, bright);
+  // 按键（按下为 LOW）打印一次状态
+  if (digitalRead(BTN) == LOW) Serial.println("btn pressed");
+}
+```
+
 ## 小结
 
 Arduino 用 setup/loop 抽象了裸机循环，IO 与串口是第一步；想深入性能与外设就转向 STM32 与 HAL 库。

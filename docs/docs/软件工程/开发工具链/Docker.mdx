@@ -462,6 +462,28 @@ Docker 负责制造一辆辆轻便的汽车，而 Kubernetes 则是一个复杂�
 
 对容器编排感兴趣的可以前往官网深入学习。
 
+## 示例
+
+把一个 Python 服务打包成最小镜像，再构建运行，是最常见的 Docker 入手路径：
+
+```dockerfile
+# 最小 Python 镜像：构建并运行一个 Flask 服务
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["python", "app.py"]
+```
+
+```bash
+docker build -t myapp:1.0 .
+docker run -d -p 8000:8000 --name myapp myapp:1.0
+```
+
+`Dockerfile` 描述「环境 + 启动命令」，`build` 把它固化为镜像，`run -p` 把容器端口映射到宿主机——同一镜像在任意装了 Docker 的机器上行为一致，这正是它解决「在我机器上能跑」问题的关键。
+
 ## 小结
 
 容器 = 被隔离的进程，镜像 = 分层只读文件系统，容器的可写层是易失的。单机多服务用 compose，跨机集群才需要 k8s——不要为了用 k8s 而用 k8s。

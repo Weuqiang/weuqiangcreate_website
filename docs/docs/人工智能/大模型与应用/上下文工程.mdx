@@ -367,6 +367,38 @@ function calling : 使用固定的 schema 输出，可控性高。
 sandbox utilities : 在沙盒中直接使用各种终端工具。
 agentic programming : 让AI根据文档写代码并调用代码。可控性很低。
 
+## 示例
+
+下面用一段代码演示上下文工程里最关键的「写入 → 修剪（reduce）→ 取回（retrieve）」三步：把用户事实存入长期记忆，再按查询召回相关片段。
+
+```python
+# 极简记忆系统：写入 -> 修剪(reduce) -> 取回(retrieve)
+class Memory:
+    def __init__(self):
+        self.facts = []          # 长期事实库
+
+    def write(self, fact: str):
+        self.facts.append(fact)
+
+    def reduce(self, keep: int = 3):
+        """只保留最近 keep 条，其余视为可重建的冗余信息。"""
+        if len(self.facts) > keep:
+            self.facts = self.facts[-keep:]
+
+    def retrieve(self, query: str) -> list:
+        """按关键词召回相关记忆。"""
+        return [f for f in self.facts if query in f]
+
+mem = Memory()
+mem.write("用户偏好：关注农业用电")
+mem.write("用户所在：广东省")
+mem.write("用户角色：数据分析师")
+mem.reduce(keep=2)
+print(mem.retrieve("用电"))      # -> ['用户偏好：关注农业用电']
+```
+
+修剪（reduce）能显著降低上下文长度，取回（retrieve）则保证模型在回答时只看到与当前问题相关的信息，两者配合是控制 token 成本与提升准确率的常用手段。
+
 ## 小结
 
 上下文工程的核心不是在窗口里塞更多，而是塞得更准。明确每段内容的角色、把它放在模型最在意的区位、对噪声果断裁剪，往往比换更大模型更划算。

@@ -117,6 +117,34 @@ description: "大模型自动化评测指标全解：MMLU、C-Eval、GSM8K 客�
 
 图像生成模型的评测是多维度的，没有单一指标能完美涵盖所有方面。FID关注图像群体的分布，CLIP Score关注图文匹配，而CIDEr/SPICE关注描述的语义质量。同时，这些自动化指标也存在局限性：FID依赖于特定的预训练模型，计算成本高昂；CLIP Score虽然高效，但可能无法捕捉到细节（如艺术家风格），导致评测不准确。这些局限性推动了行业对更多元化、更精细的评测方法和榜单的探索，并形成了评测工作的**"全栈"**属性。一个顶尖的AI评测工程师不仅要理解这些指标，还要能根据项目需求，选择和组合不同的指标，甚至进行众包评测，从而为模型优化提供最精准、最具价值的反馈。
 
+## 示例
+
+评测离不开可复现的指标计算。下面给出三类最常见场景的最小可运行示例：文本生成的 BLEU、分类模型的精确率/召回率/F1，以及直接调用 `lm-eval-harness` 跑公开基准。
+
+```python
+# 一、文本生成评测：用 sacrebleu 计算 BLEU（机器翻译/摘要常用）
+# pip install sacrebleu
+from sacrebleu.metrics import BLEU
+hyp = "猫坐在垫子上"
+ref = "猫坐在垫子上"
+print("BLEU:", BLEU().corpus_score([hyp], [[ref]]).score)   # 完全匹配 -> 100.0
+
+# 二、分类模型评测：准确率 / 精确率 / 召回率 / F1（需 sklearn）
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+y_true = [1, 0, 1, 1, 0, 1]
+y_pred = [1, 0, 0, 1, 0, 1]
+print("acc:", accuracy_score(y_true, y_pred))
+p, r, f, _ = precision_recall_fscore_support(y_true, y_pred, average="binary")
+print(f"precision={p:.2f} recall={r:.2f} f1={f:.2f}")
+
+# 三、大模型综合能力：直接调用 lm-eval-harness
+# pip install lm-eval
+# lm_eval --model hf --model_args pretrained=Qwen/Qwen2.5-0.5B-Instruct \
+#         --tasks gsm8k --device cuda:0
+```
+
+BLEU/ROUGE 衡量「与参考答案的重叠」，适合有标准答案的任务；分类指标衡量「预测与标签的一致」；`lm-eval-harness` 则把二者封装成可横向对比的公开基准，避免各团队各自造轮子。
+
 ## 小结
 
 评测是建模的一部分而非事后点缀。能力基准看上限、对齐评测看底线、线上指标看真实体验，三者缺一不可，且都怕被单一数字误导。

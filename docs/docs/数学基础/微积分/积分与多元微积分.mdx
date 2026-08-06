@@ -103,6 +103,31 @@ print(grad)   # ≈ [2. 4.]
 
 理解梯度，就理解了为什么模型能「沿着 downhill 方向」收敛到更优解。
 
+## 示例
+
+**用基本定理算定积分**：$\int_0^1 x^2\,dx$，先找原函数 $\frac{x^3}{3}$，再代上下限：
+
+$$
+\int_0^1 x^2\,dx = \left[\frac{x^3}{3}\right]_0^1 = \frac{1}{3}-0 = \frac{1}{3}
+$$
+
+**二重积分**（求单位正方形上 $f(x,y)=x+y$ 的总量）：
+
+$$
+\int_0^1\int_0^1 (x+y)\,dx\,dy
+= \int_0^1 \left[\frac{x^2}{2}+xy\right]_{x=0}^{1} dy
+= \int_0^1 \left(\frac12+y\right)dy
+= \left[\frac{y}{2}+\frac{y^2}{2}\right]_0^1 = 1
+$$
+
+**梯度计算**：$f(x,y)=x^2+y^2$，偏导 $\frac{\partial f}{\partial x}=2x,\ \frac{\partial f}{\partial y}=2y$，在 $(1,1)$ 处 $\nabla f=(2,2)$，指向函数上升最快的方向。
+
+```python
+import numpy as np
+grad = lambda x, y: np.array([2*x, 2*y])
+print(grad(1, 1))   # [2 2]
+```
+
 ## 小结
 
 积分是「无限切片的累积」，微积分基本定理让它和导数互为逆运算，多元微积分进一步把面积推广为体积与质量。它是 [多重积分应用](/docs/数学基础/微积分/多重积分应用) 与 [常微分方程](/docs/数学基础/微积分/常微分方程初步) 的前置，也是物理仿真与概率密度积分的工具。

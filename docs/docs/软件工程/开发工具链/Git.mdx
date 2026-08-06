@@ -184,6 +184,31 @@ GitHub Actions 是一种工作流，是 CI/CD 最常用的工具。
 
 [GitHub Actions documentation](https://docs.github.com/en/actions)
 
+## 示例
+
+把上文的标签与 GitHub Actions 落到可运行配置。先打一个注解标签并推送，再用一个最小 CI 工作流在每次 push 时自动跑测试：
+
+```bash
+git tag -a v1.0.0 -m "首个稳定版"   # 打注解标签
+git push origin v1.0.0               # 推送到远端
+```
+
+```yaml
+# .github/workflows/ci.yml：每次 push 自动跑测试
+name: CI
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt && pytest
+```
+
+标签用于给「可发布节点」做锚点，Actions 负责在每次提交后自动验证，二者配合让版本与质量都可视、可追溯。
+
 ## 小结
 
 Git 管的是快照而非差异，分支只是指针。把四区模型和指针模型装进脑子，命令就成了模型的语法糖；再配上规范的 commit message，历史本身就是最好的项目文档。

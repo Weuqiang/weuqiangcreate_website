@@ -1024,6 +1024,31 @@ server {
 - [使用Nginx作为HTTP负载均衡器](https://nginx.org/en/docs/http/load_balancing.html)
 - [配置HTTPS服务器](https://nginx.org/en/docs/http/configuring_https_servers.html)
 
+## 示例
+
+一个最常见的需求是把 `/api` 反向代理给后端应用，其余路径返回静态站点。最小配置如下：
+
+```nginx
+# 最小反向代理：把 /api 转发给后端，其余返回静态页
+server {
+    listen 80;
+    server_name example.com;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/;   # 末尾 / 会去掉 /api 前缀
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        root /var/www/html;
+        index index.html;
+    }
+}
+```
+
+`proxy_pass` 末尾是否带 `/` 决定要不要剥离 `location` 前缀：带 `/` 会把 `/api/foo` 转成 `http://127.0.0.1:8080/foo`，不带则转发为 `http://127.0.0.1:8080/api/foo`，这点最容易被配错。
+
 ## 小结
 
 Nginx 的一切都围绕「事件驱动 + 配置继承」两条主线。改配置前先想清楚指令在哪个 Context 生效，排障时先看 error_log 再猜原因。

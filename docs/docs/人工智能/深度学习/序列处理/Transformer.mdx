@@ -206,6 +206,31 @@ final_embeddings = token_embeddings + torch.tensor(positional_encoding, dtype=to
 
 位置编码和词嵌入相加后，就得到了包含语义和位置信息的完整表示，这将作为编码器的输入。
 
+## 示例
+
+把上文的词嵌入与位置编码之后，Transformer 的核心运算是「缩放点积注意力」。下面用 NumPy 实现一个无依赖版本，直观看到注意力权重如何分配。
+
+```python
+# 缩放点积注意力：Transformer 的核心运算
+import numpy as np
+
+def scaled_dot_product_attention(Q, K, V):
+    d_k = Q.shape[-1]
+    scores = (Q @ K.T) / np.sqrt(d_k)     # 缩放，避免点积过大导致梯度消失
+    exp = np.exp(scores - scores.max(axis=-1, keepdims=True))
+    attn = exp / exp.sum(axis=-1, keepdims=True)   # softmax
+    return attn @ V, attn
+
+Q = np.array([[1.0, 0.2], [0.3, 1.0]])
+K = np.array([[1.0, 0.1], [0.2, 0.9]])
+V = np.array([[0.5, 0.5], [0.8, 0.2]])
+out, weights = scaled_dot_product_attention(Q, K, V)
+print("输出:\n", out)
+print("注意力权重:\n", weights)
+```
+
+缩放因子 `1/sqrt(d_k)` 让点积的方差与维度无关，softmax 不会被推到饱和区；多头注意力只是把 Q/K/V 投影成多组、并行算完再拼接，从而在不同子空间捕捉不同类型的关系。
+
 ## 小结
 
 Transformer 用自注意力把「任意两位置的关系」一步算清，且可完全并行，因此既能训得大又能捕捉长依赖。它是现代大模型的共同骨架。

@@ -84,6 +84,31 @@ HTTP 明文传输，HTTPS 在 HTTP 与 TCP 间加 **TLS** 层：
 
 浏览器限制脚本只能访问**同源**（协议+域名+端口相同）资源，是 Web 安全的基石；跨域用 CORS 显式放开。
 
+## 示例
+
+**一次真实请求**（用 curl 看请求行、头与响应）：
+
+```bash
+curl -i -X GET "https://api.example.com/users/1" \
+  -H "Authorization: Bearer <token>" \
+  -H "Accept: application/json"
+# HTTP/2 200
+# content-type: application/json
+# {"id":1,"name":"weiqiang"}
+```
+
+**SQL 注入对比**：把用户输入直接拼进字符串是灾难，参数化查询让输入永远只是"数据"：
+
+```python
+# 危险：name 若是 "x' OR '1'='1" 会把整张表查出来
+cur.execute("SELECT * FROM users WHERE name = '" + name + "'")
+
+# 安全：占位符，数据库先编译语句、再把输入当纯值绑定
+cur.execute("SELECT * FROM users WHERE name = %s", (name,))
+```
+
+> 同理，XSS 靠"转义输出 + CSP"、CSRF 靠"同源令牌"，核心都是"不信任任何外部输入"。
+
 ## 小结
 
 HTTP 管"传什么"，HTTPS 管"安全传"，认证与防护管"只让对的人做对的事"。懂这一层，Web 安全漏洞大半可防。

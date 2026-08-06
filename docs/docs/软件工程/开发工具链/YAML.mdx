@@ -401,6 +401,33 @@ datetime:
   </TabItem>
 </Tabs>
 
+## 示例
+
+把上文的标量、列表、嵌套映射语法落到一份真实的应用配置上，直观看到它们如何组合：
+
+```yaml
+# 一个最小应用配置：把上文语法落到真实场景
+app:
+  name: weuqiang-site
+  port: 8080
+  debug: false
+
+database:
+  host: 127.0.0.1
+  port: 5432
+  credentials:
+    user: admin
+    password: "s3cr3t"   # 含特殊字符用引号包裹
+
+features:
+  - search
+  - recommend
+  - cache:
+      ttl: 300           # 缓存过期秒数
+```
+
+缩进即层级（必须用空格、不能用 Tab），`-` 表示列表项，冒号后空格分隔键值；含特殊字符的字符串加引号可避免被误解析成布尔/数字。
+
 ## 小结
 
 YAML 的全部复杂度集中在两处：缩进必须用空格、隐式类型转换会咬人。写配置时养成「拿不准就加引号」的习惯，能规避大部分线上事故。

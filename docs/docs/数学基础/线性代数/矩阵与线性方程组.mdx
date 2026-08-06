@@ -101,6 +101,27 @@ print(x)   # 拟合直线的斜率与截距
 
 线性回归的本质，就是求这个最小二乘解。
 
+## 示例
+
+**行列式判可逆**：页中 $A=\begin{bmatrix}1&2\\3&4\end{bmatrix}$，行列式 $\det A=1\times4-2\times3=-2\neq0$，故 $A$ 可逆、方程组有唯一解；而 $B=\begin{bmatrix}1&2\\2&4\end{bmatrix}$ 的 $\det B=1\times4-2\times2=0$，行线性相关、秩为 1，无唯一解。
+
+```python
+import numpy as np
+A = np.array([[1.,2.],[3.,4.]]); B = np.array([[1.,2.],[2.,4.]])
+print(np.linalg.det(A), np.linalg.det(B))   # -2.0  0.0
+print(np.linalg.matrix_rank(B))             # 1
+```
+
+**最小二乘**（超定方程组 $y\approx 2x$ 带噪声，用正规方程求近似斜率）：
+
+```python
+x = np.array([0,1,2,3.]).reshape(-1,1)
+y = np.array([0.1, 2.0, 3.9, 6.2])        # 近似 2x
+A = np.hstack([x, np.ones_like(x)])
+theta, *_ = np.linalg.lstsq(A, y, rcond=None)
+print(theta)   # ≈ [2.0, 0.05]  -> 斜率≈2，截距≈0
+```
+
 ## 小结
 
 线性方程组写成 `Ax=b`，高斯消元用等价行变换求解，行列式为零意味着空间被压扁、解不唯一。它承接 [矩阵入门](/docs/数学基础/线性代数/线性代数入门)，并通向 [向量空间与基](/docs/数学基础/线性代数/向量空间与基) 与 [LU 分解](/docs/数学基础/线性代数/QR与LU分解)。

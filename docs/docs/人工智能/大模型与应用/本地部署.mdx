@@ -87,6 +87,31 @@ Vllm不支持启动一个服务就可以随机切换其他模型（ollama支持�
 通常需要为每一个模型单独运行一次vllm命令，并且每个模型都要提供不同的端口，比如他默认的是8000端口，而我上一个命令使用的是1236端口
 :::
 
+## 示例
+
+部署完服务后，下一步是用客户端消费它。Ollama 与 vLLM 都暴露 OpenAI 兼容接口，下面用 `requests` 直接调用本地端点，无需额外 SDK。
+
+```python
+# 调用本地部署的 OpenAI 兼容接口（Ollama / vLLM 均支持）
+import requests
+
+def chat(base_url: str, model: str, prompt: str) -> str:
+    resp = requests.post(
+        f"{base_url}/v1/chat/completions",
+        json={
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 256,
+        },
+        timeout=30,
+    )
+    return resp.json()["choices"][0]["message"]["content"]
+
+print(chat("http://localhost:8000", "Qwen2.5-7B-Instruct", "用一句话解释 Transformer"))
+```
+
+把上面的 `base_url` 换成 Ollama 默认的 `http://localhost:11434` 或 vLLM 启动时的 `--port` 即可无缝切换，业务代码无需改动。
+
 ## 小结
 
 本地部署先问三个问题：数据能否出域、有没有显卡、要并发还是单聊。答案决定了权重格式、量化档位和框架选型，而不是反过来追新模型。

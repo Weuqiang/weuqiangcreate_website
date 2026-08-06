@@ -1005,6 +1005,38 @@ for ep in range(epochs):
 
 </Tabs>
 
+## 示例
+
+上面用 NumPy 手写了卷积、池化、全连接的前向与反向，便于理解原理。实际工程中更常用框架封装的等价实现，下面给出 PyTorch 版 LeNet-5。
+
+```python
+# 等价的 PyTorch 版 LeNet-5：比手写 numpy 前向/反向更易用
+import torch.nn as nn
+
+class LeNet5(nn.Module):
+    def __init__(self, num_classes=10):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 6, 5), nn.ReLU(), nn.AvgPool2d(2),
+            nn.Conv2d(6, 16, 5), nn.ReLU(), nn.AvgPool2d(2),
+        )
+        self.classifier = nn.Sequential(
+            nn.Linear(16 * 4 * 4, 120), nn.ReLU(),
+            nn.Linear(120, 84), nn.ReLU(),
+            nn.Linear(84, num_classes),
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = x.flatten(1)
+        return self.classifier(x)
+
+model = LeNet5()
+print(model)   # 直接用于 MNIST 等 1x28x28 输入
+```
+
+框架自动处理反向传播与设备迁移，调试时只需对照上文的维度公式（卷积 `((H-F+2P)/S)+1`、池化同理）验证张量形状是否对得上即可。
+
 ## 小结
 
 LeNet-5 是最早成型的 CNN，用权值共享和局部连接处理图像，虽受算力所限未爆发，却奠定了后来所有卷积网络的结构范式。

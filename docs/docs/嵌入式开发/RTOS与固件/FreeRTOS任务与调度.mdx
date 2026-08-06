@@ -85,6 +85,47 @@ xQueueReceive(q, &value, portMAX_DELAY);
 
 每个任务有独立栈。栈溢出是 RTOS 最常见崩溃源——CubeMX 里给任务分配足够栈，并开启 `Stack Overflow Checking` 调试。
 
+## 示例
+
+一个最小可运行的 FreeRTOS 框架：两个任务 + 一个队列，传感器任务发、网络任务收，ISR 中用 `FromISR` 安全版本投递（完整可照搬）：
+
+```cpp
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+
+QueueHandle_t g_q;
+
+void vSensorTask(void *pv) {
+    int sample = 0;
+    for (;;) {
+        sample = read_sensor();                       // 假设已有读传感器函数
+        xQueueSend(g_q, &sample, 0);                 // 非阻塞发送；队列满则丢弃
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+void vNetTask(void *pv) {
+    int val;
+    for (;;) {
+        if (xQueueReceive(g_q, &val, portMAX_DELAY) == pdPASS) {
+            send_to_cloud(val);                       // 阻塞等待，直到有数据
+        }
+    }
+}
+
+int main(void) {
+    HAL_Init(); SystemClock_Config();
+    g_q = xQueueCreate(10, sizeof(int));             // 队列长度 10，每项 4 字节
+    xTaskCreate(vSensorTask, "sensor", 256, NULL, 2, NULL);
+    xTaskCreate(vNetTask,    "net",    256, NULL, 1, NULL);
+    vTaskStartScheduler();                            // 交权给内核，永不返回
+    for (;;);                                         // 兜底：调度器启动失败才到这里
+}
+```
+
+> 注意：ISR 里投递要用 `xQueueSendFromISR`，并传给 `pxHigherPriorityTaskWoken` 决定是否调 `portYIELD_FROM_ISR`，否则会死机。
+
 ## 小结
 
 FreeRTOS 用任务抽象并发，调度由优先级加时间片决定；任务间通信走队列、信号量、互斥量，绝不直接共享全局变量；栈溢出是最常见崩溃，需开启 Stack Overflow Check。

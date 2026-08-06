@@ -676,6 +676,26 @@ y_pred = dbscan.fit_predict(X_scaled)
   </TabItem>
 </Tabs>
 
+## 示例
+
+上文演示了 DBSCAN，这里补充更常用的 K-Means，并用轮廓系数判断「聚得好不好」。
+
+```python
+# K-Means 聚类 + 轮廓系数评估（与上文 DBSCAN 互补）
+from sklearn.datasets import make_blobs
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+
+X, _ = make_blobs(n_samples=300, centers=3, random_state=42)
+km = KMeans(n_clusters=3, random_state=42, n_init=10)
+labels = km.fit_predict(X)
+
+print("簇中心:\n", km.cluster_centers_)
+print("轮廓系数:", round(silhouette_score(X, labels), 3))   # 越接近 1 聚类越合理
+```
+
+K-Means 需要预先指定簇数 `k`，适合球形、规模相近的簇；DBSCAN 则无需指定簇数、能识别任意形状并标记噪声点。轮廓系数综合了「簇内紧密度」与「簇间分离度」，是选择 `k` 的常用依据。
+
 ## 小结
 
 聚类是无标签下的结构发现。K-Means 简单但怕非球、怕 K 难定；DBSCAN 擅任意形状与噪声却依赖密度参数；层次聚类适合要看多粒度关系的场景。先画数据分布再选方法。

@@ -71,6 +71,26 @@ int pressed = digitalRead(2) == LOW;
 
 理解门电路，有助于看懂数据手册里的「真值表」与「时序图」。
 
+## 示例
+
+用软件复现基本逻辑门并打印异或真值表——代码里的 `0/1` 正好对应电路里的低/高电平，是「数字逻辑 → 软件」的桥梁：
+
+```cpp
+int AND(int a, int b) { return a & b; }
+int OR (int a, int b) { return a | b; }
+int NOT(int a)        { return a ? 0 : 1; }
+/* 异或 = (A 或 B) 且非 (A 且 B) */
+int XOR(int a, int b) { return AND(OR(a, b), NOT(AND(a, b))); }
+
+void print_truth(void) {
+    for (int a = 0; a <= 1; a++)
+        for (int b = 0; b <= 1; b++)
+            printf("A=%d B=%d -> XOR=%d\n", a, b, XOR(a, b));
+}
+```
+
+硬件视角对照：把上式每个门换成 74 系列芯片（如 74HC08 与门、74HC32 或门、74HC04 非门），输入接拨码开关、输出接 LED，就能在面包板上看到完全一致的 0/1 行为。
+
 ## 小结
 
 数字电路用电压区间表达逻辑，TTL 与 CMOS 阈值不同需电平匹配；组合逻辑无记忆、时序逻辑靠时钟锁存，GPIO 读到的就是 0/1。

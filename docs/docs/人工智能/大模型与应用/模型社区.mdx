@@ -233,6 +233,24 @@ dataset = MsDataset.load('swift/Chinese-Qwen3-235B-2507-Distill-data-110k-SFT')
 print(f'dataset[0]: {dataset[0]}')
 ```
 
+## 示例
+
+社区下载的模型最快的验证方式是 `pipeline` 一行推理；训练好的权重也可以推回 Hub 与社区共享。
+
+```python
+# 用 pipeline 一行完成推理，并演示把模型推送到 Hugging Face Hub
+from transformers import pipeline
+
+gen = pipeline("text-generation", model="Qwen/Qwen2.5-0.5B-Instruct")
+print(gen("中国的首都是哪里？", max_new_tokens=32)[0]["generated_text"])
+
+# 训练完成后推送（需先 huggingface-cli login）
+# model.push_to_hub("your-name/qwen2.5-ft-demo")
+# tokenizer.push_to_hub("your-name/qwen2.5-ft-demo")
+```
+
+`pipeline` 自动处理分词、张量搬运与解码，适合做原型验证；生产环境通常改用上面「开源模型推理」里的 `AutoModelForCausalLM` 写法以获得更细的控制。
+
 ## 小结
 
 模型社区的价值不在「能下载」，而在「能负责任地下载」。权重、模型卡、许可证三位一体，跳过任何一个都可能上线即踩坑。

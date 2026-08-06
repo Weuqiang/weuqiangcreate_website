@@ -79,6 +79,40 @@ assert(ptr != NULL);   // 失败即停机，便于定位
 - 中断里调用非 `ISR` 安全的 API（如 `printf`）→ 死锁。
 - 看门狗未按时喂 → 反复重启。
 
+## 示例
+
+一个带断言、日志与 HardFault 兜底的最小 `main` 框架，可当作调试验收模板：
+
+```cpp
+#include <stdio.h>
+#include <assert.h>
+
+#define LOG(...) printf(__VA_ARGS__)          // 调试版日志；发布版用宏关掉
+
+volatile uint32_t g_fault_lr = 0;
+
+void HardFault_Handler(void) {                // 崩溃时先抓现场再停机
+    __asm volatile ("MOV %0, LR" : "=r" (g_fault_lr));
+    LOG("HardFault! LR=0x%08lX\r\n", g_fault_lr);
+    while (1);
+}
+
+int main(void) {
+    HAL_Init(); SystemClock_Config();
+    uint8_t *buf = malloc(64);
+    assert(buf != NULL);                       // 失败即停机并定位，比跑飞好查
+    LOG("boot ok, heap=%p\r\n", (void *)buf);
+    // ... 业务初始化
+    while (1) { /* 主循环 */ }
+}
+```
+
+命令行烧录（ST-Link，无需 IDE）：
+
+```text
+STM32_Programmer_CLI -c port=SWD -w build/firmware.bin 0x08000000 -v -rst
+```
+
 ## 小结
 
 烧录与调试是嵌入式闭环的最后一步；SWD 是主流调试接口，Bootloader 让你免拆机更新，日志加断言比单步更高效。

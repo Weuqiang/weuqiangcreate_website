@@ -955,6 +955,45 @@ for config in configs:
 ```
 :::
 
+## 示例
+
+下面用一个最小 LSTM 做「正弦序列预测」：用过去 10 个时刻预测下一时刻，演示 `nn.LSTM` 的输入输出形状。
+
+```python
+# 极简 LSTM：用历史正弦序列预测下一时刻（序列回归）
+import numpy as np
+import torch
+import torch.nn as nn
+
+class LSTMModel(nn.Module):
+    def __init__(self, input_size=1, hidden_size=16, num_layers=1):
+        super().__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, 1)
+
+    def forward(self, x):
+        out, _ = self.lstm(x)          # out: (batch, seq, hidden)
+        return self.fc(out[:, -1, :])  # 取最后时刻输出
+
+# 构造滑动窗口样本
+t = np.linspace(0, 20, 200)
+y = np.sin(t).reshape(-1, 1)
+X = np.stack([y[i:i+10] for i in range(len(y)-10)])   # 窗口长 10
+Y = y[10:]
+X = torch.tensor(X, dtype=torch.float32)
+Y = torch.tensor(Y, dtype=torch.float32)
+
+model = LSTMModel()
+opt = torch.optim.Adam(model.parameters(), lr=1e-2)
+for epoch in range(50):
+    opt.zero_grad()
+    loss = nn.MSELoss()(model(X), Y)
+    loss.backward(); opt.step()
+print(f"最终损失: {loss.item():.4f}")
+```
+
+`batch_first=True` 时输入形状为 `(batch, seq_len, input_size)`；`out[:, -1, :]` 取序列最后一步的隐藏状态作为整段序列的编码，再交给全连接层输出预测值。
+
 ## 小结
 
 LSTM 用门控把「记忆」显式管理起来，解决了普通 RNN 忘性大、长依赖学不到的痛点。它曾主导序列建模，直到 Transformer 用注意力把它在很多任务上取代。

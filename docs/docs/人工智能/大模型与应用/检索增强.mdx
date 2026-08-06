@@ -145,6 +145,31 @@ class MultiAgentRetrieval:
 4. **自适应优化**：Agent可以学习用户偏好，持续优化检索效果
 5. **复杂查询处理**：能够处理需要多步骤推理的复杂查询
 
+## 示例
+
+检索增强的核心是「把文档与问题编码为向量，按相似度取 top-k」。下面用纯 NumPy 演示稠密检索的最小闭环（真实场景把 `embed` 换成 sentence-transformers 等模型即可）。
+
+```python
+# 极简稠密检索：把文档与问题编码为向量，按余弦相似度取 top-k
+import numpy as np
+
+def embed(texts):
+    # 这里用随机向量占位，真实场景用 sentence-transformers 等模型
+    rng = np.random.default_rng(0)
+    return rng.random((len(texts), 8))
+
+def retrieve(query, docs, k=2):
+    q = embed([query])[0]
+    D = embed(docs)
+    sims = D @ q / (np.linalg.norm(D, axis=1) * np.linalg.norm(q) + 1e-9)
+    return [docs[i] for i in np.argsort(-sims)[:k]]
+
+docs = ["Transformer 用于序列建模", "CNN 擅长图像特征提取", "RAG 结合检索与生成"]
+print(retrieve("如何做检索增强？", docs))
+```
+
+把召回的片段拼进提示词再交给大模型，就构成了最基础的 RAG 链路：检索负责补足知识，生成负责组织语言。
+
 ## 小结
 
 RAG 的效果上限由检索决定、下限由生成守住。先把 chunk、embedding、重排这三道关做对，再按需上混合检索与 Agent 检索，别一上来就堆花活。

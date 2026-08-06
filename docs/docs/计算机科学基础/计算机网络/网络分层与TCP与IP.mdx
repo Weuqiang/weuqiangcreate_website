@@ -83,6 +83,26 @@ TCP 在不可靠的 IP 之上提供可靠字节流：
 
 IP 找到主机，**端口（0–65535）**找到主机上的进程（如 80=HTTP，443=HTTPS，22=SSH）。
 
+## 示例
+
+**最小 TCP 回显服务**（Python `socket`，体现"IP 找到主机 + 端口找到进程 + TCP 可靠"）：
+
+```python
+# 服务端：监听 127.0.0.1:9000，收到什么回什么
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(("127.0.0.1", 9000)); s.listen(1)
+conn, addr = s.accept()
+data = conn.recv(1024); conn.sendall(data); conn.close()
+
+# 客户端：三次握手由 connect 隐式完成
+c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+c.connect(("127.0.0.1", 9000))
+c.sendall(b"hello"); print(c.recv(1024)); c.close()
+```
+
+**子网与主机数**：`192.168.1.0/24` 中 `/24` 表示前 24 位是网络号，主机位 8 位 → 可用地址 `2^8 - 2 = 254` 台（去掉网络号与广播地址）。同一子网的主机可直接二层互通，跨子网必须经路由器逐跳转发。
+
 ## 小结
 
 网络分层让复杂通信可分解：IP 管"送到哪"，TCP 管"可靠送到"，应用层管"干什么"。下一站：[HTTP 与网络安全](../HTTP与网络安全)。
