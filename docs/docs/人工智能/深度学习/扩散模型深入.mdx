@@ -1,0 +1,118 @@
+---
+title: "扩散模型深入"
+sidebar_position: 9
+description: "扩散模型把生成建模为「逐步去噪」，本质是学习 score ∇log p_t(x)：DDPM 用离散加噪+MSE 训练，DDIM/概率流 ODE 把采样加速并支持确定性编辑，CFG 实现可控条件生成。SDE/ODE 视角统一了训练与采样。"
+---
+
+# 扩散模型深入
+
+## 学习目标
+
+- 用 SDE/ODE 统一视角理解扩散（VP/VE/Sub-VP、score matching）
+- 掌握 DDPM 的训练目标（预测噪声 / clean / x0）与 ELBO 推导
+- 理解采样器演化：DDPM 多步 → DDIM 确定性加速 → 概率流 ODE
+- 认识条件扩散与引导（classifier-free guidance）
+
+## 前置知识
+
+- [生成模型（VAE / GAN / Diffusion）](/docs/人工智能/深度学习/生成模型)
+- [经典神经网络](/docs/人工智能/深度学习/经典神经网络)
+- [随机过程](/docs/数学基础/概率与统计/随机过程) —— SDE 与布朗运动
+
+## 核心概念
+
+### 1. 从「加噪—去噪」到 SDE
+
+DDPM 的前向是离散马尔可夫加噪：$q(x_t\mid x_{t-1})=\mathcal{N}(\sqrt{\alpha_t}\,x_{t-1},(1-\alpha_t)I)$。当步数 $\to\infty$、噪声调度连续化，对应随机微分方程：
+
+$$
+dx = f(x,t)\,dt + g(t)\,dW
+$$
+
+其中 $W$ 是标准布朗运动（VP-SDE / VE-SDE 是两种常见参数化）。反向过程是相应的**反向 SDE**，由 score 函数 $\nabla_x\log p_t(x)$ 参数化——这正是连续视角的核心。
+
+### 2. Score matching 与去噪
+
+score $\nabla\log p(x)$ 用去噪分数匹配学习：训练 $s_\theta(x,t)\approx \nabla_x\log p_t(x)$，目标为
+
+$$
+\mathbb{E}_t\,\mathbb{E}_{x_0,x_t}\big[\|s_\theta(x_t,t)-\nabla_{x_t}\log p_t(x_t\mid x_0)\|^2\big]
+$$
+
+这等价于 DDPM 里「预测所注入噪声 $\varepsilon$」的网络目标。
+
+### 3. 训练目标（ELBO）
+
+DDPM 的变分下界可化简为各时间步的加权 MSE，实践中常用简化目标：
+
+$$
+\mathcal{L}_{\text{simple}}=\mathbb{E}_{t,x_0,\varepsilon}\big[\|\varepsilon-\varepsilon_\theta(x_t,t)\|^2\big]
+$$
+
+即让网络从加噪样本 $x_t$ 预测所加噪声。简单、稳定、有效。
+
+### 4. 采样加速：DDIM 与概率流 ODE
+
+- **DDPM 采样**需 $T\approx 1000$ 步（反向 SDE 含随机噪声），慢；
+- **DDIM**：非马尔可夫、确定性的同分布采样，可用更少步（20–50）出图；
+- **概率流 ODE**：把反向 SDE 写成等价常微分方程，可用现成 ODE solver 采样，并支持精确似然计算与潜在空间编辑。
+
+### 5. 条件生成与引导
+
+- **classifier guidance**：用 $\nabla\log p(y\mid x)$ 偏置 score；
+- **classifier-free guidance（CFG）**：联合训练有条件 / 无条件模型，推理时
+
+$$
+\tilde{s}=s_{\text{uncond}}+w\,(s_{\text{cond}}-s_{\text{uncond}})
+$$
+
+$w$ 控制保真度与多样性的权衡，是文生图事实标准。
+
+## 示例
+
+用 numpy 复现「训练极简 DDPM 预测噪声」的骨架（前向加噪 + MSE 监督）：
+
+```python
+import numpy as np
+
+T = 1000
+betas = np.linspace(1e-4, 2e-2, T)
+alphas = 1 - betas
+alpha_bars = np.cumprod(alphas)
+
+def q_sample(x0, t, eps=None):
+    eps = np.random.randn(*x0.shape) if eps is None else eps
+    return np.sqrt(alpha_bars[t]) * x0 + np.sqrt(1 - alpha_bars[t]) * eps
+
+# 训练目标：给 x0 与 t，监督预测注入的噪声 eps
+x0 = np.random.randn(8, 3, 32, 32)
+t = np.random.randint(0, T, size=8)
+eps = np.random.randn(8, 3, 32, 32)
+xt = q_sample(x0, t, eps)
+# model(xt, t) 应输出对 eps 的预测，损失 = MSE(eps_pred, eps)
+print("加噪后信号尺度", round(float(np.sqrt(alpha_bars[t]).mean()), 3),
+      "噪声尺度", round(float(np.sqrt(1 - alpha_bars[t]).mean()), 3))
+```
+
+## 易错点
+
+- **把「前向加噪」当训练目标**：真实目标是预测噪声 / clean，加噪只是构造监督。
+- **混淆 DDPM 与 DDIM/ODE**：前者随机、慢；后两者确定性、快。
+- **CFG 的 $w$ 过大**：导致过饱和与伪影；$w$ 过小则不遵从条件。
+- **忽略连续极限**：不把 SDE 与离散 DDPM 贯通，理论会脱节。
+
+## 练习
+
+1. 从 DDPM 的 ELBO 推导 $\mathcal{L}_{\text{simple}}$ 为何退化为预测噪声的 MSE。
+2. classifier-free guidance 相比 classifier guidance 解决了什么缺陷？
+3. 为什么概率流 ODE 允许「潜在空间插值」而 DDPM 的随机采样不直接支持？
+
+## 小结
+
+扩散模型把生成建模为「逐步去噪」，其本质是学习 score $\nabla\log p_t(x)$：DDPM 用离散加噪 + MSE 训练，DDIM / 概率流 ODE 把采样加速并支持确定性编辑，CFG 实现可控条件生成。SDE/ODE 视角统一了训练与采样，是文生图、视频生成的底座。
+
+## 延伸阅读
+
+- [生成模型（VAE / GAN / Diffusion）](/docs/人工智能/深度学习/生成模型)
+- [经典神经网络](/docs/人工智能/深度学习/经典神经网络)
+- [随机过程](/docs/数学基础/概率与统计/随机过程)

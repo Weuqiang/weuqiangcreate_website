@@ -1,0 +1,84 @@
+---
+title: "大模型训练与对齐"
+sidebar_position: 16
+description: "大模型从自监督预训练（CLM）获得知识与推理基底，经 SFT 学会指令遵循，再通过 RLHF/DPO 对齐人类意图。奖励模型、PPO/DPO 与 KL 约束构成对齐闭环；对齐税与幻觉仍是核心开放问题。它是当代 LLM 工程的轴心。"
+---
+
+# 大模型训练与对齐
+
+## 学习目标
+
+- 理解预训练目标的演化（MLM → CLM → 指令 / 对话）
+- 掌握监督微调（SFT）与对齐的两阶段（RLHF / DPO）
+- 理解偏好数据、奖励模型与 PPO 的闭环
+- 认识「对齐税」与可扩展监督等开放问题
+
+## 前置知识
+
+- [模型微调](/docs/人工智能/大模型与应用/模型微调)
+- [Transformer 架构详解](/docs/人工智能/深度学习/序列处理/Transformer)
+- [强化学习进阶](/docs/人工智能/机器学习/强化学习进阶) —— PPO 基础
+- [经典神经网络](/docs/人工智能/深度学习/经典神经网络)
+
+## 核心概念
+
+### 1. 预训练：从语言建模到世界知识
+
+- **自监督目标**：MLM（BERT 类）、CLM（GPT 类），后者更适配生成；
+- **规模律（scaling law）**：loss 随参数量 / 数据 / 算力幂律下降；
+- **涌现能力**：越过规模阈值后突现新能力（仍有学术争议）。
+
+### 2. 监督微调（SFT）
+
+用（指令, 回答）高质量示范把「续写模型」变成「听话助手」。数据质量远重于数量；核心是格式化、多样化的指令-响应对。
+
+### 3. 对齐：让模型符合人类意图
+
+- **RLHF**：收集人类偏好对 $(y_w,y_l)$ → 训奖励模型 RM → 用 PPO 优化策略最大化 RM，同时用 KL 约束不偏离 SFT 分布；
+- **DPO**：直接由偏好数据做策略优化，无需显式 RM 与 PPO，把对齐写成一个分类式损失，更稳更简单：
+
+$$
+\mathcal{L}_{\text{DPO}}=-\log\sigma\Big(\beta\big(\log\tfrac{\pi_\theta(y_w\mid x)}{\pi_{\text{ref}}(y_w\mid x)}-\log\tfrac{\pi_\theta(y_l\mid x)}{\pi_{\text{ref}}(y_l\mid x)}\big)\Big)
+$$
+
+### 4. 对齐税与开放问题
+
+对齐会牺牲部分能力（对齐税）；可扩展监督、红队、宪法 AI、过程监督等试图缓解。幻觉、分布外鲁棒仍是难题。
+
+## 示例
+
+DPO 损失的核心形式（示意）：
+
+```python
+import numpy as np
+
+def dpo_loss(logp_chosen, logp_rejected, beta=0.1):
+    # 最大化 chosen 与 rejected 的对数概率差
+    return -np.log(1 / (1 + np.exp(beta * (logp_rejected - logp_chosen))))
+
+logp_chosen, logp_rejected = -1.2, -3.5
+print("DPO loss:", round(float(dpo_loss(logp_chosen, logp_rejected)), 4))
+```
+
+## 易错点
+
+- **把 SFT 当成「越多数据越好」**：质量与多样性比规模关键。
+- **忽略 RLHF 的 KL 约束**：策略漂离 SFT 导致语言退化。
+- **以为 DPO 不需要偏好数据**：它反而对偏好对的质量极敏感。
+- **混淆规模律与涌现**：涌现可能部分源于评测的非线性。
+
+## 练习
+
+1. 说明 RLHF 三阶段（SFT → RM → PPO）各自的输入输出与失败模式。
+2. DPO 相比 RLHF 省去了什么、又对什么更敏感？
+3. 为什么「对齐税」难以避免？举一个能力-对齐权衡的例子。
+
+## 小结
+
+大模型从自监督预训练（CLM）获得知识与推理基底，经 SFT 学会指令遵循，再通过 RLHF/DPO 对齐人类意图。奖励模型、PPO/DPO 与 KL 约束构成对齐闭环；对齐税与幻觉仍是核心开放问题。它是当代 LLM 工程的轴心。
+
+## 延伸阅读
+
+- [模型微调](/docs/人工智能/大模型与应用/模型微调)
+- [Transformer 架构详解](/docs/人工智能/深度学习/序列处理/Transformer)
+- [强化学习进阶](/docs/人工智能/机器学习/强化学习进阶)
