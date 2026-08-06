@@ -1,0 +1,92 @@
+---
+title: Go 性能剖析与调优
+sidebar_position: 6
+description: "用 pprof 与 trace 定位 CPU、内存与 goroutine 瓶颈，结合逃逸分析、sync.Pool 与 strings.Builder 做针对性优化，让优化有据可依。"
+---
+
+# Go 性能剖析与调优
+
+「先测量，再优化」。Go 自带强大的剖析工具链：`runtime/pprof` 与 `net/http/pprof` 采集 CPU、堆、goroutine 等剖面，`go tool pprof` 与火焰图帮你定位热点，`go build -gcflags=-m` 看逃逸分析。本篇把它们串成一套实战流程。
+
+## 学习目标
+
+- 用 `net/http/pprof` 或 `go test -cpuprofile` 采集剖面
+- 用 `go tool pprof` / 火焰图定位 CPU 与内存热点
+- 用逃逸分析与 `sync.Pool`、`strings.Builder` 减少分配
+- 用 `go tool trace` 看调度与阻塞
+
+## 前置知识
+
+- [Go 测试进阶与基准](/docs/编程语言/Go/工程实践/Go测试进阶与基准) 的 Benchmark 写法
+- [Go 并发模式实战](/docs/编程语言/Go/工程实践/Go并发模式实战) 的 goroutine 概念
+
+## 核心概念
+
+**采集剖面**：HTTP 服务导入 `_ "net/http/pprof"` 后，访问 `/debug/pprof/` 拿数据；或者测试时 `go test -bench=. -cpuprofile=cpu.out -memprofile=mem.out`。类型包括 `cpu`（耗时）、`heap`（内存分配）、`goroutine`（协程堆栈）、`block`/`mutex`（同步阻塞）。
+
+**分析**：`go tool pprof cpu.out` 进入交互，用 `top` 看最热函数、`web`/`svg` 出调用图、`list 函数名` 看逐行耗时。火焰图（`go tool pprof -http=:8080`）更直观。
+
+**逃逸分析**：`go build -gcflags="-m"` 显示变量「逃逸到堆」的原因。频繁的小对象分配会加重 GC 压力；尽量让短生命周期对象留在栈上。
+
+**常见优化手段**：
+- `sync.Pool`：复用临时对象（如缓冲区），降低 GC 频率；
+- `strings.Builder` / `bytes.Buffer`：字符串拼接避免反复分配（比 `+=` 高效得多）；
+- 预分配 slice（`make([]T, 0, n)`）减少扩容拷贝；
+- 减少不必要的接口装箱与反射。
+
+**trace**：`go tool trace` 展示每个 goroutine 何时运行、阻塞、被调度，适合定位「延迟毛刺」「调度不均」类问题。
+
+## 示例
+
+```go
+import (
+    _ "net/http/pprof"
+    "net/http"
+    "runtime"
+    "sync"
+)
+
+func main() {
+    go func() { http.ListenAndServe("localhost:6060", nil) }()
+    // 之后访问 http://localhost:6060/debug/pprof/
+    _ = runtime.NumGoroutine()
+}
+
+// 用 sync.Pool 复用缓冲区
+var bufPool = sync.Pool{New: func() any { return make([]byte, 4096) }}
+func process() {
+    buf := bufPool.Get().([]byte)
+    defer bufPool.Put(buf)
+    // 使用 buf ...
+}
+```
+
+采集命令：`go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30`（CPU），`go tool pprof http://localhost:6060/debug/pprof/heap`（内存）。
+
+## 易错点
+
+- **在基准里做无关工作**：`b.N` 循环内若包含 `fmt.Println`、setup 等，会把噪音算进热点；用 `b.ResetTimer()` 隔离。
+- **过早优化**：先 `pprof` 看数据，别凭直觉改——Knuth 名言：「过早优化是万恶之源」。
+- **误读火焰图**：宽不代表一定该改，要看「是否在关键路径」与「优化收益」。
+- **`sync.Pool` 不保活对象语义**：Pool 里的对象可能被随时清空（GC 时），不能依赖它做状态存储。
+- **线上常开 pprof 有风险**：`net/http/pprof` 暴露内部信息，生产环境应加鉴权或仅在调试端口开启。
+
+## 小结
+
+- 性能问题先 `pprof` 测量，定位 CPU/heap/goroutine 热点；
+- 优化围绕「减少分配」：逃逸分析、`sync.Pool`、`strings.Builder`、预分配；
+- `trace` 看调度与阻塞，`-race` 看并发正确性；
+- 优化后一定用 Benchmark 量化对比，确认真的变快。
+
+## 练习
+
+1. 写一个「频繁拼接字符串」的函数，用 `pprof` 的 heap 剖面看出分配热点，再改用 `strings.Builder` 重测对比。
+2. 对一个计算密集函数采集 CPU 剖面，找出最热的函数并用算法/缓存改进，用 `benchstat` 对比前后。
+3. 故意制造 goroutine 泄漏，用 `/debug/pprof/goroutine?debug=1` 观察堆积的堆栈。
+
+## 延伸阅读
+
+- [Go 测试进阶与基准](/docs/编程语言/Go/工程实践/Go测试进阶与基准) — Benchmark 驱动优化
+- [Go 并发模式实战](/docs/编程语言/Go/工程实践/Go并发模式实战) — goroutine 泄漏场景
+- [Go 官方 pprof 文档](https://pkg.go.dev/net/http/pprof)
+- [benchstat 工具](https://pkg.go.dev/golang.org/x/perf/cmd/benchstat)

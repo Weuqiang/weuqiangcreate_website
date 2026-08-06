@@ -1,0 +1,115 @@
+---
+title: Go 并发模式实战
+sidebar_position: 5
+description: "把 goroutine 与 channel 组合成可复用的并发模式：worker pool、fan-out/fan-in、errgroup、context 取消传播与信号量限流。"
+---
+
+# Go 并发模式实战
+
+单条的 `goroutine`/`channel` 只是零件（见 [goroutine 与 channel](/docs/编程语言/Go/并发模型/goroutine与channel)）。真正工程价值在于把它们组合成**模式**：控制并发度、聚合结果、统一错误与取消。本篇讲最常用的几种。
+
+## 学习目标
+
+- 用 worker pool 控制并发度，避免无节制开 goroutine
+- 用 fan-out/fan-in 并行处理再汇聚
+- 用 `errgroup` 统一错误与取消，用 `context` 传播取消信号
+- 用 `semaphore` 做资源限流
+
+## 前置知识
+
+- [goroutine 与 channel](/docs/编程语言/Go/并发模型/goroutine与channel)
+- [select 与 sync](/docs/编程语言/Go/并发模型/select与sync)
+- [context 与超时](/docs/编程语言/Go/语言基础/context与超时)
+
+## 核心概念
+
+**Worker Pool**：创建固定数量的 worker goroutine，从任务 channel 取活干，结果发往结果 channel。限制并发数，避免「一万个任务开一万个 goroutine」压垮系统。
+
+**Fan-out / Fan-in**：把一个任务拆成多个、分发给多个 goroutine 并行（fan-out），再把各路结果合并到一条 channel（fan-in）。是「分治 + 聚合」的经典结构。
+
+**errgroup**：`golang.org/x/sync/errgroup` 让你 `Go(f)` 启动一组任务，任一个返回非 `nil` 错误时，`Wait()` 立即返回该错误，并可配合 `WithContext` 自动取消其余任务——比手写 `sync.WaitGroup` + error channel 简洁得多。
+
+**context 取消传播**：把 `ctx` 透传给每个子任务，父任务取消时，所有子任务通过 `ctx.Done()` 收到信号并退出，避免 goroutine 泄漏。
+
+**semaphore**：`golang.org/x/sync/semaphore` 的加权信号量，限制同时访问某资源的 goroutine 数（比 worker pool 更轻量，适合「限流访问下游 API」）。
+
+## 示例
+
+```go
+import (
+    "context"
+    "sync"
+    "golang.org/x/sync/errgroup"
+)
+
+// 用 errgroup 并行抓取，任一失败则整体取消
+func fetchAll(ctx context.Context, urls []string) error {
+    g, ctx := errgroup.WithContext(ctx)
+    results := make([]string, len(urls))
+    for i, u := range urls {
+        i, u := i, u
+        g.Go(func() error {
+            // 模拟抓取；ctx 取消时应当提前返回
+            select {
+            case <-time.After(100 * time.Millisecond):
+                results[i] = "ok:" + u
+                return nil
+            case <-ctx.Done():
+                return ctx.Err()
+            }
+        })
+    }
+    if err := g.Wait(); err != nil {
+        return err
+    }
+    return nil
+}
+
+// Worker Pool：固定 3 个 worker 处理任务
+func workerPool(tasks []int) []int {
+    taskCh := make(chan int)
+    resCh := make(chan int)
+    var wg sync.WaitGroup
+    for w := 0; w < 3; w++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            for t := range taskCh {
+                resCh <- t * t
+            }
+        }()
+    }
+    go func() { for _, t := range tasks { taskCh <- t }; close(taskCh) }()
+    go func() { wg.Wait(); close(resCh) }()
+    var out []int
+    for r := range resCh { out = append(out, r) }
+    return out
+}
+```
+
+## 易错点
+
+- **goroutine 泄漏**：启动的 goroutine 因 channel 永不关闭或 ctx 无取消而永远阻塞，缓慢吃内存。务必保证「有退出路径」并 `defer cancel()`。
+- **忘记关闭 channel**：fan-in 端 `range` 一个没人关闭的 channel 会死锁；用 `wg.Wait()` 后由专门 goroutine 关闭。
+- **`WaitGroup.Add` 在 goroutine 内调用**：应在启动前 `Add`，否则 `Wait` 可能提前返回；或用 `errgroup` 规避。
+- **共享变量无同步**：多个 goroutine 写同一 slice/map 必须加锁或用 channel 传递所有权，否则数据竞争（`-race` 能抓）。
+- **把 `context` 存进 struct**：`context` 应作为函数第一个参数显式传递（约定 `ctx context.Context`），不要塞进结构体字段。
+
+## 小结
+
+- worker pool / semaphore 控制并发度；fan-out/fan-in 分治聚合；
+- `errgroup` 统一错误与取消，`context` 让取消信号层层传播；
+- 核心纪律：不泄漏 goroutine、正确关闭 channel、共享状态必同步。
+
+## 练习
+
+1. 实现一个「限并发 5」的 URL 状态码检查器（可用 `semaphore` 或 worker pool），并能在 `context` 超时时整体退出。
+2. 用 fan-out/fan-in 把一个大数组的求平方和拆成 4 路并行再汇总，对比单线程耗时。
+3. 故意制造一个 goroutine 泄漏（channel 不关），用 `go tool pprof` 的 goroutine 视图观察堆积。
+
+## 延伸阅读
+
+- [goroutine 与 channel](/docs/编程语言/Go/并发模型/goroutine与channel) — 并发原语基础
+- [context 与超时](/docs/编程语言/Go/语言基础/context与超时) — 取消与超时传播
+- [Go 性能剖析与调优](/docs/编程语言/Go/工程实践/Go性能剖析与调优) — 用 pprof 查泄漏
+- [errgroup / semaphore 文档](https://pkg.go.dev/golang.org/x/sync)

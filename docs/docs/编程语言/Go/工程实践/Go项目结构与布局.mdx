@@ -1,0 +1,82 @@
+---
+title: Go 项目结构与布局
+sidebar_position: 3
+description: "掌握 Go 项目的标准布局（cmd/internal/pkg）、internal 可见性规则与领域分层，把『能跑』的代码组织成可维护的工程。"
+---
+
+# Go 项目结构与布局
+
+会写 Go 文件不等于能组织好一个 Go 工程。良好的布局让团队协作、依赖边界与长期演进都更清晰。Go 社区虽不强制目录规范，但沉淀出一套被广泛采纳的项目布局约定。
+
+## 学习目标
+
+- 理解标准布局中 `cmd/`、`internal/`、`pkg/` 各自的职责
+- 掌握 `internal` 包的「仅限父目录可见」规则
+- 用领域分层（handler / service / repository）组织业务代码
+
+## 前置知识
+
+- 已读 [Go 语言入门](/docs/编程语言/Go/语言基础/Go语言入门) 与 [模块与测试](/docs/编程语言/Go/工程实践/模块与测试)
+- 了解包（package）与导入的基本语法
+
+## 核心概念
+
+Go 项目以**模块**（`go.mod`）为单元，目录即包。社区常用布局：
+
+- `cmd/`：每个子目录是一个可执行程序入口（如 `cmd/server/main.go`）。把 `main` 包与业务逻辑隔离，便于多二进制共存。
+- `internal/`：**关键**——Go 工具链强制 `internal` 下的包只能被其**父目录及祖先**导入，无法被外部模块引用。用它保护「不希望外泄」的实现细节。
+- `pkg/`：明确打算对外公开、可被外部导入的库代码。若不确定是否公开，默认放 `internal` 更安全。
+- `api/`：协议定义（protobuf、OpenAPI）；`configs/`：配置模板；`test/`：额外的集成测试数据；`docs/`：文档。
+
+业务代码常按**领域分层**，而非按技术类型：靠近边界的 `handler`（HTTP/gRPC 适配）调用 `service`（用例编排），再调用 `repository`（数据访问）。依赖方向应单向、向内收敛，避免循环导入。
+
+## 示例
+
+一个典型后端服务的目录骨架：
+
+```
+myservice/
+├── go.mod
+├── cmd/
+│   └── server/
+│       └── main.go          # 仅做组装：读配置、建依赖、启动
+├── internal/
+│   ├── user/
+│   │   ├── service.go       # 用户用例编排
+│   │   └── repository.go    # 数据访问（仅 internal 内可见）
+│   └── config/
+│       └── config.go
+├── pkg/
+│   └── token/               # 可被其他项目复用的令牌工具
+│       └── jwt.go
+└── api/
+    └── openapi.yaml
+```
+
+`main.go` 只负责「组装」：读取配置、构造 `repository`、注入 `service`、启动 HTTP 服务器，不写业务逻辑。`internal/user` 的包无法被外部模块 `import`，天然形成边界。
+
+## 易错点
+
+- **混淆 `internal` 语义**：`internal` 不是「私有工具」的同义词，而是「禁止外部模块导入」。同模块内的其他包**仍可**导入它，只是 module 外不行。
+- **把 `main.go` 写成大杂烩**：业务堆在 `main` 包里就无法被测试与复用，应抽到 `internal` 下的包，让 `main` 只做装配。
+- **过度使用 `pkg/`**：不确定的就放 `internal`。过早公开 API 面会背上兼容性包袱。
+- **循环导入**：A 导入 B、B 又导入 A 会编译失败。解法通常是抽出公共依赖到第三个包，或反转依赖（让底层不依赖上层）。
+- **配置硬编码**：环境相关参数（端口、数据库连接）应从配置文件/环境变量读取，而非写死在代码里。
+
+## 小结
+
+- `cmd/` 放可执行入口，`internal/` 放不对外泄露的实现，`pkg/` 放可复用公开库；
+- 优先用 `internal` 收紧 API 边界，依赖方向单向收敛；
+- `main` 只装配、不写业务，业务逻辑进可测的包。
+
+## 练习
+
+1. 把一个「所有逻辑写在 `main.go`」的脚本，重构成 `cmd/server/main.go` + `internal/...` 的布局，使核心逻辑可单测。
+2. 在 `internal` 下建一个包并试图从外部测试模块导入，观察编译错误，理解 `internal` 边界。
+3. 为你的服务设计 `handler/service/repository` 三层，画出依赖方向图。
+
+## 延伸阅读
+
+- [模块与测试](/docs/编程语言/Go/工程实践/模块与测试) — go mod 与测试基础
+- [Go 官方 Module 文档](https://go.dev/doc/modules/managing-dependencies)
+- [Standard Go Project Layout（社区约定）](https://github.com/golang-standards/project-layout)

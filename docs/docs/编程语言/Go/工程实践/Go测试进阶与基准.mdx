@@ -1,0 +1,96 @@
+---
+title: Go 测试进阶与基准
+sidebar_position: 4
+description: "在单元测试之上，掌握表驱动子测试、基准测试、覆盖率、竞态检测、testify 断言与 httptest 测 HTTP，把测试变成可靠的质量网。"
+---
+
+# Go 测试进阶与基准
+
+Go 内置 `testing` 包已能写基础测试（见 [模块与测试](/docs/编程语言/Go/工程实践/模块与测试)）。本篇进阶：用子测试隔离用例、用基准量化性能、用 `-race` 抓并发 bug、用 `testify` 写可读断言，以及用 `httptest` 测 HTTP handler。
+
+## 学习目标
+
+- 用 `t.Run` 组织表驱动子测试，并支持并行
+- 写 `Benchmark` 量化性能，理解 `b.N` 的作用
+- 用 `go test -race -cover` 检测竞态与覆盖率
+- 用 `testify` 简化断言、用 `httptest` 测 HTTP
+
+## 前置知识
+
+- [模块与测试](/docs/编程语言/Go/工程实践/模块与测试) 的基础写法
+- 接口与 HTTP 基础（见 [HTTP 服务与 Web 开发](/docs/编程语言/Go/工程实践/HTTP服务与Web开发)）
+
+## 核心概念
+
+**表驱动 + 子测试**：把用例放进切片，循环里用 `t.Run(name, func(t *testing.T){...})` 跑。子测试的好处是每个用例独立命名、可单独运行（`go test -run TestX/case2`），失败时定位精准。加 `t.Parallel()` 可并行执行（注意别共享可变状态）。
+
+**基准测试**：函数签名 `func BenchmarkXxx(b *testing.B)`。框架会动态调整 `b.N` 使测试跑足够久，你只需把被测逻辑放进 `for i := 0; i < b.N; i++ {}` 循环，**且用 `b.ResetTimer()` 排除准备开销**。结果给出「每次操作纳秒数」。
+
+**覆盖率与竞态**：`go test -cover` 看行覆盖；`go test -race` 开启竞态检测器，能抓到真实并发下的数据竞争（有性能开销，仅测试用）。
+
+**testify**：第三方 `github.com/stretchr/testify` 提供 `assert`/`require`，断言失败时 `require` 直接中止，`assert` 继续，可读性远高于手写 `if got != want`。
+
+**httptest**：`httptest.NewRecorder()` 捕获响应，`httptest.NewServer` 起真实测试服务器，无需手动监听端口即可测 handler。
+
+## 示例
+
+```go
+func Fib(n int) int {
+    if n < 2 { return n }
+    return Fib(n-1) + Fib(n-2)
+}
+
+func TestFib(t *testing.T) {
+    cases := []struct {
+        name string
+        in   int
+        want int
+    }{
+        {"0", 0, 0}, {"1", 1, 1}, {"10", 10, 55},
+    }
+    for _, c := range cases {
+        t.Run(c.name, func(t *testing.T) {
+            t.Parallel()
+            if got := Fib(c.in); got != c.want {
+                t.Errorf("Fib(%d)=%d, want %d", c.in, got, c.want)
+            }
+        })
+    }
+}
+
+func BenchmarkFib(b *testing.B) {
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        Fib(20)
+    }
+}
+```
+
+运行：`go test -run TestFib -v`、`go test -bench=. -benchmem`、`go test -race ./...`、`go test -coverprofile=cov.out && go tool cover -html=cov.out`。
+
+## 易错点
+
+- **Benchmark 忘记 `b.N` 循环**：把准备代码或单次调用写在循环外，基准结果毫无意义。
+- **`t.Parallel()` 与共享变量**：并行子测试若共用外层循环的切片/指针，会因竞态得到随机结果——用局部变量或在闭包里复制。
+- **`-race` 只在测试/CI 开**：竞态检测器开销大（数倍慢），不要用于生产构建，但 CI 里务必开启。
+- **覆盖率陷阱**：高行覆盖 ≠ 高置信。边界、错误分支、`nil` 路径常被忽略；更关注「关键路径是否被真实输入覆盖」。
+- **mock 过度**：Go 偏好「用真实小依赖 + 接口隔离」而非层层 mock。只在外部服务（DB、第三方 API）处用接口打桩，内部逻辑尽量真实测。
+
+## 小结
+
+- 表驱动 + `t.Run` 让用例清晰可定位，`t.Parallel` 提速；
+- `Benchmark` 量化性能，`-race` 抓并发 bug，`-cover` 看覆盖；
+- `testify` 提可读性，`httptest` 测 HTTP；
+- mock 用在边界，内部尽量真实。
+
+## 练习
+
+1. 给一个「字符串转整数（含正负、非法字符报错）」的函数写表驱动测试，覆盖正常、负数、空串、溢出。
+2. 为一个 `sort` 包装函数写基准，并对比内置 `sort.Ints` 的耗时。
+3. 用 `httptest.NewRecorder` 测一个返回 JSON 的 handler，断言状态码与响应体。
+
+## 延伸阅读
+
+- [模块与测试](/docs/编程语言/Go/工程实践/模块与测试) — 测试基础与 go mod
+- [Go 性能剖析与调优](/docs/编程语言/Go/工程实践/Go性能剖析与调优) — pprof 深入性能
+- [testify 文档](https://github.com/stretchr/testify)
