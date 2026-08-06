@@ -34,6 +34,15 @@ description: "理解编译器前端的词法分析与语法分析如何把字符
 - 再用语法分析把 token 拼成 AST
 - 最后看 AST 如何支撑后续阶段
 
+词法分析把字符流切成 token，语法分析把 token 拼成 AST，后续阶段都建立在 AST 之上：
+
+```mermaid
+flowchart LR
+    字符[源代码字符流] --> 词法[词法分析 Lexer]
+    词法 -->|Token 流| 语法[语法分析 Parser]
+    语法 -->|抽象语法树 AST| 后续[语义 / 优化 / 代码生成]
+```
+
 ## 1. 编译总览
 
 ```text
@@ -114,3 +123,8 @@ Term  → ID | NUM
 - 回到分支总览：[计算机科学基础](../../)
 - 相关：[数据结构与算法：二叉树与 BST](../../数据结构与算法/树与二叉树)（AST 本质是树）
 - 动手：[Python 入门](../../../编程语言/Python/0基础语法)
+
+### 外部权威资料
+- 《编译原理》（Alfred V. Aho 等，『龙书』）第 2 版 — 词法/语法/语义分析、中间代码与代码生成的权威。
+- 《现代编译原理》（Andrew W. Appel 等，『虎书』）— 实践导向，配套 MiniJava 与现代 IR 设计。
+- 《Engineering a Compiler》（Keith D. Cooper & Linda Torczon）— 侧重现代优化技术与数据流分析。

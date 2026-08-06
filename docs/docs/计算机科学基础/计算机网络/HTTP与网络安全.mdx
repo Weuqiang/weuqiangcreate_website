@@ -34,6 +34,19 @@ HTTP 是「请求-响应」的明文协议：客户端发一个请求行加头�
 - 用 HTTPS/TLS 理解加密与身份
 - 再梳理常见攻击与同源/认证边界
 
+HTTPS 的护城河是 TLS 握手：客户端与服务端先协商出一把对称密钥，之后的 HTTP 报文都用它加密，既解决密钥分发又保证性能：
+
+```mermaid
+sequenceDiagram
+    participant C as 客户端
+    participant S as 服务端
+    C->>S: ClientHello 支持的加密套件
+    S->>C: ServerHello + 证书 含公钥
+    C->>S: 用公钥加密 预主密钥
+    S->>C: 双方推导出对称密钥
+    Note over C,S: 之后用对称密钥加密 HTTP 报文
+```
+
 ## 1. HTTP 基础
 
 HTTP 是**请求—响应**协议，无状态（每次请求独立）：
@@ -134,3 +147,8 @@ HTTP 管"传什么"，HTTPS 管"安全传"，认证与防护管"只让对的人�
 - 跨主题关联：[Nginx](../../../软件工程/后端通识/Nginx)（反向代理、HTTPS 配置、负载均衡——协议在运维层的落地）
 - 跨主题关联：[JavaScript XMLHttpRequest](../../../软件工程/Web前端/JavaScript/bom/xmlhttprequest)（浏览器端 HTTP 客户端：同源策略与 CORS 在这里显形）
 - 📖 实践延伸：[《白帽子讲Web安全》](/read/科学技术/白帽子讲Web安全/) — 把这里的协议与防护落到真实攻防案例。
+
+### 外部权威资料
+- 《计算机网络》（Andrew S. Tanenbaum 等，『Computer Networks』）第 6 版 — 分层模型、TCP/IP 协议栈的全景式讲解。
+- 《TCP/IP 详解 卷 1：协议》（W. Richard Stevens）— 协议报文与状态机级实现细节。
+- RFC 9110（HTTP Semantics）：https://www.rfc-editor.org/rfc/rfc9110 ；RFC 793（TCP）：https://www.rfc-editor.org/rfc/rfc793 ；RFC 9000（QUIC）：https://www.rfc-editor.org/rfc/rfc9000 。

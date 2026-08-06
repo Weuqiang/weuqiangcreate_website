@@ -34,6 +34,16 @@ description: "理解分层模型、IP 寻址路由、TCP 可靠传输与 UDP 取
 - 用 IP 理解寻址与逐跳路由
 - 用 TCP/UDP 对比可靠与实时的取舍
 
+数据从应用层向下逐层「加头」封装，到链路层变成比特流；对端再逐层「拆头」还原。各层职责如下：
+
+```mermaid
+flowchart TD
+    应用[应用层 HTTP/DNS/FTP] -->|加头部| 传输[传输层 TCP/UDP]
+    传输 -->|加端口头| 网络[网络层 IP 寻址路由]
+    网络 -->|加 IP 头| 链路[链路层 传比特]
+    链路 --> 物理[物理介质 电信号/光信号]
+```
+
 ## 1. 分层模型
 
 ```text
@@ -126,3 +136,8 @@ c.sendall(b"hello"); print(c.recv(1024)); c.close()
 - 硬件落点：[嵌入式通信协议 UART/SPI/I2C](../../../嵌入式开发/通信协议/UART_SPI_I2C详解)
 - 跨主题关联：[C 网络编程（socket）](../../../编程语言/C/18网络编程)（TCP/IP 在系统调用层的落地：socket 就是协议栈开给程序的接口）
 - 跨主题关联：[Go HTTP 服务与 Web 开发](../../../编程语言/Go/工程实践/HTTP服务与Web开发)（往上一层看：应用层服务如何架在 TCP 之上）
+
+### 外部权威资料
+- 《计算机网络》（Andrew S. Tanenbaum 等，『Computer Networks』）第 6 版 — 分层模型、TCP/IP 协议栈的全景式讲解。
+- 《TCP/IP 详解 卷 1：协议》（W. Richard Stevens）— 协议报文与状态机级实现细节。
+- RFC 9110（HTTP Semantics）：https://www.rfc-editor.org/rfc/rfc9110 ；RFC 793（TCP）：https://www.rfc-editor.org/rfc/rfc793 ；RFC 9000（QUIC）：https://www.rfc-editor.org/rfc/rfc9000 。
