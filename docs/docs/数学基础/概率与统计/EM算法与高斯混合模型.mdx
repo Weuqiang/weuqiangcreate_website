@@ -1,0 +1,119 @@
+---
+title: "EM 算法与高斯混合模型"
+sidebar_position: 7
+description: "当数据里藏着看不见的变量（比如每个点属于哪个簇），直接最大化似然无解。EM 用『先猜隐变量、再据此更新参数』的迭代逼近，GMM 是其最经典的应用。"
+---
+
+# EM 算法与高斯混合模型
+
+## 学习目标
+
+- 理解「含隐变量的极大似然」为何不能直接解，以及 EM 如何用下界（ELBO）绕开
+- 记住 EM 的两步：E 步算后验（责任度），M 步据此更新参数
+- 用高斯混合模型（GMM）把聚类做成「软分配」，并与 K-means 对比
+- 知道 EM 收敛到局部极大，初值敏感
+
+## 前置知识
+
+- [概率基础与随机变量](/docs/数学基础/概率与统计/概率基础与随机变量) —— 期望、正态分布、似然
+- [描述统计与贝叶斯推断](/docs/数学基础/概率与统计/描述统计与贝叶斯推断) —— 先验/后验的直觉
+- [聚类算法](/docs/人工智能/机器学习/聚类算法) —— GMM 是比 K-means 更软的聚类
+
+## 核心概念
+
+### 1. 隐变量让似然「积不出」
+
+设观测 $x$，隐变量 $z$（如簇标签），完整数据似然 $p(x,z\mid\theta)$。边缘似然 $\log p(x\mid\theta)=\log\sum_z p(x,z\mid\theta)$ 里**对数里有求和**，无法把 $\log$ 推进去分别求偏导，解析最大化失效。这就是隐变量带来的麻烦。
+
+### 2. EM 的核心：用下界代替目标
+
+对任意分布 $q(z)$（满足 $\sum_z q(z)=1$），有：
+
+$$
+\log p(x\mid\theta)=\mathcal{L}(q,\theta)+\mathrm{KL}\big(q(z)\,\|\,p(z\mid x,\theta)\big)
+$$
+
+其中 $\mathcal{L}$ 叫 **ELBO（证据下界）**。因为 KL $\ge 0$，所以 $\log p(x\mid\theta)\ge \mathcal{L}$。EM 交替：
+- **E 步**：固定 $\theta$，把 KL 压到 0 ⇒ 取 $q(z)=p(z\mid x,\theta^{\text{old}})$，此时 $\mathcal{L}=\log p(x\mid\theta^{\text{old}})$。
+- **M 步**：固定 $q$，最大化 $\mathcal{L}$ 关于 $\theta$ ⇒ 得到 $\theta^{\text{new}}$，且保证 $\log p(x\mid\theta^{\text{new}})\ge\log p(x\mid\theta^{\text{old}})$。
+
+每轮目标不降，收敛到（局部）极大。
+
+### 3. GMM：用 K 个高斯叠加建模
+
+GMM 假设数据由 $K$ 个高斯混合生成：
+
+$$
+p(x\mid\pi,\mu,\Sigma)=\sum_{k=1}^K \pi_k\,\mathcal{N}(x\mid\mu_k,\Sigma_k),\quad \sum_k\pi_k=1
+$$
+
+隐变量 $z_k\in\{0,1\}$ 表示「样本来自第 $k$ 个分量」。EM 具体为：
+- **E 步（责任度）**：$\gamma_{ik}=p(z_k=1\mid x_i)=\dfrac{\pi_k\mathcal{N}(x_i\mid\mu_k,\Sigma_k)}{\sum_j\pi_j\mathcal{N}(x_i\mid\mu_j,\Sigma_j)}$ —— 软分配。
+- **M 步**：用 $\gamma_{ik}$ 当权重更新
+  $\mu_k=\dfrac{\sum_i\gamma_{ik}x_i}{\sum_i\gamma_{ik}}$，
+  $\Sigma_k=\dfrac{\sum_i\gamma_{ik}(x_i-\mu_k)(x_i-\mu_k)^\top}{\sum_i\gamma_{ik}}$，
+  $\pi_k=\dfrac{1}{N}\sum_i\gamma_{ik}$。
+
+### 4. GMM vs K-means
+
+K-means 是「硬分配 + 各向同性球形簇」的特例；GMM 给出**每个点属于各簇的概率**（软分配），且能建模椭圆、不同大小的簇。代价是假设了高斯形状、计算更贵、对初值更敏感。
+
+## 示例
+
+手写一个两分量 GMM 的 EM（仅对角协方差，便于理解）：
+
+```python
+import numpy as np
+
+np.random.seed(1)
+# 造两个高斯混合的数据
+a = np.random.randn(200, 1) * 0.5 + 2.0
+b = np.random.randn(200, 1) * 0.8 - 2.0
+X = np.vstack([a, b])
+
+N = len(X); K = 2
+pi = np.array([0.5, 0.5])
+mu = np.array([0.0, 1.0])          # 故意用不好的初值
+sig2 = np.array([1.0, 1.0])
+
+for it in range(50):
+    # E 步：责任度
+    lik = np.zeros((N, K))
+    for k in range(K):
+        lik[:, k] = pi[k] * np.exp(-0.5 * (X[:, 0] - mu[k])**2 / sig2[k]) / np.sqrt(2*np.pi*sig2[k])
+    gamma = lik / lik.sum(axis=1, keepdims=True)
+    # M 步
+    Nk = gamma.sum(axis=0)
+    pi = Nk / N
+    mu = (gamma.T @ X[:, 0]) / Nk
+    sig2 = (gamma.T @ (X[:, 0] - mu[:, None])**2).sum(axis=1) / Nk
+
+print("pi =", np.round(pi, 3))
+print("mu =", np.round(mu, 3), "（应接近 -2 与 2）")
+print("sig2 =", np.round(sig2, 3))
+```
+
+跑完 $\mu$ 会聚到两个峰附近——即使初值没那么准，EM 也能把责任度与参数交替推到合理值。
+
+## 易错点
+
+- **把 EM 当成了求全局最优**：EM 只保证单调不降、收敛到局部极大；多跑几组随机初值取最好。
+- **E 步忘记归一化**：责任度 $\gamma_{ik}$ 必须对 $k$ 归一（每行和为 1），否则 M 步权重不对。
+- **协方差矩阵退化**：若某分量坍缩到一个点，$\Sigma_k\to0$，似然发散；实际要加正则（如 $\Sigma_k+\epsilon I$）或检测空簇。
+- **GMM 不是万能聚类**：它假设各簇高斯，遇到非凸/月牙形分布不如谱聚类或 DBSCAN。
+
+## 练习
+
+1. 推导 GMM 的 M 步中 $\mu_k$ 的更新式（对 ELBO 关于 $\mu_k$ 求偏导置零）。
+2. 为什么说 K-means 可视为「协方差趋近 0、等权、硬分配」的极限 GMM？
+3. 若某次迭代某分量责任度全近 0，会发生什么？该如何处理？
+
+## 小结
+
+EM 用 ELBO 下界把「含隐变量的难优化」变成「先估隐变量后验、再更新参数」的交替，保证似然单调上升、收敛到局部极大。GMM 是其旗舰应用，把聚类从 K-means 的硬分配升级为概率软分配，并能刻画椭圆形状的簇。
+
+## 延伸阅读
+
+- [概率基础与随机变量](/docs/数学基础/概率与统计/概率基础与随机变量)
+- [描述统计与贝叶斯推断](/docs/数学基础/概率与统计/描述统计与贝叶斯推断)
+- [聚类算法](/docs/人工智能/机器学习/聚类算法)

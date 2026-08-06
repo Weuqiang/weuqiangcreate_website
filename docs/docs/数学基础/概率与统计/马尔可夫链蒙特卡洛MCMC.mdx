@@ -1,0 +1,104 @@
+---
+title: "马尔可夫链蒙特卡洛（MCMC）"
+sidebar_position: 8
+description: "当后验分布没有解析形式、也无法直接采样时，MCMC 用一条满足细致平衡的马尔可夫链，让其平稳分布恰好是目标后验，从而从链上取样做贝叶斯推断。"
+---
+
+# 马尔可夫链蒙特卡洛（MCMC）
+
+## 学习目标
+
+- 说清「为什么贝叶斯推断常常需要采样」：后验往往无解析形式
+- 理解 Metropolis-Hastings 的接受率如何保证平稳分布是目标分布
+- 掌握 Gibbs 采样：在高维时逐维条件采样，免去接受率
+- 知道 MCMC 的痛点：混合慢、自相关、burn-in 与收敛诊断
+
+## 前置知识
+
+- [描述统计与贝叶斯推断](/docs/数学基础/概率与统计/描述统计与贝叶斯推断) —— 后验 $p(\theta\mid x)\propto p(x\mid\theta)p(\theta)$
+- [马尔可夫链](/docs/数学基础/概率与统计/马尔可夫链) —— 平稳分布、细致平衡
+- [概率基础与随机变量](/docs/数学基础/概率与统计/概率基础与随机变量)
+
+## 核心概念
+
+### 1. 贝叶斯推断为什么需要采样
+
+后验 $p(\theta\mid x)=\dfrac{p(x\mid\theta)p(\theta)}{\int p(x\mid\theta)p(\theta)d\theta}$。分母（证据）在高维下**积分算不出**；而且我们常关心的不是后验本身，而是期望 $\mathbb{E}_{p(\theta\mid x)}[g(\theta)]$。若能从后验直接采出 $\theta^{(1)},\dots,\theta^{(S)}$，就能用蒙特卡洛平均 $\frac1S\sum_s g(\theta^{(s)})$ 近似——但后验没有简单采样器。
+
+### 2. 核心思想：造一条以目标为平稳分布的链
+
+MCMC 构造一条马尔可夫链，使其**平稳分布 $\pi$ 恰好是我们要的后验 $p(\theta\mid x)$**。从任意初态出发，跑足够久后，链上的状态就近似来自后验。采样即「沿链走、记录状态」。
+
+关键机制是**细致平衡（detailed balance）**：若转移核 $T(\theta\to\theta')$ 满足 $\pi(\theta)T(\theta\to\theta')=\pi(\theta')T(\theta'\to\theta)$，则 $\pi$ 必为平稳分布。
+
+### 3. Metropolis-Hastings（MH）
+
+给定目标 $\pi$（只需知道到比例，因为分母会消掉）：
+1. 从提议分布 $q(\theta'\mid\theta)$ 抽候选 $\theta'$
+2. 计算接受率 $\alpha=\min\!\left(1,\dfrac{\pi(\theta')q(\theta\mid\theta')}{\pi(\theta)q(\theta'\mid\theta)}\right)$
+3. 以概率 $\alpha$ 接受 $\theta'$，否则留在 $\theta$
+
+对称提议（如随机游走 $q(\theta'\mid\theta)=q(\theta\mid\theta')$）时，接受率简化为 $\min(1,\pi(\theta')/\pi(\theta))$。注意这里只需 $\pi$ 的**未归一化**值，分母证据被约掉——这正是 MCMC 对贝叶斯友好的原因。
+
+### 4. Gibbs 采样
+
+当能轻松算出「固定其他维时某一维的条件分布」时，Gibbs 逐维采样：在第 $t$ 步，依次对 $i=1..d$ 采样 $\theta_i^{(t)}\sim p(\theta_i\mid\theta_{-i}^{(t-1)})$。它**接受率恒为 1**（因为条件采样本就满足细致平衡），在高维且条件分布易采样时非常高效。
+
+### 5. 实践要点
+
+- **burn-in**：丢弃链开头未收敛的部分。
+- **自相关与 thinning**：相邻样本相关，需取足够间隔或靠大样本量降低方差。
+- **混合慢**：若后验多峰且峰间「能量壁垒」高，链长时间困在一个峰，需多链或改进提议（如 Hamiltonian Monte Carlo）。
+
+## 示例
+
+用 MH 从一个无法解析归一化的双峰形状里采样（这里为演示用已知归一化常数的混合高斯，重点在看接受/混合）：
+
+```python
+import numpy as np
+
+# 目标（未归一化即可）：两个高斯峰的混合
+def log_target(x):
+    c1 = -0.5 * ((x - 3.0) / 0.8) ** 2
+    c2 = -0.5 * ((x + 3.0) / 0.8) ** 2
+    return np.logaddexp(c1, c2)  # 两峰等权
+
+np.random.seed(2)
+x = 0.0
+samples = []
+for _ in range(20000):
+    x_prop = x + np.random.randn() * 1.0        # 随机游走提议
+    log_alpha = log_target(x_prop) - log_target(x)
+    if np.log(np.random.rand()) < log_alpha:     # 对数空间比较，免溢出
+        x = x_prop
+    samples.append(x)
+
+samples = np.array(samples[2000:])               # 丢弃 burn-in
+print("样本均值", round(samples.mean(), 3), "（应接近 0，两峰对称）")
+print("接受率约", round((np.diff(samples) != 0).mean(), 3))
+```
+
+若提议步长太大，接受率会过低、样本滞留；太小则移动缓慢。调步长是 MH 的实用关键。
+
+## 易错点
+
+- **忘记丢弃 burn-in**：链初值若远离高密度区，开头样本不代表后验。
+- **用未归一化密度时直接比 `pi` 而非比值**：要用比值 $\pi(\theta')/\pi(\theta)$，或用对数空间 `log_alpha` 比较，避免下溢/上溢。
+- **把相邻样本当独立**：MCMC 样本自相关高，有效样本量远小于样本数，报告不确定性要按自相关修正。
+- **多峰后验收敛误判**：单条链长期困在一个峰，看起来「收敛」其实漏了另一峰——需用多链（如 Gelman-Rubin 诊断）。
+
+## 练习
+
+1. 证明细致平衡 $\pi(\theta)T(\theta\to\theta')=\pi(\theta')T(\theta'\to\theta)$ 能推出 $\pi$ 是平稳分布。
+2. 对称提议下，MH 接受率为何可写成 $\min(1,\pi(\theta')/\pi(\theta))$？
+3. Gibbs 采样为什么不需要显式接受率？它的前提条件是什么？
+
+## 小结
+
+MCMC 把「从难算的后验采样」转化为「造一条以该后验为平稳分布的马尔可夫链」。MH 用接受率保证细致平衡、只需未归一化目标；Gibbs 在高维易条件采样时免去接受率。burn-in、自相关与多峰混合是其落地时必须面对的工程现实。
+
+## 延伸阅读
+
+- [马尔可夫链](/docs/数学基础/概率与统计/马尔可夫链)
+- [描述统计与贝叶斯推断](/docs/数学基础/概率与统计/描述统计与贝叶斯推断)
+- [EM 算法与高斯混合模型](/docs/数学基础/概率与统计/EM算法与高斯混合模型) —— 另一种处理隐变量的迭代法
