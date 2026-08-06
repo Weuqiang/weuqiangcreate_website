@@ -1,0 +1,108 @@
+---
+title: "生成模型（VAE / GAN / Diffusion）"
+sidebar_position: 6
+description: "生成式 AI 的数学与工程核心：VAE 用变分下界、GAN 用对抗博弈、扩散模型用逐步去噪。对比三者的目标、训练与采样差异。"
+---
+
+# 生成模型（VAE / GAN / Diffusion）
+
+## 学习目标
+
+- 用「显式密度 / 隐式密度 / 逐步生成」的框架区分三类主流生成模型
+- 理解 VAE 的变分下界（ELBO）、重参数化技巧，以及它为何能学到平滑潜空间
+- 理解 GAN 的最小最大博弈与模式崩溃陷阱
+- 理解扩散模型「前向加噪 + 反向去噪」的直觉与训练目标
+
+## 前置知识
+
+- [经典神经网络](/docs/人工智能/深度学习/经典神经网络) —— 三类生成模型都用神经网络
+- [EM 算法与高斯混合模型](/docs/数学基础/概率与统计/EM算法与高斯混合模型) —— VAE 的 ELBO 与 EM 同宗
+- [概率基础与随机变量](/docs/数学基础/概率与统计/概率基础与随机变量)
+
+## 核心概念
+
+### 1. 生成模型在做什么
+
+给定训练数据 $x\sim p_{\text{data}}(x)$，目标是学出一个分布 $p_\theta(x)$ 能采样出新样本。主流路线：
+- **显式密度**：直接定义并优化 $p_\theta(x)$（如 VAE 优化下界、归一化流直接优化似然）
+- **隐式密度**：只给采样器、不显式写出密度（如 GAN）
+- **逐步生成**：把生成拆成多步去噪（如 Diffusion）
+
+### 2. VAE：用变分下界逼近似然
+
+VAE 引入潜变量 $z$ 与编码器 $q_\phi(z\mid x)$、解码器 $p_\theta(x\mid z)$，最大化 ELBO：
+
+$$
+\log p_\theta(x)\ge \underbrace{\mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)]}_{\text{重建}} - \underbrace{\mathrm{KL}\big(q_\phi(z\mid x)\,\|\,p(z)\big)}_{\text{正则}}
+$$
+
+第二项强制后验接近标准正态先验，使潜空间连续、可插值。**重参数化技巧**把 $z\sim q_\phi$ 写成 $z=\mu_\phi(x)+\sigma_\phi(x)\odot\epsilon,\;\epsilon\sim\mathcal{N}(0,I)$，让梯度能回传。VAE 样本偏模糊（因高斯解码假设），但潜空间结构好。
+
+### 3. GAN：极小极大对抗
+
+GAN 同时训练生成器 $G$（把噪声 $z$ 映成假样本）与判别器 $D$（分辨真假），目标：
+
+$$
+\min_G\max_D\; \mathbb{E}_{x\sim p_{\text{data}}}[\log D(x)] + \mathbb{E}_{z}[\log(1-D(G(z)))]
+$$
+
+两者零和博弈达到纳什均衡时，生成分布逼近数据分布。GAN 生成锐利、逼真，但训练不稳定、易**模式崩溃**（只生成少数几种样本）。
+
+### 4. 扩散模型：逐步去噪
+
+前向过程把数据逐步加高斯噪成纯噪声：$q(x_t\mid x_{t-1})=\mathcal{N}(x_t;\sqrt{1-\beta_t}x_{t-1},\beta_t I)$；反向过程学 $p_\theta(x_{t-1}\mid x_t)$ 逐步去噪。训练目标是预测所加噪声（简化后成 MSE），采样则从 $x_T\sim\mathcal{N}(0,I)$ 反复去噪到 $x_0$。扩散质量高、稳定，是 Stable Diffusion 等文生图模型的底座；代价是采样步数多、慢。
+
+## 示例
+
+用极简代码看三类「从噪声到样本」的接口差异（示意，非完整训练）：
+
+```python
+import numpy as np
+
+# 1) VAE 式：从学好的标准正态潜空间采样后解码
+def vae_sample(decode, n=1):
+    z = np.random.randn(n, 16)          # 潜变量 ~ N(0,I)
+    return decode(z)                    # 解码器输出新样本
+
+# 2) GAN 式：生成器直接吃噪声
+def gan_sample(G, n=1):
+    z = np.random.randn(n, 100)
+    return G(z)
+
+# 3) Diffusion 式：从纯噪声逐步去噪 T 步
+def diffusion_sample(denoise, T=50, shape=(1, 3, 32, 32)):
+    x = np.random.randn(*shape)
+    for t in range(T, 0, -1):
+        noise = np.random.randn(*shape) * 0.1
+        x = denoise(x, t) + noise       # 估计的去噪方向 + 一点随机性
+    return x
+
+print("VAE 采样形状", np.array(vae_sample(lambda z: z)).shape)
+print("GAN 采样形状", np.array(gan_sample(lambda z: z)).shape)
+print("Diffusion 末步形状", diffusion_sample(lambda x, t: x).shape)
+```
+
+三者都「从随机噪声出发」，差别在中间的映射如何被训练出来。
+
+## 易错点
+
+- **VAE 的 KL 项被设成 0**：会退化为普通自编码器，潜空间不再连续、无法插值。
+- **GAN 训练步数失衡**：判别器太强则生成器梯度消失、太弱则无法提供有用信号；常用「判别器更新 k 次、生成器 1 次」等技巧。
+- **把扩散的「加噪」当目标**：训练目标是预测噪声/干净样本，前向加噪只是构造监督；采样才是反向去噪。
+- **混淆三类「似然」**：VAE 优化下界而非真似然，GAN 不显式定义密度，只有扩散/流模型才有严格似然。
+
+## 练习
+
+1. 写出 VAE 的 ELBO 并说明两项各自的角色；重参数化技巧解决了什么梯度问题？
+2. GAN 的纳什均衡对应什么分布关系？模式崩溃为何发生？
+3. 扩散模型的前向与反向过程分别是什么？为什么采样要从 $T$ 步逐步走而非一步？
+
+## 小结
+
+生成模型从数据里学出「造新样本」的机器：VAE 用变分下界+重参数化得到平滑可插值的潜空间；GAN 用对抗博弈换锐利样本但训练易崩；扩散用逐步去噪兼顾质量与稳定，成为文生图主流。三者目标、训练与采样各异，是生成式 AI 的核心。
+
+## 延伸阅读
+
+- [经典神经网络](/docs/人工智能/深度学习/经典神经网络)
+- [EM 算法与高斯混合模型](/docs/数学基础/概率与统计/EM算法与高斯混合模型) —— ELBO 同宗
+- [自监督与对比学习](/docs/人工智能/深度学习/自监督与对比学习) —— 表征学习互补
