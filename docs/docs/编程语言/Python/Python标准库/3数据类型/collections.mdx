@@ -1,0 +1,86 @@
+---
+title: "collections 高性能容器数据类型"
+description: "Python collections 模块：defaultdict、Counter、deque、namedtuple、OrderedDict、ChainMap 六种特化容器，解决 dict/list/tuple 表达力不足的常见场景"
+---
+
+## 学习目标
+
+- 说清 `collections` 里六种常用容器各自解决什么「原生类型不够用」的场景
+- 能按场景选型：`defaultdict` 自动补默认值、`Counter` 计数、`deque` 双端队列、`namedtuple` 轻量对象、`ChainMap` 多字典合并、`OrderedDict` 保序
+- 避开高频坑：误访问 `defaultdict` 会「凭空造 key」、`Counter` 的加法语义、`deque` 与 `list` 的取舍
+
+## 前置知识
+
+- Python 字典、列表、元组的基本操作（见 [数据类型的其他工具](/docs/编程语言/Python/Python标准库/3数据类型/pprint)）
+- 函数与迭代基础
+
+## 核心概念
+
+`collections` 是标准库对「内置容器表达能力不足」的一组补丁：`dict` 访问缺失 key 会抛 `KeyError`，于是有 `defaultdict`；手写计数很啰嗦，于是有 `Counter`；`list` 头插是 $O(n)$，于是有 `deque`；想给元组字段起名又不想上类，于是有 `namedtuple`。它们零成本、可读性高，是「写得少、读得懂」的典型。
+
+## 示例
+
+六种容器的最小可用形态：
+
+```python showLineNumbers
+from collections import defaultdict, Counter, deque, namedtuple, OrderedDict, ChainMap
+
+# 1) defaultdict：缺失 key 自动给默认值（工厂函数）
+words = "apple banana apple cherry banana apple".split()
+cnt = defaultdict(int)          # 访问不存在的 key 时调用 int() -> 0
+for w in words:
+    cnt[w] += 1
+# cnt -> {'apple': 3, 'banana': 2, 'cherry': 1}
+
+# 2) Counter：计数器的特化 defaultdict(int)，自带 most_common
+c = Counter(words)
+c.most_common(2)                # [('apple', 3), ('banana', 2)]
+(c + Counter({"apple": 1})).most_common(1)   # [('apple', 4)]  支持加减交并
+
+# 3) deque：双端队列，头尾 O(1)；可定长滚动窗口
+dq = deque(maxlen=3)
+for i in range(5):
+    dq.append(i)               # 只保留最后 3 个：deque([2, 3, 4], maxlen=3)
+dq.appendleft(99)              # deque([99, 2, 3], maxlen=3)  左侧挤出 4
+
+# 4) namedtuple：不可变、带字段名的轻量对象（内存比 dict 小）
+Point = namedtuple("Point", ["x", "y"])
+p = Point(1, 2)
+p.x, p.y                      # (1, 2)；也支持下标 p[0]
+
+# 5) ChainMap：多个 dict 的逻辑合并，查找按序穿透（不改原字典）
+base = {"theme": "dark"}
+user = {"theme": "light", "font": 12}
+cm = ChainMap(user, base)     # 先查 user，再查 base
+cm["theme"], cm["font"]       # ('light', 12)；写入只作用在第一个映射 user 上
+
+# 6) OrderedDict：保序且支持 move_to_end / 相等比较看顺序（Py3.7+ 普通 dict 也已保序，
+#    但 OrderedDict 在「顺序相等」语义与 move_to_end 上仍有用）
+od = OrderedDict(a=1, b=2)
+od.move_to_end("a")           # OrderedDict([('b', 2), ('a', 1)])
+```
+
+## 易错点
+
+- **`defaultdict` 会「读即创建」**：即使你只是 `if k in d` 之后又 `d[k]` 打印调试，也会悄悄插入 key。只读判断用 `k in d` 或 `d.get(k)`，别直接下标访问来「试探」。
+- **`Counter` 减法可能产生负计数**：`Counter(a=1) - Counter(a=2)` 得到 `Counter()`（自动丢弃非正数），并不是 `{'a': -1}`；需要保留负值用 `Counter(a=1) + Counter(a=-2)` 或直接操作。
+- **`deque(maxlen=N)` 是定长滚动**：满了再 `append` 会自动从另一端弹出，不是报错也不是无限增长——若想无限增长，别传 `maxlen`。
+- **`namedtuple` 字段名不能用关键字**（如 `class`）：用 `rename=True` 让冲突字段自动改名（`_1`）。它不可变，`p.x = 9` 会抛 `AttributeError`；需要可变请用 `dataclasses`（见 [dataclasses 数据类](/docs/编程语言/Python/Python标准库/3数据类型/dataclasses)）。
+- **`ChainMap` 写入只进第一个映射**：`cm["x"] = 1` 改的是 `user` 而非 `base`；若想写回「真实来源」，要直接操作原字典。
+- **`OrderedDict` 与普通 `dict` 在 Py3.7+ 都保序**：别再为「保序」而用 `OrderedDict`；仅在需要 `move_to_end`、顺序敏感相等、或作为 `LRU` 缓存底层时才值得。
+
+## 练习
+
+1. 用 `defaultdict(list)` 把一组 `(城市, 温度)` 按城市聚合成列表。
+2. 用 `Counter` 统计一段英文文本的词频，输出出现最多的 5 个词（先用 `re` 切词）。
+3. 用 `deque(maxlen=10)` 实现一个「最近 10 条命令」的滚动历史。
+4. 用 `namedtuple` 表示一个 `RGB` 颜色，并写一个函数计算它与另一个颜色的欧氏距离。
+
+## 小结
+
+`collections` 是「内置容器的精准补丁」：`defaultdict` 免去「先判断再初始化」的样板，`Counter` 让计数一行搞定，`deque` 解决头尾高频操作，`namedtuple` 给元组字段名又不引入类的开销，`ChainMap` 让多层配置/作用域叠加变简单，`OrderedDict` 在需要顺序语义时仍有一席之地。记住它们的触发场景，能显著减少「用 dict/list 硬凑」的别扭代码。
+
+## 延伸阅读
+
+- 同章兄弟：[dataclasses 数据类](/docs/编程语言/Python/Python标准库/3数据类型/dataclasses) · [使用枚举](/docs/编程语言/Python/Python标准库/3数据类型/enum) · [pprint 美化打印](/docs/编程语言/Python/Python标准库/3数据类型/pprint)
+- 更轻量的不可变对象也可考虑 `typing.NamedTuple`

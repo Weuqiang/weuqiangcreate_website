@@ -1,0 +1,90 @@
+---
+title: "dataclasses 数据类"
+description: "Python dataclasses 模块：用 @dataclass 自动生成 __init__/__repr__/__eq__ 等样板，配合 field、default_factory、frozen、order 写出清晰且安全的数据载体"
+---
+
+## 学习目标
+
+- 用 `@dataclass` 替代手写「只有字段、没有行为」的类，消灭样板代码
+- 掌握 `field(default_factory=...)` 处理可变默认值、`__post_init__` 做初始化后校验
+- 理解 `frozen`（不可变）与 `order`（自动比较）的取舍与坑
+
+## 前置知识
+
+- Python 类、`__init__`、`__repr__`、`__eq__` 的基本含义
+- 知道「可变默认参数」的陷阱（见 [collections 高性能容器数据类型](/docs/编程语言/Python/Python标准库/3数据类型/collections) 中提到 namedtuple 不可变）
+
+## 核心概念
+
+很多类「只是数据的袋子」：一堆字段 + 构造 + 打印 + 比较。手写这些样板既啰嗦又易错。`dataclasses` 用一个装饰器，按你声明的字段类型注解，自动生成 `__init__`、`__repr__`、`__eq__`，并通过参数精细控制默认值、比较、冻结等。它比 `namedtuple` 更灵活（可带方法、可变性可控），比手写类少写几十行。
+
+## 示例
+
+```python showLineNumbers
+from dataclasses import dataclass, field
+from typing import List
+
+# 基础：自动获得 __init__ / __repr__ / __eq__
+@dataclass
+class Point:
+    x: float
+    y: float
+    z: float = 0.0          # 带默认值，必须放在无默认值字段之后
+
+p = Point(1, 2)             # Point(x=1, y=2, z=0.0)
+p == Point(1, 2, 0.0)       # True（自动 __eq__）
+
+# 默认工厂：可变默认值必须用 default_factory，否则所有实例共享同一对象
+@dataclass
+class InventoryItem:
+    name: str
+    unit_price: float = 0.0
+    quantity: int = 0
+    tags: List[str] = field(default_factory=list)   # 每次新建都给一个新 list
+
+    def total(self) -> float:                        # 数据类也能带方法
+        return self.unit_price * self.quantity
+
+# __post_init__：构造后做校验或派生字段
+@dataclass
+class Range:
+    lo: int
+    hi: int
+    def __post_init__(self):
+        if self.lo > self.hi:
+            raise ValueError("lo must be <= hi")
+
+# frozen + order：不可变对象，并自动获得 <, <=, >, >=
+@dataclass(frozen=True, order=True)
+class Version:
+    major: int
+    minor: int
+
+Version(2, 1) < Version(2, 3)   # True；比较按字段顺序（major 先，再 minor）
+# Version(2, 1).major = 9       # FrozenInstanceError：frozen 不能再赋值
+```
+
+## 易错点
+
+- **可变默认值必须用 `field(default_factory=...)`**：直接写 `tags: list = []` 会触发 `ValueError`（dataclass 主动拦下这个经典陷阱）；想每次新建都拿到新对象，用 `default_factory=list`。`int`/`float`/`str` 等不可变类型可以直接给默认值。
+- **带默认值的字段必须排在「无默认值字段」之后**：否则会报 `non-default argument follows default argument`（和普通函数参数规则一致）。
+- **`frozen=True` 后不能再赋值**：包含可变字段（如 `list`）时，对象「引用不可变但内容可变」——`item.tags.append(...)` 仍然合法，只是不能 `item.tags = [...]`，别误以为 frozen 就完全不可变。
+- **`order=True` 的比较按字段声明顺序逐字段比**：不是按某个「自然大小」；若只想比较部分字段，用 `field(compare=False)` 排除。
+- **`__post_init__` 里改字段要小心 frozen**：frozen 类的 `__post_init__` 内给字段赋值也会抛 `FrozenInstanceError`；需要派生字段可改用 `field(init=False, default=...)` 在方法外计算，或用 `object.__setattr__`。
+- **继承时字段顺序**：子类字段排在父类之后；若父类和子类都有默认值规则，仍要满足「无默认值在后」的整体顺序。
+
+## 练习
+
+1. 用 `@dataclass` 定义一个 `Rectangle`（x, y, w, h），并用 `__post_init__` 校验 w、h 为正。
+2. 给 `InventoryItem` 加一个 `field(default_factory=dict)` 的 `metadata`，练习可变默认值的正确写法。
+3. 定义一个 `frozen=True, order=True` 的 `Person(name, age)`，对一组 Person 排序并打印。
+4. 比较 `@dataclass` 与 `namedtuple`：分别写一个「带方法、可冻结」的等价数据载体，体会二者取舍。
+
+## 小结
+
+`dataclasses` 把「数据载体类」的样板（构造、打印、比较）交给装饰器自动生成，让你专注字段与行为。三句要领：`field(default_factory=...)` 处理可变默认值、`__post_init__` 做构造后校验或派生、`frozen`/`order` 按需开关不可变与比较。它比 `namedtuple` 灵活、比手写类干净，是定义「纯数据 + 少量方法」类型的首选。
+
+## 延伸阅读
+
+- 同章兄弟：[collections 高性能容器数据类型](/docs/编程语言/Python/Python标准库/3数据类型/collections) · [使用枚举](/docs/编程语言/Python/Python标准库/3数据类型/enum)
+- 需要「仅初始化、不存入字段」可用 `field(init=True, repr=False)` 等组合微调生成行为

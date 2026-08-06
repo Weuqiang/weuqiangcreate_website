@@ -1,0 +1,118 @@
+---
+title: "asyncio 高级模式"
+description: "Python asyncio 进阶：TaskGroup 结构化并发、任务取消与超时、asyncio.Queue 生产者消费者、Lock/Event/Condition 同步原语、to_thread 与 shield，衔接 asyncio 基础篇"
+---
+
+## 学习目标
+
+- 用 `asyncio.TaskGroup`（3.11+）写出「任一失败则全部取消」的结构化并发
+- 用 `wait_for` / `task.cancel()` 控制超时与取消，并正确捕获 `CancelledError`
+- 用 `asyncio.Queue` 做协程间生产消费，用 `Lock`/`Event`/`Condition` 做协程间同步
+- 知道何时用 `to_thread` / `run_in_executor` 把阻塞或 CPU 活丢给线程，用 `shield` 保护关键任务不被取消
+
+## 前置知识
+
+- `async` / `await`、事件循环、`run` / `gather` / `create_task` 基础（见 [asyncio 异步编程](/docs/编程语言/Python/Python标准库/13网络和进程间通信/asyncio)）
+- 并发基本概念（见 [并发执行](/docs/编程语言/Python/Python标准库/12并发执行/)）
+
+## 核心概念
+
+基础篇讲了「怎么并发跑一批协程」。进阶要解决的，是真实系统里的三件事：**结构化的生命周期**（谁失败、谁该取消）、**协程之间的通信与同步**（共享状态怎么不打架）、**与同步世界交界**（阻塞/CPU 活怎么不卡循环）。`asyncio` 提供 `TaskGroup`、`Queue`、同步原语、`wait_for`、取消机制与 `to_thread` 来逐一应对。
+
+## 示例
+
+```python showLineNumbers
+import asyncio
+
+# 1) TaskGroup（3.11+）：结构化并发。组内任一任务抛异常，其余会被取消并统一抛出 ExceptionGroup
+async def worker(name, sec):
+    await asyncio.sleep(sec)
+    return name
+
+async def main_group():
+    async with asyncio.TaskGroup() as tg:
+        t1 = tg.create_task(worker("a", 1))
+        t2 = tg.create_task(worker("b", 2))
+    # 离开 with 时所有任务已 done；结果通过 task.result() 取
+    print(t1.result(), t2.result())
+
+# 2) 超时与取消：wait_for 在超时后取消内部协程并抛 TimeoutError
+async def slow():
+    await asyncio.sleep(10)
+    return "done"
+
+async def with_timeout():
+    try:
+        return await asyncio.wait_for(slow(), timeout=2)
+    except asyncio.TimeoutError:
+        return "被超时取消"
+
+# 3) 手动取消 + 正确吞掉 CancelledError（3.8+ 必须 re-raise 或显式处理）
+async def cancellable():
+    try:
+        await asyncio.sleep(5)
+    except asyncio.CancelledError:
+        # 清理资源…
+        raise                      # 不要静默吞掉，否则任务状态会错乱
+
+# 4) Queue：生产者-消费者在协程间传递数据（背压由 maxsize 提供）
+async def producer(q: asyncio.Queue):
+    for i in range(5):
+        await q.put(i)
+
+async def consumer(q: asyncio.Queue):
+    while True:
+        item = await q.get()
+        print("got", item)
+        q.task_done()
+
+async def pipeline():
+    q = asyncio.Queue(maxsize=3)
+    async with asyncio.TaskGroup() as tg:
+        tg.create_task(producer(q))
+        tg.create_task(consumer(q))
+    await q.join()
+
+# 5) 同步原语：Lock 保护共享计数，Event 做「就绪」信号
+counter = 0
+lock = asyncio.Lock()
+
+async def inc():
+    global counter
+    async with lock:             # 协程级锁，不是 threading.Lock
+        counter += 1
+
+# 6) to_thread：把阻塞/CPU 函数丢到线程池，不卡事件循环
+def blocking_io():
+    open("/dev/null").close()
+
+async def main():
+    await asyncio.to_thread(blocking_io)   # 等价于 run_in_executor(None, ...)
+```
+
+## 易错点
+
+- **`TaskGroup` 内异常会变成 `ExceptionGroup`**：Python 3.11+ 中，组里一个任务失败，其他会被取消，退出时抛出 `ExceptionGroup`（含全部子异常）。用 `try/except*`（注意星号）分别处理，别用普通 `except` 漏捕。
+- **`timeout=0` 不是「立即超时」**：`wait_for` 给 0 会立刻取消并抛 `TimeoutError`，常被误当「不等待」；想「不阻塞」请用 `asyncio.create_task` 立即排程。
+- **`CancelledError` 在 3.8+ 是 `BaseException` 的子类**：在协程里 `except asyncio.CancelledError` 后务必 `raise` 重新抛出（或显式处理完再 raise），否则「取消」语义被破坏，调用方 `await` 永远不返回。
+- **`asyncio.Lock` ≠ `threading.Lock`**：前者必须在协程里 `async with`，且只在「await 点」让出；混用 `threading.Lock` 会阻塞整个事件循环。
+- **`Queue.get()` 在空队列上会挂起等待**：消费者写成 `while True: await q.get()` 没问题，但要配 `q.task_done()` 与 `q.join()` 才能正确判断「全部处理完」；否则 `task_done` 多调用会抛 `ValueError`。
+- **`to_thread` 适合「阻塞或 CPU 但不是纯 CPU 重活」**：它走默认线程池；真正重 CPU 的长期计算，更该用 [ProcessPoolExecutor](/docs/编程语言/Python/Python标准库/12并发执行/concurrent-futures)。
+- **`shield` 只挡取消、不挡异常**：`asyncio.shield(inner)` 被外部取消时，`inner` 仍会继续跑完（只是外层收到 `CancelledError`）；若想真正打断内部，需要把取消信号显式传进去。
+
+## 练习
+
+1. 用 `TaskGroup` 并发请求 3 个 URL；故意让其中一个抛错，观察其余是否被取消、异常如何以 `ExceptionGroup` 呈现。
+2. 用 `asyncio.Queue` + `wait_for` 写一个「限时 3 秒的生产者消费者」，超时后优雅退出。
+3. 用 `asyncio.Lock` 保护一个被 10 个并发协程共享的计数器，验证结果等于 10。
+4. 用 `to_thread` 包装一个 `time.sleep(2)` 的同步函数，证明事件循环在此期间仍能 `await` 别的协程。
+
+## 小结
+
+`asyncio` 进阶补齐了「真实并发系统」的三块拼图：**结构化生命周期**（`TaskGroup` 自动取消、`wait_for`/`cancel` 管超时）、**协程间通信与同步**（`Queue` 传数据、`Lock`/`Event`/`Condition` 保状态）、**与同步世界交界**（`to_thread`/`run_in_executor` 隔离阻塞、CPU 活，`shield` 护住关键任务）。记住：`ExceptionGroup` 要 `except*` 处理、`CancelledError` 别静吞、`asyncio.Lock` 只在协程里用——这些细节决定了异步代码是「稳」还是「玄学」。
+
+## 延伸阅读
+
+- 基础篇：[asyncio 异步编程](/docs/编程语言/Python/Python标准库/13网络和进程间通信/asyncio)
+- 线程/进程路线：[concurrent.futures 线程池与进程池](/docs/编程语言/Python/Python标准库/12并发执行/concurrent-futures) · [threading 多线程](/docs/编程语言/Python/Python标准库/12并发执行/threading)
+- 网络请求实践：[urllib 与 http.client](/docs/编程语言/Python/Python标准库/13网络和进程间通信/urllib)

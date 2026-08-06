@@ -1,0 +1,77 @@
+---
+title: "concurrent.futures 线程池与进程池"
+description: "Python concurrent.futures 模块：用 ThreadPoolExecutor / ProcessPoolExecutor 高层接口调度任务，submit + as_completed + map，以及它和 threading / multiprocessing 的取舍"
+---
+
+## 学习目标
+
+- 用 `ThreadPoolExecutor` / `ProcessPoolExecutor` 写出「提交一批任务、收结果」的并发代码
+- 掌握 `submit` + `as_completed`（按完成顺序拿结果）与 `map`（保序批量）两种姿势
+- 说清它和底层 [threading](/docs/编程语言/Python/Python标准库/12并发执行/threading) / [multiprocessing](/docs/编程语言/Python/Python标准库/12并发执行/multiprocessing) 的关系与边界
+
+## 前置知识
+
+- 并发与并行的基本概念（进程/线程/协程，见 [并发执行](/docs/编程语言/Python/Python标准库/12并发执行/) 章节导引）
+- 函数、迭代器、`with` 上下文管理
+- 知道 GIL 对 CPU 密集任务的影响
+
+## 核心概念
+
+`concurrent.futures` 是「线程/进程并发」的**高层抽象**：你只管「提交任务、拿 Future、取结果」，不用亲手 `Thread.start()`、`Process.join()`、手动收集异常。两个执行器共享同一套 API——`ThreadPoolExecutor` 底层用线程（受 GIL 限制，适合 IO 密集），`ProcessPoolExecutor` 底层用多进程（绕开 GIL，适合 CPU 密集）。它本质是 `threading` / `multiprocessing` 的「易用封装」，不是替代品。
+
+## 示例
+
+```python showLineNumbers
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+import math, time
+
+def cpu_bound(n: int) -> int:
+    return sum(math.isqrt(k) for k in range(n))   # 纯计算，吃 CPU
+
+# 1) 线程池：IO 密集型（网络/磁盘）首选
+def fetch(i):
+    time.sleep(0.1)            # 模拟 IO 等待
+    return f"task-{i}"
+
+with ThreadPoolExecutor(max_workers=4) as ex:
+    futures = [ex.submit(fetch, i) for i in range(10)]
+    for f in as_completed(futures):      # 谁先完成先处理谁
+        print(f.result())
+
+# 2) 进程池：CPU 密集型（计算）首选，绕开 GIL
+nums = [5_000_000, 5_000_000, 5_000_000]
+with ProcessPoolExecutor() as ex:
+    results = list(ex.map(cpu_bound, nums))   # map 保序返回，等价于顺序结果
+
+# 3) as_completed 配合进程池，按完成顺序拿（不保序）
+with ProcessPoolExecutor() as ex:
+    futs = {ex.submit(cpu_bound, n): n for n in nums}
+    for f in as_completed(futs):
+        n = futs[f]
+        print(n, f.result())
+```
+
+## 易错点
+
+- **`ProcessPoolExecutor` 的任务函数必须可被 pickle**：顶层函数没问题，但**闭包、lambda、类内方法、局部函数**在 Windows 上会 `PicklingError`。需要传状态时用显式参数，而非捕获外部变量。
+- **`ProcessPoolExecutor` 默认 `max_workers = os.cpu_count()`**：进程昂贵，别开成「每任务一个进程」；CPU 密集时 worker 数 ≈ 核数即可，开太多反而因上下文切换变慢。
+- **`result()` 会抛出原异常**：子任务里抛的错不会静默，调用 `f.result()` 时原样重抛；想不中断可用 `result(timeout=...)` 或 `as_completed` + `try`。
+- **线程池里的「CPU 重活」依然被 GIL 卡**：线程池只适合 IO 等待重叠；如果在 `ThreadPoolExecutor` 里跑纯计算，性能不会提升（GIL 串行化），请改用 `ProcessPoolExecutor` 或 [asyncio.to_thread](/docs/编程语言/Python/Python标准库/13网络和进程间通信/asyncio)。
+- **`map` 与 `submit` 的异常时机不同**：`ex.map` 在**迭代结果**时才抛第一个异常；`submit` 则在调用 `result()` 时抛。批量任务想要「一个挂不影响其他」，用 `submit` + `as_completed` + `try`。
+- **`with` 退出会 `shutdown(wait=True)`**：上下文结束时默认等所有任务跑完；若想「火完即走」用 `ex.shutdown(wait=False, cancel_futures=...)`.
+
+## 练习
+
+1. 用 `ThreadPoolExecutor` 并发下载 10 个 URL（可用 `httpx` 或 `urllib`），对比单线程耗时。
+2. 用 `ProcessPoolExecutor` + `ex.map` 并行计算一组大数的质因数个数，验证 CPU 利用率上升。
+3. 把练习 1 改成 `submit` + `as_completed`，实现「先完成先写文件」而非保序。
+4. 故意让一个任务抛异常，分别用 `map` 和 `as_completed + try` 观察异常传播差异。
+
+## 小结
+
+`concurrent.futures` 用统一的 `Executor` 接口封装线程与进程并发：提交任务拿到 `Future`，再用 `as_completed`（按完成）或 `map`（保序）收结果。口诀——**IO 密集上 `ThreadPoolExecutor`，CPU 密集上 `ProcessPoolExecutor`**。它比手写 `threading`/`multiprocessing` 少写样板，但记住两条硬约束：进程池任务必须可 pickle、线程池救不了 CPU 密集。
+
+## 延伸阅读
+
+- 同章兄弟：[threading 多线程](/docs/编程语言/Python/Python标准库/12并发执行/threading) · [multiprocessing 多进程](/docs/编程语言/Python/Python标准库/12并发执行/multiprocessing) · [subprocess 子进程](/docs/编程语言/Python/Python标准库/12并发执行/subprocess)
+- 协程路线：[asyncio 异步编程](/docs/编程语言/Python/Python标准库/13网络和进程间通信/asyncio) 与 [asyncio 高级模式](/docs/编程语言/Python/Python标准库/13网络和进程间通信/asyncio高级模式)
