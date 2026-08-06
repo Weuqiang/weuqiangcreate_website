@@ -1,0 +1,91 @@
+---
+title: "性能剖析与调试"
+description: "timeit 做微观计时，cProfile 定位时间热点，tracemalloc 追踪内存，pdb 交互式调试。让优化与排错有据可依。"
+---
+
+## 学习目标
+
+- 用 `timeit` 可靠地对比小段代码的耗时
+- 用 `cProfile` + `pstats` 找出「最慢的函数」
+- 用 `tracemalloc` 定位内存增长来源
+- 用 `pdb` 设置断点、单步、查看变量
+
+## 前置知识
+
+- Python 函数与模块
+- 基本的性能直觉（算法复杂度）
+
+## 核心概念
+
+**timeit**：微观基准工具，`timeit.timeit(stmt, number=...)` 多次执行取平均，自动禁用垃圾回收干扰，比手写 `time.perf_counter` 更严谨——适合对比「两种写法谁更快」。
+
+**cProfile**：确定性剖析器，记录每个函数的调用次数与累计/自身耗时。`python -m cProfile -s cumulative script.py` 或代码内 `cProfile.run('func()')`，再用 `pstats` 按 `cumulative`/`tottime`/`calls` 排序，迅速锁定热点。
+
+**tracemalloc**：追踪 Python 堆内存分配，能告诉你「哪一行分配了最多内存」「两次快照间内存差在哪」。比 `sys.getsizeof` 更有用，适合排查内存泄漏与大数据结构膨胀。
+
+**pdb**：交互式调试器，`import pdb; pdb.set_trace()`（或 Python 3.7+ 的 `breakpoint()`）在运行处暂停，支持 `n`（下一行）、`s`（步入）、`c`（继续）、`l`（看代码）、`p`（打印变量）、`bt`（栈回溯）。
+
+## 示例
+
+```python
+import timeit
+import cProfile, pstats
+import tracemalloc
+import pdb
+
+# timeit：对比两种连接字符串
+t1 = timeit.timeit("'-'.join(str(i) for i in range(100))",
+                   number=10000)
+t2 = timeit.timeit("','.join([str(i) for i in range(100)])",
+                   number=10000)
+print(t1, t2)
+
+# cProfile：定位热点
+def slow():
+    return sum(i*i for i in range(10**6))
+prof = cProfile.Profile()
+prof.enable(); slow(); prof.disable()
+stats = pstats.Stats(prof).sort_stats("cumulative")
+stats.print_stats(5)   # 打印最慢的 5 个
+
+# tracemalloc：谁分配了内存
+tracemalloc.start()
+big = [i for i in range(10**6)]
+snapshot = tracemalloc.take_snapshot()
+top = snapshot.statistics("lineno")[0]
+print(top)             # 显示分配最多的那一行
+
+# pdb：交互式调试（运行时在下行暂停）
+def buggy(x):
+    y = x + 1
+    breakpoint()       # 或 pdb.set_trace()
+    return y / (x - 1)
+```
+
+## 易错点
+
+- **手写 `time.time` 计时不可靠**：受 GC、系统调度影响，`timeit` 多次运行更稳；测大块逻辑才用 `perf_counter`。
+- **`cProfile` 自身有开销**：它会显著拖慢程序，只用于「找热点」，不要用它测绝对延迟；生产环境用采样型（`py-spy`）更轻量。
+- **`tracemalloc` 只追踪 Python 分配**：NumPy 数组、C 扩展分配的内存它看不到，这类要用 `memory_profiler` 或原生工具。
+- **`pdb` 误提交到生产**：`breakpoint()` 留在代码里会让服务卡住，提交前务必删除；或用环境变量 `PYTHONBREAKPOINT=0` 关闭。
+- **优化前先剖析**：凭直觉优化常改错地方，先 `cProfile` 看数据再动手（Knuth：「过早优化是万恶之源」）。
+
+## 小结
+
+- 微观计时用 `timeit`，定位热点用 `cProfile`+`pstats`；
+- 内存问题用 `tracemalloc` 看分配栈；
+- 逻辑排错用 `pdb` 走进运行时；
+- 永远「先测量，再优化」。
+
+## 练习
+
+1. 用 `timeit` 对比「列表推导」与「`map` + `lambda`」在 10 万元素求和上的差异。
+2. 写一个故意低效的冒泡排序，用 `cProfile` 证明它慢在哪一行，再换成内置 `sorted` 对比。
+3. 构造一个在循环里不断 `append` 到列表的函数，用 `tracemalloc` 找出内存峰值来自哪一行。
+
+## 延伸阅读
+
+- [math 与 random](/docs/编程语言/Python/Python标准库/4数字和数学模块/math-random) — 数值与随机基础
+- [Python 官方 profile 文档](https://docs.python.org/zh-cn/3/library/profile.html)
+- [Python 官方 tracemalloc 文档](https://docs.python.org/zh-cn/3/library/tracemalloc.html)
+- [Python 官方 pdb 文档](https://docs.python.org/zh-cn/3/library/pdb.html)

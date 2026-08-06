@@ -1,0 +1,72 @@
+---
+title: "math 与 random"
+description: "math 提供标量数学函数与常数，random 提供伪随机采样与洗牌。两者是数值与概率入门、算法原型、随机化测试的基础。"
+---
+
+## 学习目标
+
+- 用 `math` 做平方根、对数、三角函数与浮点友好的比较（`isclose`）
+- 用 `random` 生成随机整数、抽样、洗牌，并理解「种子」的意义
+- 区分「伪随机」与「密码学安全随机」，知道何时该换 `secrets`
+
+## 前置知识
+
+- Python 数字与基本运算符
+- 了解浮点误差的来源（见 [decimal / statistics / fractions](../decimal-statistics-fractions)）
+
+## 核心概念
+
+`math` 是 C 实现的标量数学库：提供 `sqrt`、`log`、`exp`、`sin/cos/tan`、地板/天花板 `floor/ceil`、`factorial`、`gcd` 等，以及常数 `pi`、`e`、`tau`。它只处理**单个浮点数/整数**，不支持数组——向量化请用 NumPy。`math.isclose(a, b, rel_tol=1e-09, abs_tol=0.0)` 是判断浮点「近似相等」的正确方式，永远不要直接写 `a == b`。
+
+`random` 是**伪随机**生成器（基于 Mersenne Twister）。`random.seed(n)` 让结果可复现，这对实验、测试、教学至关重要；不设置种子则按系统时间/熵源初始化。`randint(a, b)` 含两端，`choice(seq)` 随机取一个，`sample(population, k)` 不重复抽样，`shuffle(lst)` 原地洗牌。
+
+## 示例
+
+```python
+import math
+import random
+
+# math：浮点友好的比较
+x = 0.1 + 0.2
+print(x == 0.3)            # False（浮点误差）
+print(math.isclose(x, 0.3))  # True
+
+# math：常用函数
+print(math.sqrt(2))        # 1.4142...
+print(math.comb(10, 3))    # 120（组合数 C(10,3)）
+print(math.gcd(48, 36))    # 12
+
+# random：可复现的随机序列
+random.seed(42)
+print(random.randint(1, 6))     # 掷骰子
+print(random.choice(["红", "绿", "蓝"]))
+deck = list(range(52))
+random.shuffle(deck)            # 原地洗牌
+print(random.sample(range(100), 5))  # 不重复抽 5 个
+```
+
+## 易错点
+
+- **不要用 `random` 生成密码、令牌、验证码**：它是可预测的伪随机。密码学场景改用 [`secrets`](/docs/编程语言/Python/Python标准库/15数据编码与解码/hashlib-hmac-secrets)。
+- **浮点直接用 `==` 比较**：`0.1 + 0.2 != 0.3`。比较用 `math.isclose` 或设定容差。
+- **`shuffle` 原地修改**：它返回 `None`，新手常写成 `deck = random.shuffle(deck)` 得到 `None`。
+- **`sample` 要求不重复**：要从可重复总体（如带放回抽样）请用 `random.choices(population, k=...)`（注意复数 `choices`）。
+- **跨进程/跨机器复现**：仅 `seed` 相同还不够，Python 版本与 `random` 实现细节也会影响序列，正式实验应固定版本或用 `numpy` 的 ` Generator`。
+
+## 小结
+
+- `math` 处理单值数学，强调 `isclose` 而非 `==`；
+- `random` 是伪随机，靠 `seed` 复现，靠 `choice/sample/shuffle` 实现常见随机抽样；
+- 安全随机交给 `secrets`，向量化计算交给 NumPy。
+
+## 练习
+
+1. 用 `math` 写函数判断一个整数是否为完全平方数（`isqrt` 很有用）。
+2. 实现「从 1–49 中随机抽取 6 个不重复号码」的简易彩票模拟，并验证多次运行结果不同（不固定种子）。
+3. 给定一组学生成绩列表，用 `random.sample` 做一个不放回的「随机分组」函数。
+
+## 延伸阅读
+
+- [decimal / statistics / fractions](../decimal-statistics-fractions) — 精度控制与统计分析
+- [Python 官方 math 文档](https://docs.python.org/zh-cn/3/library/math.html)
+- [Python 官方 random 文档](https://docs.python.org/zh-cn/3/library/random.html)

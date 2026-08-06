@@ -1,0 +1,81 @@
+---
+title: "functools 与 itertools"
+description: "functools 提供缓存、偏函数与归约；itertools 提供惰性迭代器组合。两者让循环更短、内存更省、组合更灵活。"
+---
+
+## 学习目标
+
+- 用 `functools.lru_cache` 缓存纯函数结果、`partial` 固定参数、`reduce` 归约
+- 用 `itertools` 的 `chain`、`groupby`、`permutations`、`combinations`、`product` 替代手写嵌套循环
+- 理解「惰性迭代」对内存的意义
+
+## 前置知识
+
+- Python 函数、lambda 与高阶函数
+- 迭代器与生成器基础（见 [迭代器](/docs/编程语言/Python/25迭代器)）
+
+## 核心概念
+
+`functools` 是高阶函数工具箱：`lru_cache(maxsize=...)` 给纯函数加最近最少使用缓存，适合递归（如斐波那契）与重复计算；`partial(func, *args)` 冻结部分参数生成新函数；`reduce(fn, seq)` 从左往右累积（来自 `functools`，原在 `__builtin__`）；`singledispatch` 实现单分派泛型函数。
+
+`itertools` 全部返回迭代器，**惰性**——不一次性生成所有元素，因此能处理「理论上无限」或超大序列：`chain` 把多个可迭代拼成一条；`groupby` 按 key 分组（需先排序）；`permutations/combinations` 生成排列组合；`product` 做笛卡尔积；`islice/count` 支持切片与无限计数。
+
+`operator` 把 `+`、`getitem` 等变成函数：`operator.add`、`operator.itemgetter`，常配合 `sorted(key=itemgetter(1))` 或 `reduce`。
+
+## 示例
+
+```python
+from functools import lru_cache, partial, reduce
+from itertools import chain, groupby, permutations, combinations, product
+import operator
+
+# lru_cache：记忆化递归
+@lru_cache(maxsize=None)
+def fib(n):
+    return n if n < 2 else fib(n-1) + fib(n-2)
+print(fib(50))  # 飞快，无缓存会极慢
+
+# partial：固定参数
+basetwo = partial(int, base=2)
+print(basetwo('1010'))  # 10
+
+# reduce：连乘
+print(reduce(operator.mul, [1, 2, 3, 4], 1))  # 24
+
+# itertools：排列组合与笛卡尔积
+print(list(permutations('ABC', 2)))   # 排列
+print(list(combinations('ABC', 2)))   # 组合
+print(list(product([0, 1], repeat=2)))  # (0,0)(0,1)(1,0)(1,1)
+
+# groupby：先排序再分组
+words = sorted(['apple', 'apricot', 'banana', 'blue'])
+for k, g in groupby(words, key=lambda w: w[0]):
+    print(k, list(g))
+```
+
+## 易错点
+
+- **`lru_cache` 只能用于纯函数**：若依赖外部状态或入参可变（如 list/dict），缓存会返回错误结果；默认可变参数也不安全（`maxsize=None` 时仅哈希不可变参数）。
+- **`groupby` 必须先排序**：它只对「相邻」相同 key 分组，未排序数据会分出多个小组。
+- **`combinations` 不计顺序、`permutations` 计顺序**：`combinations('AB',2)` 只有 `(A,B)`，`permutations` 还有 `(B,A)`。
+- **`itertools` 结果是一次性迭代器**：转成 `list` 后就被消费掉，二次遍历会得到空——需要多次遍历就先 `list()` 存下。
+- **`reduce` 可读性陷阱**：复杂归约不如显式 `for` 循环清晰，Python 之禅建议「可读性至上」。
+
+## 小结
+
+- `functools` 让函数更「可复用」：`lru_cache` 缓存、`partial` 定制、`reduce` 累积；
+- `itertools` 让循环更「声明式」且省内存：链式、分组、排列组合、笛卡尔积；
+- 配合 `operator` 可去掉大量 lambda 样板。
+
+## 练习
+
+1. 用 `lru_cache` 改写一个递归的爬楼梯问题（一次走 1 或 2 阶），对比有无缓存的耗时。
+2. 给定一串交易记录（列表），用 `groupby` 按日期汇总每日金额。
+3. 用 `itertools.product` 生成一个 3×3 的棋盘上所有「每行取一个格子」的坐标组合。
+
+## 延伸阅读
+
+- [迭代器](/docs/编程语言/Python/25迭代器) — 迭代器协议与生成器
+- [装饰器与作用域](/docs/编程语言/Python/28装饰器与作用域) — 装饰器如何改写函数行为
+- [Python 官方 itertools 文档](https://docs.python.org/zh-cn/3/library/itertools.html)
+- [Python 官方 functools 文档](https://docs.python.org/zh-cn/3/library/functools.html)

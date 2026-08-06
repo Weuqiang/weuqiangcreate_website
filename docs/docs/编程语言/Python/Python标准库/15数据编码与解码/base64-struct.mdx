@@ -1,0 +1,70 @@
+---
+title: "base64 与 struct"
+description: "base64 将任意二进制编码为可打印文本，struct 按 C 风格字节布局解析/打包数据。两者常用于协议、存储与二进制接口。"
+---
+
+## 学习目标
+
+- 用 `base64` 在文本协议（JSON、邮件、URL）中安全携带二进制
+- 用 `struct.pack` / `struct.unpack` 按精确字节布局读写数据
+- 理解「字节序」（大端/小端）对跨平台解析的影响
+
+## 前置知识
+
+- Python `bytes` 与 `bytearray`
+- 基本的进制与编码概念
+
+## 核心概念
+
+`base64` 把每 3 字节（24 位）拆成 4 个 6 位组，映射到 64 个可打印字符（A–Z a–z 0–9 + /），使二进制能安全穿过只认文本的通道。结果是原大小的 4/3。`b64encode` / `b64decode` 操作 `bytes`；`urlsafe_b64encode` 把 `+ /` 换成 `- _`，用于 URL/文件名。`base64` 不是加密，只是编码，任何人都能解码。
+
+`struct` 按格式串在 Python 值与 C 结构体字节之间转换：`'>i'` 表示大端 4 字节整数，`'<d'` 小端双精度，`'10s'` 10 字节字符串。格式串首字符控制字节序：`>` 大端、`<` 小端、`!` 网络序（同大端）、缺省按本机。它是解析二进制文件、网络包、与 C 程序交换数据的关键。
+
+## 示例
+
+```python
+import base64
+import struct
+
+# base64：二进制 → 文本
+raw = b"\x00\x01\x02hello"
+enc = base64.b64encode(raw).decode("ascii")
+print(enc)                     # AAAEChBoZWxsbw==
+print(base64.b64decode(enc))   # 还原
+
+# 网络安全的变体（URL/文件名）
+print(base64.urlsafe_b64encode(b"+/").decode())  # -_ 代替 +/
+
+# struct：打包/解包
+# 大端：1 字节无符号 + 2 字节短整 + 双精度
+buf = struct.pack(">BHd", 0x01, 1024, 3.14)
+print(buf.hex())               # 01 0400 40091eb851eb851f
+tag, n, pi = struct.unpack(">BHd", buf)
+print(tag, n, pi)              # 1 1024 3.14
+```
+
+## 易错点
+
+- **base64 是编码不是加密**：别用它「保护」敏感数据，机密性应交给 AES 等加密；base64 只是让二进制能放进文本。
+- **`b64decode` 要 `bytes`**：传入 `str` 会报错，先用 `.encode()` 或 `base64.b64decode(s.encode())`。
+- **struct 字节序必须显式指定**：同一整数 `1024` 在大端是 `0400`、小端是 `0004`，跨平台/网络协议不写 `>`/`<` 会解析错乱。
+- **`struct.calcsize(fmt)` 与对齐**：格式串里的填充字节（如 `>` 默认无填充，但 `@` 本机对齐会插 padding）会改变大小，复杂布局先用 `calcsize` 核对。
+- **`10s` 是定长字节串**：解包得到 `bytes`，若原是文本需再 `.decode()`；超长会被截断、不足补 `\x00`。
+
+## 小结
+
+- 二进制穿过文本通道用 `base64`，URL 场景用 `urlsafe_` 变体；
+- 精确字节布局用 `struct`，务必标注字节序；
+- 二者都只处理 `bytes`，记得在 `str` 与 `bytes` 间转换。
+
+## 练习
+
+1. 写一个函数把图片文件的二进制读取后用 base64 编码成可在 JSON 中传输的字符串，再解码回原文件比对一致性。
+2. 用 `struct` 定义「消息头 = 魔数(2字节大端) + 版本(1字节) + 长度(4字节大端)」，并实现打包与解析两个函数。
+3. 解析一段给定的十六进制字节串（如网络抓包），提取其中的多个字段，注意字节序。
+
+## 延伸阅读
+
+- [hashlib / hmac / secrets](/docs/编程语言/Python/Python标准库/15数据编码与解码/hashlib-hmac-secrets) — 摘要、认证与随机
+- [Python 官方 base64 文档](https://docs.python.org/zh-cn/3/library/base64.html)
+- [Python 官方 struct 文档](https://docs.python.org/zh-cn/3/library/struct.html)

@@ -1,0 +1,11 @@
+---
+sidebar_position: 15
+title: 数据编码与解码
+---
+
+数据在内存、磁盘与网络间流动时，需要一致的编解码规则。`base64` 把二进制塞进文本协议，`struct` 按字节布局解析 C 结构体，`hashlib` 与 `hmac` 提供摘要与消息认证，`secrets` 提供密码学安全的随机源。它们是网络、存储与安全的基础件。
+
+## 本章模块
+
+- [base64 与 struct](./base64-struct) — 二进制↔文本编码，以及按字节布局解析
+- [hashlib / hmac / secrets](./hashlib-hmac-secrets) — 摘要、消息认证码与密码学安全随机

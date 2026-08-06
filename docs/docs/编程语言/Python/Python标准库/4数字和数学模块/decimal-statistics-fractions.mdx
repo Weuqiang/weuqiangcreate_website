@@ -1,0 +1,81 @@
+---
+title: "decimal / statistics / fractions"
+description: "decimal 提供可控精度的定点小数，statistics 做描述统计，fractions 做精确有理数。三者补足 float 的精度与语义短板。"
+---
+
+## 学习目标
+
+- 用 `decimal.Decimal` 避免金融计算中的浮点误差
+- 用 `statistics` 快速求均值、中位数、方差与标准差
+- 用 `fractions.Fraction` 做精确的有理数运算
+
+## 前置知识
+
+- 浮点数的精度限制（见 [math 与 random](../math-random) 的易错点）
+- 基本的统计概念（均值、方差）
+
+## 核心概念
+
+`float` 是二进制浮点，很多十进制小数无法精确表示（`0.1 + 0.2 != 0.3`），在金额、税率等场景会累积误差。`decimal` 用「十进制浮点」按人类直觉表示数字：`Decimal('0.1') + Decimal('0.2') == Decimal('0.3')`。通过 `getcontext().prec` 控制有效数字位数，用 `quantize` 显式指定舍入到几位小数。
+
+`statistics` 是轻量统计库：`mean`、`median`、`mode`、`variance`（样本方差）、`stdev`（样本标准差）、`pstdev`（总体标准差）。它接受任意可迭代对象，适合快速探索，不适合大数据（用 NumPy/Pandas）。
+
+`fractions.Fraction(分子, 分母)` 以「分子/分母」精确表示有理数，避免任何浮点近似，常用于数论、比例、精确符号运算。
+
+## 示例
+
+```python
+from decimal import Decimal, getcontext
+import statistics
+from fractions import Fraction
+
+# decimal：金融级精度
+getcontext().prec = 28
+price = Decimal('19.99')
+qty = Decimal('3')
+print(price * qty)                       # 59.97（精确）
+total = Decimal('0.1') + Decimal('0.2')
+print(total == Decimal('0.3'))           # True
+# 显式舍入到两位小数（银行家舍入 ROUND_HALF_UP）
+from decimal import ROUND_HALF_UP
+print((Decimal('2.345')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))  # 2.35
+
+# statistics：描述统计
+data = [2, 4, 4, 4, 5, 5, 7, 9]
+print(statistics.mean(data))             # 5.0
+print(statistics.median(data))           # 4.5
+print(statistics.stdev(data))            # 约 2.14（样本标准差）
+
+# fractions：精确有理数
+a = Fraction(1, 3)
+b = Fraction(1, 6)
+print(a + b)                             # 1/2
+print(float(a))                          # 0.3333...
+```
+
+## 易错点
+
+- **`Decimal` 的构造要传字符串**：`Decimal(0.1)` 会先经过 float 再转 Decimal，误差被带进来了；应写 `Decimal('0.1')`。
+- **`decimal` 默认上下文精度有限**：大数相乘可能截断，需 `getcontext().prec` 调高。
+- **`statistics` 与 NumPy 不要混用语义**：`statistics.variance` 是**样本**方差（除以 n−1），总体方差用 `pstdev`/`pvariance`；NumPy 默认 `np.var` 是总体方差（除以 n），注意区分。
+- **空序列会抛 `StatisticsError`**：`mean([])` 直接报错，调用前要判空。
+- **`Fraction` 来自浮点会失真**：`Fraction(0.1)` 得到 `3602879701896397/36028797018963968` 而非 `1/10`；从浮点转分数应用 `Fraction.from_float` 或先转 `Decimal` 再转。
+
+## 小结
+
+- 金额、税率等「必须精确」的场景用 `decimal`，且务必用字符串构造；
+- 快速统计用 `statistics`，注意样本/总体方差的区别；
+- 需要符号级精确比例用 `fractions`。
+
+## 练习
+
+1. 用 `decimal` 实现一个函数，计算复利 `A = P(1 + r)^n` 并保留 2 位小数，对比用 `float` 的误差。
+2. 给定一组身高数据，计算其均值与样本标准差；人为加入一个离群值，观察标准差的变化。
+3. 用 `Fraction` 验证 `1/2 + 1/3 + 1/6 == 1` 在精确意义下成立。
+
+## 延伸阅读
+
+- [math 与 random](../math-random) — 标量数学与伪随机
+- [Python 官方 decimal 文档](https://docs.python.org/zh-cn/3/library/decimal.html)
+- [Python 官方 statistics 文档](https://docs.python.org/zh-cn/3/library/statistics.html)
+- [Python 官方 fractions 文档](https://docs.python.org/zh-cn/3/library/fractions.html)
