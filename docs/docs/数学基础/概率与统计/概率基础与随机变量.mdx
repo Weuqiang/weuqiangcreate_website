@@ -40,7 +40,7 @@ description: "建立概率公理、条件概率与随机变量的直觉。"
 
 - $0 \le P(A) \le 1$
 - $P(\Omega)=1$
-- 互斥事件可加：$P(A\cup B)=P(A)+P(B)$
+- 互斥事件可加：若 $A\cap B=\varnothing$，则 $P(A\cup B)=P(A)+P(B)$；严格地说公理要求的是**可数**无穷多个两两互斥事件的并也可加，有限可加是它的直接推论。
 
 条件概率与乘法公式：
 
@@ -82,6 +82,14 @@ print(samples.mean())   # ≈ 5
 $$
 \mathbb{E}[X]=\sum_x x\,P(x),\qquad \mathrm{Var}(X)=\mathbb{E}[(X-\mathbb{E}[X])^2]
 $$
+
+方差还有一个手算更稳的等价形式（展开平方项后中间项抵消）：
+
+$$
+\mathrm{Var}(X)=\mathbb{E}[X^2]-\mathbb{E}[X]^2
+$$
+
+本篇示例里算骰子方差用的正是它。连续型随机变量的期望把求和换成积分 $\mathbb{E}[X]=\int x\,p(x)\,dx$，方差定义完全照搬。
 
 下一篇将用它们做描述统计与贝叶斯推断。
 
