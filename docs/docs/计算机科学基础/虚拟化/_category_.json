@@ -1,0 +1,8 @@
+{
+  "label": "虚拟化",
+  "position": 8,
+  "link": {
+    "type": "generated-index",
+    "description": "从 Hypervisor 到容器——资源抽象、隔离与硬件辅助虚拟化，理解云与云原生的底层底座。"
+  }
+}
