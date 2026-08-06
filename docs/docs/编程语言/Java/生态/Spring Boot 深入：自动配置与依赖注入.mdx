@@ -1,0 +1,118 @@
+---
+sidebar_position: 3
+title: Spring Boot 深入：自动配置与依赖注入
+description: 拆解 @SpringBootApplication 三件套与自动配置原理，掌握 IoC/DI、Bean 作用域与配置外化，写出更可控的 Spring 应用。
+---
+
+# Spring Boot 深入：自动配置与依赖注入
+
+[Spring Boot 入门](/docs/编程语言/Java/生态/Spring Boot 入门)让你几行代码起服务；本篇解释它「为什么能开箱即用」，并带你把控制权拿回来——理解自动配置的条件装配、IoC 容器里的 Bean 与依赖注入、以及配置如何外化。
+
+## 学习目标
+
+- 拆解 `@SpringBootApplication` 背后的三个注解与自动配置加载机制；
+- 用 `@ConditionalOn*` 理解「条件化装配」为何不会冲突；
+- 用构造器注入管理依赖，区分 `@Component` 与 `@Bean`、作用域与 `@Primary`/`@Qualifier`；
+- 用 `@ConfigurationProperties` 与 Profile 做类型安全的配置外化。
+
+## 前置知识
+
+- [Spring Boot 入门](/docs/编程语言/Java/生态/Spring Boot 入门)（起步依赖、最小应用）；
+- [面向对象与核心语法](/docs/编程语言/Java/语言基础/面向对象与核心语法)（类、接口、注解）。
+
+## 核心概念
+
+### 1. @SpringBootApplication 三件套
+
+```java
+@SpringBootApplication   // = @Configuration + @EnableAutoConfiguration + @ComponentScan
+public class DemoApplication { ... }
+```
+
+- `@ComponentScan`：扫描当前包及子包，把 `@Component` 及其派生注解（`@Service`/`@Controller`/`@Repository`）注册为 Bean；
+- `@EnableAutoConfiguration`：按 classpath 上的依赖，**自动**装配相应基础设施（有 Tomcat 就配 Web 容器，有 DataSource 就配 JDBC）；
+- `@Configuration`：声明当前类是配置源。
+
+### 2. 自动配置的条件装配
+
+自动配置类清单在 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`。每个配置类用条件注解决定「装不装」：
+
+```java
+@AutoConfiguration
+@ConditionalOnClass(DataSource.class)          // 类路径有 DataSource 才生效
+@ConditionalOnMissingBean(DataSource.class)    // 用户没自己定义才用默认的
+public class DataSourceAutoConfiguration { ... }
+```
+
+这正是「开箱即用但可被覆盖」的关键：`@ConditionalOnMissingBean` 保证你自定义的 Bean 优先。
+
+### 3. IoC 容器与依赖注入
+
+Spring 的 **IoC（控制反转）容器**负责创建、装配、管理对象（Bean）的生命周期。注入方式：
+
+```java
+@Service
+public class OrderService {
+    private final PaymentClient client;   // 推荐：构造器注入，不可变、易测
+    public OrderService(PaymentClient client) { this.client = client; }
+}
+```
+
+- **字段注入**（`@Autowired` 在字段上）写起来省事，但隐藏依赖、不利于单测；
+- **构造器注入**显式声明依赖，配合 `final` 保证不变性，是官方推荐；
+- **循环依赖**：Spring 用三级缓存解决单例的构造期循环，但最好从设计上避免。
+
+作用域：`singleton`（默认，全局一个）、`prototype`（每次取新实例）、`request`/`session`（Web 范围）。同名冲突用 `@Primary`（默认优先）或 `@Qualifier`（按名指定）消解。
+
+### 4. 配置外化
+
+```java
+@ConfigurationProperties(prefix = "app")
+public class AppConfig {
+    private String name;
+    private int timeoutMs;
+    // getter/setter
+}
+```
+
+在 `application.yml` 写 `app.name=xxx`、`app.timeout-ms=3000`，Spring 自动绑定。多环境用 `spring.profiles.active=prod` + `application-prod.yml` 切配置。
+
+## 示例
+
+自定义一个极简「自动配置」让他人 `@Autowired` 就能用：
+
+```java
+@AutoConfiguration
+@ConditionalOnClass(Greeter.class)
+@ConditionalOnMissingBean(Greeter.class)
+public class GreeterAutoConfiguration {
+    @Bean
+    public Greeter greeter() { return new Greeter("你好"); }
+}
+```
+
+在 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` 里登记该类，打包成 starter，别人引入依赖即自动获得 `Greeter` Bean——这就是 Spring Boot 「起步依赖」的实现原理。
+
+## 易错点
+
+- **字段注入带来的隐式依赖**：类看起来无依赖，实则靠容器注入，单测要起容器才能跑；优先构造器注入；
+- **循环依赖踩坑**：虽然 Spring 能解单例循环，但 `prototype` 或构造器循环会直接失败，应从职责拆分上消除；
+- **`@ConfigurationProperties` 前缀写错**：prefix 与 yml 键不对应则绑定为空，注意大小写与中划线；
+- **自动配置被意外覆盖**：`@ConditionalOnMissingBean` 只在「用户没定义同类型 Bean」时生效，若你定义了却期望默认行为，会冲突；
+- **包扫描范围不对**：`@SpringBootApplication` 只扫其所在包及子包，把 Bean 放在上层包会扫不到。
+
+## 练习
+
+1. 用构造器注入把 `Service` 依赖的两个 `Repository` 注入，写单测验证可不依赖容器。
+2. 定义一个 `@ConfigurationProperties` 类绑定 `app.*` 配置，在 `@RestController` 里读取并返回。
+3. 制造一个循环依赖（A 依赖 B、B 依赖 A），观察 Spring 的报错信息，再改用事件/中介方式解耦。
+
+## 小结
+
+Spring Boot 的「魔法」来自自动配置的条件装配与 IoC 容器的依赖注入：自动配置按 classpath 与 `@ConditionalOn*` 决定装配、`@ConditionalOnMissingBean` 保证用户可覆盖；DI 用构造器注入最稳，作用域与 `@Primary`/`@Qualifier` 解决冲突；配置外化用 `@ConfigurationProperties` 与 Profile。读懂这些，你就能既享受开箱即用，又在需要时精准接管。
+
+## 延伸阅读
+
+- 📘 官方：[Spring Boot Reference](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/) —— 自动配置与 `@ConfigurationProperties` 细节。
+- 📘 《Spring 实战》—— IoC/DI 与 Bean 生命周期的系统性讲解。
+- 🔧 `spring-boot-configuration-processor`：为自定义配置生成 IDE 自动补全元数据。

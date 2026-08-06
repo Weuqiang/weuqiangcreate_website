@@ -1,0 +1,102 @@
+---
+sidebar_position: 3
+title: JVM 调优与故障排查
+description: 在理解内存模型与 GC 之后，进一步设定调优目标、选择收集器、读 GC 日志，并用 jstat/jmap/jstack/Arthas 排查 OOM 与高 CPU。
+---
+
+# JVM 调优与故障排查
+
+[内存模型与 GC](/docs/编程语言/Java/JVM/JVM内存模型与GC)讲清了「内存怎么分、垃圾怎么收」。本篇往前一步：把这套知识变成**可调、可查**的工程能力——设定目标、改参数、看日志、定位 OOM 与卡顿。
+
+## 学习目标
+
+- 在「吞吐量 / 延迟（STW）/ 内存占用」三者间做取舍；
+- 用 `-Xms`/`-Xmx`/`-XX:MetaspaceSize` 等参数设定堆与元空间；
+- 根据堆大小与延迟要求选择 G1 / ZGC 等收集器；
+- 用 `jstat`/`jmap`/`jstack`/`jcmd` 与 Arthas 定位内存泄漏与高 CPU。
+
+## 前置知识
+
+- 先读 [JVM 内存模型与垃圾回收](/docs/编程语言/Java/JVM/JVM内存模型与GC)（运行时数据区、可达性分析、分代收集）；
+- 类加载相关见 [类加载机制](/docs/编程语言/Java/JVM/类加载机制)。
+
+## 核心概念
+
+### 1. 调优的「不可能三角」
+
+调优前先定目标，三者很难同时最优：
+
+- **吞吐量**：单位时间内完成的业务量（GC 占比越低越好）；
+- **延迟**：单次请求的停顿（STW 越短越好）；
+- **内存占用**：堆与元空间峰值（容器环境尤其敏感）。
+
+例如追求极低延迟常要换 ZGC/Shenandoah（并发回收、毫秒级 STW），代价是更高的内存与 CPU 开销。
+
+### 2. 关键参数
+
+```text
+-Xms2g -Xmx2g          # 堆初始=最大，避免动态扩容抖动
+-XX:MetaspaceSize=256m # 元空间触发 GC 的阈值
+-Xss256k               # 每个线程栈大小（线程多时要调小）
+-XX:NewRatio=2         # 老年代:新生代 = 2:1（或 -Xmn 直接定新生代）
+-XX:+UseG1GC           # 收集器选择（G1 / ZGC / Shenandoah）
+-Xlog:gc*:file=gc.log  # JDK9+ 统一 GC 日志
+```
+
+`-Xms` 与 `-Xmx` 设为相同值可避免堆伸缩带来的额外 GC；容器里务必显式设置，否则 JVM 可能读到宿主机内存而被 OOMKill。
+
+### 3. 收集器怎么选
+
+| 收集器 | 特点 | 适用 |
+| --- | --- | --- |
+| Parallel | 吞吐优先，STW 较长 | 批处理、后台计算 |
+| G1 | 可预测停顿，平衡型 | 大多数服务端默认 |
+| ZGC / Shenandoah | 并发、亚毫秒级 STW | 大堆、低延迟交易 |
+
+### 4. 故障排查工具箱
+
+```text
+jps            # 列出 Java 进程
+jstat -gc <pid> 1000   # 实时看各分区与 GC 次数
+jmap -histo <pid>      # 对象直方图，找谁占内存
+jstack <pid>           # 线程栈，查死锁/阻塞
+jcmd <pid> VM.native_memory   # Native 内存明细
+```
+
+在线诊断可用 **Arthas**（`dashboard`/`thread`/`heapdump`），内存 dump 后用 **MAT（Eclipse Memory Analyzer）** 找「支配树」里的泄漏根。
+
+## 示例
+
+一段典型 GC 日志片段（G1）：
+
+```text
+[GC pause (G1 Evacuation Pause) (young) 512M->120M(2G), 0.018s]
+```
+
+含义：一次年轻代回收，堆从 512M 降到 120M（总容量 2G），停顿 18ms。若频繁出现 `Full GC` 且堆回收不掉，多半是**内存泄漏**（对象一直被 GC Roots 引用）。
+
+排查 OOM 的步骤：①`jstat` 看堆是否只涨不落；②`jmap -histo` 找异常多的类；③`jmap -dump` 导出后 MAT 分析支配树；④定位到持有引用的代码路径修复。
+
+## 易错点
+
+- **容器里不设置 `-Xmx`**：JVM 按宿主机内存算堆，超出 cgroup 限制被直接 kill（无 Java 堆栈，难查）；
+- **把新生代调太大**：老年代被压缩，反而更容易触发 Full GC；
+- **误读 GC 日志单位**：时间是秒还是毫秒、容量是字节还是 MB，看清再判断；
+- **`jmap -F` 在线 dump 卡死**：强制模式会暂停进程甚至可能挂起，生产优先用 `jcmd` 或 Arthas 的 `heapdump`；
+- **把「高 CPU」都当成 GC**：先用 `top -H` + `jstack` 区分是 GC 线程还是业务线程死循环/锁竞争。
+
+## 练习
+
+1. 写一段不断往 `static List` 里加对象的程序，用 `-Xmx64m` 运行到 OOM，再用 `jmap -histo` 观察泄漏类型。
+2. 用 `jstat -gc` 观察一次正常请求的 GC 行为，记录年轻代回收频率与停顿。
+3. 故意制造一个两线程互相等待的死锁，用 `jstack` 找出 `BLOCKED` 与等待链。
+
+## 小结
+
+JVM 调优不是「背参数」，而是「定目标 → 选收集器 → 看日志 → 定位根因」的闭环。记住不可能三角，会用 `jstat`/`jmap`/`jstack` 与 Arthas/MAT 这套工具链，就能把「内存溢出」「卡顿」「高 CPU」从玄学变成可复现、可修复的工程问题。
+
+## 延伸阅读
+
+- 📘 官方：[JVM Garbage Collection Tuning Guide](https://docs.oracle.com/en/java/javase/gc-tuning/) —— 各收集器参数权威参考。
+- 📘 《深入理解 Java 虚拟机》（周志明）—— 内存模型、GC 与故障排查的经典。
+- 🔧 Arthas 官方文档与 MAT 使用指南。

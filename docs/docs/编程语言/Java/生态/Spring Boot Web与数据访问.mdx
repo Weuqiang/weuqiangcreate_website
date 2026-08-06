@@ -1,0 +1,127 @@
+---
+sidebar_position: 4
+title: Spring Boot Web 与数据访问
+description: 用 Spring MVC 写 RESTful 接口，用 Spring Data JPA / MyBatis 做持久化，掌握声明式事务、参数校验与统一异常处理。
+---
+
+# Spring Boot Web 与数据访问
+
+在 [自动配置与依赖注入](/docs/编程语言/Java/生态/Spring Boot 深入：自动配置与依赖注入)之上，本篇把 Spring Boot 接到真实流量与数据库：Web 层写接口、数据层做持久化、用事务保证一致性、用校验与统一异常守住边界。
+
+## 学习目标
+
+- 用 `@RestController` 与路由注解写 RESTful 接口，正确绑定路径/请求参数/请求体；
+- 用 Spring Data JPA（或 MyBatis）做增删改查，理解实体映射与连接池；
+- 用 `@Transactional` 管理事务，知道传播行为与「自调用失效」；
+- 用 `@Valid` 校验入参与 `@ControllerAdvice` 做统一异常处理。
+
+## 前置知识
+
+- [Spring Boot 入门](/docs/编程语言/Java/生态/Spring Boot 入门) 与 [自动配置与依赖注入](/docs/编程语言/Java/生态/Spring Boot 深入：自动配置与依赖注入)；
+- 关系型数据库基础与 SQL 语法。
+
+## 核心概念
+
+### 1. Web 层（Spring MVC）
+
+```java
+@RestController
+@RequestMapping("/users")
+public class UserController {
+    private final UserRepository repo;
+    public UserController(UserRepository repo) { this.repo = repo; }
+
+    @GetMapping("/{id}")
+    public User get(@PathVariable Long id) { return repo.findById(id).orElseThrow(); }
+
+    @PostMapping
+    public User create(@Valid @RequestBody User u) { return repo.save(u); }
+}
+```
+
+- `@PathVariable` 取路径变量，`@RequestParam` 取查询参数，`@RequestBody` 反序列化 JSON；
+- 返回对象由 `HttpMessageConverter` 自动序列化为 JSON（默认 Jackson）。
+
+### 2. 数据访问
+
+**Spring Data JPA**：用接口定义仓储，方法名即查询，无需写实现：
+
+```java
+public interface UserRepository extends JpaRepository<User, Long> {
+    List<User> findByStatus(String status);   // 按命名约定自动生成 SQL
+}
+```
+
+**MyBatis**：用 Mapper 接口 + XML/注解写 SQL，适合需要精细控制 SQL 的场景。数据源与连接池（默认 HikariCP）由自动配置接管，只须在 `application.yml` 配 URL/账号。
+
+### 3. 声明式事务
+
+```java
+@Service
+public class TransferService {
+    @Transactional
+    public void transfer(Long from, Long to, BigDecimal amount) { ... }
+}
+```
+
+`@Transactional` 基于 AOP，在方法前后开启/提交（或回滚）事务。要点：
+
+- **传播行为**（`REQUIRED` 默认加入已有事务，`REQUIRES_NEW` 挂起开新）；
+- **隔离级别**对应数据库隔离；
+- **自调用失效**：类内部 `this.method()` 调用不会经过代理，事务注解不生效——要通过注入的 Bean 调用。
+
+### 4. 校验与统一异常
+
+```java
+@Data
+public class User {
+    @NotBlank private String name;
+    @Min(0) private int age;
+}
+
+@ExceptionHandler(Exception.class)
+public ResponseEntity<ErrorBody> handle(Exception e) { ... }   // @ControllerAdvice 全局捕获
+```
+
+`@Valid` 触发 Bean Validation，校验失败抛 `MethodArgumentNotValidException`，由 `@ControllerAdvice` 统一转成规范错误响应，避免到处 `try-catch`。
+
+## 示例
+
+一个带事务与校验的转账片段：
+
+```java
+@Transactional
+public void transfer(Long fromId, Long toId, BigDecimal amount) {
+    Account from = accountRepo.findById(fromId).orElseThrow();
+    Account to   = accountRepo.findById(toId).orElseThrow();
+    if (from.getBalance().compareTo(amount) < 0) throw new BizException("余额不足");
+    from.setBalance(from.getBalance().subtract(amount));
+    to.setBalance(to.getBalance().add(amount));
+    accountRepo.save(from); accountRepo.save(to);
+    // 任一异常 → 整个方法回滚
+}
+```
+
+## 易错点
+
+- **N+1 查询**：JPA 懒加载关联时循环访问触发大量 SQL；用 `@EntityGraph` 或 `JOIN FETCH` 预加载；
+- **事务自调用不生效**：类内直接调本类 `@Transactional` 方法绕过代理，事务不会开启；
+- **`LazyInitializationException`**：事务外访问懒加载属性，Session 已关闭；在事务内或用 DTO 投影解决；
+- **大事务**：把无关逻辑塞进一个事务，锁持有时间长、易死锁；按业务拆小；
+- **SQL 注入**：拼接 SQL 字符串危险，务必用参数化（JPA 方法/`?` 占位）或 MyBatis `#{}`。
+
+## 练习
+
+1. 用 `JpaRepository` 写一个「按状态分页查询」的接口，并用 `@Valid` 校验入参。
+2. 故意在 Service 内部 `this.transfer(...)` 自调用，观察事务为何不回滚，再改成注入自身 Bean 调用。
+3. 用 `@ControllerAdvice` 捕获校验异常，返回统一结构的错误 JSON。
+
+## 小结
+
+Spring Boot 的 Web 与数据访问把「写接口、存数据、保一致、守边界」四件事标准化：MVC 注解绑定请求、JPA/MyBatis 做持久化、`@Transactional` 管事务（注意自调用失效）、`@Valid`+`@ControllerAdvice` 做校验与统一异常。避开 N+1、大事务与 SQL 注入这几类高频坑，就能写出稳健的后端服务。
+
+## 延伸阅读
+
+- 📘 官方：[Spring MVC](https://docs.spring.io/spring-framework/docs/current/reference/html/web.html) 与 [Spring Data JPA](https://spring.io/projects/spring-data-jpa) 文档。
+- 📘 《Spring 实战》Web 与数据访问章节。
+- 🔧 `spring-boot-starter-validation` / `spring-boot-starter-data-jpa` 起步依赖。
