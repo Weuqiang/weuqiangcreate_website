@@ -1,0 +1,117 @@
+---
+sidebar_position: 1
+title: Cargo 与工程工作流
+description: Cargo.toml 结构、依赖与版本、工作区、构建剖面与常用命令——把 Rust 工程组织起来并可靠构建。
+---
+
+# Cargo 与工程工作流
+
+Rust 的构建系统与包管理器统一叫 **Cargo**。它管三件事：拉依赖、编代码、跑测试。理解 `Cargo.toml` 与几个常用命令，是进入 Rust 生态的第一课。
+
+## 学习目标
+
+- 读懂并编写 `Cargo.toml` 的 `[package]` / `[dependencies]` / `[dev-dependencies]`；
+- 用语义化版本（SemVer）范围声明依赖，理解 `^` 的含义；
+- 用 **工作区（workspace）** 组织多 crate 项目；
+- 用 `[profile]` 调构建优化，用 `cargo clippy` / `cargo fmt` 保持规范。
+
+## 前置知识
+
+- 先读 [Rust 语言入门](/docs/编程语言/Rust/所有权/Rust语言入门) 与 [错误处理与 Result](/docs/编程语言/Rust/系统编程/错误处理与Result)。
+
+## 核心概念
+
+### 1. Cargo.toml 的核心区段
+
+```toml
+[package]
+name = "demo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+tempfile = "3"
+```
+
+- `version = "1"` 实际等价于 `^1`，表示「兼容 1.x 的最新版」；`~1.2` 则锁定到 `1.2.x`。
+- `[dev-dependencies]` 只在测试/示例/基准里生效，不进入最终发布体积。
+
+### 2. 工作区（workspace）
+
+当项目包含多个互相依赖的 crate（库 + 多个二进制），用工作区统一管理：
+
+```toml
+# 根 Cargo.toml
+[workspace]
+members = ["crates/core", "crates/cli"]
+resolver = "2"
+```
+
+工作区共享一个 `Cargo.lock` 与 `target/` 目录，避免重复编译。各成员在自己的 `Cargo.toml` 里声明，但仍受根统一管理。
+
+### 3. 构建剖面（profile）
+
+```toml
+[profile.release]
+opt-level = 3
+lto = true        # 链接期优化，发布二进制更慢但更小更快
+codegen-units = 1
+```
+
+- `cargo build`（dev，含调试符号、零优化，编译快）；
+- `cargo build --release`（按 `[profile.release]` 优化）。
+
+### 4. 日常命令
+
+```text
+cargo new <name>        # 新建项目
+cargo add serde         # 加依赖（自动写进 Cargo.toml）
+cargo build / run / test
+cargo clippy            # 更强 lint
+cargo fmt               # 格式化
+cargo tree              # 查看依赖树（排查版本冲突）
+cargo publish           # 发布到 crates.io
+```
+
+## 示例
+
+一个最小可运行库 + 二进制的工作区结构：
+
+```text
+myapp/
+├── Cargo.toml          # [workspace] members = ["core","cli"]
+├── crates/
+│   ├── core/           # 库：纯逻辑
+│   │   └── Cargo.toml  # [lib]
+│   └── cli/            # 二进制：依赖 core
+│       └── Cargo.toml  # [dependencies] myapp-core = { path = "../core" }
+```
+
+在 `cli` 里 `use myapp_core::...;` 即可复用核心逻辑，发布时 `cargo build --release` 一次性编译全部成员。
+
+## 易错点
+
+- **`^` 不代表「任意新版」**：`^1.2.3` 只接受 `>=1.2.3, <2.0.0`，大版本升级会断；
+- **工作区成员路径写错**：`members` 用相对根的路径，漏写会导致 `cargo build` 找不到成员；
+- **feature 组合爆炸**：为某个依赖开启 `full` features 会拖入大量无用代码，发布前按需精简；
+- **`build.rs` 副作用**：构建脚本若写文件到源码目录，会污染仓库并让增量构建失效。
+
+## 练习
+
+1. 用 `cargo new --lib` 建一个库，加 `serde`（带 `derive`）依赖，写两个函数并 `cargo test` 通过。
+2. 把该库与一个新的 `cargo new --bin` 项目放进同一工作区，让二进制依赖该库。
+3. 用 `cargo tree` 找出 `tokio` 被哪些 crate 间接引入。
+
+## 小结
+
+Cargo 把「依赖管理 + 构建 + 测试 + 发布」收进一套一致的工作流。`Cargo.toml` 的区段语义、SemVer 范围、工作区与 profile 是最常用的四块；`clippy`/`fmt`/`tree` 则是日常排错与规范的利器。掌握它们，Rust 工程就能从「单文件玩具」长成「可维护的多 crate 系统」。
+
+## 延伸阅读
+
+- 📘 官方：《The Cargo Book》—— 依赖解析、`[features]`、`build.rs` 的完整参考。
+- 📘 官方：《Rust 语言圣经》「Cargo 入门」章节。
+- 🔧 `cargo-expand`：展开宏，调试过程宏与 derive 产物。

@@ -1,0 +1,133 @@
+---
+sidebar_position: 2
+title: tokio 异步运行时
+description: async/await 与 Future 模型、tokio Runtime、spawn、channel、select! 与同步原语——写高并发 IO 程序。
+---
+
+# tokio 异步运行时
+
+Rust 的 `async`/`await` 只是语法，真正让异步跑起来的是**运行时（runtime）**。[tokio](https://tokio.rs/) 是 Rust 生态事实标准的异步运行时：一个多线程调度器 + 非阻塞 IO + 异步同步原语，让你用「看似同步」的代码扛住十万级并发连接。
+
+## 学习目标
+
+- 理解 `Future` 的「惰性」：不 `await` 就不执行；
+- 用 `#[tokio::main]` 起运行时，用 `tokio::spawn` 并发任务；
+- 用 `mpsc` 通道与 `select!` 做任务通信与竞速；
+- 识别会「卡死」运行时的常见误用。
+
+## 前置知识
+
+- 先读 [并发与 async](/docs/编程语言/Rust/系统编程/并发与async)（线程模型、`Send`/`Sync`）。
+
+## 核心概念
+
+### 1. Future 与 Runtime
+
+`async fn` 返回一个 **`Future`**——一个可以被轮询（poll）的状态机，本身不做事，直到被运行时驱动。tokio 的多线程运行时负责在多个 worker 线程上调度这些 Future。
+
+```rust
+#[tokio::main]
+async fn main() {
+    let handle = tokio::spawn(async {
+        // 这是一个独立任务
+        "done".to_string()
+    });
+    let result = handle.await.unwrap();   // 等待任务完成
+    println!("{result}");
+}
+```
+
+### 2. 任务间通信：mpsc 通道
+
+```rust
+use tokio::sync::mpsc;
+
+let (tx, mut rx) = mpsc::channel(32);
+tokio::spawn(async move {
+    tx.send(1u32).await.unwrap();
+});
+while let Some(v) = rx.recv().await {
+    println!("收到 {v}");
+}
+```
+
+注意 tokio 的 `sync::mpsc` 是**异步**的，和标准库的 `std::sync::mpsc` 不是一回事。
+
+### 3. 多任务竞速：select!
+
+```rust
+use tokio::time::{sleep, Duration};
+use tokio::select;
+
+async fn race() {
+    select! {
+        _ = sleep(Duration::from_secs(1)) => println!("超时"),
+        _ = async { /* IO 完成 */ }         => println!("IO 先完成"),
+    }
+}
+```
+
+`select!` 同时等待多个分支，哪个先就绪就执行哪个，其余被取消——非常适合「超时 + 实际工作」模式。
+
+### 4. 异步同步原语
+
+tokio 提供 `Mutex` / `RwLock` / `Notify`，它们是**异步**的（`.lock().await`），不会阻塞 worker 线程：
+
+```rust
+use tokio::sync::Mutex;
+use std::sync::Arc;
+
+let data = Arc::new(Mutex::new(0));
+let d2 = Arc::clone(&data);
+tokio::spawn(async move {
+    let mut g = d2.lock().await;
+    *g += 1;
+});
+```
+
+## 示例
+
+一个并发「扇出-扇入」的最小骨架：主任务分发任务到多个 worker，汇总结果。
+
+```rust
+use tokio::sync::mpsc;
+use tokio::task::JoinSet;
+
+#[tokio::main]
+async fn main() {
+    let mut set = JoinSet::new();
+    for id in 0..4 {
+        set.spawn(async move { id * id });   // 模拟并发计算
+    }
+    let mut total = 0;
+    while let Some(res) = set.join_next().await {
+        total += res.unwrap();
+    }
+    println!("总和 = {total}");   // 0+1+4+9 = 14
+}
+```
+
+`JoinSet` 比手动收集 `JoinHandle` 更方便，适合「动态数量的并发子任务」。
+
+## 易错点
+
+- **在 async 里调用阻塞函数**：`std::thread::sleep`、`std::fs::read` 等会卡住整个 worker 线程，必须用 `tokio::time::sleep` / `tokio::fs::read` 等异步版；
+- **忘了 `.await`**：Future 不 await 就不会执行，任务「静默不跑」是最常见的新手坑；
+- **`Rc`/`RefCell` 跨 `.await`**：它们不是 `Send`，不能在线程间转移；跨 await 边界要用 `Arc`；
+- **在 task 里 panic**：`spawn` 的任务 panic 不会冒泡到 `main`，需用 `JoinHandle` 的返回或 `catch_unwind` 捕获。
+
+## 练习
+
+1. 写一个 tokio 程序：spawn 5 个任务，每个 `sleep` 随机时长后打印，主任务用 `JoinSet` 等全部完成。
+2. 用 `mpsc` 实现一个「生产者-消费者」：一个任务发 10 个数，两个消费者竞争接收并打印。
+3. 给一个 `async` 网络请求加上 2 秒超时（用 `select!` + `tokio::time::sleep`）。
+
+## 小结
+
+tokio 把「异步运行时 + 非阻塞 IO + 异步同步原语」打包成一套心智模型：`Future` 惰性、`spawn` 并发、`mpsc`/`select!` 通信竞速、`async` 版 `Mutex` 不阻塞线程。避开「阻塞调用进 async」「忘了 await」「非 Send 跨 await」三件套，就能稳定写出高并发服务。
+
+## 延伸阅读
+
+- 📘 官方：[Tokio Tutorial](https://tokio.rs/tokio/tutorial) —— 从 echo server 到异步流的循序渐进教程。
+- 📘 《Rust 异步编程》（英文名 *Asynchronous Programming in Rust*）深入 `Future` 原理。
+- 🔧 `tokio-console`：异步任务的运行时观测与调试工具。

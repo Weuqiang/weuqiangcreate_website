@@ -1,0 +1,100 @@
+---
+sidebar_position: 4
+title: rayon 数据并行
+description: 用并行迭代器把 map/reduce/filter 透明地并行化，理解工作窃取与「无共享可变状态」的安全前提。
+---
+
+# rayon 数据并行
+
+[rayon](https://github.com/rayon-rs/rayon) 让你用「和串行迭代器几乎一样的写法」获得多核并行能力。它的核心卖点是：**把 `iter()` 换成 `par_iter()`，剩下的交给工作窃取调度器**。
+
+## 学习目标
+
+- 用 `par_iter` / `par_bridge` 把集合运算并行化；
+- 用并行版的 `map` / `filter` / `reduce` / `fold` 做数据并行；
+- 理解 rayon 的安全前提：闭包之间不能有共享可变状态；
+- 知道何时并行反而更慢（任务太碎、有顺序依赖）。
+
+## 前置知识
+
+- [集合与迭代器](/docs/编程语言/Rust/系统编程/集合与迭代器)（串行迭代器模型）。
+
+## 核心概念
+
+### 1. 并行迭代器
+
+```rust
+use rayon::prelude::*;
+
+let v: Vec<u32> = (0..1_000_000).collect();
+let sum: u32 = v.par_iter()
+    .map(|x| x * x)
+    .sum();
+```
+
+只需 `par_iter()` 替换 `iter()`，`.map().sum()` 会自动分摊到所有 CPU 核。
+
+### 2. reduce 与 fold
+
+并行 `reduce` 需要「可结合的」合并函数：
+
+```rust
+let max = v.par_iter()
+    .cloned()
+    .reduce(|| 0, |a, b| a.max(b));
+```
+
+`fold` + `reduce` 组合能在「线程局部累加」后再合并，减少跨线程同步：
+
+```rust
+let total = v.par_iter()
+    .fold(|| 0u64, |acc, x| acc + *x as u64)
+    .reduce(|| 0, |a, b| a + b);
+```
+
+### 3. 工作窃取（work-stealing）
+
+rayon 默认起「每核一个 worker」的线程池，任务以细粒度「任务」为单位；空闲 worker 会从繁忙 worker 的队列「偷」任务，自动平衡负载，无需手动划分数据。
+
+### 4. 安全前提
+
+rayon 能成立的前提是**闭包之间不共享可变状态**。Rust 的所有权/借用正好在编译期保证这一点：`par_iter()` 借用的是不可变数据，多个线程只读；若要写，必须显式用 `Mutex` 或走 `reduce` 合并，而不是各自改同一块内存。
+
+## 示例
+
+并行统计一个大数据集里满足条件的个数：
+
+```rust
+use rayon::prelude::*;
+
+let data: Vec<i64> = (0..10_000_000).collect();
+let count = data.par_iter()
+    .filter(|&&x| x % 7 == 0 && x % 13 == 0)
+    .count();
+println!("被 7 和 13 同时整除的数：{count}");
+```
+
+相比串行 `iter()`，在多核机器上接近线性加速（受内存带宽限制时除外）。
+
+## 易错点
+
+- **闭包捕获 `&mut` 共享变量**：并行闭包若都去改同一个 `&mut`，编译期会被借用检查拒绝；正确做法是用 `reduce`/`fold` 合并结果，而不是共享可变量；
+- **伪共享（false sharing）**：若用 `Mutex` 保护细粒度计数器，线程会互相使对方缓存行失效，反而更慢——优先用 `reduce`；
+- **任务粒度过碎**：`par_iter()` 对每个元素开一个任务有开销，极轻量操作并行可能不如串行；
+- **顺序依赖被忽略**：并行不保证顺序，`fold` 的线程局部结果顺序不确定，别依赖「先后的副作用」。
+
+## 练习
+
+1. 用 `par_iter` + `map` + `sum` 并行求 1..N 的平方和，对比 `iter()` 的耗时。
+2. 把一个「串行 filter + 收集」改成并行，并验证结果集合一致（注意顺序无关）。
+3. 故意写一个共享 `Mutex<u64>` 计数器的并行版本，测量它是否比 `reduce` 版本慢，并解释原因。
+
+## 小结
+
+rayon 用「`par_iter` 替换 `iter`」把数据并行变得几乎免费，背后是工作窃取调度与 Rust 借用保证的「无共享可变状态」安全前提。掌握 `map`/`filter`/`reduce`/`fold` 的并行写法，并避开「共享可变 + 伪共享 + 过碎任务」三坑，就能把多核算力轻松用起来。
+
+## 延伸阅读
+
+- 📘 官方：[rayon README 与文档](https://github.com/rayon-rs/rayon) —— `par_iter`、`join`、`scope` 的用法。
+- 📘 《Rust 性能优化》相关章节：并行化收益与内存带宽瓶颈。
+- 🔧 `crossbeam`：更底层的无锁并发原语，与 rayon 互补。

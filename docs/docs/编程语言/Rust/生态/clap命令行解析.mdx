@@ -1,0 +1,132 @@
+---
+sidebar_position: 5
+title: clap 命令行解析
+description: 用 derive 宏声明式定义 CLI 参数、选项与子命令，配合 anyhow 做错误处理，快速造出专业命令行工具。
+---
+
+# clap 命令行解析
+
+想用 Rust 写一个像样的命令行工具，[clap](https://docs.rs/clap) 几乎是标配。它提供两种风格：**derive 宏**（声明式，推荐）与 **builder API**（命令式）。本篇聚焦更主流、更省事的 derive 风格。
+
+## 学习目标
+
+- 用 `#[derive(Parser)]` 定义位置参数、选项与开关；
+- 组织多级**子命令**（如 `git commit` / `git push`）；
+- 用属性控制短选项、长选项、默认值与帮助文本；
+- 配合 `anyhow` 统一错误类型，让 CLI 报错友好。
+
+## 前置知识
+
+- [Rust 语言入门](/docs/编程语言/Rust/所有权/Rust语言入门) 与 [宏与模块](/docs/编程语言/Rust/类型系统/宏与模块)（理解 attribute 宏）。
+
+## 核心概念
+
+### 1. 基础 Parser
+
+```rust
+use clap::Parser;
+
+#[derive(Parser)]
+#[command(name = "greet", about = "一个打招呼的小工具")]
+struct Cli {
+    /// 要问候的人
+    name: String,
+    /// 重复次数
+    #[arg(short, long, default_value_t = 1)]
+    count: u32,
+}
+
+fn main() {
+    let cli = Cli::parse();
+    for _ in 0..cli.count {
+        println!("你好，{}！", cli.name);
+    }
+}
+```
+
+- 无 `#[arg]` 的字段是**位置参数**；
+- `#[arg(short, long)]` 同时支持 `-c` 与 `--count`；
+- `default_value_t` 给非字符串类型默认值。
+
+### 2. 子命令
+
+```rust
+#[derive(Parser)]
+enum Command {
+    /// 添加任务
+    Add { task: String },
+    /// 列出任务
+    List,
+}
+
+#[derive(Parser)]
+struct Cli { #[command(subcommand)] cmd: Command }
+```
+
+解析后 `cli.cmd` 是枚举，用 `match` 路由到不同逻辑——这是 `git`、`cargo` 这类多命令工具的标准结构。
+
+### 3. 校验与环境变量
+
+```rust
+#[arg(env = "API_TOKEN", hide_env_values = true)]
+token: String,
+```
+
+clap 可优先从环境变量读取值；还能用 `value_parser` 做范围/枚举校验，非法输入自动打印用法并退出非零码。
+
+### 4. 与 anyhow 配合
+
+命令逻辑返回 `anyhow::Result<()>`，在 `main` 里 `?` 传播错误；配合 `anyhow` 的 `Context` 给出可读的错误链，比裸 `Result` 友好得多。
+
+## 示例
+
+一个带子命令的迷你任务管理器骨架：
+
+```rust
+use clap::{Parser, Subcommand};
+
+#[derive(Subcommand)]
+enum Tasks {
+    Add { name: String },
+    Done { id: u32 },
+}
+
+#[derive(Parser)]
+#[command(version)]
+struct Cli {
+    #[command(subcommand)]
+    task: Tasks,
+}
+
+fn main() {
+    match Cli::parse().task {
+        Tasks::Add { name } => println!("已添加：{name}"),
+        Tasks::Done { id }    => println!("已完成 #{id}"),
+    }
+}
+```
+
+运行 `app add "写文档"` 或 `app done 3` 即可路由。
+
+## 易错点
+
+- **位置参数与选项顺序**：clap 默认要求位置参数排在选项之后，混排会解析失败；用 `#[arg(index = 1)]` 或保持「选项在前、位置在后」；
+- **required 的默认值冲突**：既标 `#[arg(required)]` 又给 `default_value_t` 会矛盾，二选一；
+- **子命令路由遗漏**：`match` 漏掉某个枚举变体会编译不过（这是好事），但新增子命令别忘了补 `match` 分支；
+- **错误信息不友好**：直接在 `main` 用 `expect` 抛 `panic` 体验差，交给 `anyhow` + `Cli::parse` 的自动用法打印更专业。
+
+## 练习
+
+1. 用 derive 写一个 `calc` 工具，支持 `add` / `sub` 两个子命令，各接收两个 `f64` 并打印结果。
+2. 给某个选项加 `env` 支持，用环境变量而非命令行传值。
+3. 把命令逻辑改成返回 `anyhow::Result`，用 `?` 传播一个手动构造的错误（如「除零」）。
+
+## 小结
+
+clap 的 derive 风格让你「用结构体描述 CLI」：位置参数、选项、开关、子命令与校验都是属性声明，自动生成 `--help` / `--version` 与友好报错。配合 `anyhow` 统一错误，很快就能造出专业级命令行工具，是 Rust 写 DevOps / 小工具的首选。
+
+## 延伸阅读
+
+- 📘 官方：[clap 文档](https://docs.rs/clap) 与 `clap::Parser` derive 指南。
+- 🔧 `anyhow` / `thiserror`：错误处理的黄金搭档。
+- 🔧 `clap_complete`：为你的 CLI 自动生成 shell 补全脚本。

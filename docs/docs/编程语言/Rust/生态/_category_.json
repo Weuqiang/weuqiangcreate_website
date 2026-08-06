@@ -1,0 +1,5 @@
+{
+  "label": "生态",
+  "position": 4,
+  "description": "Cargo 工作流与 tokio/serde/rayon/clap 等核心 crate 实战。"
+}

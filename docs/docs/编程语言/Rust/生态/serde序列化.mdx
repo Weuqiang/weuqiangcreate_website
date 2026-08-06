@@ -1,0 +1,118 @@
+---
+sidebar_position: 3
+title: serde 序列化
+description: 用 derive 在 Rust 结构体与 JSON/TOML 等格式间互转，字段重命名、默认值、枚举表示与自定义序列化。
+---
+
+# serde 序列化
+
+[Rust 生态](./)里几乎每个做 IO 的项目都用 [serde](https://serde.rs/)：它把「结构体 ↔ 文本/二进制格式」的双向转换抽象成一个统一的 `Serialize` / `Deserialize` trait 体系，JSON、TOML、YAML、MessagePack 等只是「格式后端」。
+
+## 学习目标
+
+- 用 `#[derive(Serialize, Deserialize)]` 自动生成序列化代码；
+- 用属性控制字段名、缺省值与枚举的表示方式；
+- 处理「结构与数据不完全对齐」的情形（重命名、跳过、可选）；
+- 了解何时需要手写 `Serialize` / `Deserialize` 实现。
+
+## 前置知识
+
+- [Rust 语言入门](/docs/编程语言/Rust/所有权/Rust语言入门) 与 [泛型与 Trait](/docs/编程语言/Rust/类型系统/泛型与Trait)。
+
+## 核心概念
+
+### 1. 最基础的双向转换
+
+```rust
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct User {
+    name: String,
+    age: u32,
+}
+
+let u = User { name: "Ada".into(), age: 36 };
+let json = serde_json::to_string(&u).unwrap();      // => {"name":"Ada","age":36}
+let back: User = serde_json::from_str(&json).unwrap();
+```
+
+`serde_json` 是 JSON 后端；换成 `serde_yaml`、`toml` 只需换对应 crate，结构体代码不变。
+
+### 2. 字段级属性
+
+```rust
+#[derive(Serialize, Deserialize)]
+struct Config {
+    #[serde(rename = "server_url")]   // 输出/输入用不同字段名
+    url: String,
+    #[serde(default)]                 // 缺该字段时用 Default
+    retries: u32,
+    #[serde(skip_serializing)]        // 序列化时忽略
+    secret: String,
+}
+```
+
+常用属性：`rename`、`default`、`skip` / `skip_serializing` / `skip_deserializing`、`rename_all = "camelCase"`（批量命名风格）。
+
+### 3. 枚举与外部/内部表示
+
+默认枚举是「外部标签」：
+
+```rust
+#[derive(Serialize, Deserialize)]
+enum Msg { Ping, Data(String) }
+// Ping  => "Ping"
+// Data  => {"Data":"..."}
+```
+
+用 `#[serde(tag = "type")]` 可改成「内部标签」`{"type":"Data","0":"..."}`，更适合与多态 JSON 对接。
+
+### 4. 何时手写实现
+
+当结构与数据形状差异很大（如扁平化嵌套、版本兼容）时，实现 `Serialize` / `Deserialize` trait 手动控制。serde 提供 `Serializer` / `Deserializer` 与 `#[derive]` 的宏辅助，避免从零写状态机。
+
+## 示例
+
+读取一个配置文件并带默认值兜底：
+
+```rust
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+#[serde(default)]
+struct Settings {
+    host: String,
+    port: u16,
+}
+impl Default for Settings {
+    fn default() -> Self {
+        Settings { host: "127.0.0.1".into(), port: 8080 }
+    }
+}
+
+// 即使 JSON 只写了 {"host":"0.0.0.0"}，port 也会补 8080
+```
+
+## 易错点
+
+- **字段名不匹配直接报错**：`serde_json::from_str` 遇到未知字段默认报错；用 `#[serde(deny_unknown_fields)]` 可显式控制，或用 `allow` 策略容忍；
+- **非穷尽枚举**：数据里的枚举变体不在你的定义中时反序列化失败，跨版本协议要谨慎；
+- **循环/自引用结构**：serde 不支持直接序列化含 `Rc`/`Arc` 自引用的图，需要 `serde_with` 或手动处理；
+- **零拷贝的陷阱**：`Deserialize` 默认借用输入切片，若输入是临时 `String` 会编译失败；用 `to_owned` 或 `Cow` 解决。
+
+## 练习
+
+1. 定义一个嵌套结构体（含 `Vec` 与可选字段），用 `serde_json` 序列化再反序列化回来，验证往返一致。
+2. 给结构体加 `#[serde(rename_all = "camelCase")]`，观察 JSON 字段名变化。
+3. 写一个 TOML 配置文件解析（用 `toml` crate），并对缺失字段用 `default` 兜底。
+
+## 小结
+
+serde 用「一个 trait 体系 + 多种格式后端」统一了 Rust 的序列化：derive 覆盖九成场景，字段属性处理命名/缺省/跳过，枚举标签控制 JSON 形态，特殊形状再手写实现。它是 Rust 做配置、API、持久化的事实标准。
+
+## 延伸阅读
+
+- 📘 官方：[serde.rs](https://serde.rs/) —— 属性大全与自定义实现指南。
+- 🔧 `serde_json`、`toml`、`serde_yaml`、`rmp-serde`（MessagePack）等格式后端。
+- 🔧 `serde_with`：批量处理 `Option`、时间戳、容器等常见模式。
