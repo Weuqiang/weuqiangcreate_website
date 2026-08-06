@@ -6,6 +6,21 @@ description: "Python threading 多线程编程详解：线程与 GIL 概念、�
 
 threading模块用于创建和管理线程。
 
+## 学习目标
+
+- 理解线程、GIL 及其对并行的限制
+- 用 `Thread` / `ThreadPoolExecutor` 管理并发
+- 用 `Lock` / `Event` / `Condition` 做线程同步，避免竞态
+
+## 前置知识
+
+- 函数与类
+- 基本的并发概念
+
+## 核心概念
+
+`threading` 提供高级线程接口。由于 GIL，纯 Python 线程无法真正并行 CPU 工作，但对 I/O 密集型（网络、磁盘）能显著提升吞吐。共享状态必须用锁保护；`queue.Queue` 是线程安全的生产者-消费者载体，比手写锁更不易出错。
+
 ### threading 模块
 
 线程是系统调度资源的最小单位（CPU 通过计时器来切换线程）
@@ -205,6 +220,44 @@ if __name__ == '__main__':
 之所以如此，是因为 Python 的解释器有一个“全局解释器锁”（GIL）的东西，任何线程执行前必须先获得 GIL 锁，然后每执行 100 条字节码，解释器就自动释放 GIL 锁，让别的线程有机会执行。
 
 好在Python3.13已经支持在禁用 GIL 的情况下运行。
+
+## 示例
+
+```python
+import threading
+
+counter = 0
+lock = threading.Lock()
+
+def worker():
+    global counter
+    for _ in range(100000):
+        with lock:           # 保护共享变量
+            counter += 1
+
+ts = [threading.Thread(target=worker) for _ in range(4)]
+for t in ts: t.start()
+for t in ts: t.join()
+print(counter)   # 400000（无锁会是错误值）
+```
+
+## 易错点
+
+- 共享可变状态必须加锁：不加 `Lock`，`counter += 1` 这种读-改-写会竞态，结果随机。
+- GIL 不帮你免锁：GIL 只保护解释器内部，不保护你的应用数据。
+- 死锁：多个锁要约定统一获取顺序，或用 `with` 确保释放。
+- 守护线程 `daemon=True` 会随主线程退出被强杀：需完成的工作别设成守护。
+- I/O 密集才用线程：CPU 密集用线程反而因 GIL 无加速。
+
+## 练习
+
+- 用 `ThreadPoolExecutor` 并发发起多个网络请求并汇总。
+- 用 `queue.Queue` 实现生产者-消费者。
+- 故意去掉锁观察计数错误，理解竞态。
+
+## 小结
+
+`threading` 适合 I/O 密集型并发，但共享数据必须用锁保护。能用 `queue.Queue` 就用它（线程安全），能避免手写锁就避免。记住「线程为 I/O，进程为 CPU」。
 
 ## 延伸阅读
 

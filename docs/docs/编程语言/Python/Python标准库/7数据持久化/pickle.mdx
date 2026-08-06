@@ -4,6 +4,21 @@ title: pickle
 description: "pickle 把任意 Python 对象序列化成字节流，便于存盘或网络传输，但存在安全风险"
 ---
 
+## 学习目标
+
+- 用 `dump`/`load` 与 `dumps`/`loads` 做对象序列化
+- 理解协议版本与二进制模式要求
+- 认清 pickle 的安全风险与跨语言限制
+
+## 前置知识
+
+- Python 文件读写（二进制模式）
+- 基本数据结构
+
+## 核心概念
+
+`pickle` 把 Python 对象图序列化为字节流，能处理任意可 pickle 的对象（含自定义类实例）。注意：必须二进制模式 `wb`/`rb`；反序列化会执行对象里的代码，**绝不** unpickle 不可信数据；pickle 格式 Python 专属，跨语言不通用（需换 JSON/MessagePack 等）。
+
 # pickle — 对象序列化
 
 `pickle` 是 Python 标准库里负责**对象序列化**的模块：它能把几乎任何 Python 对象（列表、字典、类实例、函数……）转换成字节流，存到文件或通过网络发送；之后再用 `unpickle` 还原成原来的对象。
@@ -63,6 +78,40 @@ blob = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
 经验法则：**内部缓存 / 临时存档用 pickle 图方便；对外交换数据用 json 保安全与兼容。**
 
 > 延伸：把 Python 对象转成跨语言的结构化数据，参见 `json` 模块；二进制高效存储大量数组则常用第三方 `numpy` / `pandas`。
+
+## 示例
+
+```python
+import pickle
+
+obj = {"scores": [95, 87], "name": "Alice"}
+
+with open("data.pkl", "wb") as f:
+    pickle.dump(obj, f)          # 必须二进制 "wb"
+
+with open("data.pkl", "rb") as f:
+    loaded = pickle.load(f)      # 必须二进制 "rb"
+
+print(loaded == obj)   # True
+```
+
+## 易错点
+
+- 必须用二进制模式：缺 `b` 会抛类型错误或损坏数据。
+- 反序列化执行代码：unpickle 不可信数据等于执行其中任意代码，**高危**——只 pickle 自己信任的数据。
+- 跨版本/跨语言不兼容：pickle 格式 Python 专属，换语言或 Python 大版本可能读不出。
+- 自定义类需可导入：反序列化时 Python 要能 import 到原类，否则失败。
+- 函数无法 pickle：函数/lambda 的「代码」不能被序列化，只能存其引用路径。
+
+## 练习
+
+- 序列化一个嵌套 dataclass 对象并还原。
+- 对比 `pickle` 与 `json` 处理同一对象的差异。
+- 故意 unpickle 不可信字符串，观察为何危险（仅本地实验）。
+
+## 小结
+
+`pickle` 是 Python 对象持久化利器，但「强大即危险」：二进制模式是硬性要求，安全上只信自己产生的数据。需要跨语言或人类可读时，优先 `json`；需要性能/体积时再考虑 `pickle` 或 `orjson`。
 
 ## 延伸阅读
 - [连接到磁盘上的数据库（如果不存在则创建）](../sqlite3)

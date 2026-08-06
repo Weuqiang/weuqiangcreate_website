@@ -8,6 +8,22 @@ description: "logging 是 Python 标准库里的日志系统，支持分级、�
 
 `logging` 是 Python 标准库自带的**日志框架**。相比用 `print` 调试，它支持**日志级别、输出到多个目标（控制台 / 文件）、格式化与时间戳**，是生产代码记录运行状态的标准做法。
 
+## 学习目标
+
+- 说清为什么生产代码要用 `logging` 而非 `print`
+- 掌握五级日志级别（DEBUG / INFO / WARNING / ERROR / CRITICAL）与它们的过滤关系
+- 会用 `basicConfig` 快速配置级别、格式与输出目标
+- 理解 Logger / Handler / Formatter 三层结构，能为不同目标设不同级别
+
+## 前置知识
+
+- 已会 Python 基本语法与模块导入（见 [Python 0 基础语法](../../../0基础语法)）。
+- 无需其他基础；日志是"记运行状态"的工具，本身不依赖复杂概念。
+
+## 核心概念
+
+下面从"为什么不用 `print`"讲到"生产级三层结构"：先认识五级日志级别与过滤逻辑，再用 `basicConfig` 快速上手，最后理解 Logger / Handler / Formatter 如何组合出灵活的多目标日志。
+
 ## 五级日志
 
 | 级别 | 数值 | 用途 |
@@ -99,6 +115,51 @@ logger.info("比 logging 少写很多样板代码")
 如果项目允许引入第三方依赖，`loguru` 通常是更顺手的选择；若必须只用标准库，则掌握上面的 `logging` 三层结构即可。
 
 > 延伸：日志常配合 [`os`](../os) 模块做路径与目录管理（例如把日志按日期放到独立文件夹）。
+
+## 示例
+
+一个同时输出到控制台（INFO 及以上）和文件（DEBUG 及以上）的完整小例子：
+
+```python showLineNumbers
+import logging
+
+logger = logging.getLogger("demo")
+logger.setLevel(logging.DEBUG)
+
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+console.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+
+file = logging.FileHandler("demo.log")
+file.setLevel(logging.DEBUG)
+file.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+
+logger.addHandler(console)
+logger.addHandler(file)
+
+logger.debug("调试细节，只进文件")
+logger.info("启动完成，控制台和文件都能看到")
+logger.warning("内存占用偏高")
+```
+
+## 易错点
+
+- **只调 `logging.info` 却什么都没打印**。根 logger 默认级别是 `WARNING`，且没配置 Handler；小脚本要先 `basicConfig`，模块里要先 `getLogger` 并 `setLevel`。
+- **级别"设了不生效"**。过滤有两道关卡——Logger 的 level 和每个 Handler 的 level，取交集。Handler 级别高于 Logger 时，低级别日志会被 Handler 丢掉。
+- **重复打印（一条日志出现两次）**。多次调用 `basicConfig`（它只生效一次）或重复 `addHandler` 而不判断，会导致 handler 累积。模块级 `logger` 应用 `if not logger.handlers:` 守卫，或用 `logging.config`。
+- **在库代码里配置 Handler**。库应当只 `getLogger(__name__)` 并留级别，由**应用层**统一配置 Handler，否则多个库互相打架。
+- **用 `print` 代替日志**。生产环境无法按级别开关、没有时间戳和来源，排查问题时 `print` 远不如 `logging`。
+
+## 练习
+
+1. 用 `basicConfig` 把 WARNING 及以上日志同时输出到控制台和 `app.log` 文件，写出代码并实际运行观察两份输出差异。
+2. 搭一个三层结构：控制台只显示 ERROR 以上、文件记录 DEBUG 以上，并给日志加上 `%(filename)s:%(lineno)d` 定位信息。
+3. 故意在模块级重复 `addHandler` 两次（不加守卫），运行看是否一条日志打印两遍，再用 `if not logger.handlers:` 修复。
+4. 对比 `logging` 与 `loguru`：用 `loguru` 写一行配置实现"按大小轮转的文件日志"，体会样板代码量的差异。
+
+## 小结
+
+`logging` 用五级级别（DEBUG < INFO < WARNING < ERROR < CRITICAL）控制"记多少"，用 Logger / Handler / Formatter 三层控制"记什么、写到哪、长什么样"。过滤同时受 Logger 与 Handler 两级 level 约束。小脚本用 `basicConfig` 即可，正式项目应在应用层统一配置 Handler、在库代码里只取具名 logger。需要更少样板时，`loguru` 是顺手的第三方替代。
 
 ## 延伸阅读
 

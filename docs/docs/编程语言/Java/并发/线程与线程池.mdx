@@ -105,6 +105,28 @@ new ThreadPoolExecutor(
 1. 用固定线程池并发下载/计算 100 个任务，统计总耗时；
 2. 自定义 `RejectedExecutionHandler`，观察队列满时的拒绝行为。
 
+## 示例
+
+手动 `new Thread` 在高频场景会耗尽资源；生产环境统一用线程池托管任务：
+
+```java
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class PoolDemo {
+    public static void main(String[] args) {
+        ExecutorService pool = Executors.newFixedThreadPool(4);
+        for (int i = 0; i < 10; i++) {
+            int id = i;
+            pool.submit(() -> System.out.println("task " + id));
+        }
+        pool.shutdown(); // 不再接受新任务，等待已提交任务完成
+    }
+}
+```
+
+`submit` 返回 `Future`，可 `get()` 取结果或捕获异常；`shutdownNow()` 会尝试中断正在运行的任务。
+
 ## 延伸阅读
 
 - 更细的锁与并发容器见 [并发容器与锁](../并发容器与锁)；

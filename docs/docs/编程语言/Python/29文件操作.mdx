@@ -255,6 +255,14 @@ with open("data.bin", "rb") as f:
 2. `'w'` 与 `'a'` 模式的区别是什么？`'x'` 模式在文件已存在时如何表现？
 3. 读取一个 GBK 编码的文本文件却不指定 `encoding`，在 Windows 与 Linux 上结果会一样吗？为什么？
 
+## 易错点
+
+- 用完要关：不 `close()` 数据可能没刷盘；用 `with open(...) as f` 自动关闭最稳妥。
+- 模式别混：读模式 `r` 打开不存在文件报 `FileNotFoundError`；写模式 `w` 会清空原文件。
+- 编码问题：`open` 默认依赖平台编码（Windows 常为 gbk），读 UTF-8 文件需显式 `encoding='utf-8'`。
+- 路径拼接用 `os.path.join` / `Path`：手工拼 `/` 在 Windows 上会出错。
+- 读大文件别一次性 `read()`：逐行迭代或分块读取，避免内存暴涨。
+
 ## 延伸阅读
 
 - 上一篇：[Python · 28装饰器与作用域](../28装饰器与作用域)

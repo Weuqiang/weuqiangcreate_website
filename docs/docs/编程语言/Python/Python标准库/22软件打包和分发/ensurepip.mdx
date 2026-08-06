@@ -13,6 +13,21 @@ description: "pip 是 Python 的包安装器，但它本身是一个独立的项
 
 `ensurepip` 提供了命令行接口和模块 API 两种使用方式。
 
+## 学习目标
+
+- 理解 `ensurepip` 的作用场景（离线引导 pip）
+- 用命令行与模块 API 安装/升级 pip
+- 知道 `--user` / `--root` 的安装位置差异
+
+## 前置知识
+
+- Python 包与模块概念
+- 基本的命令行使用
+
+## 核心概念
+
+`ensurepip` 内置于 Python，负责在「没有 pip」的环境里引导安装 pip，且**完全离线**（自带 wheel）。它不联网下载，仅从 Python 安装包中提取。`--upgrade` 确保为最新版；多版本并存时生成 `pipX` / `pipX.Y` 脚本避免冲突。
+
 ## 命令行接口
 
 大多数情况下，通过命令行调用是最简单直接的方式。
@@ -82,6 +97,36 @@ ensurepip.bootstrap(upgrade=True, verbosity=1)
 :::tip
 [Python 3.14 官方文档](https://docs.python.org/zh-cn/3.14/library/ensurepip.html#module-ensurepip) 强调，`bootstrap` 过程可能会对 `sys.path` 和 `os.environ` 产生附带影响。为了避免这些影响，推荐在子进程中唤起命令行接口。
 :::
+
+## 示例
+
+```bash
+# 在当前环境离线引导 pip
+python -m ensurepip
+
+# 确保为最新版本
+python -m ensurepip --upgrade
+
+# 安装到用户目录（虚拟环境内不可用）
+python -m ensurepip --user
+```
+
+## 易错点
+
+- 它不联网：ensurepip 用的是 Python 安装包里自带的 pip wheel，不能用来「下载最新 pip」，`--upgrade` 也只升到已捆绑版本。
+- 虚拟环境内 `--user` 会被拒绝：虚拟环境已有 pip，无需也不允许用 `--user`。
+- 仅引导 pip 本体：第三方包仍要靠 pip 去 PyPI 装，ensurepip 不管。
+- 权限：系统 Python 写入可能需要管理员/写权限，否则失败。
+
+## 练习
+
+- 在干净环境用 `python -m ensurepip --upgrade` 后运行 `pip --version`。
+- 比较 `ensurepip` 与直接 `pip` 的存在性判断逻辑。
+- 实验 `--root` 把 pip 装到自定义目录。
+
+## 小结
+
+`ensurepip` 是「pip 引导器」而非包管理器：它解决的是「环境里连 pip 都没有」的冷启动问题，且完全离线。真正装第三方库还是要靠它引导出来的 `pip`。
 
 ## 延伸阅读
 - [返回总览](../../)

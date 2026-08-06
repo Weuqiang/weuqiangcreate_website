@@ -142,6 +142,14 @@ print(return_value) # 2
 2. 用 `compile` 预编译一段循环执行 10 万次的表达式，相比每次 `eval` 字符串能快多少？
 3. 为什么 `eval(input())` 是严重的安全漏洞？给出安全的替代写法。
 
+## 易错点
+
+- `eval` / `exec` 执行字符串有安全风险：绝不拿用户输入喂给它们。
+- `pdb` 断点记得删：生产代码里留 `breakpoint()` 会阻塞进程。
+- 异常别裸捕获：`except:` 连 `KeyboardInterrupt` / `SystemExit` 都抓，应写 `except Exception`。
+- 日志别只用 `print`：生产环境用 `logging`，才有级别、时间和持久化。
+- `assert` 在 `python -O` 下被移除：不要用它做安全检查或关键逻辑校验。
+
 ## 延伸阅读
 
 - 上一篇：[Python · 30异步编程](../30异步编程)

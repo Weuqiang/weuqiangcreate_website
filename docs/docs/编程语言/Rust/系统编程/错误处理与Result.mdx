@@ -101,6 +101,30 @@ let f = File::open("a.txt").expect("打开失败");  // panic 带信息
 ## 小结
 Rust 的错误处理哲学：**失败是类型的一部分**。`Result` + `?` 让错误无处遁形，又不影响性能——这是它"可靠"名声的来源。
 
+## 示例
+
+用 `Result<T, E>` 在类型上表达「可能失败」，调用者必须处理；`match` 拆解或用 `?` 向上传播：
+
+```rust
+fn div(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        return Err("division by zero".into());
+    }
+    Ok(a / b)
+}
+
+fn main() {
+    match div(10.0, 2.0) {
+        Ok(v) => println!("= {}", v),
+        Err(e) => println!("error: {}", e),
+    }
+    // 用 ? 把错误向上传播给调用者
+    let _ = div(1.0, 0.0).map_err(|e| eprintln!("{}", e));
+}
+```
+
+Rust 没有异常，`panic!` 只用于不可恢复错误；可恢复错误一律走 `Result`，`?` 运算符让错误传播既安全又简洁。
+
 ## 延伸阅读
 - 下一篇：[并发与 async](../并发与async)（并发 IO 错误大量用 `Result` 传播）
 - 上篇：[泛型与 Trait](../../类型系统/泛型与Trait)

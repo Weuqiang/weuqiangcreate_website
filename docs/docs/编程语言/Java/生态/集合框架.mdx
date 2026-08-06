@@ -132,6 +132,31 @@ Map<String, Integer> m2 = Map.of("x", 1, "y", 2);
 1. 用 `HashMap` 统计一段文本中每个词的出现次数；
 2. 用 `PriorityQueue` 实现一个简单的"任务调度器"（按优先级出队）。
 
+## 示例
+
+`List` 与 `Map` 的常用操作，以及 `Collections.sort` 排序：
+
+```java
+import java.util.*;
+
+public class CollectionDemo {
+    public static void main(String[] args) {
+        List<String> list = new ArrayList<>(Arrays.asList("b", "a", "c"));
+        Collections.sort(list);
+        System.out.println(list); // [a, b, c]
+
+        Map<String, Integer> map = new HashMap<>();
+        map.put("one", 1);
+        System.out.println(map.get("one")); // 1
+
+        Set<Integer> set = new HashSet<>(Arrays.asList(1, 1, 2));
+        System.out.println(set.size()); // 2（去重）
+    }
+}
+```
+
+`ArrayList` 随机访问快、`LinkedList` 增删快；`HashMap` 平均 O(1)、`TreeMap` 有序；并发场景用 `ConcurrentHashMap`。
+
 ## 延伸阅读
 
 - 并发场景的容器与锁深入见 [并发容器与锁](../../并发/并发容器与锁)；

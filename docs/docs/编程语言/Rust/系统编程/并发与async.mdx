@@ -103,6 +103,34 @@ async fn main() {
 ## 小结
 Rust 并发的杀手锏是**编译期安全**：`Send`/`Sync` 让数据竞争在编译期就被拒绝。线程适合计算，async 适合 IO，两者都"无畏"。
 
+## 示例
+
+「无畏并发」的两类写法：操作系统线程（借用检查器保证无数据竞争），以及 `async/await`（需 `tokio` 等运行时）。
+
+```rust
+use std::thread;
+
+fn main() {
+    let handle = thread::spawn(|| {
+        for i in 0..3 { println!("hi {}", i); }
+    });
+    handle.join().unwrap(); // 等待线程结束
+}
+```
+
+```rust
+// 需引入 tokio（async 运行时）
+use tokio::time::{sleep, Duration};
+
+async fn task(name: &str) {
+    sleep(Duration::from_millis(100)).await;
+    println!("{} done", name);
+}
+// #[tokio::main] async fn main() { task("a").await; }
+```
+
+线程间共享状态必须用 `Arc<Mutex<T>>` 等同步原语；`async` 适合海量 I/O 并发，单线程即可调度成千上万任务。
+
 ## 延伸阅读
 - 上篇：[错误处理与 Result](../错误处理与Result)（并发 IO 错误用 `Result` 传播）
 - 对照：[Go goroutine 与 channel](../../../Go/并发模型/goroutine与channel)（Go 用 CSP，Rust 用 `Send`/`Sync` + `async`）

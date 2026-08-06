@@ -661,6 +661,91 @@ puts(oldStr); // 输出结果:  lnj // 原有数据会被覆盖
 2. 用结构体自引用定义一个单向链表节点，并写出头插法。
 3. 链表相比数组，在插入/删除与随机访问上各有什么优劣？
 
+## 示例
+
+下面是一个带头节点的单向链表的完整生命周期：创建、尾插、按值删除、遍历、整体销毁。重点在删除与销毁时「先保存后继指针，再 `free` 当前节点」这个固定套路。
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct node {
+    int data;
+    struct node *next;
+} Node;
+
+/* 创建只含头节点的空链表，头节点不存数据，只做哨兵 */
+Node *create_list(void) {
+    Node *head = (Node *)malloc(sizeof(Node));
+    if (head == NULL) return NULL;
+    head->next = NULL;
+    return head;
+}
+
+/* 尾插：把 data 追加到链表末尾 */
+int push_back(Node *head, int data) {
+    Node *cur = (Node *)malloc(sizeof(Node));
+    if (cur == NULL) return -1;
+    cur->data = data;
+    cur->next = NULL;          /* malloc 不清零，必须显式赋值 */
+
+    Node *pre = head;
+    while (pre->next != NULL) pre = pre->next;
+    pre->next = cur;
+    return 0;
+}
+
+/* 删除第一个值等于 key 的节点：先摘链，再释放 */
+int remove_first(Node *head, int key) {
+    Node *pre = head;
+    while (pre->next != NULL && pre->next->data != key) pre = pre->next;
+    if (pre->next == NULL) return -1;      /* 没找到 */
+
+    Node *victim = pre->next;
+    pre->next = victim->next;
+    free(victim);
+    return 0;
+}
+
+void print_list(const Node *head) {
+    for (const Node *p = head->next; p != NULL; p = p->next)
+        printf("%d -> ", p->data);
+    printf("NULL\n");
+}
+
+void destroy_list(Node *head) {
+    Node *p = head;
+    while (p != NULL) {
+        Node *next = p->next;   /* 先存下一个，再释放当前 */
+        free(p);
+        p = next;
+    }
+}
+
+int main(void) {
+    Node *head = create_list();
+    if (head == NULL) return 1;
+
+    for (int i = 1; i <= 5; i++) push_back(head, i * 10);
+    print_list(head);           /* 10 -> 20 -> 30 -> 40 -> 50 -> NULL */
+
+    remove_first(head, 30);
+    print_list(head);           /* 10 -> 20 -> 40 -> 50 -> NULL */
+
+    destroy_list(head);
+    return 0;
+}
+```
+
+## 易错点
+
+- `free(p)` 之后再访问 `p->next` 是典型的 use-after-free：释放前必须先用临时变量保存后继指针，销毁整条链表时最容易踩这个坑。
+- 忘记检查 `malloc` 的返回值：内存不足时它返回 `NULL`，紧接着执行 `cur->data = x` 就是对空指针写入，直接段错误。
+- 新节点的 `next` 没赋值：`malloc` 得到的内存是未初始化的随机字节，尾插时若漏写 `cur->next = NULL;`，遍历会跑向野地址。
+- 头插法的两行顺序写反：必须先 `cur->next = head->next;` 再 `head->next = cur;`；反过来会把后面整条链丢掉，既断链又泄漏内存。
+- 混淆「带头节点」与「不带头节点」两种写法：带头节点时遍历要从 `head->next` 开始，`head` 本身不存数据；两者混用会多算或漏算一个元素。
+- 删除节点时只改指针不 `free`（内存泄漏），或只 `free` 不修正前驱的 `next`（留下悬空指针）——这两个错误经常成对出现。
+
 ## 延伸阅读
 
 - 上一篇：[`14C预处理器和C库`](../14C预处理器和C库)

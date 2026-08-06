@@ -4,6 +4,21 @@ title: glob
 description: "glob 按 Unix shell 风格的模式匹配文件路径，支持通配符与递归搜索"
 ---
 
+## 学习目标
+
+- 用 `glob` / `iglob` 按通配符匹配文件路径
+- 掌握 `*` `?` `[]` `**` 的含义与递归
+- 知道结果无序、需自行 `sorted`
+
+## 前置知识
+
+- 文件系统与路径基本概念
+- Python 字符串与列表
+
+## 核心概念
+
+`glob` 用 Unix shell 风格通配符找文件，比手动 `listdir`+过滤简洁。`*` 不含分隔符，`**`+`recursive=True` 递归。返回顺序不确定；大目录用 `iglob` 惰性迭代省内存。它只匹配文件名，不关心文件内容。
+
 # glob — 文件路径模式匹配
 
 `glob` 模块用 **Unix shell 风格的通配符**找出所有匹配特定模式的文件路径，比手动 `os.listdir` + 过滤更简洁。注意：返回结果的**顺序是不确定的**，需要有序请自行 `sorted()`。
@@ -75,6 +90,35 @@ rx = glob.translate("*.py")
 print(rx.pattern)            # 类似 '(?s:.*\\.py)\\Z'
 print(bool(rx.match("a.py")))
 ```
+
+## 示例
+
+```python
+import glob
+
+# 当前目录所有 .py
+print(glob.glob("*.py"))
+
+# 递归查找所有 .md（含子目录）
+print(glob.glob("docs/**/*.md", recursive=True))
+
+# 迭代器，省内存
+for path in glob.iglob("**/*.png", recursive=True):
+    print(path)
+```
+
+## 易错点
+
+- 结果顺序不确定：不要假设 `glob` 返回有序，需要排序自己 `sorted()`。
+- `**` 必须 `recursive=True`：否则 `**` 只等价于 `*`，不会深入子目录。
+- `*` 不含路径分隔符：想匹配跨目录要用 `**`。
+- 只匹配文件名不读内容：按内容筛选要自己打开文件判断。
+
+## 练习
+
+- 列出某目录下所有大于 1MB 的图片。
+- 用 `glob` 收集所有 `.py` 并统计总行数。
+- 递归查找名字含「test」的文件。
 
 ## 小结
 

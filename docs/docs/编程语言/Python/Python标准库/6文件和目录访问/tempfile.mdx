@@ -15,6 +15,10 @@ sidebar_position: 6
 - [Python 文件读写](../../../29文件操作)（`open` 与 `with` 上下文管理器）
 - [os 模块与路径](../../11通用操作系统服务/os)
 
+## 核心概念
+
+`tempfile` 解决「临时文件三件事」：唯一名（防冲突）、受限权限（仅当前用户）、自动清理（退出即删）。`NamedTemporaryFile` 最常用（有文件名、可跨进程共享），`TemporaryDirectory` 管目录，`mkstemp` 给底层 fd。比手搓 `/tmp/xxx` 安全得多——后者有竞态与权限泄露风险。
+
 ## tempfile 模块
 
 程序运行时常常需要一块"用完即弃"的磁盘空间：下载的缓存、上传文件的中间落盘、原子写入（先写临时文件再 rename 覆盖）等。`tempfile` 模块帮你做对三件事：**唯一的名字**（避免冲突）、**合理的权限**（默认仅当前用户可读）、**自动清理**（进程退出或上下文结束时删除）。
@@ -97,6 +101,28 @@ with tempfile.SpooledTemporaryFile(max_size=1_000_000) as f:
 1. 用 `TemporaryDirectory` 写一个函数：接收一个字符串列表，把它们分别写入临时目录下的 `0.txt`、`1.txt`……再读出拼接返回。
 2. 用 `NamedTemporaryFile(delete=False)` 把一段 JSON 写到临时文件，然后把路径打印出来，并在 `finally` 中删除它，体会手动清理的写法。
 3. 思考：为什么"原子写入"通常是"先写 `xxx.tmp`，再 `os.replace(tmp, target)`"，而不是直接覆盖目标文件？
+
+## 示例
+
+```python
+import tempfile, os
+
+# 最常用的临时文件：有文件名、退出即删
+with tempfile.NamedTemporaryFile(mode="w+t", suffix=".txt", delete=True) as f:
+    f.write("hello temp")
+    f.seek(0)
+    print(f.read())
+
+# 临时目录：连同内部文件一并清理
+with tempfile.TemporaryDirectory() as d:
+    path = os.path.join(d, "a.txt")
+    open(path, "w").write("x")
+# 离开 with 块后 d 及其内部文件全部被删除
+```
+
+## 小结
+
+`tempfile` 把「临时文件三件事」做对：唯一名、受限权限、自动清理。相比手搓 `/tmp/xxx`，它杜绝了竞态与权限泄露。`NamedTemporaryFile` 适合需要把路径交给其他进程的场景，`TemporaryDirectory` 适合批处理中间落盘。
 
 ## 延伸阅读
 

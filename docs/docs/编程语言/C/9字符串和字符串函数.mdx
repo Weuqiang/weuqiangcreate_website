@@ -205,6 +205,62 @@ int main(void) {
 2. `strcpy` 与 `strncpy` 的主要安全风险区别是什么？
 3. 为什么比较字符串不能用 `==`，而要用 `strcmp`？
 
+## 示例
+
+下面这段程序演示带容量限制的安全拼接、`strstr` 定位子串后用指针相减求下标、`strcmp` 的三态返回值，以及 `fgets` 配 `strcspn` 去掉行尾换行的标准输入套路。
+
+```c
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+/* 就地转大写：注意先转成 unsigned char 再传给 toupper */
+void to_upper(char *s) {
+    for (; *s != '\0'; s++)
+        *s = (char)toupper((unsigned char)*s);
+}
+
+/* 安全拼接：始终保证 dst 以 '\0' 结尾，绝不越界 */
+void safe_append(char *dst, size_t cap, const char *src) {
+    size_t used = strlen(dst);
+    if (used + 1 >= cap) return;          /* 已经没有可写空间 */
+    strncat(dst, src, cap - used - 1);
+}
+
+int main(void) {
+    char line[32] = "hello";
+
+    safe_append(line, sizeof(line), ", world");
+    printf("[%s] len=%zu\n", line, strlen(line));   /* [hello, world] len=12 */
+
+    to_upper(line);
+    printf("[%s]\n", line);                         /* [HELLO, WORLD] */
+
+    char *pos = strstr(line, "WORLD");
+    if (pos != NULL)
+        printf("found at index %td\n", pos - line); /* found at index 7 */
+
+    /* strcmp 返回负数/0/正数，不是布尔值 */
+    printf("cmp = %d\n", strcmp("apple", "apply") < 0 ? -1 : 1);
+
+    char buf[16];
+    if (fgets(buf, sizeof(buf), stdin) != NULL) {
+        buf[strcspn(buf, "\n")] = '\0';   /* 去掉 fgets 带回来的换行符 */
+        printf("you typed [%s]\n", buf);
+    }
+    return 0;
+}
+```
+
+## 易错点
+
+- 把 `sizeof` 当成字符串长度：`char s[64] = "hi";` 中 `sizeof(s)` 是 64（数组容量），`strlen(s)` 才是 2；而 `s` 一旦作为参数传进函数退化成 `char *`，`sizeof` 又变成指针大小 4 或 8。
+- 修改字符串字面量：`char *p = "abc"; p[0] = 'A';` 是未定义行为（字面量在只读段），要能修改就必须写成 `char p[] = "abc";`。
+- 把 `strcmp` 当布尔用：相等时它返回 0，所以 `if (strcmp(a, b))` 判断的其实是「不相等」，写反后整个逻辑颠倒。
+- `strncpy` 在截断时不补结尾符：源串长度大于等于 n 时目标没有 `\0`，后续按字符串使用会一路读到越界；稳妥做法是复制后手动补 `dst[n-1] = '\0';`。
+- `strcat` 只管从目标已有内容之后接着写，不检查容量：目标数组必须预留「原有长度 + 追加长度 + 1」的空间，否则溢出会破坏栈上相邻变量。
+- 直接把 `char` 传给 `toupper` / `isalpha`：`char` 是否带符号由实现决定，遇到非 ASCII 字节会传入负值触发未定义行为，应先转成 `unsigned char`。
+
 ## 延伸阅读
 
 - [数组和指针](../8数组和指针) — 字符串就是字符数组，指针运算是字符串处理的内功。

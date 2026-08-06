@@ -127,6 +127,34 @@ Go 的接口是**隐式实现**：类型只要拥有接口要求的方法集，�
 2. 用 slice + `append` 实现一个栈（push / pop / top）。
 3. 写一个闭包计数器并验证多次调用的捕获语义。
 
+## 示例
+
+切片扩容、`map` 基本操作，以及捕获外部变量的闭包：
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    s := []int{1, 2, 3}
+    s = append(s, 4) // 超出容量时 append 会分配新底层数组
+    fmt.Println(s, len(s), cap(s))
+
+    m := map[string]int{"a": 1, "b": 2}
+    m["c"] = 3
+    fmt.Println(m["a"])
+
+    adder := func(x int) func(int) int {
+        return func(y int) int { return x + y } // 闭包捕获 x
+    }
+    add10 := adder(10)
+    fmt.Println(add10(5)) // 15
+}
+```
+
+切片是「指向底层数组的窗口」，函数传参是值拷贝但共享底层数组——修改元素会影响原切片。
+
 ## 延伸阅读
 
 - 上篇：[Go 语言入门](../Go语言入门)

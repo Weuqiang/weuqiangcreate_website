@@ -15,6 +15,10 @@ sidebar_position: 3
 - [Python 数据结构（序列与字典）](../../../3序列)
 - [Python 文件读写](../../../29文件操作)
 
+## 核心概念
+
+`pprint` 美化打印嵌套结构：`pprint.pp` 自动换行缩进，`pformat` 返回字符串，`pp` 是更紧凑的快捷方式。关键参数 `width`（行宽）、`indent`（缩进）、`depth`（截断深度）、`sort_dicts`（是否排序键）。它是调试/日志工具，生产环境别打印超大结构（性能与可读性都差）。
+
 ## pprint 模块
 
 `pprint` 模块用于美化打印复杂的 Python 数据结构，让嵌套的字典、列表等以层次清晰的格式输出。
@@ -184,6 +188,24 @@ else:
 1. 构造一个三层嵌套的 dict，分别用 `pprint.pp`（默认）和 `pprint.pprint` 打印，对比字典键顺序差异。
 2. 用 `pformat` 把一个配置 dict 格式化后写入 `out.txt`，再读回来验证内容。
 3. 故意制造一个自引用列表，用 `pprint.pp` 打印，观察递归标记；再用 `isrecursive` 判断。
+
+## 示例
+
+```python
+import pprint
+
+data = {"users": [{"id": 1, "name": "张三"}, {"id": 2, "name": "李四"}]}
+
+pprint.pp(data, sort_dicts=False, width=40)
+# 层次化、换行缩进显示，比 print 清晰得多
+
+# 只拿字符串
+text = pprint.pformat(data, depth=1)
+```
+
+## 小结
+
+`pprint` 把嵌套结构层次化打印，是调试与日志的好帮手：`pp` 最常用，`pformat` 拿字符串，`width`/`indent`/`depth`/`sort_dicts` 控制形态。记住它是开发期工具，生产环境别打印超大结构。
 
 ## 延伸阅读
 

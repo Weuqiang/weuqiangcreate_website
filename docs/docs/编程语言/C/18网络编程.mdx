@@ -113,6 +113,64 @@ close(sock);
 
 本章把网络变成「可 read/write 的 socket」：TCP 服务器 listen/accept、客户端 connect，握手后就是熟悉的字节流收发。结合多线程即可支撑并发连接。
 
+## 示例
+
+下面是一个完整可运行的回显服务器，在最小示例的基础上补齐了工程里真正必要的部分：每一步都检查返回值、用 `SO_REUSEADDR` 避免重启时端口被占、用 `inet_ntop` 打印客户端地址，以及最关键的「循环 read、循环 write」来正确处理 TCP 字节流的分包与短写。
+
+```c
+/* 回显服务器：gcc echo.c -o echo && ./echo，另开终端用 nc 127.0.0.1 8080 测试 */
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+int main(void) {
+    int srv = socket(AF_INET, SOCK_STREAM, 0);
+    if (srv < 0) { perror("socket"); return 1; }
+
+    int on = 1;
+    setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));  /* 重启时不必等 TIME_WAIT */
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port        = htons(8080);        /* 端口必须转成网络字节序 */
+
+    if (bind(srv, (struct sockaddr *)&addr, sizeof(addr)) < 0) { perror("bind");   return 1; }
+    if (listen(srv, 16) < 0)                                    { perror("listen"); return 1; }
+    printf("echo server on 8080\n");
+
+    for (;;) {
+        struct sockaddr_in cli_addr;
+        socklen_t len = sizeof(cli_addr);
+        int cli = accept(srv, (struct sockaddr *)&cli_addr, &len);
+        if (cli < 0) { perror("accept"); continue; }
+
+        char ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &cli_addr.sin_addr, ip, sizeof(ip));
+        printf("client %s:%d connected\n", ip, ntohs(cli_addr.sin_port));
+
+        char buf[256];
+        ssize_t n;
+        while ((n = read(cli, buf, sizeof(buf))) > 0) {   /* 循环读：一次不一定收全 */
+            ssize_t sent = 0;
+            while (sent < n) {                            /* 循环写：一次不一定写完 */
+                ssize_t w = write(cli, buf + sent, (size_t)(n - sent));
+                if (w <= 0) break;
+                sent += w;
+            }
+        }
+        close(cli);        /* read 返回 0 表示对端已关闭连接 */
+    }
+
+    close(srv);
+    return 0;
+}
+```
+
 ## 延伸阅读
 
 - 同章前后：[C 并发执行](../17并发执行) / [C 文件输入输出](../11文件输入输出)

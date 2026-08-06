@@ -11,6 +11,16 @@ description: "Python asyncio 异步编程教程：单线程事件循环与 async
 - 用 `asyncio.gather` / `create_task` 并发运行多个协程
 - 避开三大坑：阻塞事件循环、忘记 `await`、在协程里调用同步阻塞函数
 
+## 前置知识
+
+- Python 函数、生成器与装饰器
+- 并发基本概念（可参考 threading / multiprocessing）
+- 事件循环与回调的直觉（无需深入）
+
+## 核心概念
+
+asyncio 的核心是**事件循环**与**协程**：`async def` 定义协程，`await` 在 I/O 等待时让出控制权，循环转去跑别的协程。它单线程协作式多任务，适合 I/O 密集型；`asyncio.run` 启动、`gather`/`create_task` 并发。与线程/进程互补，不替代 CPU 并行。
+
 ## 核心直觉
 
 CPU 执行一条指令极快，但「等网络响应 / 等磁盘 / 等数据库」动辄几十毫秒——这段时间 CPU 其实在空转。多线程靠操作系统切换来利用等待期，但线程切换有开销，且受 GIL 限制无法真正并行 CPU 工作。
@@ -85,6 +95,10 @@ async def fetch(url):
 1. 用 `asyncio.gather` 并发请求 5 个 URL（用 `httpx.AsyncClient` 或 `aiohttp`），对比顺序请求耗时。
 2. 写一个带 `Semaphore(3)` 的并发下载器，控制同时只下 3 个文件。
 3. 故意在协程里写 `time.sleep(1)` 观察程序变慢，再换成 `await asyncio.sleep(1)` 看差别。
+
+## 小结
+
+asyncio 用单线程事件循环 + 协程实现 I/O 并发：把「等」的时间重叠起来，而不是切换线程。记住三句话——`async`/`await` 定义协程并主动让出、`asyncio.run` 启动、`gather`/`create_task` 并发；CPU 密集请走 `multiprocessing`。避开「忘了 await、阻塞调用、同步混用」三坑，就能写出高效且清爽的并发代码。
 
 ## 延伸阅读
 

@@ -275,6 +275,68 @@ typedef struct __attribute__((aligned(8))) {
 2. 结构体指针访问成员用 `->` 还是 `.`？什么场景下二者等价？
 3. 联合体 `union` 与结构体在内存占用上有何本质区别？
 
+## 示例
+
+下面这段程序演示结构体的 `typedef` 别名、指定初始化、嵌套成员访问、枚举取值，以及用 `sizeof` 与 `offsetof` 观察内存对齐产生的填充字节。
+
+```c
+#include <stdio.h>
+#include <stddef.h>
+
+typedef struct {
+    int year;
+    int month;
+    int day;
+} Date;
+
+typedef struct {
+    char   name[16];
+    Date   hire_date;
+    double salary;
+} Employee;
+
+typedef enum { LEVEL_JUNIOR, LEVEL_SENIOR } Level;
+
+typedef struct {
+    char  a;   /* 1 字节 */
+    int   b;   /* 4 字节，需要 4 字节对齐 */
+    short c;   /* 2 字节 */
+} Packed;
+
+int main(void) {
+    Employee e = {
+        .name      = "Zhang",
+        .hire_date = {2021, 7, 1},
+        .salary    = 12500.0
+    };
+    Employee *p = &e;
+
+    /* 变量用 . 访问，指针用 -> 访问 */
+    printf("%s %d-%02d-%02d %.1f\n",
+           p->name, p->hire_date.year, p->hire_date.month,
+           p->hire_date.day, p->salary);
+
+    Level lv = LEVEL_SENIOR;
+    printf("level = %d\n", (int)lv);
+
+    printf("sizeof(Packed) = %zu\n", sizeof(Packed));
+    printf("offset a=%zu b=%zu c=%zu\n",
+           offsetof(Packed, a), offsetof(Packed, b), offsetof(Packed, c));
+    return 0;
+}
+```
+
+在常见的 64 位平台上 `sizeof(Packed)` 输出 12 而不是 7，多出来的 5 个字节就是编译器为满足对齐要求插入的填充。
+
+## 易错点
+
+- 结构体之间可以整体赋值，但只要成员里有指针，那就是**浅拷贝**：两个结构体指向同一块堆内存，任意一方 `free` 之后，另一方立刻变成悬空指针。
+- 数组成员不能用 `=` 赋值：`e.name = "Zhang";` 编译不过，必须用 `strcpy(e.name, "Zhang");`，并确认目标数组能装下含结尾符 `\0` 的长度。
+- 混用 `.` 与 `->`：结构体变量用 `.`，结构体指针用 `->`。`p->x` 等价于 `(*p).x`，而 `*p.x` 会先取成员再解引用，含义完全不同。
+- 用 `memcmp` 判断两个结构体是否相等是错的：填充字节的内容不确定，逻辑上完全相同的两个结构体也可能比出差异，应逐成员比较。
+- 联合体只有「最后一次写入的成员」有效：写完 `u.f` 再读 `u.i`，读到的是浮点数位模式被重新解释后的整数；要安全区分，就在外层结构体里配一个 `type` 标签字段。
+- 结构体作为函数参数是**按值传递**，会整体拷贝一份；大结构体应传 `const` 指针，既省掉拷贝开销，也能防止函数内部意外修改。
+
 ## 延伸阅读
 
 - 上一篇：[`11文件输入输出`](../11文件输入输出)

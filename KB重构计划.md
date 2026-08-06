@@ -230,6 +230,21 @@ description: 一句话说明本文解决什么、学完能做什么
 | 2026-08-05 | Phase 7 (11a–11h) | **Web 前端 83 篇 API 参考页补全**：11a HTML 9 / 11b JS 类型·运算符·特性 15 / 11c 标准库 11 / 11d OOP·异步 7 / 11e DOM 9 / 11f 事件 11 / 11g BOM 14 / 11h 元素 7 | ✅ 782087d·1cd6d90·9811b09·c109fe8·555f565·897da55·770d061·2eea7c9；新增 MDX 消毒剂 `scripts/_sanitize_mdxtags.py` |
 | 2026-08-05 | Phase 8 | **全站分类重规划**（用户："分类错误的要纠正，比如 web 不适合放在编程语言"）：审计结构+命名 → git mv 7 组目录 + 3 项改名。Web前端 编程语言→软件工程；软件工程与后端→软件工程；开发工具链 CS基础→软件工程；操作系统/组成原理/编译原理/计算机网络 由「导论」子级**提升为 CS基础 平级**；大模型LLM与应用→大模型与应用；网格数据→计算机视觉；26-python-language-service→26语言服务 | ✅ commit 3773efe（294 文件）；三道门禁全绿；顶层仍为六大分支 |
 | 2026-08-05 | Phase 8 附带 | Python标准库 13 子目录补 `_category_.json` 显示名 + 按仓例补 11 个分类落地页；修 `position` 撞号（导论/组成原理、数算/计网、工程实践/工具链）；同步 `index.mdx` 六大方向卡片与树图、各分支路线图文案；补「五大支柱」缺失的第 5 项（数据库） | ✅ 含在 3773efe |
+| 2026-08-05 | Phase 9.0 | **CSS 模块新建**（15 内容页+index+_category_）：填补 Web 前端 CSS 缺口；JS 分类 position 2→3；全站 index 延伸阅读加 CSS 链接 | ✅ 三道门禁全绿（build/check:links/content-audit）；本地领先 +1 未推 |
+| 2026-08-06 | Phase 9.1 | **编程语言分支 66 篇教程模板补齐**：C16/Python主15/Go+Java+Rust15/Python标准库20，补齐缺失 1–7 段；最终审计 71 篇 100% 齐备八段模板 | ✅ 编辑完成，三道门禁重跑验证中 |
+
+---
+
+### Phase 9 — 前端三件套补齐 + 编程语言分支收尾（2026-08-05~06）
+> 背景：重规划后审计发现「Web 前端」index 承诺"CSS 表现"但全站 0 篇 CSS 内容页；且「编程语言」分支 66 篇内容页缺失教程模板段（其余 5 分支已全程符合八段模板）。
+
+- [✅] 9.0 **CSS 模块新建**（15 篇内容页 + index.md + `_category_.json`）：填补 Web 前端"CSS 腿"缺口。布局线（display-flow/position/flexbox/grid/responsive）+ 表现线（text/color-background/transition-animation/variables/engineering）+ 基础线（intro/selector/cascade/box-model）。`JavaScript` 分类 `position` 2→3（顺序变 HTML→CSS→JS）；`Web前端/index.mdx`、`HTML/index.md`、`软件工程/index.mdx` 延伸阅读补 CSS 链接。三道门禁全绿（build ✅ / check:links ✅ / content-audit --gate ✅），本地领先 +1 未推
+- [✅] 9.1 **编程语言分支 66 篇教程模板补齐**（审计为唯一系统性缺口）：
+  - C 语言 16 篇：补 示例/易错点（12结构/15高级数据/19Python与C/9字符串 补示例+易错点；10存储/11文件/13位操作/14预处理/1变量/2数据/5控制流/6函数/8数组指针 补易错点；17并发/18网络 补示例）
+  - Python 主页面 15 篇：13 篇补易错点（0基础/1变量/1数字/2字符串/3序列/5控制流/10函数/20类与对象/28装饰器/29文件/38代码执行/39模块/99练习）+ 2 篇补示例+易错点（25迭代器/30异步）
+  - Go/Java/Rust 15 篇：14 篇补 示例（Go 5、Java 5、Rust 4）+ Spring Boot 补 核心概念+示例+小结
+  - Python标准库 20 篇：logging/os/multiprocessing/subprocess/threading/urllib/ensurepip/dis/pickle/compression/re/enum/glob/sqlite3/asyncio/json/typing/pprint/tempfile/csv 补齐缺失的 1–7 段（顶部 学习目标/前置知识/核心概念 + 尾部 示例/易错点/练习/小结）
+  - 最终审计：**编程语言分支 71 篇内容页，八段模板 100% 齐备，0 缺段**。三道门禁重跑验证（2026-08-06，见进度看板）
 
 ---
 

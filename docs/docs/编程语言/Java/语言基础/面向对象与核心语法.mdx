@@ -110,6 +110,31 @@ Java 用封装/继承/多态组织代码，接口定义契约、泛型确保安�
 1. 定义 `Animal` 抽象类（含 `eat()`），让 `Cat`/`Bird` 各自实现；
 2. 写一个 `Box<T>` 泛型类，存一个值并提供 `get/set`。
 
+## 示例
+
+用父类引用指向子类对象，调用被重写的方法——这就是**多态**：
+
+```java
+public class Animal {
+    protected String name;
+    public Animal(String name) { this.name = name; }
+    public void speak() { System.out.println(name + " makes a sound"); }
+
+    public static void main(String[] args) {
+        Animal a = new Dog("Buddy"); // 向上转型
+        a.speak(); // 运行时绑定到 Dog.speak()
+    }
+}
+
+class Dog extends Animal {
+    public Dog(String name) { super(name); }
+    @Override
+    public void speak() { System.out.println(name + " barks"); }
+}
+```
+
+`extends` 实现继承、`@Override` 显式重写、`protected` 允许子类访问；接口（`interface`）则用于定义跨类族的行为契约。
+
 ## 延伸阅读
 
 - 高频容器用法见 [集合框架](../../生态/集合框架)；

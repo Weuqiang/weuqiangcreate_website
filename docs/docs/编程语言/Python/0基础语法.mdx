@@ -928,6 +928,14 @@ print(... is Ellipsis) # 输出True
 2. `is` 和 `==` 的判断依据分别是什么？在什么场景下二者结果会不一致？
 3. 写出 `BaseException`、`Exception`、`ValueError` 三者的继承关系，并说明为什么捕获异常时不推荐直接写 `except BaseException`。
 
+## 易错点
+
+- 缩进必须一致：混用 Tab 与空格会在运行时报 `TabError`；统一用 4 个空格最省心。
+- 复合语句末尾的冒号：`if` / `for` / `while` / `def` / `class` 后面漏写 `:` 会直接语法错误。
+- 整数除法的行为：`3 / 2` 在 Python 3 里得到 `1.5`（float），要整除用 `//`；这与 Python 2 不同。
+- 变量未定义就使用：最常见的 `NameError`，注意变量要先赋值再引用。
+- `print` 是函数不是语句：写成 `print x` 会报错，必须加括号 `print(x)`。
+
 ## 延伸阅读
 
 - 下一篇：[Python · 1变量](../1变量)

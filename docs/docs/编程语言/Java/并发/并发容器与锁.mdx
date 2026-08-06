@@ -107,6 +107,37 @@ latch.await();   // 阻塞直到计数归零
 1. 用 `ReentrantLock` 实现一个线程安全的 `BankAccount` 存取款；
 2. 用 `Semaphore(3)` 限制同时只有 3 个线程访问某资源。
 
+## 示例
+
+用 `ReentrantLock` 保护共享计数器，并用 `ConcurrentHashMap` 做线程安全的键值存储：
+
+```java
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class LockDemo {
+    private final ReentrantLock lock = new ReentrantLock();
+    private int counter = 0;
+
+    public void safeInc() {
+        lock.lock();
+        try {
+            counter++;
+        } finally {
+            lock.unlock(); // 必须在 finally 中释放，防止异常导致死锁
+        }
+    }
+
+    public static void main(String[] args) {
+        ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+        map.put("a", 1);
+        System.out.println(map.get("a")); // 1
+    }
+}
+```
+
+`synchronized` 写法更简洁但锁粒度粗；`ReentrantLock` 支持公平锁、超时与可中断；高并发读写优先用 JUC 并发容器。
+
 ## 延伸阅读
 
 - Web 实战串起这些知识见栏目内的 Spring Boot 文档（见 [Java 学习路线图](../../)）；

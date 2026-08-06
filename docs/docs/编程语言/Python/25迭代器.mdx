@@ -197,6 +197,50 @@ for i, num in enumerate(numbers):
 2. 生成器函数被调用时会立即执行函数体吗？用 `print` 验证并解释 `yield` 的暂停语义。
 3. 用生成器实现斐波那契数列的无限流，并取前 10 项。
 
+## 示例
+
+下面演示迭代器协议与生成器：原生迭代、自定义迭代器类，以及用 `yield` 实现惰性斐波那契。
+
+```python
+# 1) 原生可迭代对象与迭代器
+nums = [1, 2, 3]
+it = iter(nums)
+print(next(it))   # 1
+print(next(it))   # 2
+# next(it) 耗尽后再次调用会抛 StopIteration
+
+# 2) 自定义迭代器
+class Countdown:
+    def __init__(self, start):
+        self.n = start
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if self.n <= 0:
+            raise StopIteration
+        self.n -= 1
+        return self.n + 1
+
+# 3) 生成器：惰性产生斐波那契
+def fib():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+f = fib()
+for _ in range(6):
+    print(next(f), end=" ")   # 0 1 1 2 3 5
+```
+
+## 易错点
+
+- 迭代器是一次性的：耗尽后再 `next()` 抛 `StopIteration`，需重新 `iter()` 才能再来一遍。
+- `for` 循环自动处理 `StopIteration`；手写 `while` 循环要自己捕获，否则直接崩溃。
+- `yield` 是暂停而非返回：对生成器对象再次 `next` 会从上次暂停处继续，不会重新执行函数体。
+- 在迭代中修改可变序列：`for x in lst` 里 `lst.remove(x)` 会跳过元素，应迭代副本或建新列表。
+- 每次 `iter()` 都新建独立迭代器：对同一个可迭代对象多次调用 `iter()` 得到的是不同状态。
+
 ## 延伸阅读
 
 - 上一篇：[Python · 20类与对象](../20类与对象)

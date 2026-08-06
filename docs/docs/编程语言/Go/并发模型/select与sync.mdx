@@ -135,6 +135,35 @@ select 用于“等多路 channel”，sync 原语用于“保护共享状态”
 2. 用 `Mutex` 写线程安全计数器并 benchmark 加锁开销。
 3. 用 `select` + `time.After` 实现带超时的请求。
 
+## 示例
+
+`select` 在多个 channel 上多路复用；`sync.WaitGroup` 等待一组 goroutine 全部结束（适合「等所有任务完成」的场景）。
+
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+    "time"
+)
+
+func main() {
+    var wg sync.WaitGroup
+    wg.Add(2)
+    for i := 0; i < 2; i++ {
+        go func(id int) {
+            defer wg.Done()
+            time.Sleep(time.Millisecond)
+            fmt.Println("worker", id, "done")
+        }(i)
+    }
+    wg.Wait() // 阻塞，直到两个 goroutine 都调用 Done()
+}
+```
+
+`select` 还能配合 `default` 实现非阻塞收发，或配合 `time.After` 实现超时控制。
+
 ## 延伸阅读
 
 - 上篇：[goroutine 与 channel](../goroutine与channel)

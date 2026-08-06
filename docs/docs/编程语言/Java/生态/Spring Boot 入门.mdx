@@ -102,6 +102,40 @@ spring:
 1. 起一个 `/users` 接口，内存 List 模拟 CRUD；
 2. 用 `@ConfigurationProperties` 把自定义配置项绑定到一个 Bean。
 
+## 核心概念
+
+Spring Boot 的设计哲学是「约定优于配置」。它通过两类机制大幅削减样板：
+
+- **起步依赖（starter）**：一个 `spring-boot-starter-web` 自动引入 Web 开发所需的一组默认依赖。
+- **自动配置（auto-configuration）**：根据 classpath 上存在的 jar 推断要装配哪些 Bean，无需手写大量 XML/Java 配置。
+
+`@SpringBootApplication` 是一个复合注解，同时开启「配置类 + 组件扫描 + 自动配置」，是应用的入口开关。
+
+## 示例
+
+几行代码即可起一个返回 JSON 的 Web 服务：
+
+```java
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+    @GetMapping("/hello")
+    public java.util.Map<String, String> hello() {
+        return java.util.Map.of("msg", "hello");
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}
+```
+
+运行 `main` 方法，内嵌的 Tomcat 会启动在 8080 端口，`curl /hello` 即可得到 `{"msg":"hello"}`。
+
+## 小结
+
+Spring Boot 用自动配置与内嵌服务器，把「起一个 Web 服务」从几十行样板降到几行。`@SpringBootApplication` 是总开关，`@RestController` + `@GetMapping` 暴露 HTTP 接口，返回的 Java 对象由消息转换器自动序列化为 JSON。在此之上可继续接入数据库、安全、缓存等起步依赖。
+
 ## 延伸阅读
 
 - 并发基础回顾：[并发容器与锁](../../并发/并发容器与锁)；

@@ -111,6 +111,26 @@ goroutine 负责"并行做事"，channel 负责"安全传递数据"。两者组�
 2. 写一个 `fanIn` 函数，把多个 channel 合并为一个。
 3. 用 `context` 实现可取消的 worker（取消信号广播）。
 
+## 示例
+
+用 `go` 启动一个 goroutine，通过 channel 把结果传回主协程——这是「用通信共享内存」的典型写法。
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    ch := make(chan string)
+    go func() {
+        ch <- "hello from goroutine"
+    }()
+    fmt.Println(<-ch) // 主协程阻塞等待，直到收到值
+}
+```
+
+无缓冲 channel 的发送与接收会**相互阻塞**，天然实现同步；若需解耦，可用 `make(chan T, n)` 建带缓冲 channel。
+
 ## 延伸阅读
 
 - 下一篇：[select 与 sync](../select与sync)

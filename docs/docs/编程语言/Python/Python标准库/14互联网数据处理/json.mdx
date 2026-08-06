@@ -16,6 +16,10 @@ sidebar_position: 14
 - [字符串](../../../2字符串)
 - [dict 与序列](../../../3序列)
 
+## 核心概念
+
+`json` 在 Python 对象与 JSON 文本间互转：`dumps`/`loads` 处理字符串，`dump`/`load` 处理文件。类型映射关键：dict↔object、list/tuple↔array、str↔string、True/False/None↔true/false/null。JSON 键恒为字符串，非字符串键反序列化会丢失——`loads(dumps(x)) != x` 当 x 的键非字符串时。
+
 ## json 模块
 
 `json` 模块提供了 `python -> json` 以及 `json -> python` 两种转换，规则如下：
@@ -103,6 +107,30 @@ print(type(res_j)) # <class 'str'>
 1. 把一段中文 dict 用 `dumps(..., ensure_ascii=False, indent=2)` 输出，对比加与不加 `ensure_ascii` 的差异。
 2. 用 `dump` 把一个配置 dict 写入 `config.json`，再 `load` 读回来，验证往返一致。
 3. 写一个 `default=` 函数，让 `datetime` 对象能被 `dumps` 成 ISO 字符串。
+
+## 示例
+
+```python
+import json
+
+data = {"name": "Alice", "tags": ["a", "b"], "age": 30}
+
+# 对象 -> 字符串
+s = json.dumps(data, ensure_ascii=False, indent=2)
+print(s)
+
+# 字符串 -> 对象
+obj = json.loads(s)
+print(obj["name"])
+
+# 文件读写
+with open("cfg.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, ensure_ascii=False)
+```
+
+## 小结
+
+`json` 是 Python 与 JSON 互转的标准工具：`dumps`/`loads` 处理字符串，`dump`/`load` 处理文件。`ensure_ascii=False` 保留中文可读；类型映射要记牢（dict↔object、tuple↔array、None↔null）。它是配置文件与接口数据交换的首选格式。
 
 ## 延伸阅读
 

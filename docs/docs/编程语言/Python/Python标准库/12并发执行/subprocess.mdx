@@ -4,6 +4,21 @@ title: subprocess
 description: "Python subprocess 模块系统详解：run、Popen、shell=True 的用法，错误处理、进程交互、git 命令示例与调用外部程序的最佳实践"
 ---
 
+## 学习目标
+
+- 用 `subprocess.run` 启动外部命令并捕获输出
+- 理解 `shell=True` 的安全风险与替代写法
+- 掌握进程输入/输出交互与超时控制
+
+## 前置知识
+
+- 命令行与 shell 基础
+- Python 字符串与文件
+
+## 核心概念
+
+`subprocess` 用来在 Python 里运行外部程序。推荐 `run()` + `capture_output=True` + `text=True` 拿结果；需要流式交互时用 `Popen`。`shell=True` 会经系统 shell 解析命令字符串，拼接不可信输入会造成命令注入——应优先传列表形式并 `shell=False`。
+
 ### subprocess 模块
 
 用来启动新进程，执行系统命令，拿到输出结果。
@@ -248,6 +263,42 @@ output = run_command(['ls', '-la'])
 if output:
     print(output)
 ```
+
+## 示例
+
+```python
+import subprocess
+
+# 推荐：列表形式 + 捕获输出
+result = subprocess.run(
+    ["ls", "-l"],
+    capture_output=True,
+    text=True,
+)
+print(result.stdout)
+print("returncode:", result.returncode)
+
+# 非 0 退出即抛异常（适合严格要求成功的场景）
+subprocess.run(["false"], check=True)
+```
+
+## 易错点
+
+- `shell=True` + 字符串命令有注入风险：拼接不可信输入会被执行任意命令，优先传列表、`shell=False`。
+- 大输出不捕获会死锁：`capture_output` 把 stdout/stderr 全读进内存；超大数据应流式读 `stdout` 管道。
+- 默认不抛异常：返回码非 0 只是 `returncode != 0`，想自动报错加 `check=True`。
+- 忘记 `text=True` 得到字节：需要字符串就加，否则要自己 `.decode()`。
+- 超时要用 `timeout=`：否则子进程卡住会无限期挂起主程序。
+
+## 练习
+
+- 用 `subprocess` 调用 `git` 获取当前分支名并解析。
+- 捕获 `ping` 输出统计丢包率。
+- 用 `Popen` 实现「边产生边消费」的流式管道。
+
+## 小结
+
+`subprocess.run` 是启动外部命令的现代入口：列表形式最安全，`capture_output`+`text` 拿结果，`check`/`timeout` 控错误与挂起。把外部程序当作「数据变换函数」来用，能让 Python 轻松编排 shell 工具链。
 
 ## 延伸阅读
 

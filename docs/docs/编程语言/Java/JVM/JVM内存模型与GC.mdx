@@ -92,6 +92,27 @@ a = null;                  // 原对象不再可达，下次 GC 可回收
 1. 写个无限向 `static List` 添加对象的循环，观察堆增长与 `OutOfMemoryError`；
 2. 用 `-Xmx64m` 启动，观察不同堆大小下 GC 频率变化。
 
+## 示例
+
+下面用一段代码演示对象在堆上分配、引用在栈帧中持有，以及失去引用后由 GC 回收的过程。
+
+```java
+public class HeapDemo {
+    public static void main(String[] args) {
+        // sb 是局部变量（栈/局部变量表），指向堆上的 StringBuilder 对象
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 1000; i++) {
+            sb.append(i);
+        }
+        // 当 sb 不再被引用，对象进入"待回收"状态
+        sb = null;
+        System.gc(); // 建议 JVM 回收（不保证立即执行）
+    }
+}
+```
+
+`-Xmx` / `-Xms` 可设置堆上限与初始大小；频繁 Full GC 往往是内存泄漏或堆过小的信号。
+
 ## 延伸阅读
 
 - 类如何被加载进内存见 [类加载机制](../类加载机制)；

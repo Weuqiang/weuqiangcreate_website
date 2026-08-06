@@ -10,6 +10,21 @@ SQLite 是一个开源的嵌入式关系型数据库，以其轻量级、零配�
 - [Python sqlite3 文档](https://docs.python.org/zh-cn/3/library/sqlite3.html)
 :::
 
+## 学习目标
+
+- 连接数据库（文件或 `:memory:`）并建表
+- 用游标执行 SQL、参数化查询防注入
+- 理解事务、上下文管理器与并发锁定
+
+## 前置知识
+
+- 基础 SQL（SELECT/INSERT）
+- Python 文件与上下文管理器
+
+## 核心概念
+
+`sqlite3` 是内嵌式关系数据库，零配置、单文件。通过 `connect` 拿连接、`cursor` 执行 SQL；**务必用参数化占位符**（`?`）避免 SQL 注入。写入默认需 `commit`；并发写会锁库，多线程注意 `check_same_thread`。适合本地配置、缓存、小型应用的持久层。
+
 ## 基础操作
 
 ### 连接数据库
@@ -918,6 +933,24 @@ if __name__ == '__main__':
 :::tip
 如果项目需求超出 SQLite 的能力范围（如需要高并发写入、网络访问、用户权限管理等），建议迁移到 PostgreSQL 或 MySQL。
 :::
+
+## 易错点
+
+- 必须参数化查询：用 `?` 占位符，绝不等号拼接字符串，否则 SQL 注入。
+- 写入要 commit：默认开启事务，不 `commit()` 改动会丢失；用上下文管理器或 `with conn:` 自动提交。
+- 多线程默认受限：`check_same_thread=True` 时跨线程用同一连接会报错，需设 `False` 或每线程一连接。
+- 并发写会锁库：多写者场景考虑 WAL 模式或换 client/server 数据库。
+- 类型亲和性：SQLite 是动态类型，存 Python 对象需用 `pickle` 或 JSON，别直接塞。
+
+## 练习
+
+- 建 `users` 表并插入、查询、更新数据（全参数化）。
+- 用上下文管理器保证异常时也正确关闭/回滚。
+- 把一个 CSV 导入 sqlite3 做聚合查询。
+
+## 小结
+
+`sqlite3` 是零配置嵌入式数据库，适合本地持久化与小型应用。核心纪律是「参数化防注入 + 记得 commit + 理解锁」。它轻量，但高并发/远程访问请上 PostgreSQL/MySQL。
 
 ## 延伸阅读
 

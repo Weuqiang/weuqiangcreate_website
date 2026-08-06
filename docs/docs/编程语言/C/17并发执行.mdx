@@ -126,6 +126,61 @@ pthread_mutex_unlock(&m);
 
 本章进入并发世界：pthread 创建线程、join 等待、mutex 保护共享数据。线程共享内存既是便利也是风险——没有同步的多线程等于埋雷。
 
+## 示例
+
+下面这段程序用四个线程并发累加同一个计数器，演示互斥锁保护临界区、为每个线程准备独立的参数结构体、以及用 `pthread_join` 回收线程。把 `pthread_mutex_lock` / `pthread_mutex_unlock` 两行注释掉再跑一次，`counter` 就会明显小于期望值——这就是数据竞争的直观证据。
+
+```c
+/* 编译：gcc demo.c -o demo -lpthread */
+#include <pthread.h>
+#include <stdio.h>
+
+#define NTHREAD 4
+#define NLOOP   100000
+
+static long counter = 0;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+typedef struct {
+    int  id;
+    long local;      /* 线程私有的统计量，不需要加锁 */
+} Task;
+
+void *worker(void *arg) {
+    Task *t = (Task *)arg;
+    for (int i = 0; i < NLOOP; i++) {
+        pthread_mutex_lock(&lock);
+        counter++;                 /* 临界区只放必须串行的那一行 */
+        pthread_mutex_unlock(&lock);
+        t->local++;
+    }
+    return NULL;
+}
+
+int main(void) {
+    pthread_t tid[NTHREAD];
+    Task tasks[NTHREAD];           /* 每个线程一份参数，避免共用同一变量 */
+
+    for (int i = 0; i < NTHREAD; i++) {
+        tasks[i].id = i;
+        tasks[i].local = 0;
+        if (pthread_create(&tid[i], NULL, worker, &tasks[i]) != 0) {
+            perror("pthread_create");
+            return 1;
+        }
+    }
+
+    for (int i = 0; i < NTHREAD; i++) {
+        pthread_join(tid[i], NULL);          /* 等待并回收，否则主线程退出会带走全部 */
+        printf("thread %d did %ld\n", tasks[i].id, tasks[i].local);
+    }
+
+    printf("counter = %ld (expect %d)\n", counter, NTHREAD * NLOOP);
+    pthread_mutex_destroy(&lock);
+    return 0;
+}
+```
+
 ## 延伸阅读
 
 - 同章前后：[C 结构与其他数据形式](../12结构和其他数据形式) / [Python 与 C 互操作](../19Python与C互交互)

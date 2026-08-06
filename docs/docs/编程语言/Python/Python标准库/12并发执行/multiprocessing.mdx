@@ -3,6 +3,21 @@ sidebar_position: 1
 title: multiprocessing
 description: "Python multiprocessing 多进程编程详解：进程概念、Process、Pool、Queue 的创建与使用，以及计算密集型任务的性能对比与最佳实践"
 ---
+## 学习目标
+
+- 理解进程与线程的区别，以及 GIL 对 CPU 密集型任务的制约
+- 用 `Process` / `Pool` 并行执行任务并回收结果
+- 掌握进程间通信（`Queue` / `Pipe`）与数据共享的注意事项
+
+## 前置知识
+
+- Python 函数与模块
+- 基础并发概念（可参考 threading 与 asyncio）
+
+## 核心概念
+
+`multiprocessing` 通过启动独立进程绕过 GIL，适合 CPU 密集型并行。进程间内存不共享，通信靠 `Queue`/`Pipe` 或共享内存（`Value`/`Array`）。进程数通常取 CPU 核心数；过多反而因切换开销变慢。`if __name__ == '__main__':` 是 Windows 上多进程的必需要求（避免递归 spawn）。
+
 ### multiprocessing 模块
 
 进程是系统独立安排和分配系统资源（CPU、内存）的基本单位，操作系统以进程为单位分配存储空间，操作系统管理所有进程的执行，为它们合理的分配资源。
@@ -122,6 +137,39 @@ if __name__ == '__main__':
 明显，多进程更快。
 
 使用多进程后由于获得了更多的 CPU 执行时间以及更好的利用了 CPU 的多核特性，明显的减少了程序的执行时间，而且计算量越大效果越明显。
+
+## 示例
+
+```python
+from multiprocessing import Pool
+
+def square(x):
+    return x * x
+
+if __name__ == "__main__":
+    with Pool() as p:          # 默认进程数 = CPU 核心数
+        print(p.map(square, [1, 2, 3, 4]))   # [1, 4, 9, 16]
+```
+
+CPU 密集型任务（如对大列表逐元素重计算）拆到多进程，可对照单进程测出明显加速。
+
+## 易错点
+
+- Windows 必须把多进程代码放在 `if __name__ == "__main__":` 内：否则子进程递归 import 主模块导致无限 spawn。
+- 进程间不共享内存：函数内修改全局变量不会影响主进程，通信要用 `Queue`/`Value`。
+- 传大对象给子进程有 pickle 开销：数据拷贝成本可能抵消并行收益。
+- `Pool` 用完要 `close()`+`join()` 或用 `with`：否则主进程可能提前退出，任务丢失。
+- GIL 不限制 multiprocessing：它靠的是多进程而非多线程。
+
+## 练习
+
+- 用 `Process` 同时处理多个文件，用 `Queue` 回收结果。
+- 对比单进程 vs 4 进程处理 CPU 密集任务的耗时。
+- 用 `Pool.starmap` 传递多个参数。
+
+## 小结
+
+`multiprocessing` 绕过 GIL，是 CPU 密集型并行的首选。记住「进程间不共享状态、靠 Queue 通信、Windows 要包 `__main__`」三件事，就能避开绝大多数坑。I/O 密集仍优先 `threading`/`asyncio`。
 
 ## 延伸阅读
 

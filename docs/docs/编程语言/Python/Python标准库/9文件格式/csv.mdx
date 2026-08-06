@@ -15,6 +15,10 @@ description: "csv 模块读写逗号分隔值文件，支持 reader/writer、字
 - [Python 文件读写](../../../29文件操作)
 - [序列与字符串](../../../3序列)
 
+## 核心概念
+
+`csv` 读写逗号分隔值，核心是 `reader`/`writer`（行→字符串列表）与 `DictReader`/`DictWriter`（行→字典，按表头）。务必 `open(..., newline="", encoding="utf-8")` 否则 Windows 空行错位；`delimiter`/`quoting` 适配非标准格式。不要手搓 `split(',')`——字段内含逗号会直接出错。
+
 # csv — 读写 CSV 文件
 
 CSV（Comma Separated Values）是电子表格与数据库之间最常见的交换格式。`csv` 模块提供了跨平台、正确处理引号与换行的读写器，避免你自己用 `split(',')` 带来的各种边界 bug（比如字段里本身含有逗号）。
@@ -88,6 +92,24 @@ with open("eu.csv", "w", newline="", encoding="utf-8") as f:
 - `delimiter`：字段分隔符，默认 `,`。
 - `quotechar`：引号字符，默认 `"`。
 - `quoting`：`QUOTE_MINIMAL`（默认，只在必要时加引号）/ `QUOTE_ALL` / `QUOTE_NONNUMERIC` 等。
+
+## 示例
+
+```python
+import csv
+
+# 读取（务必 newline=""）
+with open("data.csv", newline="", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        print(row["name"], row["age"])   # 按表头取字段
+
+# 写入
+with open("out.csv", "w", newline="", encoding="utf-8") as f:
+    w = csv.DictWriter(f, fieldnames=["name", "age"])
+    w.writeheader()
+    w.writerow({"name": "Alice", "age": 30})
+```
 
 ## 小结
 

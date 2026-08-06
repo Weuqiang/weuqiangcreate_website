@@ -123,6 +123,44 @@ Go 的工程化哲学是"标准库够用"：`go mod` 管依赖、`testing` 管�
 2. 用 `go test -cover` 看覆盖率，补测试到 80% 以上。
 3. 写 benchmark 对比 map 与 slice 的查找性能。
 
+## 示例
+
+下面演示最小可测模块：`go.mod` 声明模块、业务函数在 `add.go`、用 `testing` 包写表驱动测试。
+
+```go
+// go.mod
+module example.com/hello
+
+go 1.21
+```
+
+```go
+// add.go
+package hello
+
+func Add(a, b int) int { return a + b }
+```
+
+```go
+// add_test.go
+package hello
+
+import "testing"
+
+func TestAdd(t *testing.T) {
+    cases := []struct{ a, b, want int }{
+        {2, 3, 5}, {0, 0, 0}, {-1, 1, 0},
+    }
+    for _, c := range cases {
+        if got := Add(c.a, c.b); got != c.want {
+            t.Fatalf("Add(%d,%d)=%d, want %d", c.a, c.b, got, c.want)
+        }
+    }
+}
+```
+
+运行 `go test ./...` 即可执行全部测试；`go test -bench=.` 跑基准测试。
+
 ## 延伸阅读
 
 - 同栏：[HTTP 服务与 Web 开发](../HTTP服务与Web开发)

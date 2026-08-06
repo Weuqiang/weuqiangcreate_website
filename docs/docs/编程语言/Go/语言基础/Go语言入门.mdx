@@ -147,6 +147,31 @@ Go 用简洁语法 + `(结果, error)` 错误处理 + 隐式接口降低协作�
 2. 用 `(int, error)` 实现安全除法，并在 `main` 中处理错误打印结果。
 3. 定义 `Shape` 接口与 `Circle` / `Rect` 实现，分别打印面积。
 
+## 示例
+
+第一个 Go 程序：变量声明、短变量声明（类型推断）、以及 Go 标志性的**多返回值**。
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    var name string = "Go"
+    age := 15          // := 短声明，编译器推断类型
+    fmt.Println(name, age)
+
+    a, b := swap("x", "y") // 一次接收两个返回值
+    fmt.Println(a, b)      // y x
+}
+
+func swap(x, y string) (string, string) {
+    return y, x
+}
+```
+
+注意 `main` 包与 `func main()` 是程序入口；导入未使用的包会编译报错。
+
 ## 延伸阅读
 
 - 下一篇：[切片、映射与函数](../切片映射与函数)

@@ -36,7 +36,7 @@
       "to": "/",
       "layer": 0,
       "group": "root",
-      "count": 303
+      "count": 317
     },
     {
       "id": "d-编程语言",
@@ -238,7 +238,7 @@
       "to": "/docs/软件工程/",
       "layer": 1,
       "group": "d-软件工程",
-      "count": 117
+      "count": 131
     },
     {
       "id": "d-软件工程-工程实践",
@@ -274,7 +274,7 @@
       "layer": 2,
       "group": "d-软件工程",
       "parent": "d-软件工程",
-      "count": 98
+      "count": 112
     },
     {
       "id": "d-数学基础",

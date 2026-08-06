@@ -100,6 +100,32 @@ let Point { x, y } = p;                // 解构出字段
 ## 小结
 枚举 + 模式匹配是 Rust 的"表达力引擎"：把状态穷尽地编码进类型，编译器替你检查遗漏。结合 [泛型与 Trait](../泛型与Trait) 可实现高度复用的抽象。
 
+## 示例
+
+定义携带数据的 `enum`，并用 `match` 穷尽处理每个变体——编译器会强制你覆盖所有情况：
+
+```rust
+enum Message {
+    Quit,
+    Move { x: i32, y: i32 },
+    Write(String),
+}
+
+fn handle(msg: Message) {
+    match msg {
+        Message::Quit => println!("quit"),
+        Message::Move { x, y } => println!("move to {},{}", x, y),
+        Message::Write(s) => println!("text: {}", s),
+    }
+}
+
+fn main() {
+    handle(Message::Move { x: 1, y: 2 });
+}
+```
+
+`match` 是表达式，可返回值；未覆盖全部变体会编译报错，这正是「把状态穷尽编码进类型」的安全来源。
+
 ## 延伸阅读
 - 下一篇：[泛型与 Trait](../泛型与Trait)
 - 上篇：[借用与生命周期](../../所有权/借用与生命周期)

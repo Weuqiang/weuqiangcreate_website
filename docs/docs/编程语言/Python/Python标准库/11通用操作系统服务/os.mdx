@@ -4,6 +4,21 @@ description: " os.remove(path) 或 os.unlink(path) ：删除指定路径的文�
 ---
 
 
+## 学习目标
+
+- 掌握路径拼接、目录遍历、文件增删改查的 `os` 接口
+- 理解 `os.path` 与 `pathlib` 的关系与取舍
+- 知道跨平台差异（路径分隔符、权限语义）与环境变量访问
+
+## 前置知识
+
+- Python 字符串与序列基础
+- 基本的文件系统概念（目录、路径、绝对/相对路径）
+
+## 核心概念
+
+`os` 模块封装了操作系统的通用接口：进程与环境变量、文件路径与目录操作。它偏「过程式」API——路径处理优先用 `os.path.join` 保证跨平台，新代码也推荐面向对象的 `pathlib.Path`。注意 Windows 与 POSIX 在路径分隔符、权限位上的差异，写跨平台脚本时要规避硬编码 `/` 或 `\\`。
+
 ## 文件路径操作
 
 - os.remove(path) 或 os.unlink(path) ：删除指定路径的文件。路径可以是全名，也可以是当前工作目录下的路径。
@@ -203,6 +218,45 @@ print(d)
 b = ast.literal_eval('[10.0, 2, True, "foo"]')
 print(b)
 ```
+
+## 示例
+
+下面演示跨平台路径拼接、目录遍历与多级目录创建：
+
+```python
+import os
+
+# 拼接跨平台路径（不要用字符串相加！）
+path = os.path.join("data", "logs", "app.log")
+print(path)
+
+# 遍历目录
+for name in os.listdir("."):
+    full = os.path.join(".", name)
+    print(name, "is dir?", os.path.isdir(full))
+
+# 创建多级目录 / 重命名
+os.makedirs("tmp/a/b", exist_ok=True)
+os.rename("tmp/a/b", "tmp/a/c")
+```
+
+## 易错点
+
+- 拼接路径别用 `+`：Windows 用 `\`、Linux 用 `/`，写死分隔符会跨平台报错，用 `os.path.join`。
+- `os.listdir` 只给名字不给完整路径：要操作文件记得 `os.path.join(dir, name)`。
+- 删除不存在的文件会 `FileNotFoundError`：`os.remove` 前先判断或用 `try/except`。
+- 相对路径依赖「当前工作目录」，未必是你以为的目录：关键操作用 `os.path.abspath`。
+- 权限在 POSIX 与 Windows 语义不同：用 `os.chmod` 时要注意 Windows 只认只读位。
+
+## 练习
+
+- 写一个函数 `tree(dir)` 递归打印目录树（用 `os.walk`）。
+- 批量把某目录下 `.txt` 改名为 `.md`。
+- 统计一个目录下所有文件的总大小。
+
+## 小结
+
+`os` 是跨平台系统接口的总入口：路径用 `os.path.join`、目录用 `os.listdir`/`os.walk`、文件用 `os.remove`/`os.rename`。写脚本时优先用 `pathlib.Path` 获得更现代的面向对象 API，但 `os` 仍是理解底层行为的钥匙。
 
 ## 延伸阅读
 

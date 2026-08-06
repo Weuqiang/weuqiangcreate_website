@@ -16,6 +16,10 @@ sidebar_position: 20
 - [类与对象](../../../20类与对象)
 - [模块与导入](../../../39模块)
 
+## 核心概念
+
+`typing` 提供类型标注（type hints）：`List`/`Dict`/`Tuple`/`Optional`/`Union`/`Callable` 描述容器与可空，`TypeVar`/`Generic` 写泛型，`Literal`/`TypedDict` 细化。标注只服务于静态检查（mypy/pyright），**运行时无强制**；Python 3.9+ 多可用内置 `list`/`dict` 代替 `typing` 容器，更简洁。
+
 ## typing 模块
 
 `typing` 模块提供高级类型支持，**注意：类型提示只在静态检查阶段有意义，运行时不做任何强制**。
@@ -94,6 +98,29 @@ def process_flag(flag: Literal[True, False, 0, 1]) -> None:
 1. 用 `Optional[int]` 改写一个"按名字查年龄"的函数签名，让它对查不到的情况返回 `None`。
 2. 用 `TypeVar` + `Generic` 写一个 `Box[T]`，支持 `get` / `set`。
 3. 给一个配置函数加 `Literal["dev", "prod"]` 参数，分别用 `mypy`（若已安装）检查正确值与错误值。
+
+## 示例
+
+```python
+from typing import List, Optional
+
+def first_or_default(items: List[str], default: Optional[str] = None) -> Optional[str]:
+    return items[0] if items else default
+
+# 泛型
+from typing import TypeVar, Generic
+
+T = TypeVar("T")
+
+class Box(Generic[T]):
+    def __init__(self, value: T) -> None:
+        self.value = value
+```
+（Python 3.9+ 可直接写 `list[str]`、`str | None`。）
+
+## 小结
+
+`typing` 让类型标注表达更丰富的约束，配合 mypy/pyright 在运行前抓错。关键点：标注只在静态检查阶段有意义、运行时无强制；优先用 `Optional`/泛型描述「可空」与「复用」。新项目直接用内置泛型语法更简洁。
 
 ## 延伸阅读
 

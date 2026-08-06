@@ -931,6 +931,14 @@ for a, b in zip(list_a, list_b):
 2. `try` 中有 `return`，`finally` 中也有 `return`，最终返回哪一个？
 3. 解释 LBYL 与 EAFP 两种风格，并各写一段读取字典键的代码作对比。
 
+## 易错点
+
+- `for...else` 的 `else` 在循环**正常结束**（没有被 `break`）时执行，常被误以为是循环体的一部分。
+- 在循环中修改正在迭代的列表会跳过元素：应迭代副本或新建列表。
+- `range` 左闭右开：`range(3)` 是 `0,1,2`，常因把上限当成「包含」而差一（off-by-one）。
+- Python 没有 `switch/case`（3.10 之前）：别写 `switch`，用 `if-elif` 或 `match`。
+- 布尔陷阱：`if x == True:` 不如 `if x:`；`0`、`''`、`[]` 都是假值，要分清用途。
+
 ## 延伸阅读
 
 - 上一篇：[Python · 3序列](../3序列)

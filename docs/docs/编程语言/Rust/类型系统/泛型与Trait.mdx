@@ -102,6 +102,32 @@ fn report(items: &[&dyn Summary]) {   // dyn 动态分发，运行时决定
 ## 小结
 泛型负责"对多种类型复用"，Trait 负责"约束类型能做什么"。二者结合既灵活又零成本，是 Rust 抽象的核心工具。
 
+## 示例
+
+用 `trait` 定义共享行为，用泛型写出对多种类型复用的函数，零运行时开销：
+
+```rust
+trait Summary {
+    fn summarize(&self) -> String;
+}
+
+struct Article { title: String }
+impl Summary for Article {
+    fn summarize(&self) -> String { format!("《{}》", self.title) }
+}
+
+fn notify<T: Summary>(item: &T) {
+    println!("Breaking: {}", item.summarize());
+}
+
+fn main() {
+    let a = Article { title: "Rust".into() };
+    notify(&a);
+}
+```
+
+泛型在编译期单态化（为用到的类型各生成一份代码），因此既抽象又不牺牲性能；`impl Trait for Type` 为该类型提供行为。
+
 ## 延伸阅读
 - 上篇：[枚举与模式匹配](../枚举与模式匹配)
 - 错误处理：[错误处理与 Result](../../系统编程/错误处理与Result)（Result 常配合 `?` 与 trait）

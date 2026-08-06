@@ -302,6 +302,75 @@ static PyObject* rotate_image(PyObject* self, PyObject* args) {
 2. Python 调用 C 传递大数组时，为什么直接传 Python list 效率低？应如何优化？
 3. C 扩展与 ctypes 在「开发成本 / 运行性能」上如何取舍？
 
+## 示例
+
+下面这组 C + Python 代码演示 ctypes 互操作的三件必做事：声明 `argtypes` / `restype`、用 ctypes 数组把连续缓冲区传给 C、以及「C 分配的内存由 C 提供的函数释放」这一所有权约定。
+
+```c
+/* mathlib.c  编译：gcc -shared -fPIC -o mathlib.so mathlib.c */
+#include <stdlib.h>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+/* 缓冲区由调用方提供，C 只读不拥有 */
+double sum_array(const double *arr, int n) {
+    double s = 0.0;
+    for (int i = 0; i < n; i++) s += arr[i];
+    return s;
+}
+
+/* C 分配、C 释放：所有权留在 C 侧，必须成对使用 */
+double *make_range(int n) {
+    double *p = (double *)malloc((size_t)n * sizeof(double));
+    if (p == NULL) return NULL;
+    for (int i = 0; i < n; i++) p[i] = (double)i;
+    return p;
+}
+
+void free_range(double *p) {
+    free(p);
+}
+```
+
+```python
+from ctypes import CDLL, POINTER, c_int, c_double
+
+lib = CDLL('./mathlib.so')
+
+# 必须声明原型，否则 ctypes 一律按 int 处理返回值
+lib.add.argtypes = [c_int, c_int]
+lib.add.restype = c_int
+
+lib.sum_array.argtypes = [POINTER(c_double), c_int]
+lib.sum_array.restype = c_double
+
+lib.make_range.argtypes = [c_int]
+lib.make_range.restype = POINTER(c_double)
+
+lib.free_range.argtypes = [POINTER(c_double)]
+lib.free_range.restype = None
+
+print(lib.add(5, 3))                       # 8
+
+buf = (c_double * 4)(1.0, 2.0, 3.0, 4.0)   # Python 侧分配连续缓冲区
+print(lib.sum_array(buf, 4))               # 10.0
+
+p = lib.make_range(5)                      # C 侧分配
+print([p[i] for i in range(5)])            # [0.0, 1.0, 2.0, 3.0, 4.0]
+lib.free_range(p)                          # 谁分配谁释放
+```
+
+## 易错点
+
+- 不声明 `argtypes` / `restype`：ctypes 默认按 `int` 解释返回值，返回 `double` 会得到垃圾数，返回指针在 64 位平台上还会被截断成 32 位，表现为莫名其妙的段错误。
+- 把 Python 的 `list` 直接传给期望 `double *` 的函数：list 不是连续的 C 数组，必须先构造成 `(c_double * n)(*values)`，或使用 numpy 数组的 `ctypes.data_as`。
+- 传字符串忘记编码：C 侧要的是 `char *`，Python 3 的 `str` 必须先 `encode()` 成 `bytes` 再传，否则 ctypes 直接抛参数类型错误。
+- C 里 `malloc` 出来的内存交给 Python 后没有调用配套的释放函数：Python 的垃圾回收管不到 C 堆，长期运行的服务会持续泄漏。
+- 写扩展模块时引用计数搞错：`PyList_GetItem` 返回的是借用引用，多一次 `Py_DECREF` 会提前销毁对象导致解释器崩溃；而自己用 `PyLong_FromLong` 创建的新引用漏掉 `Py_DECREF` 就是内存泄漏。
+- 在耗时的纯 C 循环里不释放 GIL：整个解释器被卡住，多线程完全失去意义。用 `Py_BEGIN_ALLOW_THREADS` 与 `Py_END_ALLOW_THREADS` 包住，但其间绝对不能触碰任何 Python 对象。
+
 ## 延伸阅读
 
 - 上一篇：[`18网络编程`](../18网络编程)

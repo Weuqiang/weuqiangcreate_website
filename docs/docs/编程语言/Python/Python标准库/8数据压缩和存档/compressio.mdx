@@ -18,6 +18,21 @@ title: compression
 
 这里只介绍 `Python 3.14` 新增的 `compression.zstd`，综合性能最好的压缩算法。
 
+## 学习目标
+
+- 了解 `compression` 包统一的多算法压缩接口
+- 掌握 zstd 压缩等级与性能权衡
+- 会做流式压缩/解压与文件归档
+
+## 前置知识
+
+- 文件读写（二进制）
+- 字节与缓冲概念
+
+## 核心概念
+
+`compression` 包（3.14 新增）把多种算法（zstd/lzma/bz2/gzip）统一到一致接口。`zstd` 综合最佳：等级 1–19 平衡速度与压缩率，负值更快更差，>20 极致但耗内存。压缩本质是空间与时间的权衡——选等级时要先想清楚瓶颈是磁盘、带宽还是 CPU。
+
 ## compression.zstd
 
 ### 压缩等级
@@ -156,6 +171,38 @@ def compress_bytes_data():
     print(f"压缩后: {len(compressed)} 字节")
     print(f"解压后匹配: {data == decompressed}")
 ```
+
+## 示例
+
+```python
+from compression import zstd
+
+data = b"repeat " * 1000
+
+# 压缩
+compressed = zstd.compress(data, level=3)
+print(len(compressed), "vs", len(data))
+
+# 解压
+assert zstd.decompress(compressed) == data
+```
+
+## 易错点
+
+- `compression` 是 3.14 新增：旧版本 Python 没有此包，需用 `zlib`/`gzip`/`lzma`/`bz2` 替代。
+- 等级不是越高越好：>20 的极致等级耗内存且很慢，日常用 1–19。
+- 压缩是字节运算：输入/输出都是 `bytes`，要处理文本先 `.encode()`。
+- 不同算法文件头不同：zstd 压出的不能直接用 gzip 解，要配对算法。
+
+## 练习
+
+- 比较 zstd 与 gzip 在同一文本上的压缩率与速度。
+- 用流式接口压缩一个大文件，避免一次读进内存。
+- 实验不同等级对压缩率的影响。
+
+## 小结
+
+`compression` 把多种算法统一到一致接口，`zstd` 综合最佳。选算法时权衡压缩率与速度：实时传输用快算法，长期存档用高压缩率算法。
 
 ## 延伸阅读
 - [返回总览](../../)

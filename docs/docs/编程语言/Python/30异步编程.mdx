@@ -475,6 +475,39 @@ asyncio.run(main2())
 2. `await` 一个协程与用 `asyncio.create_task` 包装后再 `await`，并发行为有何不同？
 3. 为什么说 asyncio 对 CPU 密集任务无效？结合 GIL 与事件循环解释。
 
+## 示例
+
+下面演示 `async` / `await` 与 `asyncio`：并发下载三个「任务」，总耗时约等于最慢的那个而非三者之和。
+
+```python
+import asyncio
+
+async def task(name, secs):
+    print(f"{name} 开始")
+    await asyncio.sleep(secs)       # 非阻塞等待，让出事件循环
+    print(f"{name} 结束（{secs}s）")
+    return name
+
+async def main():
+    # 三个协程并发执行
+    results = await asyncio.gather(
+        task("A", 1),
+        task("B", 2),
+        task("C", 1.5),
+    )
+    print("结果:", results)
+
+asyncio.run(main())
+```
+
+## 易错点
+
+- `async def` 里忘写 `await`：协程不会被真正执行，只是返回一个协程对象，毫无效果。
+- 阻塞调用会卡死整个事件循环：`time.sleep` 不是 `await asyncio.sleep`，必须用后者。
+- 混用同步库：`requests.get` 在 async 函数里仍然是阻塞的，I/O 密集型应改用 `aiohttp`。
+- `asyncio.run` 不能嵌套：已在事件循环内再调用它会报错，应直接 `await`。
+- 只 `create_task` 却没 `await`：任务可能在事件循环关闭前被取消，记得等待其完成。
+
 ## 延伸阅读
 
 - 上一篇：[Python · 29文件操作](../29文件操作)
