@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-10-08T19:08:04.461Z",
-  "total": 106,
+  "generatedAt": "2026-10-09T18:38:15.662Z",
+  "total": 107,
   "categories": [
     {
       "name": "科技资讯",
-      "count": 72
+      "count": 73
     },
     {
       "name": "AI资讯",
@@ -22,15 +22,15 @@
   "tags": [
     {
       "name": "科技日报",
-      "count": 72
+      "count": 73
     },
     {
       "name": "每日资讯",
-      "count": 72
+      "count": 73
     },
     {
       "name": "科技要闻",
-      "count": 72
+      "count": 73
     },
     {
       "name": "OpenAI",
@@ -361,6 +361,19 @@
     {
       "year": "2026",
       "posts": [
+        {
+          "title": "科技日报 · 2026-10-08",
+          "date": "2026-10-08",
+          "url": "/blog/2026/10/08/tech-daily/",
+          "summary": "周四好。例行扫了一眼今天的科技新闻，有几条想顺手记下来。",
+          "category": "科技资讯",
+          "tags": [
+            "科技日报",
+            "每日资讯",
+            "科技要闻"
+          ],
+          "file": "2026-10-08-tech-daily.md"
+        },
         {
           "title": "科技日报 · 2026-10-07",
           "date": "2026-10-07",
